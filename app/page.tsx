@@ -5,14 +5,11 @@ import { useState } from 'react';
 export default function InfluencyDashboard() {
   const [activeNav, setActiveNav] = useState('Donators');
   const [selectedMonth, setSelectedMonth] = useState('Jun');
-  const [period, setPeriod] = useState('Monthly');
-  const [visitorFilter, setVisitorFilter] = useState('This Month');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Chart data for interactive hovering
   const barChartData = [
     { month: 'May', blue: 36, lime: 72, value: '$68,400' },
-    { month: 'Jun', blue: 64, lime: 75, value: '$75,200', date: 'Jun 2023', hasTooltip: true },
+    { month: 'Jun', blue: 64, lime: 75, value: '$75,200', date: 'Jun 2023' },
     { month: 'Jul', blue: 38, lime: 50, value: '$52,100' },
     { month: 'Aug', blue: 60, lime: 70, value: '$71,800' },
     { month: 'Sep', blue: 70, lime: 82, value: '$84,500' },
@@ -36,7 +33,7 @@ export default function InfluencyDashboard() {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
                 </svg>
               </div>
-              <span className="font-extrabold text-slate-900 tracking-wider text-base font-sans">INFLUENCY</span>
+              <span className="brand-logo-text text-[15px] text-slate-900">INFLUENCY</span>
             </div>
 
             {/* Nav Items */}
@@ -54,13 +51,13 @@ export default function InfluencyDashboard() {
                   <button
                     key={item.name}
                     onClick={() => setActiveNav(item.name)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition text-left ${
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] transition text-left ${
                       isActive ? 'nav-pill-active' : 'nav-pill-inactive'
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
                       <span className="text-base text-slate-400 w-5 text-center">{item.icon}</span>
-                      <span className="font-medium text-[13.5px]">{item.name}</span>
+                      <span className="font-semibold text-[13.5px]">{item.name}</span>
                     </div>
                     {item.badge && (
                       <span className="w-5 h-5 rounded-full bg-[#5d87ff] text-white text-[11px] font-bold flex items-center justify-center">
@@ -75,14 +72,14 @@ export default function InfluencyDashboard() {
 
           {/* Upgrade to Pro Card */}
           <div className="white-bento-card p-5 mt-8 border border-slate-100 relative">
-            <div className="w-10 h-10 rounded-full bg-[#d4ff00] flex items-center justify-center text-slate-900 font-bold mb-4 shadow-xs">
+            <div className="w-10 h-10 rounded-full bg-[#d4ff00] flex items-center justify-center text-slate-900 font-bold mb-3.5 shadow-2xs">
               <span className="text-base">👑</span>
             </div>
-            <h4 className="font-bold text-slate-900 text-sm mb-1">Upgrade to Pro</h4>
-            <p className="text-slate-400 text-xs leading-relaxed mb-4">Discover the benefits of an upgraded account</p>
+            <h4 className="font-bold text-slate-900 text-[14px] tracking-tight mb-1">Upgrade to Pro</h4>
+            <p className="text-slate-400 text-[12px] font-medium leading-relaxed mb-4">Discover the benefits of an upgraded account</p>
             <button
               onClick={() => setShowUpgradeModal(true)}
-              className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-xs font-semibold rounded-full transition shadow-xs"
+              className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-[12px] font-semibold rounded-full transition shadow-xs"
             >
               Upgrade $10
             </button>
@@ -97,25 +94,23 @@ export default function InfluencyDashboard() {
           {/* Header Row */}
           <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Donators</h1>
-                <span className="bg-[#8eb3ff] text-slate-900 text-xs font-bold px-3 py-1 rounded-full">
+              <div className="flex items-center gap-3">
+                <h1 className="display-title text-[28px] text-slate-900 leading-none">Donators</h1>
+                <span className="bg-[#8eb3ff] text-slate-900 text-[12px] font-bold px-3 py-1 rounded-full tracking-tight">
                   2 New
                 </span>
               </div>
-              <p className="text-slate-400 text-xs mt-0.5">See all your donators information here</p>
+              <p className="text-slate-400 text-[13px] font-medium mt-1">See all your donators information here</p>
             </div>
 
             {/* Right User & Utility Controls */}
             <div className="flex items-center gap-3">
-              {/* Search Circle Button */}
               <button className="icon-circle-btn shadow-2xs" title="Search">
                 <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
 
-              {/* Notification Circle Button with Red Badge */}
               <button className="icon-circle-btn relative shadow-2xs" title="Notifications">
                 <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -123,7 +118,6 @@ export default function InfluencyDashboard() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
               </button>
 
-              {/* User Pill Button */}
               <div className="flex items-center gap-2.5 bg-white border border-slate-200/80 rounded-full pl-1.5 pr-3 py-1 shadow-2xs cursor-pointer hover:border-slate-300 transition">
                 <div className="w-7 h-7 rounded-full bg-slate-200 overflow-hidden shrink-0">
                   <img
@@ -133,8 +127,8 @@ export default function InfluencyDashboard() {
                   />
                 </div>
                 <div className="text-left hidden sm:block">
-                  <span className="text-[10px] text-slate-400 block leading-tight">Welcome back</span>
-                  <strong className="text-xs text-slate-900 block font-semibold leading-tight">Andrew Johnson</strong>
+                  <span className="text-[10.5px] text-slate-400 block leading-tight font-medium">Welcome back</span>
+                  <strong className="text-[12.5px] text-slate-900 block font-bold leading-tight">Andrew Johnson</strong>
                 </div>
                 <span className="text-[10px] text-slate-400 ml-0.5">∨</span>
               </div>
@@ -157,10 +151,10 @@ export default function InfluencyDashboard() {
                 </button>
               </div>
               <div>
-                <div className="text-2xl lg:text-[26px] font-extrabold text-slate-950 tracking-tight leading-none mb-1">
+                <div className="stat-display-number text-[30px] text-slate-950 mb-1">
                   $740.89
                 </div>
-                <span className="text-slate-800 text-xs font-medium">In this month</span>
+                <span className="text-slate-800 text-[12px] font-medium">In this month</span>
               </div>
             </div>
 
@@ -176,10 +170,10 @@ export default function InfluencyDashboard() {
               </div>
               <div>
                 <div className="flex items-baseline gap-1.5 mb-1">
-                  <span className="text-2xl lg:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">80%</span>
-                  <span className="text-slate-400 text-xs font-medium">$800 of $1000</span>
+                  <span className="stat-display-number text-[30px] text-slate-900">80%</span>
+                  <span className="text-slate-400 text-[12.5px] font-medium">$800 of $1000</span>
                 </div>
-                <span className="text-slate-400 text-xs">Active Donation Goals</span>
+                <span className="text-slate-400 text-[12px] font-medium">Active Donation Goals</span>
               </div>
             </div>
 
@@ -195,10 +189,10 @@ export default function InfluencyDashboard() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-2xl lg:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">38</span>
-                  <span className="bg-[#8eb3ff] text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">+8</span>
+                  <span className="stat-display-number text-[30px] text-slate-900">38</span>
+                  <span className="bg-[#8eb3ff] text-slate-900 text-[11px] font-bold px-2 py-0.5 rounded-full">+8</span>
                 </div>
-                <span className="text-slate-400 text-xs">In this month</span>
+                <span className="text-slate-400 text-[12px] font-medium">In this month</span>
               </div>
             </div>
 
@@ -213,10 +207,10 @@ export default function InfluencyDashboard() {
                 </button>
               </div>
               <div>
-                <div className="text-2xl lg:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none mb-1">
+                <div className="stat-display-number text-[30px] text-slate-900 mb-1">
                   $8,234.19
                 </div>
-                <span className="text-slate-400 text-xs">For all time</span>
+                <span className="text-slate-400 text-[12px] font-medium">For all time</span>
               </div>
             </div>
 
@@ -236,7 +230,7 @@ export default function InfluencyDashboard() {
                     <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
                       📊
                     </div>
-                    <h3 className="text-base font-bold text-slate-900">Statistics</h3>
+                    <h3 className="text-[17px] font-bold text-slate-900 tracking-tight">Statistics</h3>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -256,18 +250,18 @@ export default function InfluencyDashboard() {
                 {/* Subheader: Income | Spend */}
                 <div className="grid grid-cols-2 gap-4 pb-6 border-b border-slate-100 mb-6">
                   <div>
-                    <span className="text-xs text-slate-400 block font-medium">Income</span>
-                    <div className="text-2xl font-extrabold text-slate-900 my-1">$150.09</div>
-                    <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <span className="text-[12px] text-slate-400 block font-medium">Income</span>
+                    <div className="stat-display-number text-[26px] text-slate-900 my-1">$150.09</div>
+                    <span className="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                       <span>↗ 4,1%</span>
                       <span className="text-slate-400 font-normal">vs 143,938 Last Year</span>
                     </span>
                   </div>
 
                   <div className="border-l border-slate-100 pl-4">
-                    <span className="text-xs text-slate-400 block font-medium">Spend</span>
-                    <div className="text-2xl font-extrabold text-slate-900 my-1">$90.23</div>
-                    <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <span className="text-[12px] text-slate-400 block font-medium">Spend</span>
+                    <div className="stat-display-number text-[26px] text-slate-900 my-1">$90.23</div>
+                    <span className="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                       <span>↗ 2%</span>
                       <span className="text-slate-400 font-normal">vs 82,203 Last Year</span>
                     </span>
@@ -278,7 +272,7 @@ export default function InfluencyDashboard() {
               {/* Dual Bar Chart with Floating Tooltip */}
               <div className="h-56 relative flex flex-col justify-end pt-8">
                 {/* Y-Axis Label Gridlines */}
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-300 font-medium">
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[11px] text-slate-300 font-medium">
                   <div className="border-b border-slate-100/60 pb-1">$100</div>
                   <div className="border-b border-slate-100/60 pb-1">$75</div>
                   <div className="border-b border-slate-100/60 pb-1">$50</div>
@@ -299,9 +293,9 @@ export default function InfluencyDashboard() {
                         {/* Tooltip on Jun / Selected Month */}
                         {selectedMonth === item.month && (
                           <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
-                            <div className="speech-bubble text-[11px] font-bold text-center">
+                            <div className="speech-bubble text-[12px] font-extrabold text-center">
                               <div>{item.value}</div>
-                              <div className="text-[9px] text-slate-300 font-normal">{item.date || `${item.month} 2023`}</div>
+                              <div className="text-[9.5px] text-slate-300 font-normal">{item.date || `${item.month} 2023`}</div>
                             </div>
                             <div className="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
                           </div>
@@ -321,7 +315,7 @@ export default function InfluencyDashboard() {
                       </div>
 
                       {/* X-Axis Month Label */}
-                      <span className={`text-xs transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400'}`}>
+                      <span className={`text-[12px] transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400 font-medium'}`}>
                         {item.month}
                       </span>
                     </div>
@@ -340,11 +334,11 @@ export default function InfluencyDashboard() {
                     <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
                       👤
                     </div>
-                    <h3 className="text-base font-bold text-slate-900">Visitors</h3>
+                    <h3 className="text-[17px] font-bold text-slate-900 tracking-tight">Visitors</h3>
                   </div>
 
                   <button className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                    <span>{visitorFilter}</span>
+                    <span>This Month</span>
                     <span className="text-[10px]">∨</span>
                   </button>
                 </div>
@@ -354,20 +348,20 @@ export default function InfluencyDashboard() {
                   
                   {/* Large Lime Neon Circle (Individual) */}
                   <div className="absolute left-6 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-transform">
-                    <span className="text-2xl font-black tracking-tight leading-none">2,3k</span>
-                    <span className="text-[11px] font-medium text-slate-800 mt-0.5">Individual</span>
+                    <span className="text-[27px] font-black tracking-[-0.04em] leading-none">2,3k</span>
+                    <span className="text-[11.5px] font-semibold text-slate-800 mt-0.5">Individual</span>
                   </div>
 
                   {/* Medium Soft Blue Circle (Corporate) */}
                   <div className="absolute right-6 top-8 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-transform">
-                    <span className="text-xl font-black tracking-tight leading-none">1,2k</span>
-                    <span className="text-[11px] font-medium text-slate-800 mt-0.5">Corporate</span>
+                    <span className="text-[23px] font-black tracking-[-0.035em] leading-none">1,2k</span>
+                    <span className="text-[11.5px] font-semibold text-slate-800 mt-0.5">Corporate</span>
                   </div>
 
                   {/* Small Light Grey Circle (Foundation) */}
                   <div className="absolute left-24 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-200/60 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-transform">
-                    <span className="text-sm font-extrabold tracking-tight leading-none">982</span>
-                    <span className="text-[9px] font-medium text-slate-600 mt-0.5">Foundation</span>
+                    <span className="text-[15px] font-extrabold tracking-[-0.02em] leading-none">982</span>
+                    <span className="text-[10px] font-medium text-slate-600 mt-0.5">Foundation</span>
                   </div>
 
                 </div>
@@ -376,8 +370,8 @@ export default function InfluencyDashboard() {
               {/* Target Progress Bars */}
               <div className="space-y-3.5 pt-4 border-t border-slate-100">
                 <div>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-slate-600 font-medium">Individual Target</span>
+                  <div className="flex justify-between text-[12.5px] mb-1.5">
+                    <span className="text-[#4b5563] font-medium">Individual Target</span>
                     <span className="text-slate-900 font-bold">92%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -386,8 +380,8 @@ export default function InfluencyDashboard() {
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-slate-600 font-medium">Corporate Target</span>
+                  <div className="flex justify-between text-[12.5px] mb-1.5">
+                    <span className="text-[#4b5563] font-medium">Corporate Target</span>
                     <span className="text-slate-900 font-bold">67%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -396,8 +390,8 @@ export default function InfluencyDashboard() {
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-slate-600 font-medium">Foundation Target</span>
+                  <div className="flex justify-between text-[12.5px] mb-1.5">
+                    <span className="text-[#4b5563] font-medium">Foundation Target</span>
                     <span className="text-slate-900 font-bold">54%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">

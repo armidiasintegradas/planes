@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-outer: #e6ebf0;
@@ -24,32 +24,50 @@
       min-height: 100vh;
       background: radial-gradient(circle at 10% 20%, #f7f9fb 0%, #e5eaf0 90%);
       color: var(--text-dark);
-      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
     .dashboard-main-frame {
       background: #f4f6f9;
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.7);
       border-radius: 2rem;
+    }
+    .stat-display-number {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 1;
+    }
+    .display-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    .brand-logo-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.12em;
     }
     .white-bento-card {
       background: #ffffff;
       border-radius: 1.5rem;
-      box-shadow: 0 4px 20px -2px rgba(17, 24, 39, 0.03);
+      box-shadow: 0 4px 20px -2px rgba(17, 24, 39, 0.025);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .white-bento-card:hover {
-      box-shadow: 0 12px 28px -6px rgba(17, 24, 39, 0.06);
+      box-shadow: 0 12px 28px -6px rgba(17, 24, 39, 0.055);
     }
     .lime-bento-card {
-      background: linear-gradient(140deg, #e4ff3a 0%, #ccff00 60%, #b8f000 100%);
+      background: linear-gradient(140deg, #e4ff3a 0%, #d4ff00 55%, #c0f400 100%);
       border-radius: 1.5rem;
-      box-shadow: 0 12px 30px -8px rgba(190, 242, 0, 0.45);
+      box-shadow: 0 14px 32px -8px rgba(190, 242, 0, 0.45);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .lime-bento-card:hover {
-      box-shadow: 0 16px 36px -6px rgba(190, 242, 0, 0.6);
+      box-shadow: 0 18px 38px -6px rgba(190, 242, 0, 0.6);
       transform: translateY(-2px);
     }
     .speech-bubble {
@@ -57,8 +75,8 @@
       background: #000000;
       color: #ffffff;
       border-radius: 0.75rem;
-      padding: 0.4rem 0.75rem;
-      box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3);
+      padding: 0.4rem 0.8rem;
+      box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.35);
     }
     .speech-bubble::after {
       content: '';
@@ -91,7 +109,7 @@
     }
     .nav-pill-active {
       background: #ffffff;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
       color: #111827;
       font-weight: 600;
     }
@@ -169,7 +187,7 @@
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
                   </svg>
                 </div>
-                <span class="font-extrabold text-slate-900 tracking-wider text-base font-sans">INFLUENCY</span>
+                <span class="brand-logo-text text-[15px] text-slate-900">INFLUENCY</span>
               </div>
 
               <!-- Nav Items -->
@@ -184,11 +202,11 @@
                 ].map(item => `
                   <button
                     onclick="setNav('${item.name}')"
-                    class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition text-left ${activeNav === item.name ? 'nav-pill-active' : 'nav-pill-inactive'}"
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] transition text-left ${activeNav === item.name ? 'nav-pill-active' : 'nav-pill-inactive'}"
                   >
                     <div class="flex items-center gap-3.5">
                       <span class="text-base text-slate-400 w-5 text-center">${item.icon}</span>
-                      <span class="font-medium text-[13.5px]">${item.name}</span>
+                      <span class="font-semibold text-[13.5px]">${item.name}</span>
                     </div>
                     ${item.badge ? `<span class="w-5 h-5 rounded-full bg-[#5d87ff] text-white text-[11px] font-bold flex items-center justify-center">${item.badge}</span>` : ''}
                   </button>
@@ -198,14 +216,14 @@
 
             <!-- Upgrade to Pro Card -->
             <div class="white-bento-card p-5 mt-8 border border-slate-100 relative">
-              <div class="w-10 h-10 rounded-full bg-[#d4ff00] flex items-center justify-center text-slate-900 font-bold mb-4 shadow-xs">
+              <div class="w-10 h-10 rounded-full bg-[#d4ff00] flex items-center justify-center text-slate-900 font-bold mb-3.5 shadow-2xs">
                 <span class="text-base">👑</span>
               </div>
-              <h4 class="font-bold text-slate-900 text-sm mb-1">Upgrade to Pro</h4>
-              <p class="text-slate-400 text-xs leading-relaxed mb-4">Discover the benefits of an upgraded account</p>
+              <h4 class="font-bold text-slate-900 text-[14px] tracking-tight mb-1">Upgrade to Pro</h4>
+              <p class="text-slate-400 text-[12px] font-medium leading-relaxed mb-4">Discover the benefits of an upgraded account</p>
               <button
                 onclick="openUpgradeModal()"
-                class="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-xs font-semibold rounded-full transition shadow-xs"
+                class="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-[12px] font-semibold rounded-full transition shadow-xs"
               >
                 Upgrade $10
               </button>
@@ -218,24 +236,24 @@
             <!-- Header -->
             <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div class="flex items-center gap-2.5">
-                  <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Donators</h1>
-                  <span class="bg-[#8eb3ff] text-slate-900 text-xs font-bold px-3 py-1 rounded-full">2 New</span>
+                <div class="flex items-center gap-3">
+                  <h1 class="display-title text-[28px] text-slate-900 leading-none">Donators</h1>
+                  <span class="bg-[#8eb3ff] text-slate-900 text-[12px] font-bold px-3 py-1 rounded-full tracking-tight">2 New</span>
                 </div>
-                <p class="text-slate-400 text-xs mt-0.5">See all your donators information here</p>
+                <p class="text-slate-400 text-[13px] font-medium mt-1">See all your donators information here</p>
               </div>
 
               <!-- Controls -->
               <div class="flex items-center gap-3">
                 <button class="icon-circle-btn shadow-2xs" title="Search">
                   <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </button>
 
                 <button class="icon-circle-btn relative shadow-2xs" title="Notifications">
                   <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
                 </button>
@@ -245,8 +263,8 @@
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Andrew Johnson" class="w-full h-full object-cover" />
                   </div>
                   <div class="text-left hidden sm:block">
-                    <span class="text-[10px] text-slate-400 block leading-tight">Welcome back</span>
-                    <strong class="text-xs text-slate-900 block font-semibold leading-tight">Andrew Johnson</strong>
+                    <span class="text-[10.5px] text-slate-400 block leading-tight font-medium">Welcome back</span>
+                    <strong class="text-[12.5px] text-slate-900 block font-bold leading-tight">Andrew Johnson</strong>
                   </div>
                   <span class="text-[10px] text-slate-400 ml-0.5">∨</span>
                 </div>
@@ -267,10 +285,10 @@
                   </button>
                 </div>
                 <div>
-                  <div class="text-2xl lg:text-[26px] font-extrabold text-slate-950 tracking-tight leading-none mb-1">
+                  <div class="stat-display-number text-[30px] text-slate-950 mb-1">
                     $740.89
                   </div>
-                  <span class="text-slate-800 text-xs font-medium">In this month</span>
+                  <span class="text-slate-800 text-[12px] font-medium">In this month</span>
                 </div>
               </div>
 
@@ -286,10 +304,10 @@
                 </div>
                 <div>
                   <div class="flex items-baseline gap-1.5 mb-1">
-                    <span class="text-2xl lg:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">80%</span>
-                    <span class="text-slate-400 text-xs font-medium">$800 of $1000</span>
+                    <span class="stat-display-number text-[30px] text-slate-900">80%</span>
+                    <span class="text-slate-400 text-[12.5px] font-medium">$800 of $1000</span>
                   </div>
-                  <span class="text-slate-400 text-xs">Active Donation Goals</span>
+                  <span class="text-slate-400 text-[12px] font-medium">Active Donation Goals</span>
                 </div>
               </div>
 
@@ -305,10 +323,10 @@
                 </div>
                 <div>
                   <div class="flex items-center gap-1.5 mb-1">
-                    <span class="text-2xl lg:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">38</span>
-                    <span class="bg-[#8eb3ff] text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">+8</span>
+                    <span class="stat-display-number text-[30px] text-slate-900">38</span>
+                    <span class="bg-[#8eb3ff] text-slate-900 text-[11px] font-bold px-2 py-0.5 rounded-full">+8</span>
                   </div>
-                  <span class="text-slate-400 text-xs">In this month</span>
+                  <span class="text-slate-400 text-[12px] font-medium">In this month</span>
                 </div>
               </div>
 
@@ -323,10 +341,10 @@
                   </button>
                 </div>
                 <div>
-                  <div class="text-2xl lg:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none mb-1">
+                  <div class="stat-display-number text-[30px] text-slate-900 mb-1">
                     $8,234.19
                   </div>
-                  <span class="text-slate-400 text-xs">For all time</span>
+                  <span class="text-slate-400 text-[12px] font-medium">For all time</span>
                 </div>
               </div>
 
@@ -343,7 +361,7 @@
                       <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
                         📊
                       </div>
-                      <h3 className="text-base font-bold text-slate-900">Statistics</h3>
+                      <h3 class="text-[17px] font-bold text-slate-900 tracking-tight">Statistics</h3>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -362,18 +380,18 @@
 
                   <div class="grid grid-cols-2 gap-4 pb-6 border-b border-slate-100 mb-6">
                     <div>
-                      <span class="text-xs text-slate-400 block font-medium">Income</span>
-                      <div class="text-2xl font-extrabold text-slate-900 my-1">$150.09</div>
-                      <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <span class="text-[12px] text-slate-400 block font-medium">Income</span>
+                      <div class="stat-display-number text-[26px] text-slate-900 my-1">$150.09</div>
+                      <span class="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                         <span>↗ 4,1%</span>
                         <span class="text-slate-400 font-normal">vs 143,938 Last Year</span>
                       </span>
                     </div>
 
                     <div class="border-l border-slate-100 pl-4">
-                      <span class="text-xs text-slate-400 block font-medium">Spend</span>
-                      <div class="text-2xl font-extrabold text-slate-900 my-1">$90.23</div>
-                      <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <span class="text-[12px] text-slate-400 block font-medium">Spend</span>
+                      <div class="stat-display-number text-[26px] text-slate-900 my-1">$90.23</div>
+                      <span class="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                         <span>↗ 2%</span>
                         <span class="text-slate-400 font-normal">vs 82,203 Last Year</span>
                       </span>
@@ -382,7 +400,7 @@
                 </div>
 
                 <div class="h-56 relative flex flex-col justify-end pt-8">
-                  <div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-300 font-medium">
+                  <div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-[11px] text-slate-300 font-medium">
                     <div class="border-b border-slate-100/60 pb-1">$100</div>
                     <div class="border-b border-slate-100/60 pb-1">$75</div>
                     <div class="border-b border-slate-100/60 pb-1">$50</div>
@@ -396,9 +414,9 @@
                         <div class="flex items-end gap-1.5 h-36 relative">
                           ${selectedMonth === item.month ? `
                             <div class="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
-                              <div class="speech-bubble text-[11px] font-bold text-center">
+                              <div class="speech-bubble text-[12px] font-extrabold text-center">
                                 <div>${item.value}</div>
-                                <div class="text-[9px] text-slate-300 font-normal">${item.date || item.month + ' 2023'}</div>
+                                <div class="text-[9.5px] text-slate-300 font-normal">${item.date || item.month + ' 2023'}</div>
                               </div>
                               <div class="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
                             </div>
@@ -407,7 +425,7 @@
                           <div style="height: ${item.blue}%" class="w-4 sm:w-5 bg-[#8eb3ff] rounded-t-full group-hover:brightness-95 transition-all"></div>
                           <div style="height: ${item.lime}%" class="w-4 sm:w-5 bg-[#d4ff00] rounded-t-full group-hover:brightness-95 transition-all"></div>
                         </div>
-                        <span class="text-xs transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400'}">
+                        <span class="text-[12px] transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400 font-medium'}">
                           ${item.month}
                         </span>
                       </div>
@@ -424,7 +442,7 @@
                       <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
                         👤
                       </div>
-                      <h3 class="text-base font-bold text-slate-900">Visitors</h3>
+                      <h3 class="text-[17px] font-bold text-slate-900 tracking-tight">Visitors</h3>
                     </div>
 
                     <button class="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
@@ -435,26 +453,26 @@
 
                   <div class="relative h-44 my-4 flex items-center justify-center">
                     <div class="absolute left-6 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-transform">
-                      <span class="text-2xl font-black tracking-tight leading-none">2,3k</span>
-                      <span class="text-[11px] font-medium text-slate-800 mt-0.5">Individual</span>
+                      <span class="text-[27px] font-black tracking-[-0.04em] leading-none">2,3k</span>
+                      <span class="text-[11.5px] font-semibold text-slate-800 mt-0.5">Individual</span>
                     </div>
 
                     <div class="absolute right-6 top-8 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-transform">
-                      <span class="text-xl font-black tracking-tight leading-none">1,2k</span>
-                      <span class="text-[11px] font-medium text-slate-800 mt-0.5">Corporate</span>
+                      <span class="text-[23px] font-black tracking-[-0.035em] leading-none">1,2k</span>
+                      <span class="text-[11.5px] font-semibold text-slate-800 mt-0.5">Corporate</span>
                     </div>
 
                     <div class="absolute left-24 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-200/60 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-transform">
-                      <span class="text-sm font-extrabold tracking-tight leading-none">982</span>
-                      <span class="text-[9px] font-medium text-slate-600 mt-0.5">Foundation</span>
+                      <span class="text-[15px] font-extrabold tracking-[-0.02em] leading-none">982</span>
+                      <span class="text-[10px] font-medium text-slate-600 mt-0.5">Foundation</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="space-y-3.5 pt-4 border-t border-slate-100">
                   <div>
-                    <div class="flex justify-between text-xs mb-1.5">
-                      <span class="text-slate-600 font-medium">Individual Target</span>
+                    <div class="flex justify-between text-[12.5px] mb-1.5">
+                      <span class="text-[#4b5563] font-medium">Individual Target</span>
                       <span class="text-slate-900 font-bold">92%</span>
                     </div>
                     <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -463,8 +481,8 @@
                   </div>
 
                   <div>
-                    <div class="flex justify-between text-xs mb-1.5">
-                      <span class="text-slate-600 font-medium">Corporate Target</span>
+                    <div class="flex justify-between text-[12.5px] mb-1.5">
+                      <span class="text-[#4b5563] font-medium">Corporate Target</span>
                       <span class="text-slate-900 font-bold">67%</span>
                     </div>
                     <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -473,8 +491,8 @@
                   </div>
 
                   <div>
-                    <div class="flex justify-between text-xs mb-1.5">
-                      <span class="text-slate-600 font-medium">Foundation Target</span>
+                    <div class="flex justify-between text-[12.5px] mb-1.5">
+                      <span class="text-[#4b5563] font-medium">Foundation Target</span>
                       <span class="text-slate-900 font-bold">54%</span>
                     </div>
                     <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
