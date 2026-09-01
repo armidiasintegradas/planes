@@ -1,10 +1,17 @@
 import { project, initialState } from './data.js';
-import { calculateKpis, updateProgress, addRestriction, closeRestriction } from './domain.js';
+import { calculateKpis, calculateExecutiveMetrics, updateProgress, addRestriction, closeRestriction } from './domain.js';
 
 const STORAGE_KEY = 'planes-japaratinga-mvp-v1';
 const app = document.querySelector('#app');
 const title = document.querySelector('#page-title');
+const budgetStatusEl = document.querySelector('#header-budget-status');
+const scheduleStatusEl = document.querySelector('#header-schedule-status');
 let state = loadState();
+
+const EXECUTIVE_SCENARIO = {
+  budget: { baseline: 42800000, forecast: 41900000, actual: 24600000, plannedToDate: 25400000 },
+  schedule: { plannedStart:'2026-03-02', contractualEnd:'2026-11-30', forecastEnd:'2026-12-12', asOf:'2026-09-01', plannedProgress:63, actualProgress:57 }
+};
 
 function loadState(){
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(initialState); }
@@ -13,18 +20,75 @@ function loadState(){
 function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function pct(v){ return `${Math.round(v)}%`; }
 function statusClass(status){ return status === 'Em atraso' ? 'bad' : status === 'Concluída' ? 'good' : ''; }
+function brl(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v); }
+function compactBrl(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',notation:'compact',maximumFractionDigits:1}).format(v); }
+function datePt(iso){ return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}).format(new Date(`${iso}T00:00:00Z`)); }
+function signedPct(v){ return `${v > 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`; }
+function signedDays(v){ return v < 0 ? `${Math.abs(v)} dias adiantada` : v > 0 ? `${v} dias de atraso` : 'no prazo'; }
+function toneFromVariance(v, inverse=false){ const good=inverse ? v<=0 : v>=0; return v===0 ? '' : good ? 'good' : 'bad'; }
 
 function renderDashboard(){
   const k = calculateKpis(state);
+  const executive = calculateExecutiveMetrics({
+    budget: EXECUTIVE_SCENARIO.budget,
+    schedule: { ...EXECUTIVE_SCENARIO.schedule, actualProgress:k.physicalProgress }
+  });
+  const budgetTone = toneFromVariance(executive.budgetVariance,true);
+  const scheduleTone = toneFromVariance(executive.scheduleVarianceDays,true);
+  const progressTone = toneFromVariance(executive.progressVariancePct);
+  if(budgetStatusEl){ budgetStatusEl.textContent=executive.budgetStatus; budgetStatusEl.className=budgetTone; }
+  if(scheduleStatusEl){ scheduleStatusEl.textContent=executive.scheduleStatus; scheduleStatusEl.className=scheduleTone; }
+
   const fronts = [...new Set(state.activities.map(a=>a.front))].map(front=>{
     const items=state.activities.filter(a=>a.front===front);
     return {front,progress:items.reduce((s,a)=>s+a.progress,0)/items.length};
   }).sort((a,b)=>a.progress-b.progress);
   const critical = state.activities.filter(a=>a.priority==='Crítica' || a.status==='Em atraso').slice(0,4);
+  const financialProgress = Math.round((EXECUTIVE_SCENARIO.budget.actual / EXECUTIVE_SCENARIO.budget.baseline) * 100);
+
   app.innerHTML = `
-    <div class="hero"><div><span class="badge">Obra piloto · estrutura real + cenário demonstrativo</span><h2>${project.name}</h2><p>Uma visão única do planejamento, execução e decisões críticas da obra.</p></div><div class="badge">Baseline: ${project.baseline}</div></div>
+    <div class="executive-hero">
+      <div class="executive-hero-main">
+        <span class="badge">Visão executiva · cenário demonstrativo</span>
+        <h2>${project.name}</h2>
+        <p>Prazo, orçamento e produção reunidos em uma leitura única para apoiar decisões de engenharia e gestão.</p>
+      </div>
+      <div class="executive-summary">
+        <div class="summary-item"><span>Orçamento</span><strong class="${budgetTone}">${executive.budgetStatus}</strong></div>
+        <div class="summary-item"><span>Prazo</span><strong class="${scheduleTone}">${signedDays(executive.scheduleVarianceDays)}</strong></div>
+        <div class="summary-item"><span>Avanço</span><strong class="${progressTone}">${signedPct(executive.progressVariancePct)} vs. planejado</strong></div>
+      </div>
+    </div>
+
+    <div class="exec-grid">
+      <div class="card exec-card"><div class="label">Orçamento contratado</div><div class="value">${compactBrl(EXECUTIVE_SCENARIO.budget.baseline)}</div><div class="sub">meta financeira de referência</div></div>
+      <div class="card exec-card"><div class="label">Previsão ao término</div><div class="value">${compactBrl(EXECUTIVE_SCENARIO.budget.forecast)}</div><div class="sub">estimativa atual do custo final</div></div>
+      <div class="card exec-card"><div class="label">Variação orçamentária</div><div class="value ${budgetTone}">${executive.budgetVariance < 0 ? '−' : '+'}${compactBrl(Math.abs(executive.budgetVariance))}</div><div class="sub">${signedPct(executive.budgetVariancePct)} sobre o orçamento geral</div></div>
+      <div class="card exec-card"><div class="label">Custo realizado</div><div class="value">${compactBrl(EXECUTIVE_SCENARIO.budget.actual)}</div><div class="sub">planejado até hoje: ${compactBrl(EXECUTIVE_SCENARIO.budget.plannedToDate)}</div></div>
+      <div class="card exec-card"><div class="label">Previsão de término</div><div class="value ${scheduleTone}">${datePt(EXECUTIVE_SCENARIO.schedule.forecastEnd)}</div><div class="sub">contratual: ${datePt(EXECUTIVE_SCENARIO.schedule.contractualEnd)}</div></div>
+      <div class="card exec-card"><div class="label">Desvio de prazo</div><div class="value ${scheduleTone}">${executive.scheduleVarianceDays > 0 ? '+' : ''}${executive.scheduleVarianceDays} dias</div><div class="sub">${executive.remainingDays} dias restantes na projeção</div></div>
+    </div>
+
+    <div class="executive-strip">
+      <div class="card executive-block">
+        <div class="executive-block-head"><div><span>Meta financeira</span><strong>Orçamento geral</strong></div><strong class="${budgetTone}">${executive.budgetStatus}</strong></div>
+        <div class="metric-line"><label>Orçamento total</label><div class="metric-track"><span style="width:100%"></span></div><strong>100%</strong></div>
+        <div class="metric-line financial"><label>Custo realizado</label><div class="metric-track"><span style="width:${Math.min(100,financialProgress)}%"></span></div><strong>${financialProgress}%</strong></div>
+        <div class="metric-line actual"><label>Planejado até hoje</label><div class="metric-track"><span style="width:${Math.min(100,Math.round(EXECUTIVE_SCENARIO.budget.plannedToDate/EXECUTIVE_SCENARIO.budget.baseline*100))}%"></span></div><strong>${Math.round(EXECUTIVE_SCENARIO.budget.plannedToDate/EXECUTIVE_SCENARIO.budget.baseline*100)}%</strong></div>
+        <div class="executive-note">Diferença entre custo realizado e planejado até a data: <strong>${executive.spendVariance <= 0 ? '−' : '+'}${brl(Math.abs(executive.spendVariance))}</strong>. Valores financeiros desta tela são demonstrativos até integração com orçamento/medições oficiais.</div>
+      </div>
+      <div class="card executive-block">
+        <div class="executive-block-head"><div><span>Tempo de execução</span><strong>Planejado × realizado</strong></div><strong class="${scheduleTone}">${executive.scheduleStatus}</strong></div>
+        <div class="metric-line"><label>Avanço planejado</label><div class="metric-track"><span style="width:${EXECUTIVE_SCENARIO.schedule.plannedProgress}%"></span></div><strong>${EXECUTIVE_SCENARIO.schedule.plannedProgress}%</strong></div>
+        <div class="metric-line actual"><label>Avanço realizado</label><div class="metric-track"><span style="width:${k.physicalProgress}%"></span></div><strong>${k.physicalProgress}%</strong></div>
+        <div class="metric-line financial"><label>Tempo transcorrido</label><div class="metric-track"><span style="width:${Math.min(100,Math.round(executive.elapsedDays/executive.totalPlannedDays*100))}%"></span></div><strong>${Math.round(executive.elapsedDays/executive.totalPlannedDays*100)}%</strong></div>
+        <div class="executive-note">Início planejado em ${datePt(EXECUTIVE_SCENARIO.schedule.plannedStart)}. A projeção indica <strong class="${scheduleTone}">${signedDays(executive.scheduleVarianceDays)}</strong> frente ao término contratual.</div>
+      </div>
+    </div>
+
+    <div class="section-title"><h3>Indicadores operacionais</h3><span>estrutura real + cenário demonstrativo</span></div>
     <div class="kpi-grid">
-      <div class="card kpi"><div class="label">Avanço físico</div><div class="value">${pct(k.physicalProgress)}</div><div class="sub">indicador do cenário demonstrativo</div></div>
+      <div class="card kpi"><div class="label">Avanço físico</div><div class="value">${pct(k.physicalProgress)}</div><div class="sub">realizado atual</div></div>
       <div class="card kpi"><div class="label">Aderência semanal</div><div class="value">${pct(k.weeklyAdherence)}</div><div class="sub">compromissos concluídos</div></div>
       <div class="card kpi"><div class="label">Atividades em atraso</div><div class="value trend bad">${k.delayed}</div><div class="sub">requerem ação da engenharia</div></div>
       <div class="card kpi"><div class="label">Restrições abertas</div><div class="value">${k.openRestrictions}</div><div class="sub">impedimentos registrados</div></div>
@@ -114,5 +178,5 @@ function resetDemo(){
 }
 
 const views={dashboard:renderDashboard,balance:renderLineBalance,lookahead:renderLookahead,weekly:renderWeeklyPlan,production:renderProduction,restrictions:renderRestrictions,reports:renderReports};
-document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');title.textContent=btn.textContent;views[btn.dataset.view]();}));
+document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');title.textContent=btn.querySelector('.nav-text')?.textContent||btn.textContent.trim();views[btn.dataset.view]();}));
 persist(); renderDashboard();
