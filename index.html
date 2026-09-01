@@ -139,23 +139,50 @@
     <span id="toast-msg">Mensagem</span>
   </div>
 
-  <div id="app" class="w-full max-w-[1360px]"></div>
+  <div id="app" class="w-full max-w-[1380px]"></div>
 
-  <!-- Modal Novo Apontamento -->
+  <!-- Lightbox Modal -->
+  <div id="lightbox-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeLightbox()">
+    <div class="bg-white rounded-3xl overflow-hidden max-w-xl w-full shadow-2xl" onclick="event.stopPropagation()">
+      <img id="lightbox-img" src="" alt="Foto" class="w-full h-72 object-cover" />
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h4 id="lightbox-title" class="font-bold text-base text-slate-900">Item</h4>
+            <span id="lightbox-sub" class="text-xs text-slate-500">Frente</span>
+          </div>
+          <span class="bg-[#d4ff00] text-slate-950 text-xs font-extrabold px-3 py-1 rounded-full">Auditado</span>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl text-xs text-slate-600 font-mono space-y-1 mb-4 border border-slate-100">
+          <div id="lightbox-gps">📍 GPS: ...</div>
+          <div id="lightbox-time">🕒 Timestamp: ...</div>
+        </div>
+        <button onclick="closeLightbox()" class="w-full py-2.5 bg-slate-950 text-white text-xs font-bold rounded-full">Fechar Inspeção</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Novo Apontamento (Multi-Tab) -->
   <div id="log-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div class="flex items-center gap-2.5">
           <span class="w-8 h-8 rounded-full bg-[#d4ff00] flex items-center justify-center font-bold text-slate-900">⚡</span>
           <div>
-            <h3 class="text-base font-bold text-slate-900">Novo Apontamento de Campo</h3>
-            <span class="text-[11px] text-slate-400">Lançamento 1-Touch</span>
+            <h3 class="text-base font-bold text-slate-900">Novo Lançamento de Campo</h3>
+            <span class="text-[11px] text-slate-400">Planes 1-Touch</span>
           </div>
         </div>
         <button onclick="closeLogModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
       </div>
 
-      <div class="space-y-4">
+      <div class="flex gap-1.5 p-1 bg-slate-100 rounded-xl mb-4">
+        <button id="tab-btn-prod" onclick="setLogTab('producao')" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-slate-900 shadow-2xs">Produção</button>
+        <button id="tab-btn-efet" onclick="setLogTab('efetivo')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500">Efetivo</button>
+        <button id="tab-btn-chuv" onclick="setLogTab('chuva')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500">Ocorrência</button>
+      </div>
+
+      <div id="pane-producao" class="space-y-4">
         <div>
           <label class="text-xs font-bold text-slate-700 block mb-1">Frente de Obra</label>
           <select id="modal-front" class="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden">
@@ -191,9 +218,37 @@
         </button>
       </div>
 
+      <div id="pane-efetivo" class="space-y-4 hidden">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Operários Presentes Hoje</label>
+          <div class="flex items-center gap-3">
+            <button onclick="adjustWorkers(-1)" class="w-10 h-10 rounded-xl bg-slate-100 font-bold text-base">-</button>
+            <span id="modal-workers-lbl" class="text-2xl font-black text-slate-900 flex-1 text-center">64 operários</span>
+            <button onclick="adjustWorkers(1)" class="w-10 h-10 rounded-xl bg-slate-100 font-bold text-base">+</button>
+          </div>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1 text-slate-600 border border-slate-100">
+          <div class="flex justify-between"><span>Pedreiros:</span><strong>28</strong></div>
+          <div class="flex justify-between"><span>Armadores / Carpinteiros:</span><strong>20</strong></div>
+          <div class="flex justify-between"><span>Serventes:</span><strong>16</strong></div>
+        </div>
+      </div>
+
+      <div id="pane-chuva" class="space-y-4 hidden">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Condição Climática</label>
+          <select id="modal-weather" class="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden">
+            <option value="Ensolarado / Bom">Ensolarado / Bom</option>
+            <option value="Chuva Fraca (Trabalho Normal)">Chuva Fraca (Trabalho Normal)</option>
+            <option value="Chuva Forte (Paralisação Parcial)">Chuva Forte (Paralisação Parcial)</option>
+          </select>
+        </div>
+        <p class="text-xs text-slate-400">Ocorrências de chuva alimentam automaticamente a análise de causas de não cumprimento do PAC.</p>
+      </div>
+
       <div class="flex gap-2 mt-6">
         <button onclick="closeLogModal()" class="flex-1 py-2.5 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-        <button onclick="submitFieldLog()" class="flex-1 py-2.5 rounded-full bg-[#d4ff00] text-slate-950 font-extrabold text-xs hover:bg-[#c4ed00] shadow-xs">Confirmar e Enviar</button>
+        <button onclick="submitFieldLog()" class="flex-1 py-2.5 rounded-full bg-[#d4ff00] text-slate-950 font-extrabold text-xs hover:bg-[#c4ed00] shadow-xs">Salvar Lançamento</button>
       </div>
     </div>
   </div>
@@ -207,7 +262,7 @@
       <div class="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-100 text-left text-xs space-y-1.5">
         <div class="flex justify-between"><span class="text-slate-500">Avanço Geral:</span><strong id="exp-adv">61.8%</strong></div>
         <div class="flex justify-between"><span class="text-slate-500">Aderência PAC:</span><strong>78%</strong></div>
-        <div class="flex justify-between"><span class="text-slate-500">Custo Medido:</span><strong>R$ 14,8M</strong></div>
+        <div class="flex justify-between"><span class="text-slate-500">Custo Medido:</span><strong id="exp-cost">R$ 14,8M</strong></div>
       </div>
       <div class="flex gap-2">
         <button onclick="closeExportModal()" class="flex-1 py-2.5 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50">Fechar</button>
@@ -222,13 +277,57 @@
     let selectedFront = 'Todas as Frentes';
     let selectedMonth = 'Jun';
     let chartMetric = 'Físico';
+    let chartViewType = 'barras';
     let physicalProgress = 61.8;
+    let financialSpent = 14.8;
+    let pacScore = 78;
+    let workersCount = 64;
+    let weatherCondition = 'Ensolarado / Bom';
     let hasPhoto = false;
 
     let validations = [
-      { id: 1, resp: 'Carlos Lima', cargo: 'Encarregado', front: 'Bloco de Apts', item: 'Concretagem Laje 4º Pavimento', qtd: '42 m³', data: 'Hoje, 14:20', status: 'Pendente', foto: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=150&auto=format&fit=crop&q=80' },
-      { id: 2, resp: 'Marcos Silva', cargo: 'Mestre de Obras', front: 'Arena de Shows', item: 'Montagem de Estrutura Metálica', qtd: '18 vigas', data: 'Hoje, 11:45', status: 'Pendente', foto: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&auto=format&fit=crop&q=80' },
-      { id: 3, resp: 'José Santos', cargo: 'Apontador', front: 'Complexo Piscinas', item: 'Impermeabilização com Manta', qtd: '160 m²', data: 'Ontem, 17:10', status: 'Pendente', foto: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=150&auto=format&fit=crop&q=80' },
+      {
+        id: 1,
+        resp: 'Carlos Lima',
+        cargo: 'Encarregado de Obra',
+        front: 'Bloco de Apts',
+        item: 'Concretagem Laje 4º Pavimento',
+        qtd: '42 m³ FCK 30',
+        data: 'Hoje, 14:20',
+        gps: 'Bloco C - Setor Norte (Lat -9.002, Long -35.214)',
+        status: 'Pendente',
+        foto: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=600&auto=format&fit=crop&q=80',
+      },
+      {
+        id: 2,
+        resp: 'Marcos Silva',
+        cargo: 'Mestre de Estrutura',
+        front: 'Arena de Shows',
+        item: 'Montagem de Vigas Metálicas V-12',
+        qtd: '18 vigas (4.2 Ton)',
+        data: 'Hoje, 11:45',
+        gps: 'Arena Principal - Vão Central',
+        status: 'Pendente',
+        foto: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80',
+      },
+      {
+        id: 3,
+        resp: 'José Santos',
+        cargo: 'Apontador Técnico',
+        front: 'Complexo Piscinas',
+        item: 'Impermeabilização com Manta Asfáltica',
+        qtd: '160 m²',
+        data: 'Ontem, 17:10',
+        gps: 'Piscina Infinity - Borda Sul',
+        status: 'Pendente',
+        foto: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&auto=format&fit=crop&q=80',
+      },
+    ];
+
+    const fvsItems = [
+      { id: 101, code: 'FVS-EST-042', item: 'Armação de Pilares P1 a P8', front: 'Bloco de Apts', auditor: 'Mariana Alves', status: 'Conforme', data: 'Hoje' },
+      { id: 102, code: 'FVS-CON-019', item: 'Fôrmas e Escoramento de Laje', front: 'Arena de Shows', auditor: 'Mariana Alves', status: 'Conforme', data: 'Hoje' },
+      { id: 103, code: 'FVS-IMP-007', item: 'Teste de Estanqueidade de Piscina', front: 'Complexo Piscinas', auditor: 'Carlos Lima', status: 'Em Análise', data: 'Ontem' },
     ];
 
     const barChartData = [
@@ -240,6 +339,14 @@
       { month: 'Out', plan: 97, real: 95, value: 'R$ 5,80M', deviation: '-2,0 p.p.' },
       { month: 'Nov', plan: 100, real: 100, value: 'R$ 6,40M', deviation: '0,0 p.p.' },
     ];
+
+    const frontProgress = {
+      'Todas as Frentes': { prog: 61.8, plan: 66.4, budget: 'R$ 14,8M', activeTeam: 64 },
+      'Arena de Shows': { prog: 72.0, plan: 75.0, budget: 'R$ 5,2M', activeTeam: 24 },
+      'Bloco de Apts': { prog: 58.4, plan: 63.0, budget: 'R$ 6,1M', activeTeam: 22 },
+      'Infraestrutura Viária': { prog: 45.0, plan: 48.0, budget: 'R$ 2,4M', activeTeam: 10 },
+      'Complexo Piscinas': { prog: 52.0, plan: 55.0, budget: 'R$ 1,1M', activeTeam: 8 },
+    };
 
     function showToast(msg) {
       const t = document.getElementById('toast');
@@ -255,6 +362,7 @@
 
     function setFront(f) {
       selectedFront = f;
+      showToast('Filtrando por: ' + f);
       render();
     }
 
@@ -268,6 +376,24 @@
       render();
     }
 
+    function setViewType(v) {
+      chartViewType = v;
+      render();
+    }
+
+    function openLightbox(photo, item, front, resp, data, gps) {
+      document.getElementById('lightbox-img').src = photo;
+      document.getElementById('lightbox-title').innerText = item;
+      document.getElementById('lightbox-sub').innerText = 'Frente: ' + front + ' · Por: ' + resp;
+      document.getElementById('lightbox-gps').innerText = '📍 GPS: ' + gps;
+      document.getElementById('lightbox-time').innerText = '🕒 Timestamp: ' + data;
+      document.getElementById('lightbox-modal').classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.add('hidden');
+    }
+
     function openLogModal() {
       document.getElementById('log-modal').classList.remove('hidden');
     }
@@ -276,9 +402,23 @@
       document.getElementById('log-modal').classList.add('hidden');
     }
 
+    function setLogTab(tab) {
+      ['producao', 'efetivo', 'chuva'].forEach(t => {
+        document.getElementById('pane-' + t).classList.add('hidden');
+        document.getElementById('tab-btn-' + (t === 'producao' ? 'prod' : t === 'efetivo' ? 'efet' : 'chuv')).className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500';
+      });
+      document.getElementById('pane-' + tab).classList.remove('hidden');
+      document.getElementById('tab-btn-' + (tab === 'producao' ? 'prod' : tab === 'efetivo' ? 'efet' : 'chuv')).className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-slate-900 shadow-2xs';
+    }
+
     function incAmount(val) {
       const inp = document.getElementById('modal-amount');
       inp.value = Number(inp.value) + val;
+    }
+
+    function adjustWorkers(delta) {
+      workersCount = Math.max(0, workersCount + delta);
+      document.getElementById('modal-workers-lbl').innerText = workersCount + ' operários';
     }
 
     function togglePhoto() {
@@ -302,36 +442,41 @@
 
       validations.unshift({
         id: Date.now(),
-        resp: 'Carlos Lima (Você)',
-        cargo: 'Encarregado',
+        resp: currentProfile.includes('Carlos') ? 'Carlos Lima (Você)' : 'Mariana Alves (Eng.)',
+        cargo: 'Encarregado de Campo',
         front: front,
         item: act,
         qtd: amt + ' ' + unit,
         data: 'Agora mesmo',
+        gps: 'Japaratinga - Coordenada GPS verificada',
         status: 'Pendente',
-        foto: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=150&auto=format&fit=crop&q=80',
+        foto: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=600&auto=format&fit=crop&q=80',
       });
 
       closeLogModal();
-      showToast('🚀 ' + amt + ' ' + unit + ' de ' + act + ' enviados para validação da Engenharia!');
+      showToast('🚀 ' + amt + ' ' + unit + ' de ' + act + ' enviados para a Engenharia!');
       render();
     }
 
     function approveItem(id) {
+      const it = validations.find(v => v.id === id);
       validations = validations.filter(v => v.id !== id);
       physicalProgress = Number((physicalProgress + 0.6).toFixed(1));
-      showToast('✓ Apontamento aprovado! Avanço recalculado para ' + physicalProgress + '%.');
+      financialSpent = Number((financialSpent + 0.15).toFixed(2));
+      showToast('✓ Medição de ' + (it ? it.item : 'item') + ' aprovada! Avanço recalculado para ' + physicalProgress + '%.');
       render();
     }
 
     function rejectItem(id) {
+      const it = validations.find(v => v.id === id);
       validations = validations.filter(v => v.id !== id);
-      showToast('✕ Apontamento devolvido para ajuste do encarregado.');
+      showToast('✕ Apontamento de ' + (it ? it.item : 'item') + ' devolvido para ajuste no campo.');
       render();
     }
 
     function openExportModal() {
       document.getElementById('exp-adv').innerText = physicalProgress + '%';
+      document.getElementById('exp-cost').innerText = 'R$ ' + financialSpent + 'M';
       document.getElementById('export-modal').classList.remove('hidden');
     }
 
@@ -346,8 +491,12 @@
 
     function render() {
       const app = document.getElementById('app');
+      const curData = selectedFront === 'Todas as Frentes' 
+        ? { prog: physicalProgress, plan: 66.4, budget: 'R$ ' + financialSpent + 'M', activeTeam: workersCount }
+        : (frontProgress[selectedFront] || frontProgress['Todas as Frentes']);
+
       app.innerHTML = `
-        <div class="dashboard-main-frame min-h-[820px] p-5 md:p-7 flex flex-col lg:flex-row gap-6 relative">
+        <div class="dashboard-main-frame min-h-[840px] p-5 md:p-7 flex flex-col lg:flex-row gap-6 relative">
           
           <!-- LEFT SIDEBAR -->
           <aside class="w-full lg:w-64 flex flex-col justify-between shrink-0">
@@ -362,6 +511,7 @@
                   { name: 'Canteiro 1-Touch', icon: '⚡' },
                   { name: 'Fila de Validações', icon: '✓', badge: validations.length },
                   { name: 'Curva S & PAC', icon: '📊' },
+                  { name: 'Qualidade & FVS', icon: '🛡️' },
                   { name: 'Suprimentos', icon: '🏗️' },
                   { name: 'Relatórios', icon: '📋' },
                 ].map(item => `
@@ -387,7 +537,10 @@
                   <span class="text-[11px] text-slate-400 block font-medium">Expansão Fase 3</span>
                 </div>
               </div>
-              <p class="text-slate-400 text-[11.5px] font-medium leading-relaxed mb-3.5">Entrega contratual: Dezembro/2026 (Prazo em dia)</p>
+              <div class="text-[11.5px] text-slate-500 font-medium space-y-1 mb-3.5">
+                <div class="flex justify-between"><span>Efetivo Hoje:</span><strong class="text-slate-900">${curData.activeTeam} operários</strong></div>
+                <div class="flex justify-between"><span>Clima:</span><strong class="text-slate-900">${weatherCondition}</strong></div>
+              </div>
               <button
                 onclick="openExportModal()"
                 class="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-[12px] font-semibold rounded-full transition shadow-xs flex items-center justify-center gap-1.5"
@@ -421,7 +574,7 @@
                   class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-bold text-xs rounded-full transition shadow-xs flex items-center gap-1.5"
                 >
                   <span>＋</span>
-                  <span>Novo Apontamento</span>
+                  <span>Novo Lançamento</span>
                 </button>
 
                 <button class="icon-circle-btn shadow-2xs" title="Buscar">
@@ -444,7 +597,7 @@
                   <div class="text-left">
                     <span class="text-[9.5px] text-slate-400 block leading-tight font-medium">Perfil Ativo</span>
                     <select
-                      onchange="currentProfile = this.value; render();"
+                      onchange="currentProfile = this.value; showToast('Perfil alternado para ' + this.value); render();"
                       class="text-[11.5px] text-slate-900 font-bold bg-transparent border-none p-0 focus:outline-hidden cursor-pointer"
                     >
                       <option value="Mariana (Engenharia)" ${currentProfile.includes('Mariana') ? 'selected' : ''}>Mariana (Engenharia)</option>
@@ -483,10 +636,10 @@
                   <button onclick="setNav('Curva S & PAC')" class="w-9 h-9 rounded-full border border-slate-900/15 hover:bg-black/5 flex items-center justify-center text-slate-900 font-bold transition">↗</button>
                 </div>
                 <div>
-                  <div class="font-card-number text-[30px] text-slate-950 mb-1.5">${physicalProgress}%</div>
+                  <div class="font-card-number text-[30px] text-slate-950 mb-1.5">${curData.prog}%</div>
                   <div class="flex items-center justify-between text-xs">
-                    <span class="text-slate-800 font-medium">Avanço Físico Geral</span>
-                    <span class="text-rose-800 font-bold text-[11px]">-4,6 p.p. vs meta</span>
+                    <span class="text-slate-800 font-medium">Avanço Físico (${selectedFront})</span>
+                    <span class="text-rose-800 font-bold text-[11px]">Meta: ${curData.plan}%</span>
                   </div>
                 </div>
               </div>
@@ -499,7 +652,7 @@
                 </div>
                 <div>
                   <div class="flex items-baseline gap-1.5 mb-1.5">
-                    <span class="font-card-number text-[30px] text-slate-900">78%</span>
+                    <span class="font-card-number text-[30px] text-slate-900">${pacScore}%</span>
                     <span class="text-slate-400 text-[12px] font-medium">18 de 23 itens</span>
                   </div>
                   <span class="text-slate-400 text-[12px] font-medium">Aderência ao PAC Semanal</span>
@@ -528,8 +681,8 @@
                   <button onclick="setNav('Relatórios')" class="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">↗</button>
                 </div>
                 <div>
-                  <div class="font-card-number text-[30px] text-slate-900 mb-1.5">R$ 14,8M</div>
-                  <span class="text-slate-400 text-[12px] font-medium">Custo Realizado (Meta: 24,0M)</span>
+                  <div class="font-card-number text-[30px] text-slate-900 mb-1.5">${curData.budget}</div>
+                  <span class="text-slate-400 text-[12px] font-medium">Custo Medido no Setor</span>
                 </div>
               </div>
 
@@ -538,19 +691,24 @@
             <!-- Middle Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               
-              <!-- Curva S -->
+              <!-- Curva S / Barras -->
               <div class="lg:col-span-7 xl:col-span-8 white-bento-card p-6 border border-slate-100 flex flex-col justify-between">
                 <div>
-                  <div class="flex items-center justify-between mb-6">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div class="flex items-center gap-2.5">
                       <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">📈</div>
-                      <h3 class="text-[17px] font-bold text-slate-900 tracking-tight">Curva S & Avanço Mensal</h3>
+                      <h3 class="text-[17px] font-bold text-slate-900 tracking-tight">Curva S & Desempenho</h3>
                     </div>
 
                     <div class="flex items-center gap-2">
                       <div class="bg-slate-100 p-0.5 rounded-full flex border border-slate-200/60">
+                        <button onclick="setViewType('barras')" class="px-3 py-1 text-[11px] font-bold rounded-full transition ${chartViewType === 'barras' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'}">Barras</button>
+                        <button onclick="setViewType('curva')" class="px-3 py-1 text-[11px] font-bold rounded-full transition ${chartViewType === 'curva' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'}">Curva S</button>
+                      </div>
+
+                      <div class="bg-slate-100 p-0.5 rounded-full flex border border-slate-200/60">
                         ${['Físico', 'Financeiro', 'PAC'].map(m => `
-                          <button onclick="setMetric('${m}')" class="px-3 py-1 text-xs font-semibold rounded-full transition ${chartMetric === m ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'}">${m}</button>
+                          <button onclick="setMetric('${m}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-full transition ${chartMetric === m ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'}">${m}</button>
                         `).join('')}
                       </div>
                     </div>
@@ -571,7 +729,7 @@
                       <div class="font-card-number text-[26px] text-slate-900 my-1">${physicalProgress}%</div>
                       <span class="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                         <span class="w-2 h-2 rounded-full bg-[#d4ff00]"></span>
-                        <span>R$ 14,8M Medido</span>
+                        <span>R$ ${financialSpent}M Medido</span>
                       </span>
                     </div>
                   </div>
@@ -586,33 +744,46 @@
                     <div>10%</div>
                   </div>
 
-                  <div class="relative z-10 flex justify-between items-end h-44 px-4 sm:px-8">
-                    ${barChartData.map(item => `
-                      <div onclick="setMonth('${item.month}')" class="flex flex-col items-center gap-2 group cursor-pointer">
-                        <div class="flex items-end gap-1.5 h-36 relative">
-                          ${selectedMonth === item.month ? `
-                            <div class="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
-                              <div class="speech-bubble text-[12px] font-extrabold text-center">
-                                <div>${item.value} (${item.real}%)</div>
-                                <div class="text-[9.5px] text-slate-300 font-normal">${item.month} 2026 · Desvio: ${item.deviation}</div>
+                  ${chartViewType === 'barras' ? `
+                    <div class="relative z-10 flex justify-between items-end h-44 px-4 sm:px-8">
+                      ${barChartData.map(item => `
+                        <div onclick="setMonth('${item.month}')" class="flex flex-col items-center gap-2 group cursor-pointer">
+                          <div class="flex items-end gap-1.5 h-36 relative">
+                            ${selectedMonth === item.month ? `
+                              <div class="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                                <div class="speech-bubble text-[12px] font-extrabold text-center">
+                                  <div>${item.value} (${item.real}%)</div>
+                                  <div class="text-[9.5px] text-slate-300 font-normal">${item.month} 2026 · Desvio: ${item.deviation}</div>
+                                </div>
+                                <div class="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
                               </div>
-                              <div class="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
-                            </div>
-                          ` : ''}
+                            ` : ''}
 
-                          <div style="height: ${item.plan * 0.9}%" class="w-4 sm:w-5 bg-[#8eb3ff] rounded-t-full group-hover:brightness-95 transition-all"></div>
-                          <div style="height: ${item.real * 0.9}%" class="w-4 sm:w-5 bg-[#d4ff00] rounded-t-full group-hover:brightness-95 transition-all"></div>
+                            <div style="height: ${item.plan * 0.9}%" class="w-4 sm:w-5 bg-[#8eb3ff] rounded-t-full group-hover:brightness-95 transition-all"></div>
+                            <div style="height: ${item.real * 0.9}%" class="w-4 sm:w-5 bg-[#d4ff00] rounded-t-full group-hover:brightness-95 transition-all"></div>
+                          </div>
+                          <span class="text-[12px] transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400 font-medium'}">
+                            ${item.month}
+                          </span>
                         </div>
-                        <span class="text-[12px] transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400 font-medium'}">
-                          ${item.month}
-                        </span>
+                      `).join('')}
+                    </div>
+                  ` : `
+                    <div class="relative z-10 w-full h-44 px-4 sm:px-8 flex flex-col justify-between">
+                      <svg viewBox="0 0 500 140" class="w-full h-36 overflow-visible">
+                        <path d="M 20,110 C 100,90 200,60 300,35 C 400,20 480,10 480,10" fill="none" stroke="#8eb3ff" stroke-width="3.5" stroke-linecap="round" class="svg-curve-line" />
+                        <path d="M 20,115 C 100,98 200,68 300,42" fill="none" stroke="#d4ff00" stroke-width="4.5" stroke-linecap="round" class="svg-curve-line" />
+                        <circle cx="300" cy="42" r="6" fill="#111827" stroke="#ffffff" stroke-width="2" />
+                      </svg>
+                      <div class="flex justify-between text-[11px] text-slate-400 font-medium pt-1">
+                        <span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span>
                       </div>
-                    `).join('')}
-                  </div>
+                    </div>
+                  `}
                 </div>
               </div>
 
-              <!-- Frentes de Obra Bubble -->
+              <!-- Frentes Bubble -->
               <div class="lg:col-span-5 xl:col-span-4 white-bento-card p-6 border border-slate-100 flex flex-col justify-between">
                 <div>
                   <div class="flex items-center justify-between mb-4">
@@ -680,7 +851,7 @@
 
             </div>
 
-            <!-- Dynamic Bottom Tab Content -->
+            <!-- Dynamic Bottom Tabs -->
             ${activeNav === 'Visão Geral' ? `
               <div class="white-bento-card p-6 border border-slate-100">
                 <div class="flex items-center justify-between mb-4">
@@ -791,12 +962,19 @@
                     ${validations.map(val => `
                       <div class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex items-center gap-3.5">
-                          <img src="${val.foto}" alt="Foto" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0" />
+                          <img
+                            src="${val.foto}"
+                            alt="Foto"
+                            onclick="openLightbox('${val.foto}', '${val.item}', '${val.front}', '${val.resp}', '${val.data}', '${val.gps}')"
+                            class="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0 cursor-pointer hover:opacity-80 transition"
+                            title="Clique para ver em tela cheia e conferir GPS"
+                          />
                           <div>
                             <strong class="text-sm text-slate-900 font-bold block">${val.item} (${val.qtd})</strong>
-                            <span class="text-xs text-slate-400">
+                            <span class="text-xs text-slate-400 block mt-0.5">
                               Frente: <strong class="text-slate-600">${val.front}</strong> · Por: ${val.resp} (${val.cargo}) · ${val.data}
                             </span>
+                            <span class="text-[11px] text-slate-500 font-mono mt-0.5 block">📍 ${val.gps}</span>
                           </div>
                         </div>
 
@@ -832,6 +1010,37 @@
                     <div class="text-2xl font-black text-slate-900 my-1">2</div>
                     <span class="text-[11px] text-slate-500 font-medium">Entrega de fôrmas metálicas</span>
                   </div>
+                </div>
+              </div>
+            ` : ''}
+
+            ${activeNav === 'Qualidade & FVS' ? `
+              <div class="white-bento-card p-6 border border-slate-100">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 class="text-lg font-bold text-slate-900">Fichas de Verificação de Serviço (FVS)</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Auditoria técnica de conformidade e liberação de concretagem</p>
+                  </div>
+                  <span class="bg-[#d4ff00] text-slate-950 text-xs font-bold px-3 py-1 rounded-full">100% Auditado</span>
+                </div>
+
+                <div class="divide-y divide-slate-100">
+                  ${fvsItems.map(fvs => `
+                    <div class="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="font-mono text-xs font-bold text-slate-500">${fvs.code}</span>
+                          <strong class="text-sm text-slate-900 font-bold">${fvs.item}</strong>
+                        </div>
+                        <span class="text-xs text-slate-400">Frente: ${fvs.front} · Auditora: ${fvs.auditor} · ${fvs.data}</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${fvs.status === 'Conforme' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                          ${fvs.status}
+                        </span>
+                      </div>
+                    </div>
+                  `).join('')}
                 </div>
               </div>
             ` : ''}
@@ -881,7 +1090,7 @@
                   <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200/60 flex items-center justify-between">
                     <div>
                       <strong class="text-sm font-bold text-slate-900 block">Relatório Diário de Obra (RDO)</strong>
-                      <span class="text-xs text-slate-400">Gerado hoje · 18 apontamentos</span>
+                      <span class="text-xs text-slate-400">Gerado hoje · ${workersCount} operários</span>
                     </div>
                     <button onclick="openExportModal()" class="px-4 py-2 bg-slate-900 text-white rounded-full text-xs font-bold">Baixar PDF</button>
                   </div>
