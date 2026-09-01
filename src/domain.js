@@ -13,6 +13,28 @@ export function calculateKpis(state) {
   return { physicalProgress, weeklyAdherence, delayed, inProgress, completed: completedCount, openRestrictions };
 }
 
+function dayDiff(from, to) {
+  const start = new Date(`${from}T00:00:00Z`);
+  const end = new Date(`${to}T00:00:00Z`);
+  return Math.round((end - start) / 86400000);
+}
+
+export function calculateExecutiveMetrics({ budget = {}, schedule = {} }) {
+  const baseline = Number(budget.baseline || 0);
+  const forecast = Number(budget.forecast || 0);
+  const budgetVariance = forecast - baseline;
+  const budgetVariancePct = baseline ? Number(((budgetVariance / baseline) * 100).toFixed(1)) : 0;
+  const budgetStatus = budgetVariance < 0 ? 'Abaixo do orçamento' : budgetVariance > 0 ? 'Acima do orçamento' : 'No orçamento';
+  const scheduleVarianceDays = schedule.contractualEnd && schedule.forecastEnd ? dayDiff(schedule.contractualEnd, schedule.forecastEnd) : 0;
+  const scheduleStatus = scheduleVarianceDays < 0 ? 'Entrega antecipada' : scheduleVarianceDays > 0 ? 'Atraso projetado' : 'No prazo';
+  const elapsedDays = schedule.plannedStart && schedule.asOf ? Math.max(0, dayDiff(schedule.plannedStart, schedule.asOf)) : 0;
+  const totalPlannedDays = schedule.plannedStart && schedule.contractualEnd ? Math.max(0, dayDiff(schedule.plannedStart, schedule.contractualEnd)) : 0;
+  const remainingDays = schedule.asOf && schedule.forecastEnd ? Math.max(0, dayDiff(schedule.asOf, schedule.forecastEnd)) : 0;
+  const progressVariancePct = Number(schedule.actualProgress || 0) - Number(schedule.plannedProgress || 0);
+  const spendVariance = Number(budget.actual || 0) - Number(budget.plannedToDate || 0);
+  return { baseline, forecast, budgetVariance, budgetVariancePct, budgetStatus, scheduleVarianceDays, scheduleStatus, elapsedDays, totalPlannedDays, remainingDays, progressVariancePct, spendVariance };
+}
+
 export function updateProgress(state, activityId, progress, actor = 'Campo') {
   const value = Math.max(0, Math.min(100, Number(progress)));
   const activities = state.activities.map(activity => {
