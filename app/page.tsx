@@ -1075,6 +1075,16 @@ export default function PlanesApp() {
             </button>
           )}
 
+          <a
+            href="tv.html"
+            target="_blank"
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-[#d4ff00] border border-[#d4ff00]/40 font-black text-xs rounded-full transition shadow-xs flex items-center gap-1.5 cursor-pointer min-h-[38px]"
+            title="Abrir Feed Ao Vivo para Smart TV e Sala de Reunião"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#d4ff00] animate-ping"></span>
+            <span>Feed TV Sala de Reunião</span>
+          </a>
+
           <button
             type="button"
             onClick={() => setShowReportPreviewModal(true)}
