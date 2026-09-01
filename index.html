@@ -3,38 +3,46 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Planes Engenharia | Gestão de Obras</title>
+  <meta name="theme-color" content="#10384a" />
+  <title>Planes | Gestão Inteligente de Obras</title>
+  <link rel="preconnect" href="https://planesengenharia.com.br" />
   <link rel="stylesheet" href="./src/styles.css" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">P</div>
-        <div><strong>PLANES</strong><span>ENGENHARIA</span></div>
-      </div>
+      <a class="brand" href="#" aria-label="Planes Engenharia">
+        <img class="brand-logo" src="https://planesengenharia.com.br/wp-content/uploads/2025/08/logo-invertida.svg" alt="Planes Engenharia" />
+        <span class="brand-product">Gestão de Obras</span>
+      </a>
+
+      <div class="nav-label">Operação</div>
       <nav aria-label="Módulos">
-        <button class="nav-item active" data-view="dashboard">Visão Geral</button>
-        <button class="nav-item" data-view="balance">Linha de Balanço</button>
-        <button class="nav-item" data-view="lookahead">Médio Prazo</button>
-        <button class="nav-item" data-view="weekly">Plano Semanal</button>
-        <button class="nav-item" data-view="production">Produção</button>
-        <button class="nav-item" data-view="restrictions">Restrições</button>
-        <button class="nav-item" data-view="reports">Relatórios</button>
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">01</span><span>Visão Geral</span></button>
+        <button class="nav-item" data-view="balance"><span class="nav-icon">02</span><span>Linha de Balanço</span></button>
+        <button class="nav-item" data-view="lookahead"><span class="nav-icon">03</span><span>Médio Prazo</span></button>
+        <button class="nav-item" data-view="weekly"><span class="nav-icon">04</span><span>Plano Semanal</span></button>
+        <button class="nav-item" data-view="production"><span class="nav-icon">05</span><span>Produção</span></button>
+        <button class="nav-item" data-view="restrictions"><span class="nav-icon">06</span><span>Restrições</span></button>
+        <button class="nav-item" data-view="reports"><span class="nav-icon">07</span><span>Relatórios</span></button>
       </nav>
+
       <div class="sidebar-footer">
-        <span class="status-dot"></span> MVP conectado aos dados de Japaratinga
+        <div class="sidebar-status"><span class="status-dot"></span><strong>Obra sincronizada</strong></div>
+        <span>Japaratinga Resort · Expansão 3</span>
       </div>
     </aside>
+
     <main class="main">
       <header class="topbar">
-        <div>
-          <div class="eyebrow">Planes Engenharia · Engenharia Inteligente</div>
+        <div class="topbar-title">
+          <div class="eyebrow">PLANES · ENGENHARIA INTELIGENTE</div>
           <h1 id="page-title">Visão Geral</h1>
         </div>
         <div class="project-chip">
+          <span class="project-kicker">OBRA PILOTO</span>
           <strong>Japaratinga Resort</strong>
-          <span>Expansão 3 · atualizado 01/09/2026</span>
+          <span>Expansão 3 · 01 SET 2026</span>
         </div>
       </header>
       <section id="app" class="content" aria-live="polite"></section>
