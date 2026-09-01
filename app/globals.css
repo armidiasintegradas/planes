@@ -1,18 +1,20 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
-  --navy-deep: #051620;
-  --navy: #09202c;
-  --navy-surface: #0e2b3b;
-  --navy-light: #163d50;
+  --navy-deep: #04131d;
+  --navy: #081e2b;
+  --navy-surface: #0d2a3c;
+  --navy-light: #153b52;
   --blue: #0c6a91;
+  --blue-light: #0284c7;
   --cyan: #38bdf8;
   --cyan-glow: rgba(56, 189, 248, 0.4);
+  --cyan-subtle: rgba(56, 189, 248, 0.08);
   --gold: #f59e0b;
-  --gold-light: #fef3c7;
   --paper: #f8fafc;
   --surface: #ffffff;
+  --surface-raised: #ffffff;
   --ink: #0b1924;
   --ink-secondary: #475569;
   --muted: #64748b;
@@ -38,30 +40,67 @@ html, body {
   font-family: "Newsreader", Georgia, serif;
 }
 
-/* Editorial Bento Surfaces */
-.editorial-card {
-  background: var(--surface);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
+.font-mono-numbers {
+  font-family: "JetBrains Mono", monospace;
+  font-feature-settings: "tnum";
 }
-.editorial-card:hover {
-  box-shadow: 0 12px 30px -8px rgba(9, 32, 44, 0.07), 0 4px 12px -4px rgba(9, 32, 44, 0.03);
+
+/* Modern Fluid Glassmorphism */
+.glass-header {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-panel {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 16px -4px rgba(8, 30, 43, 0.03);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel:hover {
+  box-shadow: 0 12px 32px -8px rgba(8, 30, 43, 0.08), 0 4px 12px -2px rgba(8, 30, 43, 0.02);
   border-color: #cbd5e1;
 }
 
-.editorial-dark {
-  background: linear-gradient(145deg, #051620 0%, #09202c 60%, #0e2b3b 100%);
+.glass-dark {
+  background: linear-gradient(145deg, #04131d 0%, #081e2b 60%, #0d2a3c 100%);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.25rem;
-  box-shadow: 0 16px 36px -12px rgba(5, 22, 32, 0.4);
+  box-shadow: 0 16px 40px -12px rgba(4, 19, 29, 0.45);
 }
 
-/* Editorial Chart Lines & Shaders */
+/* Fluid Pill Navigation */
+.pill-nav-container {
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+}
+.pill-tab {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pill-tab-active {
+  background: #081e2b;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(8, 30, 43, 0.15);
+}
+.pill-tab-inactive {
+  color: #64748b;
+}
+.pill-tab-inactive:hover {
+  color: #081e2b;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* Interactive Chart Lines & Shaders */
 .chart-gridline {
   stroke: #f1f5f9;
   stroke-width: 1;
@@ -79,37 +118,23 @@ html, body {
   stroke: #38bdf8;
   stroke-width: 3.5;
   fill: none;
-  filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.45));
+  filter: drop-shadow(0 4px 14px rgba(56, 189, 248, 0.5));
+  transition: all 0.4s ease;
 }
 
-.chart-area-fill {
-  fill: url(#curveGradient);
-  opacity: 0.85;
-}
-
-/* Gauge Animation */
-.gauge-circle-bg {
-  stroke: #e2e8f0;
-  stroke-width: 8;
-  fill: none;
-}
-.gauge-circle-progress {
-  stroke: #10b981;
-  stroke-width: 8;
-  stroke-linecap: round;
-  fill: none;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
-  transition: stroke-dashoffset 1s ease-out;
+.scrubber-line {
+  stroke: #081e2b;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
 }
 
 /* Micro-interactions & animations */
-@keyframes fadeInSlideUp {
-  from { opacity: 0; transform: translateY(12px); }
+@keyframes fluidFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-editorial-entry {
-  animation: fadeInSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-fluid-entry {
+  animation: fluidFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .eyebrow {
@@ -126,16 +151,18 @@ html, body {
   line-height: 1;
 }
 
-.tooltip-editorial {
-  position: absolute;
-  pointer-events: none;
-  background: #09202c;
-  color: #ffffff;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 11px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  z-index: 30;
-  transition: opacity 0.2s, transform 0.2s;
+/* Gauge Arc */
+.gauge-bg {
+  stroke: #e2e8f0;
+  stroke-width: 8;
+  fill: none;
+}
+.gauge-fill {
+  stroke: #10b981;
+  stroke-width: 8;
+  stroke-linecap: round;
+  fill: none;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
