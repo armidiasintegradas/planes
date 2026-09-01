@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Planes Engenharia | Gestão de Obras</title>
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div><strong>PLANES</strong><span>ENGENHARIA</span></div>
+      </div>
+      <nav aria-label="Módulos">
+        <button class="nav-item active" data-view="dashboard">Visão Geral</button>
+        <button class="nav-item" data-view="balance">Linha de Balanço</button>
+        <button class="nav-item" data-view="lookahead">Médio Prazo</button>
+        <button class="nav-item" data-view="weekly">Plano Semanal</button>
+        <button class="nav-item" data-view="production">Produção</button>
+        <button class="nav-item" data-view="restrictions">Restrições</button>
+        <button class="nav-item" data-view="reports">Relatórios</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="status-dot"></span> MVP conectado aos dados de Japaratinga
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Planes Engenharia · Engenharia Inteligente</div>
+          <h1 id="page-title">Visão Geral</h1>
+        </div>
+        <div class="project-chip">
+          <strong>Japaratinga Resort</strong>
+          <span>Expansão 3 · atualizado 01/09/2026</span>
+        </div>
+      </header>
+      <section id="app" class="content" aria-live="polite"></section>
+    </main>
+  </div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
