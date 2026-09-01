@@ -1,95 +1,925 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { activities, constraints, navItems, type Activity } from './data';
+import { FormEvent, useEffect, useState } from 'react';
+import { activities as initialActivities, constraints as initialConstraints, navItems, type Activity } from './data';
+import { PLANES_ICON_B64, PLANES_LOGO_B64 } from './brand-assets';
 
-type User = { name: string; role: 'Engenharia' | 'Campo' | 'Diretoria' };
-type Entry = { id: string; activityId: string; quantity: number; kind: 'Produção' | 'Material' | 'Impedimento'; note: string; status: 'Pendente' | 'Aprovado' | 'Devolvido'; date: string };
-
-const USERS: Record<string,{password:string;user:User}> = {
-  'engenharia@planes.demo': { password:'Planes2026!', user:{name:'Mariana Alves',role:'Engenharia'} },
-  'campo@planes.demo': { password:'Planes2026!', user:{name:'Carlos Lima',role:'Campo'} },
-  'diretoria@planes.demo': { password:'Planes2026!', user:{name:'Ricardo Nunes',role:'Diretoria'} }
+type UserRole = 'Engenharia' | 'Campo' | 'Diretoria';
+type User = { name: string; role: UserRole; avatar: string };
+type Entry = {
+  id: string;
+  activityId: string;
+  quantity: number;
+  kind: 'Produção' | 'Material' | 'Impedimento';
+  note: string;
+  status: 'Pendente' | 'Aprovado' | 'Devolvido';
+  date: string;
 };
 
-function Logo({ dark=false }: { dark?: boolean }) {
-  return <div className={`brand ${dark?'dark':''}`} aria-label="Planes Engenharia"><span className="brand-mark">P</span><span><strong>PLANES</strong><small>ENGENHARIA INTELIGENTE</small></span></div>;
-}
+const USERS_DB: Record<string, { password: string; user: User }> = {
+  'engenharia@planes.demo': { password: 'Planes2026!', user: { name: 'Mariana Alves', role: 'Engenharia', avatar: 'MA' } },
+  'campo@planes.demo': { password: 'Planes2026!', user: { name: 'Carlos Lima', role: 'Campo', avatar: 'CL' } },
+  'diretoria@planes.demo': { password: 'Planes2026!', user: { name: 'Ricardo Nunes', role: 'Diretoria', avatar: 'RN' } }
+};
 
 export default function Home() {
-  const [user,setUser] = useState<User|null>(null);
-  const [email,setEmail] = useState('engenharia@planes.demo');
-  const [password,setPassword] = useState('Planes2026!');
-  const [loginError,setLoginError] = useState('');
-  const [view,setView] = useState('dashboard');
-  const [entries,setEntries] = useState<Entry[]>([]);
-  const [toast,setToast] = useState('');
-  const [mobileMenu,setMobileMenu] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState('engenharia@planes.demo');
+  const [password, setPassword] = useState('Planes2026!');
+  const [loginError, setLoginError] = useState('');
+  const [view, setView] = useState('dashboard');
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [constraints, setConstraints] = useState(initialConstraints);
+  const [toast, setToast] = useState('');
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [lookaheadWeeks, setLookaheadWeeks] = useState(4);
+  const [modalMode, setModalMode] = useState<'Produção' | 'Material' | 'Impedimento' | 'NovaRestricao' | null>(null);
+  const [selectedActivityId, setSelectedActivityId] = useState(initialActivities[4].id);
+  const [entryQty, setEntryQty] = useState('10');
+  const [entryNote, setEntryNote] = useState('');
 
-  useEffect(()=>{
-    const raw=localStorage.getItem('planes:v1:entries'); if(raw) setEntries(JSON.parse(raw));
-    const session=localStorage.getItem('planes:v1:session'); if(session) setUser(JSON.parse(session));
-  },[]);
-  useEffect(()=>{ if(entries.length) localStorage.setItem('planes:v1:entries',JSON.stringify(entries)); },[entries]);
-  function login(e:FormEvent){ e.preventDefault(); const found=USERS[email]; if(!found||found.password!==password){setLoginError('E-mail ou senha inválidos.');return;} setUser(found.user); localStorage.setItem('planes:v1:session',JSON.stringify(found.user)); setView(found.user.role==='Campo'?'field':'dashboard'); }
-  function logout(){setUser(null);localStorage.removeItem('planes:v1:session');}
-  function notify(message:string){setToast(message);setTimeout(()=>setToast(''),2600)}
-  if(!user) return <Login email={email} password={password} setEmail={setEmail} setPassword={setPassword} error={loginError} onSubmit={login}/>;
+  // Initial load from storage
+  useEffect(() => {
+    try {
+      const rawEntries = localStorage.getItem('planes:v1:entries');
+      if (rawEntries) setEntries(JSON.parse(rawEntries));
+      else {
+        const defaultEntries: Entry[] = [
+          { id: 'e1', activityId: 'a6', quantity: 15, kind: 'Produção', note: 'Executado 15m² de alvenaria no 2º pavimento', status: 'Pendente', date: 'Hoje' },
+          { id: 'e2', activityId: 'a7', quantity: 8, kind: 'Produção', note: 'Reboco iniciado no dormitório 102', status: 'Pendente', date: 'Hoje' }
+        ];
+        setEntries(defaultEntries);
+        localStorage.setItem('planes:v1:entries', JSON.stringify(defaultEntries));
+      }
 
-  const available = navItems.filter(([id]) => user.role!=='Campo' || ['field','weekly','constraints'].includes(id));
-  return <div className="app">
-    <aside className={mobileMenu?'sidebar open':'sidebar'}>
-      <div className="side-brand"><Logo dark/><button className="close-menu" onClick={()=>setMobileMenu(false)}>×</button></div>
-      <div className="project-chip"><span>OBRA PILOTO</span><strong>Japaratinga Resort</strong><small>Expansão 3 · Alagoas</small></div>
-      <nav>{available.map(([id,label,icon])=><button key={id} onClick={()=>{setView(id);setMobileMenu(false)}} className={view===id?'active':''}><span>{icon}</span>{label}{id==='validation'&&entries.filter(e=>e.status==='Pendente').length>0?<b>{entries.filter(e=>e.status==='Pendente').length}</b>:null}</button>)}</nav>
-      <div className="sidebar-foot"><span className="avatar">{user.name.split(' ').map(x=>x[0]).slice(0,2)}</span><div><strong>{user.name}</strong><small>{user.role}</small></div><button onClick={logout} title="Sair">↗</button></div>
-    </aside>
-    <main>
-      <header><button className="menu-button" onClick={()=>setMobileMenu(true)}>☰</button><div><small>PLANES GESTÃO</small><strong>Japaratinga Resort – Expansão 3</strong></div><div className="header-actions"><span className="live-dot">● Dados atualizados</span><button onClick={()=>notify('Central de notificações atualizada')}>♢</button></div></header>
-      <section className="content">{renderView(view,{entries,setEntries,notify,user,setView})}</section>
-    </main>
-    {toast?<div className="toast">✓ {toast}</div>:null}
-  </div>;
+      const session = localStorage.getItem('planes:v1:session');
+      if (session) {
+        const parsed = JSON.parse(session);
+        setUser(parsed);
+        setView(parsed.role === 'Campo' ? 'field' : 'dashboard');
+      }
+    } catch (e) {}
+  }, []);
+
+  // Sync entries
+  useEffect(() => {
+    if (entries.length > 0) {
+      localStorage.setItem('planes:v1:entries', JSON.stringify(entries));
+    }
+  }, [entries]);
+
+  function notify(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3200);
+  }
+
+  function login(e: FormEvent) {
+    e.preventDefault();
+    const found = USERS_DB[email];
+    if (!found || found.password !== password) {
+      setLoginError('E-mail ou senha inválidos.');
+      return;
+    }
+    setUser(found.user);
+    localStorage.setItem('planes:v1:session', JSON.stringify(found.user));
+    setView(found.user.role === 'Campo' ? 'field' : 'dashboard');
+    notify(`Bem-vindo, ${found.user.name}!`);
+  }
+
+  function switchRole(emailKey: string) {
+    const found = USERS_DB[emailKey];
+    if (found) {
+      setUser(found.user);
+      localStorage.setItem('planes:v1:session', JSON.stringify(found.user));
+      setView(found.user.role === 'Campo' ? 'field' : 'dashboard');
+      notify(`Alternado para perfil: ${found.user.name} (${found.user.role})`);
+    }
+  }
+
+  function logout() {
+    setUser(null);
+    localStorage.removeItem('planes:v1:session');
+  }
+
+  function handleCreateEntry(e: FormEvent) {
+    e.preventDefault();
+    if (!modalMode || modalMode === 'NovaRestricao') return;
+    const newEntry: Entry = {
+      id: 'e' + Date.now(),
+      activityId: selectedActivityId,
+      quantity: Number(entryQty) || 1,
+      kind: modalMode,
+      note: entryNote || `Apontamento de ${modalMode}`,
+      status: 'Pendente',
+      date: 'Hoje'
+    };
+    setEntries([newEntry, ...entries]);
+    setModalMode(null);
+    setEntryQty('10');
+    setEntryNote('');
+    notify(`✓ Apontamento de ${modalMode} enviado para validação da Engenharia!`);
+  }
+
+  function handleDecideEntry(id: string, decision: 'Aprovado' | 'Devolvido') {
+    setEntries(entries.map(e => e.id === id ? { ...e, status: decision } : e));
+    notify(decision === 'Aprovado' ? '✓ Apontamento aprovado e avanço consolidado!' : 'Apontamento devolvido ao campo.');
+  }
+
+  if (!user) {
+    return <LoginView email={email} setEmail={setEmail} password={password} setPassword={setPassword} error={loginError} onLogin={login} onQuickDemo={switchRole} />;
+  }
+
+  const pendingCount = entries.filter(e => e.status === 'Pendente').length;
+  const availableNav = navItems.filter(([id]) => user.role !== 'Campo' || ['field', 'weekly', 'constraints', 'lookahead'].includes(id));
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col md:flex-row text-slate-800">
+      
+      {/* Sidebar */}
+      <aside className={`fixed md:sticky top-0 z-40 h-screen w-64 bg-[#0b202a] text-white flex flex-col shrink-0 border-r border-slate-800/80 transition-transform duration-300 ${mobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <!-- Official Brand Header -->
+        <div className="h-20 flex items-center justify-between px-6 border-b border-white/10 bg-[#071e28]">
+          <div className="flex items-center gap-3">
+            <img src={PLANES_ICON_B64} alt="Planes Icon" className="w-8 h-8 rounded-lg shadow-sm" />
+            <div>
+              <span className="font-bold text-white text-base tracking-wider block font-sans leading-none">PLANES</span>
+              <span className="text-[8px] tracking-widest text-[#38bdf8] uppercase font-semibold block mt-1">Engenharia Inteligente</span>
+            </div>
+          </div>
+          <button onClick={() => setMobileMenu(false)} className="md:hidden text-slate-400 hover:text-white text-lg">✕</button>
+        </div>
+
+        <!-- Pilot Project Card -->
+        <div className="m-4 p-3.5 rounded-xl bg-white/5 border border-white/10">
+          <span className="eyebrow text-[#38bdf8] block">Obra Piloto</span>
+          <strong className="text-xs text-white block mt-1 font-semibold">Japaratinga Resort</strong>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Expansão 3 · Alagoas</span>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+          {availableNav.map(([id, label, icon]) => {
+            const isActive = view === id;
+            const badge = id === 'validation' && pendingCount > 0 ? (
+              <span className="ml-auto bg-[#f59e0b] text-[#0b202a] text-[10px] font-bold px-2 py-0.5 rounded-full">{pendingCount}</span>
+            ) : null;
+            return (
+              <button
+                key={id}
+                onClick={() => { setView(id); setMobileMenu(false); }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition text-left ${
+                  isActive ? 'bg-white/15 text-white font-semibold border-l-4 border-[#38bdf8] shadow-inner' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span className="text-base w-5 text-center">{icon}</span>
+                <span>{label}</span>
+                {badge}
+              </button>
+            );
+          })}
+        </nav>
+
+        <!-- User Profile Footer -->
+        <div className="p-4 border-t border-white/10 flex items-center justify-between bg-black/20">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-cyan-200 text-[#0b202a] font-bold text-xs flex items-center justify-center shrink-0">
+              {user.avatar}
+            </div>
+            <div className="min-w-0">
+              <strong className="text-xs text-white block truncate">{user.name}</strong>
+              <span className="text-[10px] text-slate-400 block">{user.role}</span>
+            </div>
+          </div>
+          <button onClick={logout} title="Sair da conta" className="text-slate-400 hover:text-white text-xs p-1.5 rounded hover:bg-white/10 transition">
+            Sair ↗
+          </button>
+        </div>
+      </aside>
+
+      {/* Backdrop for Mobile */}
+      {mobileMenu && <div onClick={() => setMobileMenu(false)} className="fixed inset-0 bg-black/50 z-30 md:hidden" />}
+
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+        {/* Floating Top Bar with Role Switcher */}
+        <header className="h-16 bg-white border-b border-[#e2e8f0] px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileMenu(true)} className="md:hidden p-2 rounded-lg border border-slate-200 text-slate-700">☰</button>
+            <div className="flex items-center gap-3">
+              <img src={PLANES_LOGO_B64} alt="Planes ENG" className="h-7 w-auto hidden sm:block object-contain" />
+              <span className="text-xs font-semibold text-slate-500 border-l border-slate-200 pl-3 hidden md:inline">Japaratinga Resort – Expansão 3</span>
+            </div>
+          </div>
+
+          <!-- Quick Role Switcher -->
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400 hidden lg:inline">Alternar Perfil:</span>
+            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+              <button
+                onClick={() => switchRole('engenharia@planes.demo')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition ${user.role === 'Engenharia' ? 'bg-white text-[#0b202a] shadow-xs font-semibold' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Engenharia
+              </button>
+              <button
+                onClick={() => switchRole('campo@planes.demo')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition ${user.role === 'Campo' ? 'bg-white text-[#0b202a] shadow-xs font-semibold' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Campo
+              </button>
+              <button
+                onClick={() => switchRole('diretoria@planes.demo')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition ${user.role === 'Diretoria' ? 'bg-white text-[#0b202a] shadow-xs font-semibold' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Diretoria
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Dynamic Content */}
+        <main className="flex-1 p-4 md:p-8 max-w-6xl w-full mx-auto">
+          {view === 'dashboard' && <DashboardView entries={entries} setView={setView} />}
+          {view === 'field' && <FieldView onOpenModal={(mode, actId) => { setModalMode(mode); if (actId) setSelectedActivityId(actId); }} />}
+          {view === 'validation' && <ValidationView entries={entries} onDecide={handleDecideEntry} />}
+          {view === 'gantt' && <GanttView />}
+          {view === 'balance' && <BalanceView />}
+          {view === 'lookahead' && <LookaheadView weeks={lookaheadWeeks} setWeeks={setLookaheadWeeks} onPromote={() => notify('Atividade promovida para o plano semanal!')} />}
+          {view === 'weekly' && <WeeklyView />}
+          {view === 'constraints' && <ConstraintsView constraints={constraints} onNew={() => setModalMode('NovaRestricao')} />}
+          {view === 'estrutura' && <StructureView />}
+        </main>
+      </div>
+
+      {/* Entry Modal */}
+      {modalMode && modalMode !== 'NovaRestricao' && (
+        <div className="fixed inset-0 bg-[#0b202a]/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative shadow-2xl border border-slate-200">
+            <button onClick={() => setModalMode(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">✕</button>
+            <span className="eyebrow text-[#0c6a91] block">NOVO APONTAMENTO DE CAMPO</span>
+            <h3 className="text-xl text-[#0b202a] font-bold mt-1 mb-4">Registrar {modalMode}</h3>
+
+            <form onSubmit={handleCreateEntry} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Atividade</label>
+                <select value={selectedActivityId} onChange={e => setSelectedActivityId(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white">
+                  {initialActivities.map(a => <option value={a.id} key={a.id}>{a.name} ({a.location})</option>)}
+                </select>
+              </div>
+
+              {modalMode !== 'Impedimento' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Quantidade executada</label>
+                  <input type="number" step="0.1" required value={entryQty} onChange={e => setEntryQty(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Observações do Canteiro</label>
+                <textarea rows={3} placeholder="Descreva os serviços realizados ou motivo do bloqueio..." value={entryNote} onChange={e => setEntryNote(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Foto da Obra</label>
+                <div className="border-2 border-dashed border-slate-300 hover:border-[#0c6a91] hover:bg-cyan-50/50 rounded-xl p-3.5 text-center text-xs text-[#0c6a91] cursor-pointer transition">
+                  📷 Clique para anexar registro fotográfico
+                </div>
+              </div>
+
+              <button type="submit" className="w-full py-3 bg-[#0c6a91] hover:bg-[#0b202a] text-white font-semibold text-xs rounded-xl transition shadow-sm mt-2">
+                Enviar para Validação da Engenharia →
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0b202a] text-white px-5 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-2 border border-white/10 animate-fade-in">
+          <span className="text-emerald-400 font-bold text-sm">✓</span>
+          <span>{toast}</span>
+        </div>
+      )}
+
+    </div>
+  );
 }
 
-function Login({email,password,setEmail,setPassword,error,onSubmit}:{email:string;password:string;setEmail:(s:string)=>void;setPassword:(s:string)=>void;error:string;onSubmit:(e:FormEvent)=>void}){
-  const [show,setShow]=useState(false);
-  return <div className="login-page"><div className="login-left"><Logo dark/><div className="login-message"><span>PLATAFORMA DIGITAL DE GESTÃO DE OBRAS</span><h1>Do planejamento<br/>ao canteiro.<br/><em>Do canteiro à decisão.</em></h1><p>Planejamento, execução e inteligência em tempo real para obras de alta performance.</p></div><div className="login-project"><span>OBRA PILOTO</span><strong>Japaratinga Resort – Expansão 3</strong><small>16 frentes monitoradas · Planejamento até nov/2026</small></div></div><div className="login-right"><form onSubmit={onSubmit}><div className="mobile-logo"><Logo/></div><span className="eyebrow">ACESSO RESTRITO</span><h2>Bem-vindo à sua obra</h2><p>Acesse com suas credenciais Planes.</p><label>E-mail corporativo<input aria-label="E-mail corporativo" value={email} onChange={e=>setEmail(e.target.value)} type="email"/></label><label>Senha<div className="password"><input aria-label="Senha" value={password} onChange={e=>setPassword(e.target.value)} type={show?'text':'password'}/><button type="button" onClick={()=>setShow(!show)}>{show?'Ocultar':'Mostrar'}</button></div></label>{error?<div className="error">{error}</div>:null}<button className="primary" type="submit">Entrar na plataforma <span>→</span></button><div className="demo"><strong>Acesso de demonstração</strong><span>engenharia@planes.demo</span><span>Senha: Planes2026!</span></div></form></div></div>
+/* =========================================================================
+   SUB-VIEWS (Bento Grid & Editorial Awwwards Architecture)
+========================================================================= */
+
+function LoginView({ email, setEmail, password, setPassword, error, onLogin, onQuickDemo }: any) {
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#f8fafc]">
+      <div className="w-full md:w-1/2 bg-gradient-to-br from-[#061822] via-[#0b202a] to-[#0f2b38] text-white p-8 md:p-16 flex flex-col justify-between relative overflow-hidden">
+        <div className="flex items-center gap-3">
+          <img src={PLANES_ICON_B64} alt="Planes" className="w-10 h-10 rounded-xl shadow-md" />
+          <div>
+            <span className="font-bold text-white text-xl tracking-wider block leading-none font-sans">PLANES</span>
+            <span className="text-[9px] tracking-widest text-[#38bdf8] uppercase font-semibold block mt-1">Engenharia Inteligente</span>
+          </div>
+        </div>
+
+        <div className="my-12 relative z-10">
+          <span className="eyebrow text-[#38bdf8] block mb-3">PLATAFORMA DIGITAL DE GESTÃO DE OBRAS</span>
+          <h1 className="text-3xl md:text-5xl leading-tight font-normal mb-4 font-serif">
+            Do planejamento ao canteiro.<br />
+            <span className="text-[#38bdf8] italic">Do canteiro à decisão.</span>
+          </h1>
+          <p className="text-xs md:text-sm text-slate-300 max-w-md leading-relaxed">
+            Planejamento físico, fluxo contínuo de produção, gestão de restrições e inteligência operacional em tempo real.
+          </p>
+        </div>
+
+        <div className="border-t border-white/15 pt-6 relative z-10">
+          <span className="eyebrow text-[#38bdf8] block">Obra Piloto</span>
+          <strong className="text-sm text-white block mt-1 font-semibold">Japaratinga Resort – Expansão 3</strong>
+          <span className="text-xs text-slate-400 block mt-0.5">16 frentes monitoradas · Linha de balanço integrada</span>
+        </div>
+      </div>
+
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-white">
+        <div className="w-full max-w-md">
+          <img src={PLANES_LOGO_B64} alt="Planes ENG" className="h-9 w-auto mb-6 object-contain" />
+          <span className="eyebrow text-[#0c6a91] block">ACESSO RESTRITO</span>
+          <h2 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 mb-2 font-serif">Bem-vindo à sua obra</h2>
+          <p className="text-xs text-slate-500 mb-6">Acesse com suas credenciais ou selecione um perfil de demonstração:</p>
+
+          <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-2.5">Acesso Rápido de Demonstração</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button onClick={() => onQuickDemo('engenharia@planes.demo')} className="p-2.5 rounded-xl bg-white border border-slate-300 hover:border-[#38bdf8] hover:bg-cyan-50 text-left transition text-xs shadow-2xs">
+                <strong className="block text-[#0b202a]">Engenharia</strong>
+                <span className="text-[10px] text-slate-500">Mariana Alves</span>
+              </button>
+              <button onClick={() => onQuickDemo('campo@planes.demo')} className="p-2.5 rounded-xl bg-white border border-slate-300 hover:border-[#38bdf8] hover:bg-cyan-50 text-left transition text-xs shadow-2xs">
+                <strong className="block text-[#0b202a]">Campo</strong>
+                <span className="text-[10px] text-slate-500">Carlos Lima</span>
+              </button>
+              <button onClick={() => onQuickDemo('diretoria@planes.demo')} className="p-2.5 rounded-xl bg-white border border-slate-300 hover:border-[#38bdf8] hover:bg-cyan-50 text-left transition text-xs shadow-2xs">
+                <strong className="block text-[#0b202a]">Diretoria</strong>
+                <span className="text-[10px] text-slate-500">Ricardo Nunes</span>
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={onLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail corporativo</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0c6a91]" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0c6a91]" />
+            </div>
+            {error && <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">{error}</div>}
+            <button type="submit" className="w-full py-3 bg-[#0c6a91] hover:bg-[#0b202a] text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-2">
+              Entrar na Plataforma <span>→</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function renderView(view:string,ctx:{entries:Entry[];setEntries:(x:Entry[])=>void;notify:(s:string)=>void;user:User;setView:(s:string)=>void}){
-  if(view==='dashboard') return <Dashboard entries={ctx.entries} setView={ctx.setView}/>;
-  if(view==='estrutura') return <Structure/>;
-  if(view==='gantt') return <Gantt/>;
-  if(view==='balance') return <Balance/>;
-  if(view==='lookahead') return <Lookahead notify={ctx.notify}/>;
-  if(view==='weekly') return <Weekly/>;
-  if(view==='field') return <Field entries={ctx.entries} setEntries={ctx.setEntries} notify={ctx.notify}/>;
-  if(view==='validation') return <Validation entries={ctx.entries} setEntries={ctx.setEntries} notify={ctx.notify}/>;
-  return <Constraints/>;
+function DashboardView({ entries, setView }: { entries: Entry[]; setView: (s: string) => void }) {
+  const pendingCount = entries.filter(e => e.status === 'Pendente').length;
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-3">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">VISÃO EXECUTIVA</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Painel Planes</h1>
+        </div>
+        <div className="text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-600 font-medium self-start shadow-xs">
+          Semana 34 · 17–21 ago 2026
+        </div>
+      </div>
+
+      <!-- Bento Metric Grid -->
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bento-card p-5">
+          <div className="flex justify-between text-xs text-slate-500 font-medium">
+            <span>Avanço Físico</span>
+            <span className="text-slate-400">↗</span>
+          </div>
+          <div className="display-number text-3xl text-[#0b202a] my-2">61,8%</div>
+          <div className="text-[11px] text-slate-500">Planejado: 66,4%</div>
+          <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] text-rose-600 font-semibold">-4,6 p.p. de desvio</div>
+        </div>
+
+        <div className="bento-card p-5">
+          <div className="flex justify-between text-xs text-slate-500 font-medium">
+            <span>Aderência Semanal</span>
+            <span className="text-slate-400">↗</span>
+          </div>
+          <div className="display-number text-3xl text-[#0b202a] my-2">78%</div>
+          <div className="text-[11px] text-slate-500">18 de 23 compromissos</div>
+          <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] text-emerald-600 font-semibold">+6 p.p. vs semana anterior</div>
+        </div>
+
+        <div className="bento-card p-5">
+          <div className="flex justify-between text-xs text-slate-500 font-medium">
+            <span>Variação de Prazo</span>
+            <span className="text-slate-400">↗</span>
+          </div>
+          <div className="display-number text-3xl text-[#0b202a] my-2">+18 dias</div>
+          <div className="text-[11px] text-slate-500">Baseline: 30/11/2026</div>
+          <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] text-amber-600 font-semibold">Tendência: 18/12/2026</div>
+        </div>
+
+        <div className="bento-card p-5">
+          <div className="flex justify-between text-xs text-slate-500 font-medium">
+            <span>Restrições Abertas</span>
+            <span className="text-slate-400">↗</span>
+          </div>
+          <div className="display-number text-3xl text-[#0b202a] my-2">12</div>
+          <div className="text-[11px] text-slate-500">4 vencidas · 5 críticas</div>
+          <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] text-amber-600 font-semibold">3 liberadas esta semana</div>
+        </div>
+      </div>
+
+      <!-- Charts & Decision Alerts Bento -->
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bento-card p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <span className="eyebrow text-slate-400 block">CURVA DE AVANÇO</span>
+              <h3 className="text-lg text-[#0b202a] font-bold font-serif">Planejado × Realizado</h3>
+            </div>
+            <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-md">Físico Ponderado</span>
+          </div>
+
+          <div className="h-48 relative">
+            <svg viewBox="0 0 700 200" preserveAspectRatio="none" className="w-full h-44 overflow-visible">
+              <path className="gridline" d="M0 40H700M0 80H700M0 120H700M0 160H700" />
+              <path className="planned-curve" d="M0 190 C120 185 120 170 210 155 S350 110 430 85 S570 40 700 15" />
+              <path className="actual-curve" d="M0 190 C120 188 140 175 220 162 S350 125 430 108 S570 70 700 55" />
+              <circle cx="700" cy="55" r="6" fill="#38bdf8" stroke="#ffffff" strokeWidth="3" />
+            </svg>
+            <div className="flex justify-between text-[10px] text-slate-400 mt-2 px-1">
+              <span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600">
+            <span className="flex items-center gap-2"><span className="w-4 h-0.5 border-t-2 border-dashed border-slate-400"></span> Planejado 66,4%</span>
+            <span className="flex items-center gap-2"><span className="w-4 h-1 bg-[#38bdf8] rounded-full"></span> Realizado 61,8%</span>
+          </div>
+        </div>
+
+        <div className="bento-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <span className="eyebrow text-slate-400 block">PRIORIDADE</span>
+              <button onClick={() => setView('constraints')} className="text-xs text-[#0c6a91] font-semibold hover:underline">Ver todas →</button>
+            </div>
+            <h3 className="text-lg text-[#0b202a] font-bold font-serif mb-3">Atenções para Decisão</h3>
+
+            <div className="space-y-3">
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-rose-200 text-rose-800 text-xs font-bold flex items-center justify-center shrink-0">01</span>
+                <div className="text-xs">
+                  <strong className="text-rose-950 block font-semibold">Refrigeração – alteração de projeto</strong>
+                  <span className="text-rose-700 text-[10px]">Arena · Resp: Projetos · Vencida</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-amber-200 text-amber-800 text-xs font-bold flex items-center justify-center shrink-0">02</span>
+                <div className="text-xs">
+                  <strong className="text-amber-950 block font-semibold">Estouro orçamentário Apoio Quadra</strong>
+                  <span className="text-amber-700 text-[10px]">Arena · Resp: Suprimentos</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-3">
+                <span className="w-6 h-6 rounded-full bg-amber-200 text-amber-800 text-xs font-bold flex items-center justify-center shrink-0">03</span>
+                <div className="text-xs">
+                  <strong className="text-amber-950 block font-semibold">Mão de obra Alvenaria Torre 1</strong>
+                  <span className="text-amber-700 text-[10px]">Bloco Aptos · Resp: Produção</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {pendingCount > 0 && (
+            <div className="mt-4 p-3 bg-cyan-50 border border-cyan-200 rounded-xl flex items-center justify-between text-xs">
+              <span className="text-cyan-950"><strong>{pendingCount}</strong> validações pendentes</span>
+              <button onClick={() => setView('validation')} className="font-bold text-[#0c6a91] hover:underline">Revisar →</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function PageTitle({kicker,title,children}:{kicker:string;title:string;children?:React.ReactNode}){return <div className="page-title"><div><span>{kicker}</span><h1>{title}</h1></div>{children}</div>}
-function Badge({children,tone='neutral'}:{children:React.ReactNode;tone?:string}){return <span className={`badge ${tone}`}>{children}</span>}
+function FieldView({ onOpenModal }: { onOpenModal: (mode: 'Produção' | 'Material' | 'Impedimento', actId?: string) => void }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">CAMPO</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Minha Obra</h1>
+        </div>
+        <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectado
+        </span>
+      </div>
 
-function Dashboard({entries,setView}:{entries:Entry[];setView:(s:string)=>void}){
-  const approved=entries.filter(e=>e.status==='Aprovado').reduce((s,e)=>s+(e.kind==='Produção'?e.quantity:0),0);
-  const metrics=[['Avanço físico','61,8%','Planejado 66,4%','-4,6 p.p.','danger'],['Aderência semanal','78%','18 de 23 compromissos','+6 p.p. vs. semana ant.','success'],['Variação de prazo','+18 dias','Baseline: 30/11/2026','Tendência: 18/12/2026','warning'],['Restrições abertas','12','4 vencidas · 5 críticas','3 liberadas nesta semana','warning']];
-  return <><PageTitle kicker="VISÃO EXECUTIVA" title="Painel Planes"><div className="date-filter">Semana 34 · 17–21 ago 2026⌄</div></PageTitle><div className="summary-strip"><div><span>STATUS DA OBRA</span><Badge tone="warning">● Atenção</Badge></div><p>Ritmo abaixo do planejado em <strong>Bloco de Apartamentos</strong> e <strong>Área da Piscina</strong>. Quatro restrições exigem decisão.</p><small>Última consolidação: 21/08/2026 · 17:40</small></div><div className="metric-grid">{metrics.map(m=><article className="metric" key={m[0]}><div><span>{m[0]}</span><i>↗</i></div><strong>{m[1]}</strong><small>{m[2]}</small><footer className={m[4]}>{m[3]}</footer></article>)}</div><div className="dashboard-grid"><article className="panel progress-panel"><div className="panel-title"><div><span>CURVA DE AVANÇO</span><h2>Planejado × realizado</h2></div><Badge>Físico</Badge></div><div className="chart"><div className="axis">100%<br/><br/>75%<br/><br/>50%<br/><br/>25%<br/><br/>0%</div><svg viewBox="0 0 700 230" preserveAspectRatio="none"><path className="gridline" d="M0 45H700M0 95H700M0 145H700M0 195H700"/><path className="planned" d="M0 210 C120 205 120 190 210 178 S350 130 430 108 S570 55 700 25"/><path className="actual" d="M0 210 C120 208 140 195 220 184 S350 148 430 132 S570 92 700 72"/><circle cx="700" cy="72" r="6"/></svg><div className="chart-labels"><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span></div></div><div className="legend"><span><i className="line planned-line"/>Planejado 66,4%</span><span><i className="line actual-line"/>Realizado 61,8%</span>{approved?<span>+{approved} un. validadas nesta sessão</span>:null}</div></article><article className="panel attention"><div className="panel-title"><div><span>PRIORIDADE</span><h2>Atenções para decisão</h2></div><button onClick={()=>setView('constraints')}>Ver todas →</button></div>{constraints.slice(0,3).map((c,i)=><div className="attention-item" key={c.id}><span className={`priority p${i+1}`}>0{i+1}</span><div><strong>{c.title}</strong><small>{c.area} · Responsável: {c.owner}</small></div><Badge tone={i===0?'danger':'warning'}>{i===0?'Crítica':'Alta'}</Badge></div>)}</article></div><div className="section-head"><div><span>PRODUÇÃO POR FRENTE</span><h2>Onde estamos desviando</h2></div><button onClick={()=>setView('gantt')}>Abrir cronograma completo →</button></div><div className="front-grid">{[['Arena',76,81],['Bloco de apartamentos',54,66],['Infraestrutura',68,72],['Área da piscina',57,69]].map(x=><article className="front" key={x[0] as string}><div><strong>{x[0]}</strong><Badge tone={(x[1] as number)<60?'danger':'warning'}>{(x[1] as number)<60?'Atrasada':'Atenção'}</Badge></div><div className="bar"><i style={{width:`${x[2]}%`}}/><b style={{width:`${x[1]}%`}}/></div><footer><span>Realizado <strong>{x[1]}%</strong></span><span>Planejado {x[2]}%</span></footer></article>)}</div></>
+      <!-- Action Hero -->
+      <div className="bento-dark p-6 md:p-8 mb-8">
+        <span className="eyebrow text-[#38bdf8] block">CANTEIRO DE OBRAS</span>
+        <h2 className="text-xl md:text-2xl font-bold mt-1 mb-2 font-serif">O que aconteceu na obra hoje?</h2>
+        <p className="text-xs text-slate-200 mb-6 max-w-xl">Registre a produção diária, consumo de insumos ou aponte impedimentos em menos de 1 minuto.</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onClick={() => onOpenModal('Produção')} className="bg-white/10 hover:bg-white/20 border border-white/20 p-4 rounded-xl text-left transition flex items-start gap-3 shadow-xs">
+            <span className="text-2xl text-[#38bdf8]">↗</span>
+            <div>
+              <strong className="text-xs block text-white font-bold">Registrar Produção</strong>
+              <span className="text-[10px] text-slate-300">Quantidade executada</span>
+            </div>
+          </button>
+
+          <button onClick={() => onOpenModal('Material')} className="bg-white/10 hover:bg-white/20 border border-white/20 p-4 rounded-xl text-left transition flex items-start gap-3 shadow-xs">
+            <span className="text-2xl text-[#38bdf8]">▣</span>
+            <div>
+              <strong className="text-xs block text-white font-bold">Registrar Material</strong>
+              <span className="text-[10px] text-slate-300">Consumo e recebimento</span>
+            </div>
+          </button>
+
+          <button onClick={() => onOpenModal('Impedimento')} className="bg-white/10 hover:bg-white/20 border border-white/20 p-4 rounded-xl text-left transition flex items-start gap-3 shadow-xs">
+            <span className="text-2xl text-rose-300">△</span>
+            <div>
+              <strong className="text-xs block text-white font-bold">Registrar Impedimento</strong>
+              <span className="text-[10px] text-slate-300">Relatar bloqueio/restrição</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Tasks -->
+      <div className="mb-4 flex justify-between items-center">
+        <div>
+          <span className="eyebrow text-slate-400 block">SUAS ATIVIDADES</span>
+          <h3 className="text-lg text-[#0b202a] font-bold font-serif">Atividades em Foco (Semana 34)</h3>
+        </div>
+        <span className="bg-slate-200 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-lg">4 prioritárias</span>
+      </div>
+
+      <div className="space-y-3">
+        {initialActivities.slice(4, 8).map(a => (
+          <div key={a.id} className="bento-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className={`w-2.5 h-2.5 rounded-full ${a.status === 'Atrasada' ? 'bg-rose-500' : a.status === 'Atenção' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+              <div>
+                <strong className="text-sm text-[#0b202a] block font-semibold">{a.name}</strong>
+                <span className="text-xs text-slate-500">{a.area} · {a.location} · {a.discipline}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="w-32">
+                <div className="flex justify-between text-[10px] text-slate-500 font-semibold mb-1">
+                  <span>Avanço</span>
+                  <span>{a.progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#0c6a91] rounded-full" style={{ width: `${a.progress}%` }} />
+                </div>
+              </div>
+              <button onClick={() => onOpenModal('Produção', a.id)} className="px-3.5 py-1.5 rounded-xl bg-[#0c6a91] text-white text-xs font-semibold hover:bg-[#0b202a] transition">
+                Apontar →
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function Structure(){const tree=[['Arena',['Quadra coberta','Apoio das quadras','Quadras de tênis','Área 1']],['Bloco de apartamentos',['Torre 1 · Térreo/P1/P2/Rooftop','Torre 2 · Térreo/P1/P2/Rooftop','Torre 3 · Fundações/P1/P2']],['Infraestrutura',['Água','Drenagem','Elétrica','Incêndio','CFTV','Esgoto']],['Recepção e restaurante',['Recepção','Restaurante Trama','SPA e lojas','Guarita']],['Área da piscina',['Piscina','Bares da piscina','Deck seco','Obras em madeira']]];return <><PageTitle kicker="ESTRUTURA ANALÍTICA" title="Estrutura da obra"/><div className="panel tree">{tree.map(([area,children])=><details open key={area as string}><summary><span>▾</span><strong>{area as string}</strong><Badge>{(children as string[]).length} locais</Badge></summary>{(children as string[]).map(c=><div className="tree-child" key={c}><span>└</span>{c}<small>{activities.filter(a=>a.area===area&&a.location.includes(c.split(' · ')[0])).length || 3} atividades</small></div>)}</details>)}</div></>}
+function ValidationView({ entries, onDecide }: { entries: Entry[]; onDecide: (id: string, dec: 'Aprovado' | 'Devolvido') => void }) {
+  const pending = entries.filter(e => e.status === 'Pendente');
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">ENGENHARIA</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Fila de Validações</h1>
+        </div>
+        <span className="bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full">{pending.length} pendentes</span>
+      </div>
 
-function Gantt(){const weeks=['03/08','10/08','17/08','24/08','31/08','07/09'];return <><PageTitle kicker="PLANEJAMENTO MESTRE" title="Cronograma · baseline × atual"><button className="secondary">Filtros ⌄</button></PageTitle><div className="panel gantt"><div className="gantt-head"><strong>Atividade / Local</strong>{weeks.map(w=><span key={w}>{w}</span>)}</div>{activities.slice(4,14).map((a,i)=><div className="gantt-row" key={a.id}><div><strong>{a.name}</strong><small>{a.location} · {a.discipline}</small></div><div className="timeline"><i className="baseline" style={{left:`${(i%4)*9}%`,width:`${32+(i%3)*8}%`}}/><b className={a.status==='Atrasada'?'late':''} style={{left:`${(i%4)*9+3}%`,width:`${Math.max(12,a.progress/2.3)}%`}}/><em style={{left:`${Math.min(86,(i%4)*9+a.progress/2.5)}%`}}>{a.progress}%</em></div></div>)}</div><div className="legend"><span><i className="line baseline-line"/>Baseline</span><span><i className="line current-line"/>Planejamento atual</span><span><i className="late-dot"/>Em atraso</span></div></>}
+      {pending.length === 0 ? (
+        <div className="bento-card p-16 text-center">
+          <div className="w-14 h-14 bg-emerald-100 text-emerald-600 text-2xl font-bold rounded-full flex items-center justify-center mx-auto mb-4">✓</div>
+          <h3 className="text-xl text-[#0b202a] font-bold font-serif">Fila de validação em dia!</h3>
+          <p className="text-xs text-slate-500 mt-1">Todos os apontamentos submetidos pelo campo foram analisados.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pending.map(e => {
+            const act = initialActivities.find(a => a.id === e.activityId) || { name: 'Atividade Geral', location: 'Canteiro' };
+            return (
+              <div key={e.id} className="bento-card p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-center text-xs mb-3">
+                    <span className="bg-cyan-100 text-[#0b202a] font-bold px-2.5 py-1 rounded-md text-[10px] uppercase">{e.kind}</span>
+                    <span className="text-slate-400 text-[10px]">{e.date}</span>
+                  </div>
+                  <h4 className="font-semibold text-sm text-[#0b202a]">{act.name}</h4>
+                  <p className="text-xs text-slate-500 mt-1">{act.location}</p>
 
-function Balance(){const rows=['Rooftop','P2','P1','Térreo int.','Térreo ext.','Fundações'];return <><PageTitle kicker="FLUXO DE PRODUÇÃO" title="Linha de balanço"><div className="date-filter">Torres 1–3 · Alvenaria⌄</div></PageTitle><div className="panel balance"><div className="balance-header"><span>LOCALIZAÇÃO</span>{['03 ago','10 ago','17 ago','24 ago','31 ago','07 set'].map(x=><b key={x}>{x}</b>)}</div><div className="balance-body"><div className="locations">{rows.map(r=><span key={r}>{r}</span>)}</div><svg viewBox="0 0 720 360" preserveAspectRatio="none"><path className="balance-grid" d="M0 60H720M0 120H720M0 180H720M0 240H720M0 300H720M120 0V360M240 0V360M360 0V360M480 0V360M600 0V360"/><path className="flow f1" d="M60 330 L190 270 L310 210 L430 150 L560 90 L680 30"/><path className="flow f2" d="M120 330 L255 270 L390 210 L520 150 L660 90"/><path className="flow-real" d="M60 330 L205 270 L345 210 L500 150 L650 110"/><circle cx="650" cy="110" r="7"/></svg></div><div className="legend"><span><i className="line current-line"/>Torre 1 planejado</span><span><i className="line blue-line"/>Torre 2 planejado</span><span><i className="line danger-line"/>Realizado</span></div></div></>}
+                  <div className="my-4 p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="text-lg text-[#0c6a91] font-bold">{e.kind === 'Produção' ? `${e.quantity} unidades executadas` : `Registro de ${e.kind}`}</div>
+                    <div className="text-xs text-slate-600 mt-1 italic font-sans">"{e.note || 'Sem observações'}"</div>
+                  </div>
+                </div>
 
-function Lookahead({notify}:{notify:(s:string)=>void}){const [weeks,setWeeks]=useState(4);const shown=activities.filter(a=>a.status!=='Em dia').slice(0,weeks+2);return <><PageTitle kicker="MÉDIO PRAZO" title="Lookahead"><div className="segmented">{[2,3,4,5,6].map(w=><button className={w===weeks?'active':''} onClick={()=>setWeeks(w)} key={w}>{w} sem.</button>)}</div></PageTitle><div className="lookahead-board">{['17–21 ago','24–28 ago','31 ago–04 set','07–11 set'].slice(0,Math.min(weeks,4)).map((week,wi)=><div className="week-col" key={week}><header><span>SEMANA {34+wi}</span><strong>{week}</strong></header>{shown.filter((_,i)=>i%Math.min(weeks,4)===wi).map(a=><article key={a.id}><div><Badge tone={a.status==='Atrasada'?'danger':'warning'}>{a.status}</Badge><small>{a.area}</small></div><strong>{a.name}</strong><span>{a.location}</span>{constraints.find(c=>c.area===a.area)?<p>△ Restrição vinculada</p>:<p className="ready">✓ Pronta para executar</p>}<button onClick={()=>notify('Atividade promovida para o plano semanal')}>Adicionar ao plano →</button></article>)}</div>)}</div></>}
+                <div className="flex gap-2 pt-3 border-t border-slate-100">
+                  <button onClick={() => onDecide(e.id, 'Devolvido')} className="flex-1 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-700 font-semibold hover:bg-slate-100 transition">
+                    Devolver
+                  </button>
+                  <button onClick={() => onDecide(e.id, 'Aprovado')} className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-xs">
+                    ✓ Aprovar e Consolidar
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
-function Weekly(){return <><PageTitle kicker="COMPROMISSOS" title="Plano semanal"><div className="date-filter">Semana 34 · 17–21 ago⌄</div></PageTitle><div className="weekly-summary"><article><span>ADERÊNCIA</span><strong>78%</strong><small>18 de 23 concluídos</small></article><article><span>EM ANDAMENTO</span><strong>4</strong><small>Dentro da semana</small></article><article><span>NÃO CUMPRIDOS</span><strong>5</strong><small>3 com restrição</small></article></div><div className="panel table"><div className="table-row table-head"><span>Atividade</span><span>Responsável</span><span>Meta</span><span>Realizado</span><span>Situação</span></div>{activities.slice(5,12).map((a,i)=><div className="table-row" key={a.id}><span><strong>{a.name}</strong><small>{a.location}</small></span><span>{i%2?'João Silva':'Equipe Alfa'}</span><span>{a.planned}%</span><span>{a.progress}%</span><span><Badge tone={a.status==='Atrasada'?'danger':a.status==='Em dia'?'success':'warning'}>{a.status}</Badge></span></div>)}</div></>}
+function GanttView() {
+  const weeks = ['03/08', '10/08', '17/08', '24/08', '31/08', '07/09'];
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">PLANEJAMENTO MESTRE</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Cronograma · Baseline × Atual</h1>
+        </div>
+        <div className="text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-600 font-medium">Torres 1–3 · Estrutura e Alvenaria</div>
+      </div>
 
-function Field({entries,setEntries,notify}:{entries:Entry[];setEntries:(e:Entry[])=>void;notify:(s:string)=>void}){const [mode,setMode]=useState<Entry['kind']|null>(null);const [activityId,setActivityId]=useState(activities[5].id);const [quantity,setQuantity]=useState('');const [note,setNote]=useState('');function submit(e:FormEvent){e.preventDefault();const entry:Entry={id:`entry-${Date.now()}`,activityId,quantity:Number(quantity)||0,kind:mode!,note,status:'Pendente',date:new Date().toLocaleDateString('pt-BR')};setEntries([...entries,entry]);setMode(null);setQuantity('');setNote('');notify('Apontamento enviado para validação')};const today=activities.filter(a=>['Atenção','Atrasada'].includes(a.status)).slice(0,4);return <><PageTitle kicker="CAMPO" title="Minha Obra"><Badge tone="success">● Sincronizado</Badge></PageTitle><div className="field-hero"><div><span>OLÁ, EQUIPE DE CAMPO</span><h2>O que aconteceu na obra hoje?</h2><p>Registre em menos de um minuto.</p></div><div className="field-actions"><button onClick={()=>setMode('Produção')}><i>↗</i><strong>Registrar produção</strong><small>Quantidade executada</small></button><button onClick={()=>setMode('Material')}><i>▣</i><strong>Registrar material</strong><small>Consumo e recebimento</small></button><button onClick={()=>setMode('Impedimento')}><i>△</i><strong>Registrar impedimento</strong><small>Algo bloqueando?</small></button></div></div><div className="section-head"><div><span>SUAS ATIVIDADES</span><h2>Hoje e nesta semana</h2></div><Badge>{today.length} atividades</Badge></div><div className="task-list">{today.map(a=><article key={a.id}><div className="task-status"><i className={a.status==='Atrasada'?'red':'amber'}/><span>{a.status}</span></div><div><strong>{a.name}</strong><small>{a.area} · {a.location}</small></div><div className="mini-progress"><span><i style={{width:`${a.progress}%`}}/></span><b>{a.progress}%</b></div><button onClick={()=>{setActivityId(a.id);setMode('Produção')}}>Apontar →</button></article>)}</div>{mode?<div className="modal"><form onSubmit={submit}><button type="button" className="modal-close" onClick={()=>setMode(null)}>×</button><span className="eyebrow">NOVO APONTAMENTO</span><h2>Registrar {mode.toLowerCase()}</h2><label>Atividade<select value={activityId} onChange={e=>setActivityId(e.target.value)}>{activities.map(a=><option value={a.id} key={a.id}>{a.name}</option>)}</select></label>{mode!=='Impedimento'?<label>Quantidade executada<input required min="0.1" step="0.1" value={quantity} onChange={e=>setQuantity(e.target.value)} type="number"/></label>:null}<label>Observação<textarea required={mode==='Impedimento'} value={note} onChange={e=>setNote(e.target.value)} placeholder="Descreva o que aconteceu"/></label><label className="photo-input">Foto da obra<input type="file" accept="image/*"/><span>＋ Adicionar foto</span></label><button className="primary" type="submit">Enviar para validação →</button></form></div>:null}</>}
+      <div className="bento-card overflow-hidden">
+        <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider p-3.5">
+          <div className="col-span-3">Atividade / Localização</div>
+          {weeks.slice(0, 4).map(w => <div key={w} className="text-center">{w}</div>)}
+        </div>
 
-function Validation({entries,setEntries,notify}:{entries:Entry[];setEntries:(x:Entry[])=>void;notify:(s:string)=>void}){const pending=entries.filter(e=>e.status==='Pendente');function decide(id:string,status:'Aprovado'|'Devolvido'){setEntries(entries.map(e=>e.id===id?{...e,status}:e));notify(status==='Aprovado'?'Apontamento aprovado e indicadores atualizados':'Apontamento devolvido ao campo')}return <><PageTitle kicker="ENGENHARIA" title="Validações"><Badge tone={pending.length?'warning':'success'}>{pending.length} pendentes</Badge></PageTitle>{pending.length===0?<div className="empty"><span>✓</span><h2>Fila de validação em dia</h2><p>Novos apontamentos do campo aparecerão aqui.</p></div>:<div className="validation-list">{pending.map(e=>{const a=activities.find(x=>x.id===e.activityId)!;return <article key={e.id}><div><Badge>{e.kind}</Badge><small>{e.date}</small></div><h3>{a.name}</h3><p>{a.location} · {e.note||'Sem observações'}</p><strong>{e.kind==='Produção'?`${e.quantity} unidades executadas`:'Registro recebido'}</strong><footer><button className="return" onClick={()=>decide(e.id,'Devolvido')}>Devolver</button><button className="approve" onClick={()=>decide(e.id,'Aprovado')}>✓ Aprovar</button></footer></article>})}</div>}</>}
+        <div className="divide-y divide-slate-100">
+          {initialActivities.slice(4, 12).map((a, i) => (
+            <div key={a.id} className="grid grid-cols-7 p-3.5 items-center text-xs">
+              <div className="col-span-3 pr-4">
+                <strong className="text-xs text-[#0b202a] block font-semibold">{a.name}</strong>
+                <span className="text-[10px] text-slate-500">{a.location} · {a.discipline}</span>
+              </div>
+              <div className="col-span-4 relative h-8 bg-slate-50/50 rounded-xl flex items-center px-2">
+                <div className="absolute h-1.5 bg-slate-300 rounded-full" style={{ left: `${(i % 3) * 15}%`, width: '50%' }} />
+                <div className={`absolute h-2.5 ${a.status === 'Atrasada' ? 'bg-rose-500' : 'bg-[#0c6a91]'} rounded-full`} style={{ left: `${(i % 3) * 15 + 4}%`, width: `${Math.max(20, a.progress * 0.4)}%` }} />
+                <span className="absolute right-2 text-[10px] font-bold text-slate-600">{a.progress}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-function Constraints(){const [filter,setFilter]=useState('Todas');const list=filter==='Todas'?constraints:constraints.filter(c=>c.status===filter);return <><PageTitle kicker="GESTÃO DE RESTRIÇÕES" title="Restrições"><button className="primary small">＋ Nova restrição</button></PageTitle><div className="filter-row">{['Todas','Vencida','Em tratamento','Aberta'].map(f=><button className={filter===f?'active':''} onClick={()=>setFilter(f)} key={f}>{f}</button>)}</div><div className="panel table constraints-table"><div className="table-row table-head"><span>Restrição</span><span>Área</span><span>Responsável</span><span>Prazo</span><span>Situação</span></div>{list.map(c=><div className="table-row" key={c.id}><span><strong>{c.title}</strong><small>{c.type}</small></span><span>{c.area}</span><span>{c.owner}</span><span>{c.due}</span><span><Badge tone={c.status==='Vencida'?'danger':'warning'}>{c.status}</Badge></span></div>)}</div></>}
+function BalanceView() {
+  const floors = ['Rooftop', 'Pavimento 2', 'Pavimento 1', 'Térreo Interno', 'Térreo Externo', 'Fundações'];
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">FLUXO DE PRODUÇÃO</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Linha de Balanço</h1>
+        </div>
+        <div className="text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-600 font-medium">Torres 1 e 2 · Alvenaria</div>
+      </div>
+
+      <div className="bento-card p-6">
+        <div className="grid grid-cols-6 text-center text-[10px] font-bold text-slate-500 uppercase pb-3 border-b border-slate-100">
+          <span>Localização</span>
+          <span>03 ago</span>
+          <span>10 ago</span>
+          <span>17 ago</span>
+          <span>24 ago</span>
+          <span>31 ago</span>
+        </div>
+
+        <div className="grid grid-cols-6 gap-2 my-4">
+          <div className="flex flex-col justify-between text-xs text-slate-600 font-medium py-2">
+            {floors.map(f => <span key={f}>{f}</span>)}
+          </div>
+          <div className="col-span-5 h-64 relative bg-slate-50 rounded-xl p-2 border border-slate-100">
+            <svg viewBox="0 0 500 240" preserveAspectRatio="none" className="w-full h-full">
+              <path className="gridline" d="M0 40H500M0 80H500M0 120H500M0 160H500M0 200H500" />
+              <path className="balance-flow-1" d="M30 220 L120 180 L210 140 L300 100 L390 60 L470 20" />
+              <path className="balance-flow-2" d="M80 220 L170 180 L260 140 L350 100 L440 60" />
+              <path className="balance-flow-real" d="M30 220 L130 180 L230 140 L340 100 L430 70" />
+              <circle cx="430" cy="70" r="5" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="flex gap-6 pt-3 border-t border-slate-100 text-xs text-slate-600">
+          <span className="flex items-center gap-2"><span className="w-4 h-1 bg-[#0c6a91]"></span> Torre 1 (Planejado)</span>
+          <span className="flex items-center gap-2"><span className="w-4 h-1 bg-[#38bdf8]"></span> Torre 2 (Planejado)</span>
+          <span className="flex items-center gap-2"><span className="w-4 h-1 border-t-2 border-dashed border-rose-500"></span> Realizado em Campo</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LookaheadView({ weeks, setWeeks, onPromote }: any) {
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-3">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">MÉDIO PRAZO</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Lookahead ({weeks} Semanas)</h1>
+        </div>
+        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1">
+          {[2, 3, 4, 5, 6].map(w => (
+            <button key={w} onClick={() => setWeeks(w)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${weeks === w ? 'bg-[#0b202a] text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+              {w} sem
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {['Semana 34 (17–21 ago)', 'Semana 35 (24–28 ago)', 'Semana 36 (31 ago–04 set)', 'Semana 37 (07–11 set)'].slice(0, weeks).map((w, idx) => (
+          <div key={w} className="bg-slate-100 p-3.5 rounded-2xl border border-slate-200 flex flex-col gap-3">
+            <div className="font-bold text-xs text-[#0b202a] border-b border-slate-200 pb-2">{w}</div>
+            {initialActivities.slice(idx * 2, idx * 2 + 2).map(a => (
+              <div key={a.id} className="bento-card p-3.5 shadow-2xs">
+                <div className="flex justify-between items-center text-[10px] mb-1">
+                  <span className="font-semibold text-slate-500">{a.discipline}</span>
+                  <span className={a.status === 'Atrasada' ? 'text-rose-600 font-bold' : 'text-emerald-600'}>{a.status}</span>
+                </div>
+                <strong className="text-xs text-[#0b202a] block font-semibold">{a.name}</strong>
+                <span className="text-[10px] text-slate-500 block mt-1">{a.location}</span>
+                <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
+                  <span className={`text-[10px] ${idx === 0 ? 'text-rose-600 font-semibold' : 'text-emerald-600'}`}>{idx === 0 ? '△ Restrição ativa' : '✓ Pronta p/ execução'}</span>
+                  <button onClick={onPromote} className="text-[10px] text-[#0c6a91] font-bold hover:underline">Promover →</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WeeklyView() {
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">COMPROMISSOS</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Plano Semanal de Produção</h1>
+        </div>
+        <div className="text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-600 font-medium">Semana 34 · 17 a 21 de Agosto</div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bento-card p-5">
+          <span className="eyebrow text-slate-400 block">ADERÊNCIA</span>
+          <div className="display-number text-3xl text-[#0b202a] my-1">78%</div>
+          <span className="text-xs text-slate-500">18 de 23 compromissos concluídos</span>
+        </div>
+        <div className="bento-card p-5">
+          <span className="eyebrow text-slate-400 block">EM ANDAMENTO</span>
+          <div className="display-number text-3xl text-amber-600 my-1">4</div>
+          <span className="text-xs text-slate-500">Dentro do prazo da semana</span>
+        </div>
+        <div className="bento-card p-5">
+          <span className="eyebrow text-slate-400 block">NÃO CUMPRIDOS</span>
+          <div className="display-number text-3xl text-rose-600 my-1">5</div>
+          <span className="text-xs text-slate-500">3 com restrição associada</span>
+        </div>
+      </div>
+
+      <div className="bento-card overflow-hidden">
+        <div className="grid grid-cols-5 bg-slate-50 p-3.5 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200">
+          <div className="col-span-2">Atividade</div>
+          <div>Responsável</div>
+          <div>Meta / Realizado</div>
+          <div>Situação</div>
+        </div>
+        <div className="divide-y divide-slate-100 text-xs">
+          {initialActivities.slice(4, 10).map((a, i) => (
+            <div key={a.id} className="grid grid-cols-5 p-3.5 items-center">
+              <div className="col-span-2 pr-4">
+                <strong className="font-semibold text-[#0b202a] block">{a.name}</strong>
+                <span className="text-[10px] text-slate-500">{a.location}</span>
+              </div>
+              <div className="text-slate-600">{i % 2 === 0 ? 'Carlos (Campo)' : 'Equipe Alfa'}</div>
+              <div className="font-semibold text-slate-700">{a.progress}% / 100%</div>
+              <div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${a.status === 'Atrasada' ? 'bg-rose-100 text-rose-800' : a.status === 'Atenção' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                  {a.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConstraintsView({ constraints, onNew }: any) {
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">GESTÃO DE IMPEDIMENTOS</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Restrições da Obra</h1>
+        </div>
+        <button onClick={onNew} className="bg-[#0c6a91] text-white px-3.5 py-2 rounded-xl text-xs font-semibold hover:bg-[#0b202a] transition shadow-xs">＋ Nova Restrição</button>
+      </div>
+
+      <div className="bento-card overflow-hidden">
+        <div className="grid grid-cols-5 bg-slate-50 p-3.5 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200">
+          <div className="col-span-2">Restrição / Tipo</div>
+          <div>Área</div>
+          <div>Responsável / Prazo</div>
+          <div>Situação</div>
+        </div>
+        <div className="divide-y divide-slate-100 text-xs">
+          {constraints.map((c: any) => (
+            <div key={c.id} className="grid grid-cols-5 p-3.5 items-center">
+              <div className="col-span-2 pr-4">
+                <strong className="font-semibold text-[#0b202a] block">{c.title}</strong>
+                <span className="text-[10px] text-slate-500">Tipo: {c.type}</span>
+              </div>
+              <div className="text-slate-600">{c.area}</div>
+              <div>
+                <div className="text-slate-700 font-medium">{c.owner}</div>
+                <div className="text-[10px] text-slate-400">Prazo: {c.due}</div>
+              </div>
+              <div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${c.status === 'Vencida' ? 'bg-rose-100 text-rose-800' : c.status === 'Em tratamento' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'}`}>
+                  {c.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StructureView() {
+  const tree = [
+    { area: 'Arena', items: ['Quadra Coberta', 'Apoio das Quadras', 'Quadras de Tênis', 'Área 1'] },
+    { area: 'Bloco de Apartamentos', items: ['Torre 1 (Térreo, P1, P2, Rooftop)', 'Torre 2 (Térreo, P1, P2, Rooftop)', 'Torre 3 (Fundações, P1, P2)'] },
+    { area: 'Infraestrutura', items: ['Água Potável', 'Drenagem Pluvial', 'Rede Elétrica e CFTV', 'Rede de Esgoto'] },
+    { area: 'Área da Piscina', items: ['Piscina Central', 'Bares Molhados', 'Deck Seco e Obras em Madeira'] },
+    { area: 'Recepção e Restaurante', items: ['Recepção Principal', 'Restaurante Trama', 'SPA e Lojas', 'Guarita'] }
+  ];
+
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <span className="eyebrow text-[#0c6a91] block">ESTRUTURA ANALÍTICA (EAP)</span>
+          <h1 className="text-2xl md:text-3xl text-[#0b202a] font-bold mt-1 font-serif">Hierarquia da Obra</h1>
+        </div>
+        <div className="text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-600 font-medium">16 frentes cadastradas</div>
+      </div>
+
+      <div className="space-y-4">
+        {tree.map(t => (
+          <div key={t.area} className="bento-card p-4">
+            <div className="flex items-center justify-between font-semibold text-sm text-[#0b202a] border-b border-slate-100 pb-2 mb-3">
+              <span className="flex items-center gap-2"><span>📂</span> {t.area}</span>
+              <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{t.items.length} locais</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pl-4">
+              {t.items.map(item => <div key={item} className="flex items-center gap-2"><span className="text-slate-400">└</span> {item}</div>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
