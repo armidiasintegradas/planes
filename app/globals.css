@@ -1,5 +1,6 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700,800&f[]=satoshi@400,500,700,800,900&display=swap');
 
 :root {
   --bg-outer: #e6ebf0;
@@ -8,7 +9,6 @@
   --lime-neon: #d4ff00;
   --lime-light: #e4ff3a;
   --soft-blue: #8eb3ff;
-  --soft-blue-pill: #8eb3ff;
   --badge-blue: #5d87ff;
   --foundation-color: #f1efea;
   --text-dark: #111827;
@@ -26,10 +26,11 @@ html, body {
   min-height: 100%;
   background: var(--bg-outer);
   color: var(--text-dark);
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'General Sans', 'Plus Jakarta Sans', 'Satoshi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv01' on, 'ss01' on, 'calt' on, 'kern' on;
 }
 
 /* Wavy Background */
@@ -44,24 +45,46 @@ html, body {
   border-radius: 2rem;
 }
 
-/* Typography Refinements matching the image */
-.stat-display-number {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+/* Ultra-Refined Typography Classes */
+.font-brand-logo {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.font-page-title {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.font-card-number {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
   font-weight: 800;
   letter-spacing: -0.045em;
-  line-height: 1;
+  line-height: 0.95;
+  font-feature-settings: 'tnum' on, 'zero' on;
 }
 
-.display-title {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+.font-nav-label {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
-.brand-logo-text {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+.font-label-muted {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #9ca3af;
+}
+
+.font-bubble-number {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
 }
 
 /* Bento Card Styling */
@@ -132,7 +155,6 @@ html, body {
   background: #ffffff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
   color: #111827;
-  font-weight: 600;
 }
 .nav-pill-inactive {
   color: #6b7280;
