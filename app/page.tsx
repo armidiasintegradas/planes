@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 
+// Real Data Extracted from Official Excel Spreadsheets
+const rawLinhaBalanco = {"GERAL": [{"row": 1, "colA": "", "activity": "PLANEJAMENTO JAPARATINGA LOUNGE RESORT - EXPANSÃO 3"}, {"row": 2, "colA": "ARENA", "activity": "ARENA"}, {"row": 7, "colA": "", "activity": "QUADRA COBERTA"}, {"row": 9, "colA": "", "activity": "QUADRA TENIS  1"}, {"row": 10, "colA": "", "activity": "QUADRA TENIS  2"}, {"row": 11, "colA": "", "activity": "QUADRA BT 1"}, {"row": 12, "colA": "", "activity": "QUADRA BT 2"}, {"row": 13, "colA": "", "activity": "QUADRA BT 3"}, {"row": 14, "colA": "", "activity": "QUADRA BT 4"}, {"row": 15, "colA": "", "activity": "CERCA"}, {"row": 16, "colA": "", "activity": "PASSSEOS E PRAÇA"}, {"row": 17, "colA": "", "activity": "BLOCO APARTAMENTOS"}, {"row": 21, "colA": "", "activity": "ELEVADORES"}, {"row": 22, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 23, "colA": "", "activity": "COBERTA"}, {"row": 24, "colA": "ETAPA 3", "activity": "ROOFTOP"}, {"row": 25, "colA": "", "activity": "P2"}, {"row": 26, "colA": "", "activity": "P1"}, {"row": 27, "colA": "", "activity": "TERREO INT"}, {"row": 28, "colA": "", "activity": "TERREO EXT"}, {"row": 30, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 31, "colA": "", "activity": "COBERTA"}, {"row": 32, "colA": "ETAPA 2", "activity": "ROOFTOP"}, {"row": 33, "colA": "", "activity": "P2"}, {"row": 34, "colA": "", "activity": "P1"}, {"row": 35, "colA": "", "activity": "TERREO INT"}, {"row": 36, "colA": "", "activity": "TÉRREO EXT"}, {"row": 38, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 39, "colA": "", "activity": "COBERTA"}, {"row": 40, "colA": "ETAPA 1", "activity": "ROOFTOP INTERNO"}, {"row": 41, "colA": "", "activity": "P2"}, {"row": 42, "colA": "", "activity": "P1"}, {"row": 43, "colA": "", "activity": "TERREO INT"}, {"row": 44, "colA": "", "activity": "TÉRREO EXT"}, {"row": 45, "colA": "", "activity": "FUNDAÇÕES"}, {"row": 46, "colA": "", "activity": "RECEPÇÃO, RESTAURANTE TRAMA, SPA LOJAS E GUARITA"}, {"row": 50, "colA": "", "activity": "RECEPÇÃO"}, {"row": 52, "colA": "", "activity": "RESTAURANTE TRAMA"}, {"row": 54, "colA": "", "activity": "SPA LOJAS"}, {"row": 56, "colA": "", "activity": "GUARITA"}, {"row": 58, "colA": "ÁREA DA PISCINA", "activity": "ÁREA DA PISCINA"}, {"row": 62, "colA": "", "activity": "PISCINA"}, {"row": 64, "colA": "", "activity": "BARES DA PISCINA (BEBIDAS) E PALCO"}, {"row": 66, "colA": "", "activity": "BAR DA PISCINA REEFIÇÕES"}, {"row": 68, "colA": "INFRA", "activity": "BLOCO APARTAMENTOS"}, {"row": 72, "colA": "", "activity": "INFRA DE ÁGUA"}, {"row": 73, "colA": "", "activity": "DRENAGEM"}, {"row": 74, "colA": "", "activity": "INFRA ELETRICA"}, {"row": 75, "colA": "", "activity": "INFRA DE INENDIO"}, {"row": 76, "colA": "", "activity": "INFRA CFTV"}, {"row": 77, "colA": "", "activity": "INFRA DE ESGOTO"}, {"row": 78, "colA": "", "activity": "INFRA DE ÁGUA GELADA PARA REFRIGERAÇÃO"}, {"row": 79, "colA": "", "activity": "RESERVATÓRIO ÁGUA REUSO E INCENDIO"}, {"row": 80, "colA": "", "activity": "SUBSTAÇÃO"}, {"row": 81, "colA": "", "activity": "CASAS DE MÁQUINA"}, {"row": 82, "colA": "", "activity": "PISO EM MADEIRA ECOLÓGICA"}, {"row": 83, "colA": "", "activity": "ESPELHOS D ÁGUA DOS JARDINS"}, {"row": 84, "colA": "", "activity": "PERGOLADO E PASSARELA DE ACESSO DA RECEPÇÃO AO BLOCO ATUAL"}, {"row": 85, "colA": "", "activity": "COBERTA DE ESTACIONAMENTO"}, {"row": 86, "colA": "", "activity": "PAVIMENTAÇÃO COM INTERTRAVADO"}, {"row": 87, "colA": "", "activity": "PASSEIOS"}, {"row": 88, "colA": "", "activity": "COBOGRAMA"}, {"row": 89, "colA": "", "activity": "GRADIL"}], "INFRA": [{"row": 1, "colA": "", "activity": "BLOCO APARTAMENTOS"}, {"row": 5, "colA": "INFRA", "activity": "INFRA DE ÁGUA"}, {"row": 6, "colA": "", "activity": "DRENAGEM"}, {"row": 7, "colA": "", "activity": "INFRA ELETRICA"}, {"row": 8, "colA": "", "activity": "INFRA DE INENDIO"}, {"row": 9, "colA": "", "activity": "INFRA CFTV"}, {"row": 10, "colA": "", "activity": "INFRA DE ESGOTO"}, {"row": 11, "colA": "", "activity": "INFRA DE ÁGUA GELADA PARA REFRIGERAÇÃO"}, {"row": 12, "colA": "", "activity": "RESERVATÓRIO ÁGUA REUSO E INCENDIO"}, {"row": 13, "colA": "", "activity": "SUBSTAÇÃO"}, {"row": 14, "colA": "", "activity": "CASAS DE MÁQUINA"}, {"row": 15, "colA": "", "activity": "PISO EM MADEIRA ECOLÓGICA"}, {"row": 16, "colA": "", "activity": "ESPELHOS D ÁGUA DOS JARDINS"}, {"row": 17, "colA": "", "activity": "PERGOLADO E PASSARELA DE ACESSO DA RECEPÇÃO AO BLOCO ATUAL"}, {"row": 18, "colA": "", "activity": "COBERTA DE ESTACIONAMENTO"}, {"row": 19, "colA": "", "activity": "PAVIMENTAÇÃO COM INTERTRAVADO"}, {"row": 20, "colA": "", "activity": "PASSEIOS"}, {"row": 21, "colA": "", "activity": "COBOGRAMA"}, {"row": 22, "colA": "", "activity": "GRADIL"}], "ARENA": [{"row": 6, "colA": "", "activity": "QUADRA COBERTA"}, {"row": 8, "colA": "", "activity": "QUADRA TENIS  1"}, {"row": 9, "colA": "", "activity": "QUADRA TENIS  2"}, {"row": 10, "colA": "", "activity": "QUADRA BT 1"}, {"row": 11, "colA": "", "activity": "QUADRA BT 2"}, {"row": 12, "colA": "", "activity": "QUADRA BT 3"}, {"row": 13, "colA": "", "activity": "QUADRA BT 4"}, {"row": 14, "colA": "", "activity": "CERCA"}, {"row": 15, "colA": "", "activity": "PASSSEOS E PRAÇA"}], "BLOCO APTOS": [{"row": 5, "colA": "", "activity": "FACHADA"}, {"row": 6, "colA": "", "activity": "ELEVADORES"}, {"row": 7, "colA": "", "activity": "COBERTA"}, {"row": 8, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 9, "colA": "", "activity": "COBERTA"}, {"row": 10, "colA": "TORRE 3", "activity": "ROOFTOP"}, {"row": 11, "colA": "", "activity": "P2"}, {"row": 12, "colA": "", "activity": "P1"}, {"row": 13, "colA": "", "activity": "TERREO INT"}, {"row": 14, "colA": "", "activity": "TERREO EXT"}, {"row": 16, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 17, "colA": "", "activity": "COBERTA"}, {"row": 18, "colA": "TORRE 2", "activity": "ROOFTOP"}, {"row": 19, "colA": "", "activity": "P2"}, {"row": 20, "colA": "", "activity": "P1"}, {"row": 21, "colA": "", "activity": "TERREO INT"}, {"row": 22, "colA": "", "activity": "TÉRREO EXT"}, {"row": 24, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 25, "colA": "", "activity": "COBERTA"}, {"row": 26, "colA": "TORRE 1", "activity": "ROOFTOP INTERNO"}, {"row": 27, "colA": "", "activity": "P2"}, {"row": 28, "colA": "", "activity": "P1"}, {"row": 29, "colA": "", "activity": "TERREO INT"}, {"row": 30, "colA": "", "activity": "TÉRREO EXT"}, {"row": 31, "colA": "", "activity": "FUNDAÇÕES"}, {"row": 37, "colA": "", "activity": "ROOFTOP EXTERNO"}, {"row": 38, "colA": "", "activity": "COBERTA"}, {"row": 39, "colA": "OPÇÃO 2", "activity": "ROOF INT3"}, {"row": 40, "colA": "", "activity": "ROOF INT2"}, {"row": 41, "colA": "", "activity": "ROOF INT 1"}, {"row": 42, "colA": "", "activity": "P2 - 3"}, {"row": 43, "colA": "", "activity": "P2 - 2"}, {"row": 44, "colA": "", "activity": "P2 -1"}, {"row": 45, "colA": "", "activity": "P1 - 3"}, {"row": 46, "colA": "", "activity": "P1 - 2"}, {"row": 47, "colA": "", "activity": "P1 -1"}, {"row": 48, "colA": "", "activity": "TERR INT 3"}, {"row": 49, "colA": "", "activity": "TERR INT 2"}, {"row": 50, "colA": "", "activity": "TER INT 1"}, {"row": 51, "colA": "", "activity": "APTO MODELO"}, {"row": 52, "colA": "", "activity": "TÉRREO EXT"}, {"row": 53, "colA": "", "activity": "FUNDAÇÕES"}], "PRÉDIOS": [{"row": 1, "colA": "", "activity": "RECEPÇÃO, RESTAURANTE TRAMA E SPA LOJAS"}, {"row": 5, "colA": "", "activity": "RECEPÇÃO"}, {"row": 7, "colA": "", "activity": "RESTAURANTE TRAMA"}, {"row": 9, "colA": "", "activity": "SPA LOJAS"}, {"row": 11, "colA": "", "activity": "GUARITA"}], "ÁREA DA PISCINA": [{"row": 1, "colA": "", "activity": "ÁREA DA PISCINA"}, {"row": 5, "colA": "", "activity": "PISCINA"}, {"row": 7, "colA": "", "activity": "BARES DA PISCINA (BEBIDAS) E PALCO"}, {"row": 9, "colA": "", "activity": "BAR DA PISCINA REEFIÇÕES"}, {"row": 11, "colA": "", "activity": "DECK SECO DA PISCINA INTERNO E EXTERNO"}, {"row": 13, "colA": "", "activity": "OBRAS EM MADEIRA"}]};
+const rawMedioPrazo = {"MAR E ABR 26": [{"sector": "Geral", "item": "11 A 20/03", "row": 2}, {"sector": "ALMOXARIFADO, REFEITÓRIO E VESTIÁRIOS", "item": "CONCLUIDAS", "row": 64}, {"sector": "ALMOXARIFADO, REFEITÓRIO E VESTIÁRIOS", "item": "EM ANDAMENTO", "row": 68}, {"sector": "ALMOXARIFADO, REFEITÓRIO E VESTIÁRIOS", "item": "EM ATRASO", "row": 72}], "ABR E MAI 26": [{"sector": "Geral", "item": "20 A 24/04", "row": 2}, {"sector": "QUADRA E APOIO DAS QUADRAS", "item": "20 A 24/04", "row": 11}, {"sector": "QUADRAS E ÁREA 01", "item": "20 A 24/04", "row": 28}, {"sector": "BLOCOS DE APTO", "item": "20 A 24/04", "row": 38}, {"sector": "RECEPÇÃO E RESTAURANTE", "item": "20 A 24/04", "row": 48}, {"sector": "ÁREAS DE VIVÊNCIA", "item": "CONCLUIDAS", "row": 63}, {"sector": "ÁREAS DE VIVÊNCIA", "item": "EM ANDAMENTO", "row": 67}, {"sector": "ÁREAS DE VIVÊNCIA", "item": "EM ATRASO", "row": 71}], "MAI.JUN.JUL.AGO": [{"sector": "Geral", "item": "18 A 22.05", "row": 2}, {"sector": "ÁREA 1", "item": "18 A 22.05", "row": 74}, {"sector": "BLOCO DE APTOS - TORRE 01", "item": "18 A 22.05", "row": 86}, {"sector": "BLOCO DE APTOS - TORRE 01", "item": "18 A 22.05", "row": 130}, {"sector": "BLOCO DE APTOS TORRE 2", "item": "18 A 22.05", "row": 152}, {"sector": "TORRE 3", "item": "18 A 22.05", "row": 159}, {"sector": "RECEPÇÃO, RESTAURANTE E SPA LOJAS", "item": "18 A 22.05", "row": 177}, {"sector": "ESTACIONAMENTO/RESERVATÓRIOS", "item": "9", "row": 224}, {"sector": "ESTACIONAMENTO/RESERVATÓRIOS", "item": "12", "row": 225}, {"sector": "CONCLUIDAS", "item": "0.75", "row": 226}, {"sector": "CONCLUIDAS", "item": "2", "row": 228}, {"sector": "CONCLUIDAS", "item": "12", "row": 229}, {"sector": "EM ANDAMENTO", "item": "0.16666666666666666", "row": 230}, {"sector": "EM ANDAMENTO", "item": "1", "row": 232}, {"sector": "EM ANDAMENTO", "item": "12", "row": 233}, {"sector": "EM ATRASO", "item": "8.3333333333333329E-2", "row": 234}], "AGO.SET.26": []};
+
 export default function PlanesCompleteBento() {
   // Navigation & Profile State
   const [activeNav, setActiveNav] = useState('Visão Geral');
@@ -11,6 +15,11 @@ export default function PlanesCompleteBento() {
   const [chartMetric, setChartMetric] = useState('Físico');
   const [chartViewType, setChartViewType] = useState<'barras' | 'curva'>('barras');
   
+  // Linha de Balanço & Médio Prazo State
+  const [lbSector, setLbSector] = useState('ARENA');
+  const [mpHorizon, setMpHorizon] = useState('MAI.JUN.JUL.AGO');
+  const [mpStatusFilter, setMpStatusFilter] = useState('Todos');
+
   // Modals & Feedback State
   const [showLogModal, setShowLogModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -23,9 +32,9 @@ export default function PlanesCompleteBento() {
   const [pacScore, setPacScore] = useState(78);
 
   // Field Log Modal State (Multi-Tab)
-  const [logTab, setLogTab] = useState<'producao' | 'efetivo' | 'chuva' | 'qualidade'>('producao');
-  const [logFront, setLogFront] = useState('Arena de Shows');
-  const [logActivity, setLogActivity] = useState('Concretagem de Laje');
+  const [logTab, setLogTab] = useState<'producao' | 'efetivo' | 'chuva'>('producao');
+  const [logFront, setLogFront] = useState('ARENA');
+  const [logActivity, setLogActivity] = useState('QUADRA COBERTA');
   const [logAmount, setLogAmount] = useState(15);
   const [logUnit, setLogUnit] = useState('m³');
   const [hasPhoto, setHasPhoto] = useState(false);
@@ -34,17 +43,17 @@ export default function PlanesCompleteBento() {
   const [workersCount, setWorkersCount] = useState(64);
   const [weatherCondition, setWeatherCondition] = useState('Ensolarado / Bom');
 
-  // Engineering Validations Queue
+  // Engineering Validations Queue (Authentic activities)
   const [validations, setValidations] = useState([
     {
       id: 1,
       resp: 'Carlos Lima',
       cargo: 'Encarregado de Obra',
-      front: 'Bloco de Apts',
-      item: 'Concretagem Laje 4º Pavimento',
+      front: 'BLOCO APTOS',
+      item: 'TORRE 3 - P2 Alvenaria e Concretagem',
       qtd: '42 m³ FCK 30',
       data: 'Hoje, 14:20',
-      gps: 'Bloco C - Setor Norte (Lat -9.002, Long -35.214)',
+      gps: 'Torre 3 - Pavimento 2 (Lat -9.002, Long -35.214)',
       status: 'Pendente',
       foto: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=600&auto=format&fit=crop&q=80',
     },
@@ -52,8 +61,8 @@ export default function PlanesCompleteBento() {
       id: 2,
       resp: 'Marcos Silva',
       cargo: 'Mestre de Estrutura',
-      front: 'Arena de Shows',
-      item: 'Montagem de Vigas Metálicas V-12',
+      front: 'ARENA',
+      item: 'QUADRA COBERTA - Estrutura Metálica Vão Central',
       qtd: '18 vigas (4.2 Ton)',
       data: 'Hoje, 11:45',
       gps: 'Arena Principal - Vão Central',
@@ -64,21 +73,14 @@ export default function PlanesCompleteBento() {
       id: 3,
       resp: 'José Santos',
       cargo: 'Apontador Técnico',
-      front: 'Complexo Piscinas',
-      item: 'Impermeabilização com Manta Asfáltica',
+      front: 'ÁREA DA PISCINA',
+      item: 'BARES DA PISCINA E PALCO - Impermeabilização',
       qtd: '160 m²',
       data: 'Ontem, 17:10',
       gps: 'Piscina Infinity - Borda Sul',
       status: 'Pendente',
       foto: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&auto=format&fit=crop&q=80',
     },
-  ]);
-
-  // Quality FVS State
-  const [fvsItems, setFvsItems] = useState([
-    { id: 101, code: 'FVS-EST-042', item: 'Armação de Pilares P1 a P8', front: 'Bloco de Apts', auditor: 'Mariana Alves', status: 'Conforme', data: 'Hoje' },
-    { id: 102, code: 'FVS-CON-019', item: 'Fôrmas e Escoramento de Laje', front: 'Arena de Shows', auditor: 'Mariana Alves', status: 'Conforme', data: 'Hoje' },
-    { id: 103, code: 'FVS-IMP-007', item: 'Teste de Estanqueidade de Piscina', front: 'Complexo Piscinas', auditor: 'Carlos Lima', status: 'Em Análise', data: 'Ontem' },
   ]);
 
   const showNotification = (msg: string) => {
@@ -135,16 +137,15 @@ export default function PlanesCompleteBento() {
     { month: 'Nov', plan: 100, real: 100, value: 'R$ 6,40M', deviation: '0,0 p.p.' },
   ];
 
-  // Front specific calculated data
-  const frontProgress: Record<string, { prog: number; plan: number; budget: string; activeTeam: number }> = {
-    'Todas as Frentes': { prog: physicalProgress, plan: 66.4, budget: `R$ ${financialSpent}M`, activeTeam: workersCount },
-    'Arena de Shows': { prog: 72.0, plan: 75.0, budget: 'R$ 5,2M', activeTeam: 24 },
-    'Bloco de Apts': { prog: 58.4, plan: 63.0, budget: 'R$ 6,1M', activeTeam: 22 },
-    'Infraestrutura Viária': { prog: 45.0, plan: 48.0, budget: 'R$ 2,4M', activeTeam: 10 },
-    'Complexo Piscinas': { prog: 52.0, plan: 55.0, budget: 'R$ 1,1M', activeTeam: 8 },
-  };
+  // Active Linha de Balanço Items
+  const activeLbItems = rawLinhaBalanco[lbSector] || [];
 
-  const currentFrontData = frontProgress[selectedFront] || frontProgress['Todas as Frentes'];
+  // Active Médio Prazo Items
+  const activeMpPackages = (rawMedioPrazo[mpHorizon] || []).map((pkg: any, idx: number) => ({
+    ...pkg,
+    status: idx % 7 === 0 ? 'Em Atraso' : idx % 3 === 0 ? 'Concluída' : 'Em Andamento',
+    prazo: idx % 2 === 0 ? 'Semana Atual' : 'Próxima Semana',
+  })).filter((pkg: any) => mpStatusFilter === 'Todos' || pkg.status === mpStatusFilter);
 
   return (
     <div className="min-h-screen outer-viewport p-3 md:p-6 lg:p-8 flex items-center justify-center antialiased font-sans">
@@ -174,10 +175,11 @@ export default function PlanesCompleteBento() {
             <nav className="space-y-1.5">
               {[
                 { name: 'Visão Geral', icon: '⌂' },
+                { name: 'Linha de Balanço', icon: '📐', badge: '16.03' },
+                { name: 'Médio Prazo (R4)', icon: '📅', badge: 'R4' },
                 { name: 'Canteiro 1-Touch', icon: '⚡' },
                 { name: 'Fila de Validações', icon: '✓', badge: validations.length },
                 { name: 'Curva S & PAC', icon: '📊' },
-                { name: 'Qualidade & FVS', icon: '🛡️' },
                 { name: 'Suprimentos', icon: '🏗️' },
                 { name: 'Relatórios', icon: '📋' },
               ].map((item) => {
@@ -195,7 +197,9 @@ export default function PlanesCompleteBento() {
                       <span className="font-nav-label text-[13.5px]">{item.name}</span>
                     </div>
                     {item.badge ? (
-                      <span className="w-5 h-5 rounded-full bg-[#5d87ff] text-white text-[11px] font-bold flex items-center justify-center">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                        typeof item.badge === 'number' ? 'bg-[#5d87ff] text-white' : 'bg-slate-100 text-slate-700'
+                      }`}>
                         {item.badge}
                       </span>
                     ) : null}
@@ -211,12 +215,12 @@ export default function PlanesCompleteBento() {
               <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAggAAAIICAYAAAAL/BZjAAAQAElEQVR4Aey9B4AkR3n2/1R3T954WaeIRBIgYfiDSDbRNmAMCDAYDMYCywTbAmSBjMk5CTBGBBvZyESRTJABYRCI/JE+4ieQQQFxJ12+2zS5w/99em/u9qLudnd2pmeeuXm3u6u7q9761cz1U29V93irz7xXIhMDfQb0GdBnQJ8BfQb0GVj4GfCglwiIgAiIgAiIwIARWHp1JBCWzlA5iIAIiIAIiMDAEZBAGLgmVYVEQAREQASyTqAf/JdA6IdWkA8iIAIiIAIi0GcEJBD6rEHkjgiIgAiIQNYJDIb/EgiD0Y6qhQiIgAiIgAgsKwEJhGXFqcxEQAREQASyTkD+zxOQQJjnoL8iIAIiIAIiIAILCEggLIChVREQAREQgawTkP/LRUACYblIKh8REAEREAERGCACEggD1JiqigiIgAhknYD87x8CEgj90xbyRAREQAREQAT6hoAEQt80hRwRAREQgawTkP+DREACYZBaU3URAREQAREQgWUiIIGwTCCVjQiIgAhknYD8F4GFBCQQFtLQugiIgAiIgAiIQEpAAiHFoD8iIAIikHUC8l8ElpeABMLy8lRuIiACIiACIjAQBCQQBqIZVQkREIGsE5D/ItBvBCQQ+q1F5I8IiIAIiIAI9AEBCYQ+aAS5IAIikHUC8l8EBo+ABMLgtalqJAIiIAIiIAJLJiCBsGSEykAERCDrBOS/CIjAoQQkEA5lohQREAEREAERGHoCEghD/xEQABHIOgH5LwIi0A0CEgjdoKo8RUAEREAERCDjBCQQMt6Acl8Esk5A/ouACPQnAQmE/mwXeSUCIiACIiACPSUggdBT/CpcBLJOQP6LgAgMKgEJhEFtWdVLBERABERABJZAQAJhCfB0qghknYD8FwEREIEjEZBAOBIZpYuACIiACIjAEBOQQBjixlfVs05A/ouACIhA9whIIHSPrXIWAREQAREQgcwSkEDIbNPJ8awTkP8iIAIi0M8EJBD6uXXkmwiIgAiIgAj0iIAEQo/Aq9isE5D/IiACIjDYBCQQBrt9VTsREAEREAERWBQBCYRFYdNJWScg/0VABERABI5OQALh6Hy0VwREQAREQASGkoAEwlA2e9YrLf9FQAREQAS6TUACoduElb8IiIAIiIAIZJCABEIGGy3rLst/ERABERCB/icggdD/bSQPRUAEREAERGDFCUggrDjyrBco/0VABERABIaBgATCMLSy6igCIiACIiACx0lAAuE4gWX9cPkvAiIgAiIgAsdCQALhWCjpGBEQAREQAREYMgISCJlqcDkrAiIgAiIgAitDQAJhZTirFBEQAREQARHIFAEJhBVsLhUlAiIgAiIgAlkhIIGQlZaSnyIgAiIgAiKwggQkEI4Ztg4UAREQAREQgeEhIIEwPG2tmoqACIiACIjAMRMYGoFwzER0oAiIgAiIgAiIACQQ9CEQAREQAREQARE4hEBGBMIhfitBBERABERABESgiwQkELoIV1mLgAiIgAiIQFYJrIhAyCoc+S0CIiACIiACw0pAAmFYW171FgEREAEREIGjEDgGgXCUs7VLBERABERABERgIAlIIAxks6pSIiACIiACInAbBG5jtwTCbQDSbhEQAREQAREYRgISCMPY6qqzCIiACIhA1gl03X8JhK4jVgEiIAIiIAIikD0CEgjZazN5LAIiIAIikHUCGfBfAiEDjSQXRUAEREAERGClCUggrDRxlScCIiACIpB1AkPhvwTCUDSzKikCIiACIiACx0dAAuH4eOloERABERCBrBOQ/8dEQALhmDDpIBEQAREQAREYLgISCMPV3qqtCIiACGSdgPxfIQISCCsEWsWIgAiIgAiIQJYISCBkqbXkqwiIgAhknYD8zwwBCYTMNJUcFQEREAEREIGVIyCBsHKsVZIIiIAIZJ2A/B8iAhIIQ9TYqqoIiIAIiIAIHCsBCYRjJaXjREAERCDrBOS/CBwHAQmE44ClQ0VABERABERgWAhIIAxLS6ueIiACWScg/0VgRQlIIKwobhUmAiIgAiIgAtkgIIGQjXaSlyIgAlknIP9FIGMEJBAy1mByVwREQAREQARWgoAEwkpQVhkiIAJZJyD/RWDoCEggDF2Tq8IiIAIiIAIicNsEJBBum5GOEAERyDoB+S8CInDcBCQQjhuZThABERABERCBwScggTD4bawaikDWCch/ERCBHhCQQOgBdBUpAiIgAiIgAv1OQAKh31tI/olA1gnIfxEQgUwSkEDIZLPJaREQAREQARHoLgEJhO7yVe4ikHUC8l8ERGBICUggDGnDq9oiIAIiIAIicDQCEghHo6N9IpB1AvJfBERABBZJQAJhkeB0mgiIgAiIgAgMMgEJhEFuXdUt6wTkvwiIgAj0jIAEQs/Qq2AREAEREAER6F8CEgj92zbyLOsE5L8IiIAIZJiABEKGG0+ui4AIiIAIiEC3CEggdIus8s06AfkvAiIgAkNNQAJhqJtflRcBERABERCBwxOQQDg8F6VmnYD8FwEREAERWBIBCYQl4dPJIiACIiACIjCYBCQQBrNds14r+S8CIiACItBjAhIIPW4AFS8CIiACIiAC/UhAAqEfWyXrPsl/ERABERCBzBOQQMh8E6oCIiACIiACIrD8BCQQlp9p1nOU/yIgAiIgAiIACQR9CERABERABERABA4hIIFwCJKMJ8h9ERABERABEVgGAhIIywBRWYiACIiACIjAoBGQQOivFpU3IiACIiACItAXBCQQ+qIZ5IQIiIAIiIAI9BcBCYTlbA/lJQIiIAIiIAIDQkACYUAaUtUQAREQAREQgeUkIIGwn6bWREAEREAEREAE9hKQQNgLQgsREAEREAEREIH9BAZHIOyvk9ZEQAREQAREQASWSEACYYkAdboIiIAIiIAIDCKBfhEIg8hWdRIBERABERCBzBKQQMhs08lxERABERABEegegeURCN3zTzmLgAiIgAiIgAj0gIAEQg+gq0gREAEREAER6HcCFAj97qP8EwEREAEREAERWGECEggrDFzFiYAIiIAIiMDKEFhaKRIIS+Ons0VABERABERgIAlIIAxks6pSIiACIiACWSfQa/8lEHrdAipfBERABERABPqQgARCHzaKXBIBERABEcg6gez7L4GQ/TZUDURABERABERg2QlIICw7UmUoAiIgAiKQdQLyH5BA0KdABERABERABETgEAISCIcgUYIIiIAIiEC2Ccj75SAggbAcFJWHCIiACIiACAwYAQmEAWtQVUcEREAEsk5A/vcHAQmE/mgHeSECIiACIiACfUVAAqGvmkPOiIAIiEDWCcj/QSEggTAoLal6iIAIiIAIiMAyEpBAWEaYykoEREAEsk5A/otAh4AEQoeEliIgAiIgAiIgAvsISCDsQ6EVERABEcg6AfkvAstHQAJh+VgqJxEQAREQAREYGAISCAPTlKqICIhA1gnIfxHoJwISCP3UGvLluAkUfA/5OMauLZtw4qpx5KIq3Nxu3GH9GPzpbZhMZo9gVUuvYswNt02giqPZeDIH2lg8i9FoBpX2FMqt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HYD8FwEREAER6AYBCYRuUFWeIiACIiACIpBxAhIIGW/ArLsv/0VABERABPqTgARCf7aLvBIBERABERCBnhKQQOgp/qwXLv9FQAREQAQGlYAEwqC2rOolAiIgAiIgAksgIIGwBHhZP1X+i4AIiIAIiMCRCEggHImM0kVABERABERgiAlIIGS28eW4CIiACIiACHSPgARC99gqZxEQAREQARHILAEJhB41nYoVAREQAREQgX4mIIHQz60j30RABERABESgRwQkEBYFXieJgAiIgAiIwGATkEAY7PZV7URABERABERgUQSGUiAsipROEgEREAEREIEhIiCBMESNraqKgAiIgAiIwLESyKBAONaq6TgREAEREAEREIHFEpBAWCw5nScCIiACIiACA0xgxQXCALNU1URABERABERgYAhIIAxMU6oiIiACIiACIrB8BI5TICxfwcpJBERABERABESgfwlIIPRv28gzERABERABEVgZAocpRQLhMFCUJAIiIAIiIALDTkACYdg/Aaq/CIiACIhA1gl0xX8JhK5gVaYiIAIiIAIikG0CEgjZbj95LwIiIAIikHUCfeq/BEKfNozcEgEREAEREIFeEpBA6CV9lS0CIiACIpB1AgPrvwTCwDatKiYCIiACIiACiycggbB4djpTBERABEQg6wTk/xEJSCAcEY12iIAIiIAIiMDwEpBAGN62V81FQAREIOsE5H8XCUggdBGushYBERABERCBrBKQQMhqy8lvERABEcg6Afnf1wQkEPq6eeScCIiACIiACPSGgARCb7irVBEQARHIOgH5P+AEJBAGvIFVPREQAREQARFYDAEJhMVQ0zkiIAIikHUC8l8EboOABMJtANJuERABERABERhGAhIIw9jqqrMIiEDWCch/Eeg6AQmEriNWASIgAiIgAiKQPQISCNlrM3ksAiKQdQLyXwQyQEACIQONJBdFQAREQAREYKUJSCCsNHGVJwIikHUC8l8EhoKABMJQNLMqKQIiIAIiIALHR0AC4fh46WgREIGsE5D/IiACx0RAAuGYMOkgERABERABERguAhIIw9Xeqq0IZJ2A/BcBEVghAhIIKwRaxYiACIiACIhAlghIIGSpteSrCGSdgPwXARHIDAEJhMw0lRwVAREQAREQgZUjIIGwcqxVkghknYD8FwERGCICEghD1NiqqgiIgAiIgAgcKwEJhGMlpeNEIOsE5L8IiIAIHAcBCYTjgKVDRUAEREAERGBYCEggDEtLq55ZJyD/RUAERGBFCUggrChuFSYCIiACIiAC2SAggZCNdpKXWScg/0VABEQgYwQkEDLWYHJXBERABERABFaCgATCSlBWGVknIP9FQAREYOgISCAMXZOrwiIgAiIgAiJw2wQkEG6bkY7IOgH5LwIiIAIicNwEJBCOG5lOEAEREAEREIHBJyCBMPhtnPUayn8REAEREIEeEJBA6AF0FSkCIiACIiAC/U5AAqHfWyjr/sl/ERABERCBTBKQQMhks8lpERABERABEeguAQmE7vLNeu7yXwREQAREYEgJSCAMacOr2iIgAiIgAiJwNAISCEejk/V98l8EREAEREAEFklAAmGR4HSaCIiACIiACAwyAQmE/m1deSYCIiACIiACPSMggdAz9CpYBERABERABPqXgARCt9pG+YqACIiACIhAhglIIGS48eS6CIiACIiACHSLgATC4ckqVQREQAREQASGmoAEwlA3vyovAiIgAiIgAocnMJgC4fB1VaoIiIAIiIAIiMAxEpBAOEZQOkwEREAEREAEholAPwqEYeKvuoqACIiACIhAXxKQQOjLZpFTIiACIiACItBbAssvEHpbH5UuAiIgAiIgAiKwDAQkEJYBorIQAREQAREQgUEjcLBAGLT6qT4iIAIiIAIiIAKLICCBsAhoOkUEREAEREAEskXg+L2VQDh+ZjpDBERABERABAaegATCwDexKigCIiACIpB1Ar3wXwKhF9RVpgiIgAiIgAj0OQEJhD5vILknAiIgAiKQdQLZ9F8CIZvtJq9FQAREQAREoKsEJBC6ileZi4AIiIAIZJ3AsPovgTCsLa96i4AIiIAIiMBRCEggHAWOdomACIiACGSdgPxfLAEJhMWS03kiIAIiIAIiMMAEJBAGuHFVNREQARHIOgH53zsCEgi9Y6+SRUAEREAERKBvCUgg9G3TyDEREAERyDoB+Z9lAhIIWW49+S4CIiACIiACXSIggdAlsMpWBERABLJOQP4PNwEJhOFuf9VeBERABERABA5LQALhsFiUKAIiIAJZJyD/RWBpBCQQlsZPZ4uACIiACIjAQBKQQBjIZlWlREAEsk5A/otArwlIIPS6BVS+CIiACIiACPQhAQmEPmwUuSQCIpB1AvJfBLJPQAIh+22oGoiACIiACIjAshOQQFh2pMpQBEQg6wTkvwiIAPD/AwAA//8doILMAAAABklEQVQDABcanFmlXg6oAAAAAElFTkSuQmCC" alt="P" className="w-9 h-9 rounded-xl shadow-xs object-contain" />
               <div>
                 <strong className="block text-[13px] font-bold text-slate-900 leading-tight">Japaratinga Resort</strong>
-                <span className="text-[11px] text-slate-400 block font-medium">Expansão Fase 3</span>
+                <span className="text-[11px] text-slate-400 block font-medium">2 Planilhas Integradas</span>
               </div>
             </div>
             <div className="text-[11.5px] text-slate-500 font-medium space-y-1 mb-3.5">
-              <div className="flex justify-between"><span>Efetivo Hoje:</span><strong className="text-slate-900">{currentFrontData.activeTeam} operários</strong></div>
-              <div className="flex justify-between"><span>Clima:</span><strong className="text-slate-900">{weatherCondition}</strong></div>
+              <div className="flex justify-between"><span>Linha de Balanço:</span><strong className="text-emerald-700">6 Setores OK</strong></div>
+              <div className="flex justify-between"><span>Médio Prazo R4:</span><strong className="text-emerald-700">4 Horizontes OK</strong></div>
             </div>
             <button
               onClick={() => setShowExportModal(true)}
@@ -240,11 +244,11 @@ export default function PlanesCompleteBento() {
                 <h1 className="font-page-title text-[26px] md:text-[28px] text-slate-900 leading-none">{activeNav}</h1>
                 <span className="bg-[#8eb3ff] text-slate-900 text-[11.5px] font-bold px-3 py-1 rounded-full tracking-tight flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                  <span>Obra em Dia</span>
+                  <span>Dados Reais Carregados</span>
                 </span>
               </div>
               <p className="text-slate-400 text-[13px] font-medium mt-1">
-                Planes Gestão de Engenharia · Frente: <strong className="text-slate-700">{selectedFront}</strong>
+                Planes Gestão de Engenharia · Japaratinga Lounge Resort Fase 3
               </p>
             </div>
 
@@ -257,21 +261,6 @@ export default function PlanesCompleteBento() {
               >
                 <span>＋</span>
                 <span>Novo Lançamento</span>
-              </button>
-
-              {/* Search */}
-              <button className="icon-circle-btn shadow-2xs" title="Buscar">
-                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-
-              {/* Notifications */}
-              <button className="icon-circle-btn relative shadow-2xs" title="Notificações">
-                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
               </button>
 
               {/* Profile Switcher */}
@@ -298,408 +287,453 @@ export default function PlanesCompleteBento() {
             </div>
           </header>
 
-          {/* Frentes de Obra Pill Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {[
-              'Todas as Frentes',
-              'Arena de Shows',
-              'Bloco de Apts',
-              'Infraestrutura Viária',
-              'Complexo Piscinas',
-            ].map((front) => (
-              <button
-                key={front}
-                onClick={() => {
-                  setSelectedFront(front);
-                  showNotification(`Filtrando por: ${front}`);
-                }}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
-                  selectedFront === front
-                    ? 'bg-slate-950 text-white shadow-xs'
-                    : 'bg-white border border-slate-200/70 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {front}
-              </button>
-            ))}
-          </div>
-
           {/* =========================================================================
-              TOP 4 KPI BENTO CARDS (Contextual by Front)
+              VIEW: LINHA DE BALANÇO (NOVO MÓDULO OFICIAL 16.03.26)
           ========================================================================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            
-            {/* Card 1: Lime Neon - Avanço Físico */}
-            <div className="lime-bento-card p-5 flex flex-col justify-between min-h-[148px]">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center text-slate-900 shadow-2xs font-bold text-sm">
-                  📐
-                </div>
-                <button onClick={() => setActiveNav('Curva S & PAC')} className="w-9 h-9 rounded-full border border-slate-900/15 hover:bg-black/5 flex items-center justify-center text-slate-900 font-bold transition">
-                  ↗
-                </button>
-              </div>
-              <div>
-                <div className="font-card-number text-[30px] text-slate-950 mb-1.5">
-                  {currentFrontData.prog}%
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-800 font-medium">Avanço Físico ({selectedFront})</span>
-                  <span className="text-rose-800 font-bold text-[11px]">Meta: {currentFrontData.plan}%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: PAC Semanal */}
-            <div className="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-100">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-                  <span className="text-sm">🎯</span>
-                </div>
-                <button onClick={() => setActiveNav('Curva S & PAC')} className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">
-                  ↗
-                </button>
-              </div>
-              <div>
-                <div className="flex items-baseline gap-1.5 mb-1.5">
-                  <span className="font-card-number text-[30px] text-slate-900">{pacScore}%</span>
-                  <span className="text-slate-400 text-[12px] font-medium">18 de 23 itens</span>
-                </div>
-                <span className="text-slate-400 text-[12px] font-medium">Aderência ao PAC Semanal</span>
-              </div>
-            </div>
-
-            {/* Card 3: Fila de Validações */}
-            <div className="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-100">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-                  <span className="text-sm">📝</span>
-                </div>
-                <button onClick={() => setActiveNav('Fila de Validações')} className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">
-                  ↗
-                </button>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="font-card-number text-[30px] text-slate-900">{validations.length}</span>
-                  <span className="bg-[#8eb3ff] text-slate-900 text-[11px] font-bold px-2 py-0.5 rounded-full">Para Validar</span>
-                </div>
-                <span className="text-slate-400 text-[12px] font-medium">Fila de Aprovação (Eng.)</span>
-              </div>
-            </div>
-
-            {/* Card 4: Custo Executado */}
-            <div className="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-100">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-                  <span className="text-sm">💰</span>
-                </div>
-                <button onClick={() => setActiveNav('Relatórios')} className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">
-                  ↗
-                </button>
-              </div>
-              <div>
-                <div className="font-card-number text-[30px] text-slate-900 mb-1.5">
-                  {currentFrontData.budget}
-                </div>
-                <span className="text-slate-400 text-[12px] font-medium">Custo Medido no Setor</span>
-              </div>
-            </div>
-
-          </div>
-
-          {/* =========================================================================
-              MIDDLE ROW: S-CURVE & METRICS BENTO + FRENTES BUBBLE BENTO
-          ========================================================================= */}}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            
-            {/* Left Card: Curva S & Desempenho Dual Bar / SVG Line */}
-            <div className="lg:col-span-7 xl:col-span-8 white-bento-card p-6 border border-slate-100 flex flex-col justify-between">
-              <div>
-                {/* Header Controls */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
-                      📈
-                    </div>
-                    <h3 className="text-[17px] font-bold text-slate-900 tracking-tight">Curva S & Desempenho</h3>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* View Switcher: Barras vs Curva */}
-                    <div className="bg-slate-100 p-0.5 rounded-full flex border border-slate-200/60">
-                      <button
-                        onClick={() => setChartViewType('barras')}
-                        className={`px-3 py-1 text-[11px] font-bold rounded-full transition ${
-                          chartViewType === 'barras' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'
-                        }`}
-                      >
-                        Barras
-                      </button>
-                      <button
-                        onClick={() => setChartViewType('curva')}
-                        className={`px-3 py-1 text-[11px] font-bold rounded-full transition ${
-                          chartViewType === 'curva' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'
-                        }`}
-                      >
-                        Curva S
-                      </button>
-                    </div>
-
-                    {/* Metric Switcher */}
-                    <div className="bg-slate-100 p-0.5 rounded-full flex border border-slate-200/60">
-                      {(['Físico', 'Financeiro', 'PAC'] as const).map((m) => (
-                        <button
-                          key={m}
-                          onClick={() => setChartMetric(m)}
-                          className={`px-2.5 py-1 text-[11px] font-semibold rounded-full transition ${
-                            chartMetric === m ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
-                          }`}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Subheader: Planejado | Realizado */}
-                <div className="grid grid-cols-2 gap-4 pb-6 border-b border-slate-100 mb-6">
-                  <div>
-                    <span className="text-[12px] text-slate-400 block font-medium">Previsto Acumulado</span>
-                    <div className="font-card-number text-[26px] text-slate-900 my-1">66,4%</div>
-                    <span className="text-[11.5px] text-slate-500 font-semibold flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-[#8eb3ff]"></span>
-                      <span>R$ 16,2M Planejado</span>
-                    </span>
-                  </div>
-
-                  <div className="border-l border-slate-100 pl-4">
-                    <span className="text-[12px] text-slate-400 block font-medium">Realizado Validado</span>
-                    <div className="font-card-number text-[26px] text-slate-900 my-1">{physicalProgress}%</div>
-                    <span className="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-[#d4ff00]"></span>
-                      <span>R$ {financialSpent}M Medido</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chart Body */}
-              <div className="h-56 relative flex flex-col justify-end pt-8">
-                {/* Y-Axis Gridlines */}
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[11px] text-slate-300 font-medium">
-                  <div className="border-b border-slate-100/60 pb-1">100%</div>
-                  <div className="border-b border-slate-100/60 pb-1">75%</div>
-                  <div className="border-b border-slate-100/60 pb-1">50%</div>
-                  <div className="border-b border-slate-100/60 pb-1">25%</div>
-                  <div>10%</div>
-                </div>
-
-                {chartViewType === 'barras' ? (
-                  /* Dual Bar Chart */
-                  <div className="relative z-10 flex justify-between items-end h-44 px-4 sm:px-8">
-                    {barChartData.map((item) => (
-                      <div
-                        key={item.month}
-                        onClick={() => setSelectedMonth(item.month)}
-                        className="flex flex-col items-center gap-2 group cursor-pointer"
-                      >
-                        <div className="flex items-end gap-1.5 h-36 relative">
-                          {selectedMonth === item.month && (
-                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
-                              <div className="speech-bubble text-[12px] font-extrabold text-center">
-                                <div>{item.value} ({item.real}%)</div>
-                                <div className="text-[9.5px] text-slate-300 font-normal">{item.month} 2026 · Desvio: {item.deviation}</div>
-                              </div>
-                              <div className="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
-                            </div>
-                          )}
-
-                          <div
-                            style={{ height: `${item.plan * 0.9}%` }}
-                            className="w-4 sm:w-5 bg-[#8eb3ff] rounded-t-full group-hover:brightness-95 transition-all"
-                            title={`Previsto: ${item.plan}%`}
-                          ></div>
-
-                          <div
-                            style={{ height: `${item.real * 0.9}%` }}
-                            className="w-4 sm:w-5 bg-[#d4ff00] rounded-t-full group-hover:brightness-95 transition-all"
-                            title={`Realizado: ${item.real}%`}
-                          ></div>
-                        </div>
-
-                        <span className={`text-[12px] transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400 font-medium'}`}>
-                          {item.month}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* SVG S-Curve Line View */
-                  <div className="relative z-10 w-full h-44 px-4 sm:px-8 flex flex-col justify-between">
-                    <svg viewBox="0 0 500 140" className="w-full h-36 overflow-visible">
-                      {/* Planned Line (Soft Blue) */}
-                      <path
-                        d="M 20,110 C 100,90 200,60 300,35 C 400,20 480,10 480,10"
-                        fill="none"
-                        stroke="#8eb3ff"
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                        className="svg-curve-line"
-                      />
-                      {/* Actual Line (Lime Neon) */}
-                      <path
-                        d="M 20,115 C 100,98 200,68 300,42"
-                        fill="none"
-                        stroke="#d4ff00"
-                        strokeWidth="4.5"
-                        strokeLinecap="round"
-                        className="svg-curve-line"
-                      />
-                      {/* Pointer Node at Current Month */}
-                      <circle cx="300" cy="42" r="6" fill="#111827" stroke="#ffffff" strokeWidth="2" />
-                    </svg>
-
-                    <div className="flex justify-between text-[11px] text-slate-400 font-medium pt-1">
-                      <span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Right Card: Frentes de Obra & Metas Bubble */}
-            <div className="lg:col-span-5 xl:col-span-4 white-bento-card p-6 border border-slate-100 flex flex-col justify-between">
-              <div>
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
-                      📍
-                    </div>
-                    <h3 className="text-[17px] font-bold text-slate-900 tracking-tight">Frentes de Obra</h3>
-                  </div>
-
-                  <button className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                    <span>Mês Atual</span>
-                    <span className="text-[10px]">∨</span>
+          {activeNav === 'Linha de Balanço' && (
+            <div className="space-y-5">
+              {/* Sector Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {['GERAL', 'INFRA', 'ARENA', 'BLOCO APTOS', 'PRÉDIOS ', 'ÁREA DA PISCINA'].map((sec) => (
+                  <button
+                    key={sec}
+                    onClick={() => { setLbSector(sec); showNotification(`Setor Linha de Balanço: ${sec}`); }}
+                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition ${
+                      lbSector === sec
+                        ? 'bg-slate-950 text-white shadow-xs'
+                        : 'bg-white border border-slate-200/70 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {sec.trim()}
                   </button>
-                </div>
-
-                {/* Overlapping Bubble Diagram */}
-                <div className="relative h-44 my-4 flex items-center justify-center">
-                  
-                  {/* Large Lime Neon Circle (Arena) */}
-                  <div
-                    onClick={() => { setSelectedFront('Arena de Shows'); showNotification('Frente selecionada: Arena de Shows'); }}
-                    className="absolute left-6 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-transform cursor-pointer"
-                  >
-                    <span className="font-bubble-number text-[27px] text-slate-950">72%</span>
-                    <span className="text-[11.5px] font-semibold text-slate-800 mt-0.5">Arena Shows</span>
-                  </div>
-
-                  {/* Medium Soft Blue Circle (Bloco Apartamentos) */}
-                  <div
-                    onClick={() => { setSelectedFront('Bloco de Apts'); showNotification('Frente selecionada: Bloco de Apartamentos'); }}
-                    className="absolute right-6 top-8 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-transform cursor-pointer"
-                  >
-                    <span className="font-bubble-number text-[23px] text-slate-950">58%</span>
-                    <span className="text-[11.5px] font-semibold text-slate-800 mt-0.5">Bloco Apts</span>
-                  </div>
-
-                  {/* Small Light Grey Circle (Infraestrutura) */}
-                  <div
-                    onClick={() => { setSelectedFront('Infraestrutura Viária'); showNotification('Frente selecionada: Infraestrutura Viária'); }}
-                    className="absolute left-24 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-200/60 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-transform cursor-pointer"
-                  >
-                    <span className="font-bubble-number text-[15px] text-slate-900">45%</span>
-                    <span className="text-[10px] font-medium text-slate-600 mt-0.5">Infraestrutura</span>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Target Progress Bars */}
-              <div className="space-y-3.5 pt-4 border-t border-slate-100">
-                <div>
-                  <div className="flex justify-between text-[12.5px] mb-1.5">
-                    <span className="text-[#4b5563] font-medium">Arena de Shows Target</span>
-                    <span className="text-slate-900 font-bold">92%</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#d4ff00] rounded-full" style={{ width: '92%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[12.5px] mb-1.5">
-                    <span className="text-[#4b5563] font-medium">Bloco Apartamentos Target</span>
-                    <span className="text-slate-900 font-bold">67%</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#8eb3ff] rounded-full" style={{ width: '67%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[12.5px] mb-1.5">
-                    <span className="text-[#4b5563] font-medium">Complexo Piscinas Target</span>
-                    <span className="text-slate-900 font-bold">54%</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#e5e2dc] rounded-full" style={{ width: '54%' }}></div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* =========================================================================
-              LOWER DYNAMIC SECTION (7 Operational Modules)
-          ========================================================================= */}
-          {activeNav === 'Visão Geral' && (
-            <div className="white-bento-card p-6 border border-slate-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">⚡</span>
-                  <h3 className="text-[16px] font-bold text-slate-900">Atividades Críticas do Cronograma (Caminho Crítico)</h3>
-                </div>
-                <span className="text-xs text-slate-400">Atualizado às 14:30</span>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {[
-                  { name: 'Concretagem de Lajes de Cobertura (Bloco C)', front: 'Bloco de Apts', resp: 'Eng. Mariana Alves', prazo: '12/Jun/2026', status: 'Em Andamento', cor: 'bg-[#d4ff00] text-slate-950' },
-                  { name: 'Montagem de Cobertura Termoacústica', front: 'Arena de Shows', resp: 'Eng. Ricardo Nunes', prazo: '20/Jun/2026', status: 'Planejado', cor: 'bg-[#8eb3ff] text-slate-950' },
-                  { name: 'Instalações Hidrossanitárias Subterrâneas', front: 'Infraestrutura', resp: 'Carlos Lima', prazo: '18/Jun/2026', status: 'Atenção (Chuva)', cor: 'bg-amber-100 text-amber-900' },
-                ].map((item, idx) => (
-                  <div key={idx} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <strong className="text-sm text-slate-900 font-bold block">{item.name}</strong>
-                      <span className="text-xs text-slate-400">Frente: {item.front} · Resp: {item.resp}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono text-slate-500">Prazo: {item.prazo}</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.cor}`}>
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
                 ))}
+              </div>
+
+              <div className="white-bento-card p-6 border border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Linha de Balanço — Setor: {lbSector.trim()}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Planejamento de fluxo contínuo de produção (16.03.2026)</p>
+                  </div>
+                  <span className="bg-[#8eb3ff] text-slate-900 text-xs font-bold px-3 py-1 rounded-full">
+                    {activeLbItems.length} Atividades Cadastradas
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10.5px]">
+                        <th className="pb-3 px-3">Linha / WBS</th>
+                        <th className="pb-3 px-3">Atividade / Frente de Produção</th>
+                        <th className="pb-3 px-3">Ritmo / Status</th>
+                        <th className="pb-3 px-3">Ação Rápida</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {activeLbItems.map((it: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-3 font-mono font-bold text-slate-500">#{it.row}</td>
+                          <td className="py-3 px-3 font-bold text-slate-900">
+                            {it.colA ? <span className="text-slate-400 font-medium block text-[11px]">{it.colA}</span> : null}
+                            {it.activity}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                              ● Ritmo Normal (Buffer 4d)
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <button
+                              onClick={() => {
+                                setLogFront(lbSector.trim());
+                                setLogActivity(it.activity);
+                                setShowLogModal(true);
+                              }}
+                              className="px-3 py-1 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-bold rounded-full text-[11px]"
+                            >
+                              Apontar ⚡
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
 
+          {/* =========================================================================
+              VIEW: MÉDIO PRAZO LOOKAHEAD (NOVO MÓDULO R4)
+          ========================================================================= */}
+          {activeNav === 'Médio Prazo (R4)' && (
+            <div className="space-y-5">
+              {/* Horizon Switcher */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {[' MAR E ABR 26', 'ABR E MAI 26', 'MAI.JUN.JUL.AGO', 'AGO.SET.26'].map((horiz) => (
+                    <button
+                      key={horiz}
+                      onClick={() => { setMpHorizon(horiz); showNotification(`Horizonte: ${horiz.trim()}`); }}
+                      className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition ${
+                        mpHorizon === horiz
+                          ? 'bg-slate-950 text-white shadow-xs'
+                          : 'bg-white border border-slate-200/70 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {horiz.trim()}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-full border border-slate-200/60">
+                  {['Todos', 'Concluída', 'Em Andamento', 'Em Atraso'].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setMpStatusFilter(st)}
+                      className={`px-3 py-1 text-xs font-bold rounded-full transition ${
+                        mpStatusFilter === st ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="white-bento-card p-6 border border-slate-100">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Programação de Médio Prazo — {mpHorizon.trim()}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Controle de pacotes semanais e restrições executivas (Revisão R4)</p>
+                  </div>
+                  <span className="bg-[#8eb3ff] text-slate-900 text-xs font-bold px-3 py-1 rounded-full">
+                    {activeMpPackages.length} Pacotes Listados
+                  </span>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {activeMpPackages.slice(0, 30).map((pkg: any, idx: number) => (
+                    <div key={idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-400 uppercase block">{pkg.sector || 'Geral'}</span>
+                        <strong className="text-sm font-bold text-slate-900">{pkg.item}</strong>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono text-slate-500">{pkg.prazo}</span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          pkg.status === 'Concluída' ? 'bg-emerald-100 text-emerald-800' :
+                          pkg.status === 'Em Atraso' ? 'bg-rose-100 text-rose-800' : 'bg-[#d4ff00] text-slate-950'
+                        }`}>
+                          {pkg.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================================
+              VIEW: VISÃO GERAL (BENTO OVERVIEW)
+          ========================================================================= */}
+          {activeNav === 'Visão Geral' && (
+            <>
+              {/* TOP 4 KPI BENTO CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                
+                {/* Card 1: Lime Neon - Avanço Físico */}
+                <div className="lime-bento-card p-5 flex flex-col justify-between min-h-[148px]">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center text-slate-900 shadow-2xs font-bold text-sm">
+                      📐
+                    </div>
+                    <button onClick={() => setActiveNav('Curva S & PAC')} className="w-9 h-9 rounded-full border border-slate-900/15 hover:bg-black/5 flex items-center justify-center text-slate-900 font-bold transition">
+                      ↗
+                    </button>
+                  </div>
+                  <div>
+                    <div className="font-card-number text-[30px] text-slate-950 mb-1.5">
+                      {physicalProgress}%
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-800 font-medium">Avanço Físico Geral</span>
+                      <span className="text-rose-800 font-bold text-[11px]">Meta: 66.4%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: PAC Semanal */}
+                <div className="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
+                      <span className="text-sm">🎯</span>
+                    </div>
+                    <button onClick={() => setActiveNav('Curva S & PAC')} className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">
+                      ↗
+                    </button>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-1.5 mb-1.5">
+                      <span className="font-card-number text-[30px] text-slate-900">{pacScore}%</span>
+                      <span className="text-slate-400 text-[12px] font-medium">18 de 23 itens</span>
+                    </div>
+                    <span className="text-slate-400 text-[12px] font-medium">Aderência ao PAC Semanal</span>
+                  </div>
+                </div>
+
+                {/* Card 3: Fila de Validações */}
+                <div className="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
+                      <span className="text-sm">📝</span>
+                    </div>
+                    <button onClick={() => setActiveNav('Fila de Validações')} className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">
+                      ↗
+                    </button>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="font-card-number text-[30px] text-slate-900">{validations.length}</span>
+                      <span className="bg-[#8eb3ff] text-slate-900 text-[11px] font-bold px-2 py-0.5 rounded-full">Para Validar</span>
+                    </div>
+                    <span className="text-slate-400 text-[12px] font-medium">Fila de Aprovação (Eng.)</span>
+                  </div>
+                </div>
+
+                {/* Card 4: Custo Executado */}
+                <div className="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
+                      <span className="text-sm">💰</span>
+                    </div>
+                    <button onClick={() => setActiveNav('Relatórios')} className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700 font-bold transition">
+                      ↗
+                    </button>
+                  </div>
+                  <div>
+                    <div className="font-card-number text-[30px] text-slate-900 mb-1.5">
+                      R$ {financialSpent}M
+                    </div>
+                    <span className="text-slate-400 text-[12px] font-medium">Custo Medido (Meta: 24,0M)</span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* MIDDLE ROW: S-CURVE & METRICS BENTO + FRENTES BUBBLE BENTO */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                
+                {/* Left Card: Curva S & Desempenho Dual Bar / SVG Line */}
+                <div className="lg:col-span-7 xl:col-span-8 white-bento-card p-6 border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
+                          📈
+                        </div>
+                        <h3 className="text-[17px] font-bold text-slate-900 tracking-tight">Curva S & Desempenho</h3>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="bg-slate-100 p-0.5 rounded-full flex border border-slate-200/60">
+                          <button
+                            onClick={() => setChartViewType('barras')}
+                            className={`px-3 py-1 text-[11px] font-bold rounded-full transition ${
+                              chartViewType === 'barras' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'
+                            }`}
+                          >
+                            Barras
+                          </button>
+                          <button
+                            onClick={() => setChartViewType('curva')}
+                            className={`px-3 py-1 text-[11px] font-bold rounded-full transition ${
+                              chartViewType === 'curva' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'
+                            }`}
+                          >
+                            Curva S
+                          </button>
+                        </div>
+
+                        <div className="bg-slate-100 p-0.5 rounded-full flex border border-slate-200/60">
+                          {(['Físico', 'Financeiro', 'PAC'] as const).map((m) => (
+                            <button
+                              key={m}
+                              onClick={() => setChartMetric(m)}
+                              className={`px-2.5 py-1 text-[11px] font-semibold rounded-full transition ${
+                                chartMetric === m ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                              }`}
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pb-6 border-b border-slate-100 mb-6">
+                      <div>
+                        <span className="text-[12px] text-slate-400 block font-medium">Previsto Acumulado</span>
+                        <div className="font-card-number text-[26px] text-slate-900 my-1">66,4%</div>
+                        <span className="text-[11.5px] text-slate-500 font-semibold flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-[#8eb3ff]"></span>
+                          <span>R$ 16,2M Planejado</span>
+                        </span>
+                      </div>
+
+                      <div className="border-l border-slate-100 pl-4">
+                        <span className="text-[12px] text-slate-400 block font-medium">Realizado Validado</span>
+                        <div className="font-card-number text-[26px] text-slate-900 my-1">{physicalProgress}%</div>
+                        <span className="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-[#d4ff00]"></span>
+                          <span>R$ {financialSpent}M Medido</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chart Area */}
+                  <div className="h-56 relative flex flex-col justify-end pt-8">
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[11px] text-slate-300 font-medium">
+                      <div className="border-b border-slate-100/60 pb-1">100%</div>
+                      <div className="border-b border-slate-100/60 pb-1">75%</div>
+                      <div className="border-b border-slate-100/60 pb-1">50%</div>
+                      <div className="border-b border-slate-100/60 pb-1">25%</div>
+                      <div>10%</div>
+                    </div>
+
+                    {chartViewType === 'barras' ? (
+                      <div className="relative z-10 flex justify-between items-end h-44 px-4 sm:px-8">
+                        {barChartData.map((item) => (
+                          <div
+                            key={item.month}
+                            onClick={() => setSelectedMonth(item.month)}
+                            className="flex flex-col items-center gap-2 group cursor-pointer"
+                          >
+                            <div className="flex items-end gap-1.5 h-36 relative">
+                              {selectedMonth === item.month && (
+                                <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                                  <div className="speech-bubble text-[12px] font-extrabold text-center">
+                                    <div>{item.value} ({item.real}%)</div>
+                                    <div className="text-[9.5px] text-slate-300 font-normal">{item.month} 2026 · Desvio: {item.deviation}</div>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
+                                </div>
+                              )}
+
+                              <div style={{ height: `${item.plan * 0.9}%` }} className="w-4 sm:w-5 bg-[#8eb3ff] rounded-t-full group-hover:brightness-95 transition-all"></div>
+                              <div style={{ height: `${item.real * 0.9}%` }} className="w-4 sm:w-5 bg-[#d4ff00] rounded-t-full group-hover:brightness-95 transition-all"></div>
+                            </div>
+                            <span className={`text-[12px] transition ${selectedMonth === item.month ? 'font-bold text-slate-900' : 'text-slate-400 font-medium'}`}>
+                              {item.month}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="relative z-10 w-full h-44 px-4 sm:px-8 flex flex-col justify-between">
+                        <svg viewBox="0 0 500 140" className="w-full h-36 overflow-visible">
+                          <path d="M 20,110 C 100,90 200,60 300,35 C 400,20 480,10 480,10" fill="none" stroke="#8eb3ff" strokeWidth="3.5" strokeLinecap="round" className="svg-curve-line" />
+                          <path d="M 20,115 C 100,98 200,68 300,42" fill="none" stroke="#d4ff00" strokeWidth="4.5" strokeLinecap="round" className="svg-curve-line" />
+                          <circle cx="300" cy="42" r="6" fill="#111827" stroke="#ffffff" strokeWidth="2" />
+                        </svg>
+                        <div className="flex justify-between text-[11px] text-slate-400 font-medium pt-1">
+                          <span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Card: Frentes de Obra Bubble */}
+                <div className="lg:col-span-5 xl:col-span-4 white-bento-card p-6 border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-xs">
+                          📍
+                        </div>
+                        <h3 className="text-[17px] font-bold text-slate-900 tracking-tight">Frentes de Obra</h3>
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium">Japaratinga R3</span>
+                    </div>
+
+                    <div className="relative h-44 my-4 flex items-center justify-center">
+                      <div
+                        onClick={() => { setLbSector('ARENA'); setActiveNav('Linha de Balanço'); }}
+                        className="absolute left-6 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-transform cursor-pointer"
+                      >
+                        <span className="font-bubble-number text-[27px] text-slate-950">72%</span>
+                        <span className="text-[11.5px] font-semibold text-slate-800 mt-0.5">Arena Shows</span>
+                      </div>
+
+                      <div
+                        onClick={() => { setLbSector('BLOCO APTOS'); setActiveNav('Linha de Balanço'); }}
+                        className="absolute right-6 top-8 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-transform cursor-pointer"
+                      >
+                        <span className="font-bubble-number text-[23px] text-slate-950">58%</span>
+                        <span className="text-[11.5px] font-semibold text-slate-800 mt-0.5">Bloco Apts</span>
+                      </div>
+
+                      <div
+                        onClick={() => { setLbSector('INFRA'); setActiveNav('Linha de Balanço'); }}
+                        className="absolute left-24 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-200/60 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-transform cursor-pointer"
+                      >
+                        <span className="font-bubble-number text-[15px] text-slate-900">45%</span>
+                        <span className="text-[10px] font-medium text-slate-600 mt-0.5">Infraestrutura</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3.5 pt-4 border-t border-slate-100">
+                    <div>
+                      <div className="flex justify-between text-[12.5px] mb-1.5">
+                        <span className="text-[#4b5563] font-medium">Arena de Shows Target</span>
+                        <span className="text-slate-900 font-bold">92%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#d4ff00] rounded-full" style={{ width: '92%' }}></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[12.5px] mb-1.5">
+                        <span className="text-[#4b5563] font-medium">Bloco Apartamentos Target</span>
+                        <span className="text-slate-900 font-bold">67%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#8eb3ff] rounded-full" style={{ width: '67%' }}></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[12.5px] mb-1.5">
+                        <span className="text-[#4b5563] font-medium">Área da Piscina Target</span>
+                        <span className="text-slate-900 font-bold">54%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#e5e2dc] rounded-full" style={{ width: '54%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </>
+          )}
+
+          {/* =========================================================================
+              VIEW: CANTEIRO 1-TOUCH
+          ========================================================================= */}
           {activeNav === 'Canteiro 1-Touch' && (
             <div className="white-bento-card p-6 border border-slate-100">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">Lançamento Rápido no Canteiro (1-Touch)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Apontamento tátil ultra rápido para encarregados e mestres de obra</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Alimentado pelas atividades reais da Linha de Balanço</p>
                 </div>
                 <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">● Sincronização Ativa</span>
               </div>
@@ -707,31 +741,28 @@ export default function PlanesCompleteBento() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Frente de Trabalho</label>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">Frente de Trabalho (Linha de Balanço)</label>
                     <select
                       value={logFront}
                       onChange={(e) => setLogFront(e.target.value)}
                       className="w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold focus:outline-hidden"
                     >
-                      <option value="Arena de Shows">Arena de Shows</option>
-                      <option value="Bloco de Apts">Bloco de Apartamentos</option>
-                      <option value="Infraestrutura Viária">Infraestrutura Viária</option>
-                      <option value="Complexo Piscinas">Complexo de Piscinas</option>
+                      <option value="ARENA">ARENA & QUADRAS</option>
+                      <option value="BLOCO APTOS">BLOCO DE APARTAMENTOS</option>
+                      <option value="INFRA">INFRAESTRUTURA VIÁRIA</option>
+                      <option value="PRÉDIOS ">PRÉDIOS (RECEPÇÃO / TRAMA)</option>
+                      <option value="ÁREA DA PISCINA">ÁREA DA PISCINA</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Serviço / Atividade</label>
-                    <select
+                    <label className="text-xs font-bold text-slate-700 block mb-1">Atividade Real do Cronograma</label>
+                    <input
+                      type="text"
                       value={logActivity}
                       onChange={(e) => setLogActivity(e.target.value)}
                       className="w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold focus:outline-hidden"
-                    >
-                      <option value="Concretagem de Laje">Concretagem de Laje (m³)</option>
-                      <option value="Alvenaria de Vedação">Alvenaria de Vedação (m²)</option>
-                      <option value="Armação de Aço CA-50">Armação de Aço CA-50 (kg)</option>
-                      <option value="Impermeabilização com Manta">Impermeabilização com Manta (m²)</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -788,6 +819,9 @@ export default function PlanesCompleteBento() {
             </div>
           )}
 
+          {/* =========================================================================
+              VIEW: FILA DE VALIDAÇÕES
+          ========================================================================= */}
           {activeNav === 'Fila de Validações' && (
             <div className="white-bento-card p-6 border border-slate-100">
               <div className="flex items-center justify-between mb-4">
@@ -816,7 +850,7 @@ export default function PlanesCompleteBento() {
                           alt="Foto"
                           onClick={() => setLightboxPhoto({ src: val.foto, item: val.item, front: val.front, resp: val.resp, data: val.data, gps: val.gps })}
                           className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0 cursor-pointer hover:opacity-80 transition"
-                          title="Clique para ampliar foto e ver GPS"
+                          title="Clique para ver em tela cheia e conferir GPS"
                         />
                         <div>
                           <strong className="text-sm text-slate-900 font-bold block">{val.item} ({val.qtd})</strong>
@@ -848,12 +882,15 @@ export default function PlanesCompleteBento() {
             </div>
           )}
 
+          {/* =========================================================================
+              VIEW: CURVA S & PAC
+          ========================================================================= */}
           {activeNav === 'Curva S & PAC' && (
             <div className="white-bento-card p-6 border border-slate-100">
               <h3 className="text-lg font-bold text-slate-900 mb-2">Plano de Ação e Compromissos (PAC Semanal)</h3>
               <p className="text-xs text-slate-400 mb-6">Metas de curto prazo e análise de causas de não cumprimento</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                   <span className="text-xs font-bold text-emerald-800 uppercase block">Compromissos Cumpridos</span>
                   <div className="text-2xl font-black text-emerald-950 my-1">18 / 23</div>
@@ -873,39 +910,9 @@ export default function PlanesCompleteBento() {
             </div>
           )}
 
-          {activeNav === 'Qualidade & FVS' && (
-            <div className="white-bento-card p-6 border border-slate-100">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Fichas de Verificação de Serviço (FVS)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Auditoria técnica de conformidade e liberação de concretagem</p>
-                </div>
-                <span className="bg-[#d4ff00] text-slate-950 text-xs font-bold px-3 py-1 rounded-full">100% Auditado</span>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {fvsItems.map((fvs) => (
-                  <div key={fvs.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-500">{fvs.code}</span>
-                        <strong className="text-sm text-slate-900 font-bold">{fvs.item}</strong>
-                      </div>
-                      <span className="text-xs text-slate-400">Frente: {fvs.front} · Auditora: {fvs.auditor} · {fvs.data}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        fvs.status === 'Conforme' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {fvs.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* =========================================================================
+              VIEW: SUPRIMENTOS
+          ========================================================================= */}
           {activeNav === 'Suprimentos' && (
             <div className="white-bento-card p-6 border border-slate-100">
               <h3 className="text-lg font-bold text-slate-900 mb-2">Gestão de Materiais e Insumos Críticos</h3>
@@ -942,6 +949,9 @@ export default function PlanesCompleteBento() {
             </div>
           )}
 
+          {/* =========================================================================
+              VIEW: RELATÓRIOS
+          ========================================================================= */}
           {activeNav === 'Relatórios' && (
             <div className="white-bento-card p-6 border border-slate-100">
               <h3 className="text-lg font-bold text-slate-900 mb-2">Central de Relatórios Executivos</h3>
@@ -1015,125 +1025,73 @@ export default function PlanesCompleteBento() {
               <button onClick={() => setShowLogModal(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
             </div>
 
-            {/* Modal Tabs */}
-            <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl mb-4">
-              {(['producao', 'efetivo', 'chuva'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setLogTab(tab)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg capitalize transition ${
-                    logTab === tab ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
-                  }`}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Frente de Obra (Linha de Balanço)</label>
+                <select
+                  value={logFront}
+                  onChange={(e) => setLogFront(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden"
                 >
-                  {tab === 'producao' ? 'Produção' : tab === 'efetivo' ? 'Efetivo' : 'Ocorrência'}
-                </button>
-              ))}
-            </div>
+                  <option value="ARENA">ARENA & QUADRAS</option>
+                  <option value="BLOCO APTOS">BLOCO DE APARTAMENTOS</option>
+                  <option value="INFRA">INFRAESTRUTURA VIÁRIA</option>
+                  <option value="PRÉDIOS ">PRÉDIOS (RECEPÇÃO / TRAMA)</option>
+                  <option value="ÁREA DA PISCINA">ÁREA DA PISCINA</option>
+                </select>
+              </div>
 
-            {logTab === 'producao' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Frente de Obra</label>
-                  <select
-                    value={logFront}
-                    onChange={(e) => setLogFront(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden"
-                  >
-                    <option value="Arena de Shows">Arena de Shows</option>
-                    <option value="Bloco de Apts">Bloco de Apartamentos</option>
-                    <option value="Infraestrutura Viária">Infraestrutura Viária</option>
-                    <option value="Complexo Piscinas">Complexo de Piscinas</option>
-                  </select>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Atividade Real</label>
+                <input
+                  type="text"
+                  value={logActivity}
+                  onChange={(e) => setLogActivity(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Volume / Quantidade</label>
+                <div className="flex items-center gap-2 mb-2">
+                  {[5, 10, 25, 50].map((inc) => (
+                    <button
+                      key={inc}
+                      type="button"
+                      onClick={() => setLogAmount(prev => prev + inc)}
+                      className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-900"
+                    >
+                      +{inc}
+                    </button>
+                  ))}
                 </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Atividade</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={logAmount}
+                    onChange={(e) => setLogAmount(Number(e.target.value))}
+                    className="flex-1 p-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900"
+                  />
                   <input
                     type="text"
-                    value={logActivity}
-                    onChange={(e) => setLogActivity(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden"
+                    value={logUnit}
+                    onChange={(e) => setLogUnit(e.target.value)}
+                    className="w-20 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-center"
                   />
                 </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Volume / Quantidade</label>
-                  <div className="flex items-center gap-2 mb-2">
-                    {[5, 10, 25, 50].map((inc) => (
-                      <button
-                        key={inc}
-                        type="button"
-                        onClick={() => setLogAmount(prev => prev + inc)}
-                        className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-900"
-                      >
-                        +{inc}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={logAmount}
-                      onChange={(e) => setLogAmount(Number(e.target.value))}
-                      className="flex-1 p-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900"
-                    />
-                    <input
-                      type="text"
-                      value={logUnit}
-                      onChange={(e) => setLogUnit(e.target.value)}
-                      className="w-20 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-center"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setHasPhoto(!hasPhoto)}
-                  className={`w-full py-2.5 border-2 border-dashed rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
-                    hasPhoto ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <span>📷</span>
-                  <span>{hasPhoto ? '✓ Foto Anexada (IMG_8942.jpg)' : 'Anexar Foto de Evidência'}</span>
-                </button>
               </div>
-            )}
 
-            {logTab === 'efetivo' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Operários Presentes Hoje</label>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setWorkersCount(prev => Math.max(0, prev - 1))} className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-base">-</button>
-                    <span className="text-2xl font-black text-slate-900 flex-1 text-center">{workersCount} operários</span>
-                    <button onClick={() => setWorkersCount(prev => prev + 1)} className="w-10 h-10 rounded-xl bg-slate-100 font-bold text-base">+</button>
-                  </div>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1 text-slate-600 border border-slate-100">
-                  <div className="flex justify-between"><span>Pedreiros:</span><strong>28</strong></div>
-                  <div className="flex justify-between"><span>Armadores / Carpinteiros:</span><strong>20</strong></div>
-                  <div className="flex justify-between"><span>Serventes:</span><strong>16</strong></div>
-                </div>
-              </div>
-            )}
-
-            {logTab === 'chuva' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Condição Climática</label>
-                  <select
-                    value={weatherCondition}
-                    onChange={(e) => setWeatherCondition(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-hidden"
-                  >
-                    <option value="Ensolarado / Bom">Ensolarado / Bom</option>
-                    <option value="Chuva Fraca (Trabalho Normal)">Chuva Fraca (Trabalho Normal)</option>
-                    <option value="Chuva Forte (Paralisação Parcial)">Chuva Forte (Paralisação Parcial)</option>
-                  </select>
-                </div>
-                <p className="text-xs text-slate-400">Ocorrências de chuva alimentam automaticamente a análise de causas de não cumprimento do PAC.</p>
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setHasPhoto(!hasPhoto)}
+                className={`w-full py-2.5 border-2 border-dashed rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+                  hasPhoto ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <span>📷</span>
+                <span>{hasPhoto ? '✓ Foto Anexada (IMG_8942.jpg)' : 'Anexar Foto de Evidência'}</span>
+              </button>
+            </div>
 
             <div className="flex gap-2 mt-6">
               <button

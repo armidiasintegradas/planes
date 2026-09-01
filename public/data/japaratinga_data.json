@@ -1,0 +1,885 @@
+{
+  "linha_balanco": {
+    "GERAL": [
+      {
+        "row": 1,
+        "colA": "",
+        "activity": "PLANEJAMENTO JAPARATINGA LOUNGE RESORT - EXPANSÃO 3"
+      },
+      {
+        "row": 2,
+        "colA": "ARENA",
+        "activity": "ARENA"
+      },
+      {
+        "row": 7,
+        "colA": "",
+        "activity": "QUADRA COBERTA"
+      },
+      {
+        "row": 9,
+        "colA": "",
+        "activity": "QUADRA TENIS  1"
+      },
+      {
+        "row": 10,
+        "colA": "",
+        "activity": "QUADRA TENIS  2"
+      },
+      {
+        "row": 11,
+        "colA": "",
+        "activity": "QUADRA BT 1"
+      },
+      {
+        "row": 12,
+        "colA": "",
+        "activity": "QUADRA BT 2"
+      },
+      {
+        "row": 13,
+        "colA": "",
+        "activity": "QUADRA BT 3"
+      },
+      {
+        "row": 14,
+        "colA": "",
+        "activity": "QUADRA BT 4"
+      },
+      {
+        "row": 15,
+        "colA": "",
+        "activity": "CERCA"
+      },
+      {
+        "row": 16,
+        "colA": "",
+        "activity": "PASSSEOS E PRAÇA"
+      },
+      {
+        "row": 17,
+        "colA": "",
+        "activity": "BLOCO APARTAMENTOS"
+      },
+      {
+        "row": 21,
+        "colA": "",
+        "activity": "ELEVADORES"
+      },
+      {
+        "row": 22,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 23,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 24,
+        "colA": "ETAPA 3",
+        "activity": "ROOFTOP"
+      },
+      {
+        "row": 25,
+        "colA": "",
+        "activity": "P2"
+      },
+      {
+        "row": 26,
+        "colA": "",
+        "activity": "P1"
+      },
+      {
+        "row": 27,
+        "colA": "",
+        "activity": "TERREO INT"
+      },
+      {
+        "row": 28,
+        "colA": "",
+        "activity": "TERREO EXT"
+      },
+      {
+        "row": 30,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 31,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 32,
+        "colA": "ETAPA 2",
+        "activity": "ROOFTOP"
+      },
+      {
+        "row": 33,
+        "colA": "",
+        "activity": "P2"
+      },
+      {
+        "row": 34,
+        "colA": "",
+        "activity": "P1"
+      },
+      {
+        "row": 35,
+        "colA": "",
+        "activity": "TERREO INT"
+      },
+      {
+        "row": 36,
+        "colA": "",
+        "activity": "TÉRREO EXT"
+      },
+      {
+        "row": 38,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 39,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 40,
+        "colA": "ETAPA 1",
+        "activity": "ROOFTOP INTERNO"
+      },
+      {
+        "row": 41,
+        "colA": "",
+        "activity": "P2"
+      },
+      {
+        "row": 42,
+        "colA": "",
+        "activity": "P1"
+      },
+      {
+        "row": 43,
+        "colA": "",
+        "activity": "TERREO INT"
+      },
+      {
+        "row": 44,
+        "colA": "",
+        "activity": "TÉRREO EXT"
+      },
+      {
+        "row": 45,
+        "colA": "",
+        "activity": "FUNDAÇÕES"
+      },
+      {
+        "row": 46,
+        "colA": "",
+        "activity": "RECEPÇÃO, RESTAURANTE TRAMA, SPA LOJAS E GUARITA"
+      },
+      {
+        "row": 50,
+        "colA": "",
+        "activity": "RECEPÇÃO"
+      },
+      {
+        "row": 52,
+        "colA": "",
+        "activity": "RESTAURANTE TRAMA"
+      },
+      {
+        "row": 54,
+        "colA": "",
+        "activity": "SPA LOJAS"
+      },
+      {
+        "row": 56,
+        "colA": "",
+        "activity": "GUARITA"
+      },
+      {
+        "row": 58,
+        "colA": "ÁREA DA PISCINA",
+        "activity": "ÁREA DA PISCINA"
+      },
+      {
+        "row": 62,
+        "colA": "",
+        "activity": "PISCINA"
+      },
+      {
+        "row": 64,
+        "colA": "",
+        "activity": "BARES DA PISCINA (BEBIDAS) E PALCO"
+      },
+      {
+        "row": 66,
+        "colA": "",
+        "activity": "BAR DA PISCINA REEFIÇÕES"
+      },
+      {
+        "row": 68,
+        "colA": "INFRA",
+        "activity": "BLOCO APARTAMENTOS"
+      },
+      {
+        "row": 72,
+        "colA": "",
+        "activity": "INFRA DE ÁGUA"
+      },
+      {
+        "row": 73,
+        "colA": "",
+        "activity": "DRENAGEM"
+      },
+      {
+        "row": 74,
+        "colA": "",
+        "activity": "INFRA ELETRICA"
+      },
+      {
+        "row": 75,
+        "colA": "",
+        "activity": "INFRA DE INENDIO"
+      },
+      {
+        "row": 76,
+        "colA": "",
+        "activity": "INFRA CFTV"
+      },
+      {
+        "row": 77,
+        "colA": "",
+        "activity": "INFRA DE ESGOTO"
+      },
+      {
+        "row": 78,
+        "colA": "",
+        "activity": "INFRA DE ÁGUA GELADA PARA REFRIGERAÇÃO"
+      },
+      {
+        "row": 79,
+        "colA": "",
+        "activity": "RESERVATÓRIO ÁGUA REUSO E INCENDIO"
+      },
+      {
+        "row": 80,
+        "colA": "",
+        "activity": "SUBSTAÇÃO"
+      },
+      {
+        "row": 81,
+        "colA": "",
+        "activity": "CASAS DE MÁQUINA"
+      },
+      {
+        "row": 82,
+        "colA": "",
+        "activity": "PISO EM MADEIRA ECOLÓGICA"
+      },
+      {
+        "row": 83,
+        "colA": "",
+        "activity": "ESPELHOS D ÁGUA DOS JARDINS"
+      },
+      {
+        "row": 84,
+        "colA": "",
+        "activity": "PERGOLADO E PASSARELA DE ACESSO DA RECEPÇÃO AO BLOCO ATUAL"
+      },
+      {
+        "row": 85,
+        "colA": "",
+        "activity": "COBERTA DE ESTACIONAMENTO"
+      },
+      {
+        "row": 86,
+        "colA": "",
+        "activity": "PAVIMENTAÇÃO COM INTERTRAVADO"
+      },
+      {
+        "row": 87,
+        "colA": "",
+        "activity": "PASSEIOS"
+      },
+      {
+        "row": 88,
+        "colA": "",
+        "activity": "COBOGRAMA"
+      },
+      {
+        "row": 89,
+        "colA": "",
+        "activity": "GRADIL"
+      }
+    ],
+    "INFRA": [
+      {
+        "row": 1,
+        "colA": "",
+        "activity": "BLOCO APARTAMENTOS"
+      },
+      {
+        "row": 5,
+        "colA": "INFRA",
+        "activity": "INFRA DE ÁGUA"
+      },
+      {
+        "row": 6,
+        "colA": "",
+        "activity": "DRENAGEM"
+      },
+      {
+        "row": 7,
+        "colA": "",
+        "activity": "INFRA ELETRICA"
+      },
+      {
+        "row": 8,
+        "colA": "",
+        "activity": "INFRA DE INENDIO"
+      },
+      {
+        "row": 9,
+        "colA": "",
+        "activity": "INFRA CFTV"
+      },
+      {
+        "row": 10,
+        "colA": "",
+        "activity": "INFRA DE ESGOTO"
+      },
+      {
+        "row": 11,
+        "colA": "",
+        "activity": "INFRA DE ÁGUA GELADA PARA REFRIGERAÇÃO"
+      },
+      {
+        "row": 12,
+        "colA": "",
+        "activity": "RESERVATÓRIO ÁGUA REUSO E INCENDIO"
+      },
+      {
+        "row": 13,
+        "colA": "",
+        "activity": "SUBSTAÇÃO"
+      },
+      {
+        "row": 14,
+        "colA": "",
+        "activity": "CASAS DE MÁQUINA"
+      },
+      {
+        "row": 15,
+        "colA": "",
+        "activity": "PISO EM MADEIRA ECOLÓGICA"
+      },
+      {
+        "row": 16,
+        "colA": "",
+        "activity": "ESPELHOS D ÁGUA DOS JARDINS"
+      },
+      {
+        "row": 17,
+        "colA": "",
+        "activity": "PERGOLADO E PASSARELA DE ACESSO DA RECEPÇÃO AO BLOCO ATUAL"
+      },
+      {
+        "row": 18,
+        "colA": "",
+        "activity": "COBERTA DE ESTACIONAMENTO"
+      },
+      {
+        "row": 19,
+        "colA": "",
+        "activity": "PAVIMENTAÇÃO COM INTERTRAVADO"
+      },
+      {
+        "row": 20,
+        "colA": "",
+        "activity": "PASSEIOS"
+      },
+      {
+        "row": 21,
+        "colA": "",
+        "activity": "COBOGRAMA"
+      },
+      {
+        "row": 22,
+        "colA": "",
+        "activity": "GRADIL"
+      }
+    ],
+    "ARENA": [
+      {
+        "row": 6,
+        "colA": "",
+        "activity": "QUADRA COBERTA"
+      },
+      {
+        "row": 8,
+        "colA": "",
+        "activity": "QUADRA TENIS  1"
+      },
+      {
+        "row": 9,
+        "colA": "",
+        "activity": "QUADRA TENIS  2"
+      },
+      {
+        "row": 10,
+        "colA": "",
+        "activity": "QUADRA BT 1"
+      },
+      {
+        "row": 11,
+        "colA": "",
+        "activity": "QUADRA BT 2"
+      },
+      {
+        "row": 12,
+        "colA": "",
+        "activity": "QUADRA BT 3"
+      },
+      {
+        "row": 13,
+        "colA": "",
+        "activity": "QUADRA BT 4"
+      },
+      {
+        "row": 14,
+        "colA": "",
+        "activity": "CERCA"
+      },
+      {
+        "row": 15,
+        "colA": "",
+        "activity": "PASSSEOS E PRAÇA"
+      }
+    ],
+    "BLOCO APTOS": [
+      {
+        "row": 5,
+        "colA": "",
+        "activity": "FACHADA"
+      },
+      {
+        "row": 6,
+        "colA": "",
+        "activity": "ELEVADORES"
+      },
+      {
+        "row": 7,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 8,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 9,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 10,
+        "colA": "TORRE 3",
+        "activity": "ROOFTOP"
+      },
+      {
+        "row": 11,
+        "colA": "",
+        "activity": "P2"
+      },
+      {
+        "row": 12,
+        "colA": "",
+        "activity": "P1"
+      },
+      {
+        "row": 13,
+        "colA": "",
+        "activity": "TERREO INT"
+      },
+      {
+        "row": 14,
+        "colA": "",
+        "activity": "TERREO EXT"
+      },
+      {
+        "row": 16,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 17,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 18,
+        "colA": "TORRE 2",
+        "activity": "ROOFTOP"
+      },
+      {
+        "row": 19,
+        "colA": "",
+        "activity": "P2"
+      },
+      {
+        "row": 20,
+        "colA": "",
+        "activity": "P1"
+      },
+      {
+        "row": 21,
+        "colA": "",
+        "activity": "TERREO INT"
+      },
+      {
+        "row": 22,
+        "colA": "",
+        "activity": "TÉRREO EXT"
+      },
+      {
+        "row": 24,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 25,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 26,
+        "colA": "TORRE 1",
+        "activity": "ROOFTOP INTERNO"
+      },
+      {
+        "row": 27,
+        "colA": "",
+        "activity": "P2"
+      },
+      {
+        "row": 28,
+        "colA": "",
+        "activity": "P1"
+      },
+      {
+        "row": 29,
+        "colA": "",
+        "activity": "TERREO INT"
+      },
+      {
+        "row": 30,
+        "colA": "",
+        "activity": "TÉRREO EXT"
+      },
+      {
+        "row": 31,
+        "colA": "",
+        "activity": "FUNDAÇÕES"
+      },
+      {
+        "row": 37,
+        "colA": "",
+        "activity": "ROOFTOP EXTERNO"
+      },
+      {
+        "row": 38,
+        "colA": "",
+        "activity": "COBERTA"
+      },
+      {
+        "row": 39,
+        "colA": "OPÇÃO 2",
+        "activity": "ROOF INT3"
+      },
+      {
+        "row": 40,
+        "colA": "",
+        "activity": "ROOF INT2"
+      },
+      {
+        "row": 41,
+        "colA": "",
+        "activity": "ROOF INT 1"
+      },
+      {
+        "row": 42,
+        "colA": "",
+        "activity": "P2 - 3"
+      },
+      {
+        "row": 43,
+        "colA": "",
+        "activity": "P2 - 2"
+      },
+      {
+        "row": 44,
+        "colA": "",
+        "activity": "P2 -1"
+      },
+      {
+        "row": 45,
+        "colA": "",
+        "activity": "P1 - 3"
+      },
+      {
+        "row": 46,
+        "colA": "",
+        "activity": "P1 - 2"
+      },
+      {
+        "row": 47,
+        "colA": "",
+        "activity": "P1 -1"
+      },
+      {
+        "row": 48,
+        "colA": "",
+        "activity": "TERR INT 3"
+      },
+      {
+        "row": 49,
+        "colA": "",
+        "activity": "TERR INT 2"
+      },
+      {
+        "row": 50,
+        "colA": "",
+        "activity": "TER INT 1"
+      },
+      {
+        "row": 51,
+        "colA": "",
+        "activity": "APTO MODELO"
+      },
+      {
+        "row": 52,
+        "colA": "",
+        "activity": "TÉRREO EXT"
+      },
+      {
+        "row": 53,
+        "colA": "",
+        "activity": "FUNDAÇÕES"
+      }
+    ],
+    "PRÉDIOS": [
+      {
+        "row": 1,
+        "colA": "",
+        "activity": "RECEPÇÃO, RESTAURANTE TRAMA E SPA LOJAS"
+      },
+      {
+        "row": 5,
+        "colA": "",
+        "activity": "RECEPÇÃO"
+      },
+      {
+        "row": 7,
+        "colA": "",
+        "activity": "RESTAURANTE TRAMA"
+      },
+      {
+        "row": 9,
+        "colA": "",
+        "activity": "SPA LOJAS"
+      },
+      {
+        "row": 11,
+        "colA": "",
+        "activity": "GUARITA"
+      }
+    ],
+    "ÁREA DA PISCINA": [
+      {
+        "row": 1,
+        "colA": "",
+        "activity": "ÁREA DA PISCINA"
+      },
+      {
+        "row": 5,
+        "colA": "",
+        "activity": "PISCINA"
+      },
+      {
+        "row": 7,
+        "colA": "",
+        "activity": "BARES DA PISCINA (BEBIDAS) E PALCO"
+      },
+      {
+        "row": 9,
+        "colA": "",
+        "activity": "BAR DA PISCINA REEFIÇÕES"
+      },
+      {
+        "row": 11,
+        "colA": "",
+        "activity": "DECK SECO DA PISCINA INTERNO E EXTERNO"
+      },
+      {
+        "row": 13,
+        "colA": "",
+        "activity": "OBRAS EM MADEIRA"
+      }
+    ]
+  },
+  "medio_prazo": {
+    "MAR E ABR 26": [
+      {
+        "sector": "Geral",
+        "item": "11 A 20/03",
+        "row": 2
+      },
+      {
+        "sector": "ALMOXARIFADO, REFEITÓRIO E VESTIÁRIOS",
+        "item": "CONCLUIDAS",
+        "row": 64
+      },
+      {
+        "sector": "ALMOXARIFADO, REFEITÓRIO E VESTIÁRIOS",
+        "item": "EM ANDAMENTO",
+        "row": 68
+      },
+      {
+        "sector": "ALMOXARIFADO, REFEITÓRIO E VESTIÁRIOS",
+        "item": "EM ATRASO",
+        "row": 72
+      }
+    ],
+    "ABR E MAI 26": [
+      {
+        "sector": "Geral",
+        "item": "20 A 24/04",
+        "row": 2
+      },
+      {
+        "sector": "QUADRA E APOIO DAS QUADRAS",
+        "item": "20 A 24/04",
+        "row": 11
+      },
+      {
+        "sector": "QUADRAS E ÁREA 01",
+        "item": "20 A 24/04",
+        "row": 28
+      },
+      {
+        "sector": "BLOCOS DE APTO",
+        "item": "20 A 24/04",
+        "row": 38
+      },
+      {
+        "sector": "RECEPÇÃO E RESTAURANTE",
+        "item": "20 A 24/04",
+        "row": 48
+      },
+      {
+        "sector": "ÁREAS DE VIVÊNCIA",
+        "item": "CONCLUIDAS",
+        "row": 63
+      },
+      {
+        "sector": "ÁREAS DE VIVÊNCIA",
+        "item": "EM ANDAMENTO",
+        "row": 67
+      },
+      {
+        "sector": "ÁREAS DE VIVÊNCIA",
+        "item": "EM ATRASO",
+        "row": 71
+      }
+    ],
+    "MAI.JUN.JUL.AGO": [
+      {
+        "sector": "Geral",
+        "item": "18 A 22.05",
+        "row": 2
+      },
+      {
+        "sector": "ÁREA 1",
+        "item": "18 A 22.05",
+        "row": 74
+      },
+      {
+        "sector": "BLOCO DE APTOS - TORRE 01",
+        "item": "18 A 22.05",
+        "row": 86
+      },
+      {
+        "sector": "BLOCO DE APTOS - TORRE 01",
+        "item": "18 A 22.05",
+        "row": 130
+      },
+      {
+        "sector": "BLOCO DE APTOS TORRE 2",
+        "item": "18 A 22.05",
+        "row": 152
+      },
+      {
+        "sector": "TORRE 3",
+        "item": "18 A 22.05",
+        "row": 159
+      },
+      {
+        "sector": "RECEPÇÃO, RESTAURANTE E SPA LOJAS",
+        "item": "18 A 22.05",
+        "row": 177
+      },
+      {
+        "sector": "ESTACIONAMENTO/RESERVATÓRIOS",
+        "item": "9",
+        "row": 224
+      },
+      {
+        "sector": "ESTACIONAMENTO/RESERVATÓRIOS",
+        "item": "12",
+        "row": 225
+      },
+      {
+        "sector": "CONCLUIDAS",
+        "item": "0.75",
+        "row": 226
+      },
+      {
+        "sector": "CONCLUIDAS",
+        "item": "2",
+        "row": 228
+      },
+      {
+        "sector": "CONCLUIDAS",
+        "item": "12",
+        "row": 229
+      },
+      {
+        "sector": "EM ANDAMENTO",
+        "item": "0.16666666666666666",
+        "row": 230
+      },
+      {
+        "sector": "EM ANDAMENTO",
+        "item": "1",
+        "row": 232
+      },
+      {
+        "sector": "EM ANDAMENTO",
+        "item": "12",
+        "row": 233
+      },
+      {
+        "sector": "EM ATRASO",
+        "item": "8.3333333333333329E-2",
+        "row": 234
+      }
+    ],
+    "AGO.SET.26": []
+  }
+}
