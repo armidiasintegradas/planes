@@ -1,17 +1,19 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap');
 
 :root {
-  --navy-deep: #061822;
-  --navy: #0b202a;
-  --navy-surface: #0f2b38;
+  --navy-deep: #051620;
+  --navy: #09202c;
+  --navy-surface: #0e2b3b;
   --navy-light: #163d50;
   --blue: #0c6a91;
   --cyan: #38bdf8;
+  --cyan-glow: rgba(56, 189, 248, 0.4);
   --gold: #f59e0b;
   --gold-light: #fef3c7;
   --paper: #f8fafc;
   --surface: #ffffff;
-  --ink: #0f172a;
+  --ink: #0b1924;
   --ink-secondary: #475569;
   --muted: #64748b;
   --line: #e2e8f0;
@@ -27,57 +29,113 @@ html, body {
   min-height: 100%;
   background: var(--paper);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glass & Bento Surfaces */
-.bento-card {
+.font-editorial {
+  font-family: "Newsreader", Georgia, serif;
+}
+
+/* Editorial Bento Surfaces */
+.editorial-card {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 1.25rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
 }
-.bento-card:hover {
-  box-shadow: 0 10px 25px -5px rgba(11, 32, 42, 0.06), 0 8px 10px -6px rgba(11, 32, 42, 0.04);
-  border-color: var(--line-strong);
+.editorial-card:hover {
+  box-shadow: 0 12px 30px -8px rgba(9, 32, 44, 0.07), 0 4px 12px -4px rgba(9, 32, 44, 0.03);
+  border-color: #cbd5e1;
 }
 
-.bento-dark {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-surface) 100%);
+.editorial-dark {
+  background: linear-gradient(145deg, #051620 0%, #09202c 60%, #0e2b3b 100%);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.25rem;
-  box-shadow: 0 12px 30px -10px rgba(6, 24, 34, 0.35);
+  box-shadow: 0 16px 36px -12px rgba(5, 22, 32, 0.4);
 }
 
-/* Chart SVGs */
-.gridline { stroke: #f1f5f9; stroke-width: 1; fill: none; }
-.planned-curve { stroke: #94a3b8; stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; }
-.actual-curve { stroke: var(--cyan); stroke-width: 3.5; fill: none; filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.4)); }
-.balance-flow-1 { stroke: var(--blue); stroke-width: 3; fill: none; }
-.balance-flow-2 { stroke: var(--cyan); stroke-width: 3; fill: none; }
-.balance-flow-real { stroke: var(--red); stroke-width: 2.5; stroke-dasharray: 6 4; fill: none; }
-
-/* Pulse & Live indicators */
-@keyframes pulseGlow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.15); }
-}
-.live-pulse {
-  animation: pulseGlow 2.5s infinite ease-in-out;
+/* Editorial Chart Lines & Shaders */
+.chart-gridline {
+  stroke: #f1f5f9;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
 }
 
-/* Typography refinements */
-.display-number {
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  letter-spacing: -0.04em;
-  font-weight: 700;
+.chart-baseline-curve {
+  stroke: #94a3b8;
+  stroke-width: 2.2;
+  stroke-dasharray: 6 5;
+  fill: none;
 }
+
+.chart-actual-curve {
+  stroke: #38bdf8;
+  stroke-width: 3.5;
+  fill: none;
+  filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.45));
+}
+
+.chart-area-fill {
+  fill: url(#curveGradient);
+  opacity: 0.85;
+}
+
+/* Gauge Animation */
+.gauge-circle-bg {
+  stroke: #e2e8f0;
+  stroke-width: 8;
+  fill: none;
+}
+.gauge-circle-progress {
+  stroke: #10b981;
+  stroke-width: 8;
+  stroke-linecap: round;
+  fill: none;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+/* Micro-interactions & animations */
+@keyframes fadeInSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-editorial-entry {
+  animation: fadeInSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .eyebrow {
   font-size: 0.65rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.display-stat {
+  font-family: "Inter Tight", -apple-system, sans-serif;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tooltip-editorial {
+  position: absolute;
+  pointer-events: none;
+  background: #09202c;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 30;
+  transition: opacity 0.2s, transform 0.2s;
 }
