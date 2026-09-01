@@ -7,7 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700,800&f[]=satoshi@400,500,700,800,900&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-outer: #e6ebf0;
@@ -24,10 +25,11 @@
       min-height: 100vh;
       background: radial-gradient(circle at 10% 20%, #f7f9fb 0%, #e5eaf0 90%);
       color: var(--text-dark);
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'General Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
+      font-feature-settings: 'cv01' on, 'ss01' on, 'calt' on, 'kern' on;
     }
     .dashboard-main-frame {
       background: #f4f6f9;
@@ -35,21 +37,34 @@
       box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.7);
       border-radius: 2rem;
     }
-    .stat-display-number {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+    .font-brand-logo {
+      font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .font-page-title {
+      font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+    }
+    .font-card-number {
+      font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
       font-weight: 800;
       letter-spacing: -0.045em;
-      line-height: 1;
+      line-height: 0.95;
+      font-feature-settings: 'tnum' on, 'zero' on;
     }
-    .display-title {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700;
-      letter-spacing: -0.025em;
+    .font-nav-label {
+      font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600;
+      letter-spacing: -0.015em;
     }
-    .brand-logo-text {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+    .font-bubble-number {
+      font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
       font-weight: 800;
-      letter-spacing: 0.12em;
+      letter-spacing: -0.04em;
+      line-height: 0.9;
     }
     .white-bento-card {
       background: #ffffff;
@@ -111,7 +126,6 @@
       background: #ffffff;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
       color: #111827;
-      font-weight: 600;
     }
     .nav-pill-inactive { color: #6b7280; }
     .nav-pill-inactive:hover { color: #111827; background: rgba(255, 255, 255, 0.5); }
@@ -182,12 +196,12 @@
             <div>
               <!-- Logo -->
               <div class="flex items-center gap-3 px-3 py-2 mb-8">
-                <div class="w-8 h-8 rounded-full border-2 border-slate-900 flex items-center justify-center font-bold text-slate-900 text-sm">
+                <div class="w-8 h-8 rounded-full border-[2.2px] border-slate-900 flex items-center justify-center font-bold text-slate-900 text-sm">
                   <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
                   </svg>
                 </div>
-                <span class="brand-logo-text text-[15px] text-slate-900">INFLUENCY</span>
+                <span class="font-brand-logo text-[15px] text-slate-900">INFLUENCY</span>
               </div>
 
               <!-- Nav Items -->
@@ -202,11 +216,11 @@
                 ].map(item => `
                   <button
                     onclick="setNav('${item.name}')"
-                    class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] transition text-left ${activeNav === item.name ? 'nav-pill-active' : 'nav-pill-inactive'}"
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] transition text-left ${activeNav === item.name ? 'nav-pill-active font-semibold' : 'nav-pill-inactive font-medium'}"
                   >
                     <div class="flex items-center gap-3.5">
                       <span class="text-base text-slate-400 w-5 text-center">${item.icon}</span>
-                      <span class="font-semibold text-[13.5px]">${item.name}</span>
+                      <span class="font-nav-label text-[13.5px]">${item.name}</span>
                     </div>
                     ${item.badge ? `<span class="w-5 h-5 rounded-full bg-[#5d87ff] text-white text-[11px] font-bold flex items-center justify-center">${item.badge}</span>` : ''}
                   </button>
@@ -219,11 +233,11 @@
               <div class="w-10 h-10 rounded-full bg-[#d4ff00] flex items-center justify-center text-slate-900 font-bold mb-3.5 shadow-2xs">
                 <span class="text-base">👑</span>
               </div>
-              <h4 class="font-bold text-slate-900 text-[14px] tracking-tight mb-1">Upgrade to Pro</h4>
+              <h4 class="font-bold text-slate-900 text-[14.5px] tracking-tight mb-1">Upgrade to Pro</h4>
               <p class="text-slate-400 text-[12px] font-medium leading-relaxed mb-4">Discover the benefits of an upgraded account</p>
               <button
                 onclick="openUpgradeModal()"
-                class="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-[12px] font-semibold rounded-full transition shadow-xs"
+                class="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white text-[12.5px] font-semibold rounded-full transition shadow-xs"
               >
                 Upgrade $10
               </button>
@@ -237,7 +251,7 @@
             <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div class="flex items-center gap-3">
-                  <h1 class="display-title text-[28px] text-slate-900 leading-none">Donators</h1>
+                  <h1 class="font-page-title text-[28px] text-slate-900 leading-none">Donators</h1>
                   <span class="bg-[#8eb3ff] text-slate-900 text-[12px] font-bold px-3 py-1 rounded-full tracking-tight">2 New</span>
                 </div>
                 <p class="text-slate-400 text-[13px] font-medium mt-1">See all your donators information here</p>
@@ -247,13 +261,13 @@
               <div class="flex items-center gap-3">
                 <button class="icon-circle-btn shadow-2xs" title="Search">
                   <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </button>
 
                 <button class="icon-circle-btn relative shadow-2xs" title="Notifications">
                   <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
                 </button>
@@ -263,7 +277,7 @@
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Andrew Johnson" class="w-full h-full object-cover" />
                   </div>
                   <div class="text-left hidden sm:block">
-                    <span class="text-[10.5px] text-slate-400 block leading-tight font-medium">Welcome back</span>
+                    <span class="text-[10px] text-slate-400 block leading-tight font-medium">Welcome back</span>
                     <strong class="text-[12.5px] text-slate-900 block font-bold leading-tight">Andrew Johnson</strong>
                   </div>
                   <span class="text-[10px] text-slate-400 ml-0.5">∨</span>
@@ -285,7 +299,7 @@
                   </button>
                 </div>
                 <div>
-                  <div class="stat-display-number text-[30px] text-slate-950 mb-1">
+                  <div class="font-card-number text-[30px] text-slate-950 mb-1.5">
                     $740.89
                   </div>
                   <span class="text-slate-800 text-[12px] font-medium">In this month</span>
@@ -303,8 +317,8 @@
                   </button>
                 </div>
                 <div>
-                  <div class="flex items-baseline gap-1.5 mb-1">
-                    <span class="stat-display-number text-[30px] text-slate-900">80%</span>
+                  <div class="flex items-baseline gap-1.5 mb-1.5">
+                    <span class="font-card-number text-[30px] text-slate-900">80%</span>
                     <span class="text-slate-400 text-[12.5px] font-medium">$800 of $1000</span>
                   </div>
                   <span class="text-slate-400 text-[12px] font-medium">Active Donation Goals</span>
@@ -322,8 +336,8 @@
                   </button>
                 </div>
                 <div>
-                  <div class="flex items-center gap-1.5 mb-1">
-                    <span class="stat-display-number text-[30px] text-slate-900">38</span>
+                  <div class="flex items-center gap-1.5 mb-1.5">
+                    <span class="font-card-number text-[30px] text-slate-900">38</span>
                     <span class="bg-[#8eb3ff] text-slate-900 text-[11px] font-bold px-2 py-0.5 rounded-full">+8</span>
                   </div>
                   <span class="text-slate-400 text-[12px] font-medium">In this month</span>
@@ -341,7 +355,7 @@
                   </button>
                 </div>
                 <div>
-                  <div class="stat-display-number text-[30px] text-slate-900 mb-1">
+                  <div class="font-card-number text-[30px] text-slate-900 mb-1.5">
                     $8,234.19
                   </div>
                   <span class="text-slate-400 text-[12px] font-medium">For all time</span>
@@ -381,7 +395,7 @@
                   <div class="grid grid-cols-2 gap-4 pb-6 border-b border-slate-100 mb-6">
                     <div>
                       <span class="text-[12px] text-slate-400 block font-medium">Income</span>
-                      <div class="stat-display-number text-[26px] text-slate-900 my-1">$150.09</div>
+                      <div class="font-card-number text-[26px] text-slate-900 my-1">$150.09</div>
                       <span class="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                         <span>↗ 4,1%</span>
                         <span class="text-slate-400 font-normal">vs 143,938 Last Year</span>
@@ -390,7 +404,7 @@
 
                     <div class="border-l border-slate-100 pl-4">
                       <span class="text-[12px] text-slate-400 block font-medium">Spend</span>
-                      <div class="stat-display-number text-[26px] text-slate-900 my-1">$90.23</div>
+                      <div class="font-card-number text-[26px] text-slate-900 my-1">$90.23</div>
                       <span class="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
                         <span>↗ 2%</span>
                         <span class="text-slate-400 font-normal">vs 82,203 Last Year</span>
@@ -453,17 +467,17 @@
 
                   <div class="relative h-44 my-4 flex items-center justify-center">
                     <div class="absolute left-6 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-transform">
-                      <span class="text-[27px] font-black tracking-[-0.04em] leading-none">2,3k</span>
+                      <span class="font-bubble-number text-[27px] text-slate-950">2,3k</span>
                       <span class="text-[11.5px] font-semibold text-slate-800 mt-0.5">Individual</span>
                     </div>
 
                     <div class="absolute right-6 top-8 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-transform">
-                      <span class="text-[23px] font-black tracking-[-0.035em] leading-none">1,2k</span>
+                      <span class="font-bubble-number text-[23px] text-slate-950">1,2k</span>
                       <span class="text-[11.5px] font-semibold text-slate-800 mt-0.5">Corporate</span>
                     </div>
 
                     <div class="absolute left-24 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-200/60 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-transform">
-                      <span class="text-[15px] font-extrabold tracking-[-0.02em] leading-none">982</span>
+                      <span class="font-bubble-number text-[15px] text-slate-900">982</span>
                       <span class="text-[10px] font-medium text-slate-600 mt-0.5">Foundation</span>
                     </div>
                   </div>
