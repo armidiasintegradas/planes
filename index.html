@@ -161,6 +161,85 @@
 
   
     <!-- MODAL DE CADASTRO COMPLETO DE USUÁRIOS (CAMPOS OBRIGATÓRIOS) -->
+    
+    <!-- MODAL DE EDIÇÃO DE USUÁRIO (ADMIN) -->
+    <div id="edit-user-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
+      <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">
+              ${getSvg('user', 'w-4 h-4')}
+            </div>
+            <div>
+              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Editar Usuário & Permissões</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Altere as informações cadastrais e o nível de acesso</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeEditUserModal()" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Nome Completo</label>
+            <input id="edit-user-name" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">E-mail</label>
+              <input id="edit-user-email" type="email" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp</label>
+              <input id="edit-user-phone" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">CPF</label>
+              <input id="edit-user-cpf" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">RG</label>
+              <input id="edit-user-rg" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Nascimento</label>
+              <input id="edit-user-birth" type="date" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Nível de Acesso (RBAC)</label>
+              <select id="edit-user-role" class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-[10px] text-slate-900 font-bold">
+                <option value="Engenharia">Engenharia</option>
+                <option value="Campo">Campo</option>
+                <option value="Canteiro">Canteiro</option>
+                <option value="Diretoria">Diretoria</option>
+                <option value="Cliente">Cliente</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Empresa</label>
+              <input id="edit-user-company" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Frente / Setor</label>
+              <input id="edit-user-sector" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[10px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="saveEditedUser()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] border border-slate-300 shadow-xs">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
     <div id="register-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
       <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -905,6 +984,179 @@
       document.getElementById('register-modal').classList.add('hidden');
     }
 
+    
+    // ESTADO DE VERSIONAMENTO & ATUALIZAÇÃO VIA EXCEL (.XLSX)
+    let excelDiffData = null;
+    let projectVersions = [
+      { version: 'v16.03', date: '01/06/2026', author: 'Eng. Mariana Alves', progress: '61.8%', pac: '78%', status: 'Versão Atual em Produção' },
+      { version: 'v16.02', date: '15/05/2026', author: 'Eng. Mariana Alves', progress: '58.2%', pac: '75%', status: 'Arquivado' },
+      { version: 'v16.01', date: '01/05/2026', author: 'Eng. Mariana Alves', progress: '54.0%', pac: '72%', status: 'Arquivado' }
+    ];
+
+    let editingUserId = null;
+
+    function handleExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      showToast(`Processando planilha "${file.name}"...`);
+      setTimeout(() => {
+        simulateExcelDiff(file.name);
+      }, 800);
+    }
+
+    function simulateExcelDiff(filename = 'Cronograma_Resort_Fase3_Rev16.04.xlsx') {
+      excelDiffData = {
+        fileName: filename,
+        currentVersion: 'v16.03',
+        newVersion: 'v16.04 (Detectada na Planilha)',
+        dateDetected: '01 de Setembro, 2026',
+        itemsChanged: [
+          { setor: 'BLOCO APTOS', atividade: 'TORRE 3 - Concretagem Laje P2 (FCK 30)', oldVal: '45% (Em andamento)', newVal: '100% (Concluído)', status: 'Avanço +55%' },
+          { setor: 'ARENA SHOWS', atividade: 'Montagem de 18 Vigas Metálicas Cobertura', oldVal: '40% (Parcial)', newVal: '75% (Avançado)', status: 'Avanço +35%' },
+          { setor: 'ÁREA DA PISCINA', atividade: 'Escavação & Fundações Parque Aquático', oldVal: '30%', newVal: '42%', status: 'Avanço +12%' },
+          { setor: 'GERAL', atividade: 'Meta Acumulada Linha de Balanço', oldVal: '61.8% Físico', newVal: '64.2% Físico', status: 'Recalculado (+2.4 p.p.)' },
+          { setor: 'FINANCEIRO', atividade: 'Medição Total Comprovada', oldVal: 'R$ 14,80M', newVal: 'R$ 15,45M', status: '+ R$ 650 mil medidos' },
+          { setor: 'PAC', atividade: 'Aderência ao Plano de Ação de Curto Prazo', oldVal: '78% (18/23 itens)', newVal: '82% (19/23 itens)', status: '+4 p.p.' }
+        ]
+      };
+      showToast('✓ Planilha lida com sucesso! Veja a comparação de versões abaixo.');
+      render();
+    }
+
+    function applyExcelProjectUpdate() {
+      if (!excelDiffData) return;
+
+      physicalProgress = 64.2;
+      pacScore = 82;
+      financialSpent = 15.45;
+
+      projectVersions.unshift({
+        version: 'v16.04',
+        date: 'Hoje (Atualização via Excel)',
+        author: currentUser ? currentUser.name : 'Admin',
+        progress: '64.2%',
+        pac: '82%',
+        status: 'Versão Atual em Produção'
+      });
+      projectVersions[1].status = 'Arquivado';
+
+      excelDiffData = null;
+      showToast('🚀 Projeto atualizado com sucesso a partir da planilha! Avanço agora em 64.2%.');
+      render();
+    }
+
+    function cancelExcelDiff() {
+      excelDiffData = null;
+      render();
+    }
+
+    function changeUserRole(userId, newRole) {
+      const u = registeredUsers.find(x => x.id === userId || x.email === userId);
+      if (u) {
+        u.level = newRole;
+        u.role = newRole;
+        
+        // Atualiza na Agenda Telefônica
+        const tm = teamMembersList.find(x => x.id === u.id || x.name === u.name);
+        if (tm) {
+          tm.role = newRole;
+        }
+
+        showToast(`✓ Permissão de ${u.name} atualizada para "${newRole}"!`);
+        render();
+      }
+    }
+
+    function deleteUser(userId) {
+      const u = registeredUsers.find(x => x.id === userId || x.email === userId);
+      if (!u) return;
+
+      if (u.email === 'armidiasintegradas@gmail.com') {
+        showToast('❌ O Admin Master não pode ser excluído.');
+        return;
+      }
+
+      if (confirm(`Deseja realmente excluir o usuário "${u.name}" e desvinculá-lo da agenda?`)) {
+        registeredUsers = registeredUsers.filter(x => x.id !== userId && x.email !== userId);
+        pendingUsers = pendingUsers.filter(x => x.id !== userId && x.email !== userId);
+        teamMembersList = teamMembersList.filter(x => x.id !== u.id && x.name !== u.name);
+        showToast(`✓ Usuário ${u.name} excluído do sistema.`);
+        render();
+      }
+    }
+
+    function openEditUserModal(userId) {
+      const u = registeredUsers.find(x => x.id === userId || x.email === userId);
+      if (!u) return;
+      editingUserId = userId;
+
+      document.getElementById('edit-user-name').value = u.name;
+      document.getElementById('edit-user-email').value = u.email;
+      document.getElementById('edit-user-phone').value = u.phone || '';
+      document.getElementById('edit-user-cpf').value = u.cpf || '';
+      document.getElementById('edit-user-rg').value = u.rg || '';
+      document.getElementById('edit-user-birth').value = u.birthDate || '1990-01-01';
+      document.getElementById('edit-user-role').value = u.level;
+      document.getElementById('edit-user-company').value = u.company || 'Planes ENG';
+      document.getElementById('edit-user-sector').value = u.sector || 'Geral';
+
+      document.getElementById('edit-user-modal').classList.remove('hidden');
+    }
+
+    function closeEditUserModal() {
+      document.getElementById('edit-user-modal').classList.add('hidden');
+      editingUserId = null;
+    }
+
+    function saveEditedUser() {
+      if (!editingUserId) return;
+      const u = registeredUsers.find(x => x.id === editingUserId || x.email === editingUserId);
+      if (!u) return;
+
+      const name = document.getElementById('edit-user-name').value.trim();
+      const email = document.getElementById('edit-user-email').value.trim();
+      const phone = document.getElementById('edit-user-phone').value.trim();
+      const cpf = document.getElementById('edit-user-cpf').value.trim();
+      const rg = document.getElementById('edit-user-rg').value.trim();
+      const birth = document.getElementById('edit-user-birth').value.trim();
+      const role = document.getElementById('edit-user-role').value;
+      const company = document.getElementById('edit-user-company').value.trim();
+      const sector = document.getElementById('edit-user-sector').value.trim();
+
+      if (!name || !email) {
+        showToast('Nome e E-mail são obrigatórios.');
+        return;
+      }
+
+      u.name = name;
+      u.email = email;
+      u.phone = phone;
+      u.cpf = cpf;
+      u.rg = rg;
+      u.birthDate = birth;
+      u.level = role;
+      u.role = role;
+      u.company = company;
+      u.sector = sector;
+
+      // Sincroniza na Agenda Telefônica
+      const tm = teamMembersList.find(x => x.id === u.id || x.name === u.name);
+      if (tm) {
+        tm.name = name;
+        tm.phone = phone;
+        tm.cpf = cpf;
+        tm.rg = rg;
+        tm.role = role;
+        tm.company = company;
+        tm.sector = sector;
+      }
+
+      closeEditUserModal();
+      showToast(`✓ Dados de ${u.name} atualizados com sucesso!`);
+      render();
+    }
+
     function handleRoleLogin(role) {
       const rolesMap = {
         Engenharia: { name: 'Mariana Alves', role: 'Engenheira de Planejamento', email: 'engenharia@planes.eng.br', level: 'Engenharia', avatar: 'M' },
@@ -1437,7 +1689,7 @@
                       <input
                         id="login-email"
                         type="email"
-                        value="armidiasintegradas@gmail.com"
+                        value=""
                         placeholder="seu.email@empresa.com"
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-hidden focus:border-slate-400"
                       />
@@ -1447,7 +1699,7 @@
                       <input
                         id="login-pass"
                         type="password"
-                        value="@dmin201375"
+                        value=""
                         placeholder="••••••••"
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-hidden focus:border-slate-400"
                         onkeydown="if (event.key === 'Enter') handleEmailLogin()"
@@ -1475,9 +1727,7 @@
                         Cadastre-se na Plataforma
                       </button>
                     </p>
-                    <span class="text-[10.5px] text-slate-400 font-medium block mt-1">
-                      Admin Master pré-liberado: <strong>armidiasintegradas@gmail.com</strong>
-                    </span>
+
                   </div>
 
                 </div>
@@ -2717,33 +2967,178 @@
                 </div>
               ` : ''}
 
-              <!-- GESTÃO DE USUÁRIOS & PERMISSÕES (ADMIN MASTER COM PRIVILÉGIO TOTAL) -->
+              <!-- MÓDULO ADMIN COMPLETO: ATUALIZAÇÃO VIA EXCEL COM DIFF + GESTÃO AVANÇADA DE USUÁRIOS -->
               ${activeNav === 'Gestão de Usuários (Admin)' && accessLevel === 'Admin' ? `
                 <div class="space-y-5 animate-card-fade">
+                  
+                  <!-- Top Admin Header -->
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3.5">
                       <div class="w-11 h-11 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center shadow-2xs shrink-0">
                         ${getSvg('settings', 'w-5 h-5 text-[#d4ff00]')}
                       </div>
                       <div>
-                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Gestão Central de Usuários, Acessos & Permissões</h2>
-                        <p class="text-xs text-slate-600 font-medium">Admin Master com privilégio irrestrito sobre todas as áreas da obra e atribuição de perfis</p>
+                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Painel Admin Master — Gestão de Projeto & Acessos</h2>
+                        <p class="text-xs text-slate-600 font-medium">Importação de planilhas Excel com versionamento inteligente e controle total de usuários</p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <span class="px-3 py-1 bg-[#d4ff00] text-slate-950 font-black text-xs rounded-full border border-slate-300">
-                        ${pendingUsers.length} Cadastros Pendentes
-                      </span>
+                      <button
+                        type="button"
+                        onclick="openRegisterModal()"
+                        class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                      >
+                        ${getSvg('plus', 'w-4 h-4 text-slate-950')}
+                        <span>Cadastrar Novo Usuário</span>
+                      </button>
                     </div>
                   </div>
 
-                  <!-- Fila de Usuários Pendentes de Autenticação -->
+                  <!-- 1. MÓDULO DE ATUALIZAÇÃO DO PROJETO VIA PLANILHA EXCEL (.XLSX) COM COMPARAÇÃO DE VERSÕES -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <h3 class="text-sm sm:text-base font-black text-slate-950 flex items-center gap-2">
+                          <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                          <span>Atualização de Projeto via Planilha Excel (.xlsx / .csv)</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 font-medium">O sistema lê a planilha, compara as versões de cronograma e atualiza o projeto automaticamente</p>
+                      </div>
+                      <span class="px-2.5 py-1 bg-slate-100 text-slate-800 text-[11px] font-bold rounded-full font-mono border border-slate-200">
+                        Versão Atual: ${projectVersions[0].version}
+                      </span>
+                    </div>
+
+                    <!-- Upload Area & Simulation Button -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div class="md:col-span-2 border-2 border-dashed border-slate-300 rounded-[14px] p-5 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-slate-100 transition relative">
+                        <input
+                          type="file"
+                          id="excel-file-upload"
+                          accept=".xlsx, .xls, .csv"
+                          onchange="handleExcelUpload(event)"
+                          class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          title="Clique ou arraste sua planilha Excel aqui"
+                        />
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mb-2 shadow-2xs">
+                          ${getSvg('fileText', 'w-5 h-5 text-emerald-700')}
+                        </div>
+                        <strong class="text-xs font-bold text-slate-950 block">Arraste a Planilha Excel (.xlsx) ou clique para carregar</strong>
+                        <span class="text-[11px] text-slate-500 mt-0.5">Lê atividades, Linha de Balanço 16.03/16.04, medições e custos</span>
+                      </div>
+
+                      <div class="p-4 bg-slate-100 rounded-[14px] border border-slate-200 flex flex-col justify-between">
+                        <div>
+                          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Demonstração Rápida</span>
+                          <strong class="text-xs font-bold text-slate-950 block mt-1">Simular Leitura da Planilha Rev 16.04</strong>
+                          <p class="text-[11px] text-slate-600 mt-1">Gera o comparativo instantâneo com a nova medição de lajes e arena</p>
+                        </div>
+                        <button
+                          type="button"
+                          onclick="simulateExcelDiff()"
+                          class="w-full py-2 bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs rounded-[10px] transition mt-2 shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <span>Simular Leitura da Planilha</span>
+                          ${getSvg('arrowUpRight', 'w-3.5 h-3.5 text-white')}
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- DIFF COMPARISON VIEW (When spreadsheet is read) -->
+                    ${excelDiffData ? `
+                      <div class="p-5 bg-amber-50/60 border border-amber-300 rounded-[16px] space-y-4 animate-card-fade">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-amber-200">
+                          <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-amber-500 animate-ping"></span>
+                            <h4 class="text-sm font-black text-amber-950">Comparação de Versões Detectada (${excelDiffData.fileName})</h4>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-slate-600 bg-white px-2 py-0.5 rounded-md border border-amber-300">
+                              ${excelDiffData.currentVersion} ➔ <strong>${excelDiffData.newVersion}</strong>
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- Diff Table -->
+                        <div class="overflow-x-auto bg-white rounded-[12px] border border-amber-200">
+                          <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr class="bg-amber-100/70 border-b border-amber-200 text-amber-950 font-bold">
+                                <th class="p-2.5">Setor / Atividade</th>
+                                <th class="p-2.5">Versão Atual (${excelDiffData.currentVersion})</th>
+                                <th class="p-2.5">Nova Planilha (${excelDiffData.newVersion})</th>
+                                <th class="p-2.5 text-right">Variação Detectada</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                              ${excelDiffData.itemsChanged.map(item => `
+                                <tr class="hover:bg-amber-50/40 transition">
+                                  <td class="p-2.5">
+                                    <span class="text-[10px] font-bold text-slate-500 block">${item.setor}</span>
+                                    <strong class="text-slate-950 font-semibold">${item.atividade}</strong>
+                                  </td>
+                                  <td class="p-2.5 text-slate-600 font-mono">${item.oldVal}</td>
+                                  <td class="p-2.5 text-emerald-950 font-bold font-mono bg-emerald-50/50">${item.newVal}</td>
+                                  <td class="p-2.5 text-right font-black text-emerald-700">${item.status}</td>
+                                </tr>
+                              `).join('')}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center justify-end gap-2 pt-1">
+                          <button
+                            type="button"
+                            onclick="cancelExcelDiff()"
+                            class="px-4 py-2 border border-slate-300 bg-white text-slate-700 text-xs font-bold rounded-[10px] hover:bg-slate-50 cursor-pointer"
+                          >
+                            Descartar
+                          </button>
+                          <button
+                            type="button"
+                            onclick="applyExcelProjectUpdate()"
+                            class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[10px] shadow-xs cursor-pointer flex items-center gap-2"
+                          >
+                            ${getSvg('checkCircle', 'w-4 h-4 text-white')}
+                            <span>Confirmar e Aplicar Atualização do Projeto</span>
+                          </button>
+                        </div>
+                      </div>
+                    ` : ''}
+
+                    <!-- Histórico de Versões do Projeto -->
+                    <div class="pt-2">
+                      <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Histórico de Versões da Obra</span>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        ${projectVersions.map(pv => `
+                          <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200 text-xs flex flex-col justify-between">
+                            <div class="flex justify-between items-center mb-1">
+                              <strong class="font-black text-slate-950 font-mono">${pv.version}</strong>
+                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                pv.status.includes('Atual') ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-slate-200 text-slate-600'
+                              }">${pv.status}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-600 space-y-0.5">
+                              <div>Avanço: <strong>${pv.progress}</strong> · PAC: <strong>${pv.pac}</strong></div>
+                              <div class="text-[10px] text-slate-400 font-mono">${pv.date} · ${pv.author}</div>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 2. FILA DE CADASTROS PENDENTES DE AUTENTICAÇÃO -->
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs">
                     <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                       <div>
                         <h3 class="text-sm sm:text-base font-bold text-slate-950">Fila de Novos Cadastros para Autenticação</h3>
                         <p class="text-xs text-slate-500 font-medium">Avalie as informações completas e determine o nível de acesso permitido</p>
                       </div>
+                      <span class="text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full font-mono">
+                        ${pendingUsers.length} aguardando
+                      </span>
                     </div>
 
                     ${pendingUsers.length === 0 ? `
@@ -2771,7 +3166,6 @@
                               </div>
                             </div>
 
-                            <!-- Seleção de Nível e Botão de Aprovação -->
                             <div class="flex items-center gap-2 shrink-0">
                               <select id="assign-level-${u.id}" class="px-3 py-2 bg-white border border-slate-200 rounded-[10px] text-xs font-bold text-slate-900">
                                 <option value="Engenharia" ${u.requestedLevel === 'Engenharia' ? 'selected' : ''}>Engenharia</option>
@@ -2806,39 +3200,80 @@
                     `}
                   </div>
 
-                  <!-- Lista de Usuários Ativos no Sistema -->
+                  <!-- 3. USUÁRIOS ATIVOS & CONECTADOS À AGENDA (COM EDITAR, EXCLUIR E AUTORIZAR ACESSO) -->
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
                       <div>
                         <h3 class="text-sm sm:text-base font-bold text-slate-950">Usuários Ativos & Conectados à Agenda</h3>
-                        <p class="text-xs text-slate-500 font-medium">Controle de privilégios e permissões por perfil de atuação</p>
+                        <p class="text-xs text-slate-500 font-medium">O Administrador pode editar, excluir, cadastrar e autorizar permissões diretamente</p>
                       </div>
+                      <span class="text-xs font-bold text-slate-600 font-mono bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                        ${registeredUsers.length} Usuários Cadastrados
+                      </span>
                     </div>
 
                     <div class="divide-y divide-slate-100">
                       ${registeredUsers.map(reg => `
-                        <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                        <div class="py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
                           <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-[10px] bg-slate-950 text-[#d4ff00] font-black text-xs flex items-center justify-center">
+                            <div class="w-10 h-10 rounded-[12px] bg-slate-950 text-[#d4ff00] font-black text-xs flex items-center justify-center shadow-2xs shrink-0">
                               ${reg.avatar || 'US'}
                             </div>
                             <div>
-                              <strong class="text-slate-950 font-bold block">${reg.name}</strong>
-                              <span class="text-slate-500">${reg.email} · ${reg.phone || 'Sem fone'}</span>
+                              <div class="flex items-center gap-2">
+                                <strong class="text-sm font-bold text-slate-950 leading-tight">${reg.name}</strong>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  reg.level === 'Admin' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                }">
+                                  ${reg.level}
+                                </span>
+                              </div>
+                              <span class="text-slate-500 text-[11px] block mt-0.5 font-medium">
+                                ${reg.email} · WhatsApp: <strong>${reg.phone || 'Sem fone'}</strong> · CPF: ${reg.cpf || 'N/A'}
+                              </span>
                             </div>
                           </div>
-                          <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                              reg.level === 'Admin' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                            }">
-                              ${reg.level}
-                            </span>
-                            <span class="text-[10px] font-bold text-slate-400 font-mono">${reg.status}</span>
+
+                          <!-- Actions: Change Role, Edit & Delete -->
+                          <div class="flex items-center gap-2 shrink-0">
+                            <select
+                              onchange="changeUserRole('${reg.id}', this.value)"
+                              class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[8px] text-xs font-bold text-slate-900 cursor-pointer"
+                              title="Alterar Permissão / Nível de Acesso"
+                            >
+                              <option value="Engenharia" ${reg.level === 'Engenharia' ? 'selected' : ''}>Engenharia</option>
+                              <option value="Campo" ${reg.level === 'Campo' ? 'selected' : ''}>Campo</option>
+                              <option value="Canteiro" ${reg.level === 'Canteiro' ? 'selected' : ''}>Canteiro</option>
+                              <option value="Diretoria" ${reg.level === 'Diretoria' ? 'selected' : ''}>Diretoria</option>
+                              <option value="Cliente" ${reg.level === 'Cliente' ? 'selected' : ''}>Cliente</option>
+                              <option value="Admin" ${reg.level === 'Admin' ? 'selected' : ''}>Admin</option>
+                            </select>
+
+                            <button
+                              type="button"
+                              onclick="openEditUserModal('${reg.id}')"
+                              class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[8px] transition border border-slate-200 cursor-pointer flex items-center gap-1"
+                              title="Editar dados cadastrais"
+                            >
+                              <span>Editar</span>
+                            </button>
+
+                            ${reg.email !== 'armidiasintegradas@gmail.com' ? `
+                              <button
+                                type="button"
+                                onclick="deleteUser('${reg.id}')"
+                                class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-[8px] transition border border-rose-200 cursor-pointer flex items-center gap-1"
+                                title="Excluir usuário"
+                              >
+                                <span>Excluir</span>
+                              </button>
+                            ` : ''}
                           </div>
                         </div>
                       `).join('')}
                     </div>
                   </div>
+
                 </div>
               ` : ''}
 
