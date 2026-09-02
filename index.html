@@ -1032,6 +1032,65 @@
       editingSupplyId = null;
     }
 
+    
+    // AÇÕES INTERATIVAS DA FILA DE VALIDAÇÕES
+    function approveValidation(id) {
+      const valIndex = validations.findIndex(v => v.id === id);
+      if (valIndex !== -1) {
+        const item = validations[valIndex];
+        validations.splice(valIndex, 1);
+        physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 0.8).toFixed(1));
+        showToast(`✓ Medição de "${item.item}" aprovada com sucesso! Avanço: ${physicalProgress}%`);
+        render();
+      }
+    }
+
+    function rejectValidation(id) {
+      const valIndex = validations.findIndex(v => v.id === id);
+      if (valIndex !== -1) {
+        const item = validations[valIndex];
+        validations.splice(valIndex, 1);
+        showToast(`✕ Medição de "${item.item}" devolvida para revisão de campo.`);
+        render();
+      }
+    }
+
+    // AÇÕES DE SUPRIMENTOS
+    function confirmSupplyReceipt(id) {
+      const sup = suppliesList.find(s => s.id === id);
+      if (sup) {
+        sup.status = 'No Canteiro';
+        sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+        showToast(`✓ Recebimento de "${sup.name}" confirmado no canteiro!`);
+        render();
+      }
+    }
+
+    // AÇÕES DE APROVAÇÃO DE USUÁRIOS
+    function approvePendingUser(id) {
+      const idx = pendingUsers.findIndex(u => u.id === id);
+      if (idx !== -1) {
+        const u = pendingUsers.splice(idx, 1)[0];
+        u.status = 'Aprovado';
+        u.level = u.requestedLevel || 'Campo';
+        u.pass = 'planes123';
+        registeredUsers.push(u);
+        saveUsersStorage();
+        showToast(`✓ Usuário ${u.name} aprovado com nível ${u.level}!`);
+        render();
+      }
+    }
+
+    function rejectPendingUser(id) {
+      const idx = pendingUsers.findIndex(u => u.id === id);
+      if (idx !== -1) {
+        const u = pendingUsers.splice(idx, 1)[0];
+        saveUsersStorage();
+        showToast(`✕ Cadastro de ${u.name} recusado.`);
+        render();
+      }
+    }
+
     function handleEditSupplySubmit() {
       const sup = suppliesList.find(s => s.id === editingSupplyId);
       if (!sup) return;
@@ -1244,6 +1303,16 @@
     ];
     let liveTranscript = '';
 
+    
+    let galleryPhotos = [
+      { id: 1, title: 'Concretagem da Laje de Cobertura Torre 2', sector: 'Bloco de Apartamentos', date: '01/06/2026', author: 'Mariana Alves · Eng. Residente', status: 'Auditado RT', desc: 'Concretagem com FCK 30 MPa, controle tecnológico de corpos de prova e cura química aplicada.', badge: 'Estrutura' },
+      { id: 2, title: 'Montagem de Treliças Metálicas da Cobertura', sector: 'Arena Shows & Eventos', date: '28/05/2026', author: 'Carlos Lima · Encarregado', status: 'Auditado RT', desc: 'Fixação de parafusos estruturais ASTM A325 e conferência topográfica de prumo e nivelamento.', badge: 'Cobertura' },
+      { id: 3, title: 'Alvenaria Estrutural e Passagem de Shafts', sector: 'Bloco de Apartamentos', date: '25/05/2026', author: 'José Santos · Apontador', status: 'Auditado RT', desc: 'Elevação de alvenaria com blocos cerâmicos e instalação de eletrodutos e tubulações de água.', badge: 'Alvenaria' },
+      { id: 4, title: 'Impermeabilização e Teste de Estanqueidade', sector: 'Parque de Piscinas', date: '22/05/2026', author: 'Alex Ribeiro · RT Master', status: 'Auditado RT', desc: 'Aplicação de manta asfáltica dupla camada e teste de estanqueidade de 72h sem vazamentos.', badge: 'Impermeabilização' },
+      { id: 5, title: 'Pavimentação Intertravada e Drenagem', sector: 'Infraestrutura Viária', date: '18/05/2026', author: 'Rodrigo Tavares · Fiscal', status: 'Auditado RT', desc: 'Assentamento de blocos de concreto intertravado 16 faces com colchão de areia compactada.', badge: 'Infraestrutura' },
+      { id: 6, title: 'Instalação de Esquadrias e Vidros Laminados', sector: 'Recepção & Lounge', date: '15/05/2026', author: 'Mariana Alves · Eng. Residente', status: 'Auditado RT', desc: 'Fixação de caixilharia de alumínio preto fosco com vidro laminado 8mm acústico.', badge: 'Acabamentos' }
+    ];
+    
     let validations = [
       {
         id: 1,
@@ -5838,6 +5907,677 @@ ${activeNav === 'Equipe & Contatos' ? `
                   </div>
                 </div>
               ` : ''}
+
+              
+              <!-- ========================================================= -->
+              <!-- 1. FILA DE VALIDAÇÕES & MEDIÇÕES DE CAMPO                 -->
+              <!-- ========================================================= -->
+              ${activeNav === 'Fila de Validações' ? `
+                <div class="space-y-6 animate-card-fade">
+                  
+                  <!-- Top Banner Executivo -->
+                  <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
+                        ${getSvg('checkCircle', 'w-6 h-6 text-slate-950')}
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
+                            AUDITORIA & MEDIÇÃO · QA/QC
+                          </span>
+                          <span class="text-xs text-slate-400 font-mono">Controle de Engenharia</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                          Fila de Validações & Medições de Campo
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                          Validação de apontamentos, inspeções geotécnicas e aprovação físico-financeira de empreiteiros.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono shrink-0">
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Validações Pendentes</span>
+                        <strong class="text-[#d4ff00] text-sm font-black block">${validations.length} Itens</strong>
+                        <span class="text-slate-400 text-[9.5px]">Aguardando RT</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Montante Medido</span>
+                        <strong class="text-emerald-400 text-sm font-black block">R$ 480.000</strong>
+                        <span class="text-slate-400 text-[9.5px]">Valor Acumulado</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5 col-span-2 sm:col-span-1">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Rastreabilidade</span>
+                        <strong class="text-white text-sm font-black block">100% GPS</strong>
+                        <span class="text-slate-400 text-[9.5px]">Fotos Georreferenciadas</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Lista de Cards de Validação -->
+                  <div class="space-y-4">
+                    ${validations.length === 0 ? `
+                      <div class="white-bento-card p-12 text-center border border-slate-200 shadow-xs space-y-3">
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                          ${getSvg('checkCircle', 'w-8 h-8 text-emerald-600')}
+                        </div>
+                        <h3 class="text-lg font-black text-slate-950">Fila 100% em dia!</h3>
+                        <p class="text-xs text-slate-600 max-w-md mx-auto">Todas as medições de campo foram aprovadas e auditadas pela equipe de engenharia.</p>
+                      </div>
+                    ` : `
+                      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${validations.map(val => `
+                          <div class="white-bento-card p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition space-y-4">
+                            <div>
+                              <div class="flex items-start justify-between gap-2 mb-2">
+                                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                                  ● ${val.status || 'Pendente de Aprovação'}
+                                </span>
+                                <span class="text-[11px] font-mono text-slate-500 font-bold">${val.data || 'Hoje'}</span>
+                              </div>
+
+                              <strong class="text-sm font-bold text-slate-950 block leading-snug">
+                                ${val.item}
+                              </strong>
+                              <span class="text-xs text-slate-500 font-medium block mt-0.5">Frente: <strong class="text-slate-800 font-bold">${val.front}</strong></span>
+
+                              <div class="my-3 p-3 bg-slate-50 rounded-[12px] border border-slate-200 space-y-1.5 text-xs">
+                                <div class="flex justify-between items-center">
+                                  <span class="text-slate-500 font-semibold">Responsável:</span>
+                                  <strong class="text-slate-900 font-bold">${val.resp} (${val.cargo})</strong>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                  <span class="text-slate-500 font-semibold">Volume / Qtd:</span>
+                                  <strong class="text-slate-950 font-mono font-bold">${val.qtd}</strong>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                  <span class="text-slate-500 font-semibold">Impacto no Avanço:</span>
+                                  <span class="bg-[#d4ff00] text-slate-950 px-2 py-0.5 rounded text-[11px] font-black">${val.avanco || '+1.5%'}</span>
+                                </div>
+                                <div class="pt-1 border-t border-slate-200 text-[10.5px] text-slate-500 flex items-center gap-1 truncate">
+                                  ${getSvg('mapPin', 'w-3 h-3 text-slate-400 shrink-0')}
+                                  <span class="truncate">${val.gps}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+                              <button
+                                type="button"
+                                onclick="approveValidation(${val.id})"
+                                class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[10px] transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px]"
+                              >
+                                ${getSvg('checkCircle', 'w-4 h-4 text-white')}
+                                <span>Aprovar Medição</span>
+                              </button>
+                              <button
+                                type="button"
+                                onclick="rejectValidation(${val.id})"
+                                class="px-3 py-2.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-[10px] transition cursor-pointer min-h-[38px] border border-slate-200"
+                                title="Solicitar Ajuste"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    `}
+                  </div>
+
+                </div>
+              ` : ''}
+
+              <!-- ========================================================= -->
+              <!-- 2. CURVA S & ADERÊNCIA AO PAC                             -->
+              <!-- ========================================================= -->
+              ${activeNav === 'Curva S & PAC' ? `
+                <div class="space-y-6 animate-card-fade">
+                  
+                  <!-- Top Banner Executivo -->
+                  <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
+                        ${getSvg('barChart2', 'w-6 h-6 text-slate-950')}
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
+                            LAST PLANNER SYSTEM · EARNED VALUE MANAGEMENT (EVM)
+                          </span>
+                          <span class="text-xs text-slate-400 font-mono">Avanço Físico vs Financeiro</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                          Curva S Físico-Financeira & Aderência ao PAC
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                          Índices de desempenho de prazo (SPI), custo (CPI) e Percentual de Atividades Concluídas (PAC).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono shrink-0">
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Índice SPI (Prazo)</span>
+                        <strong class="text-emerald-400 text-sm font-black block">1.03</strong>
+                        <span class="text-slate-400 text-[9.5px]">Acima da Meta</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Índice CPI (Custo)</span>
+                        <strong class="text-emerald-400 text-sm font-black block">1.02</strong>
+                        <span class="text-slate-400 text-[9.5px]">Custo Eficiente</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Aderência PAC</span>
+                        <strong class="text-[#d4ff00] text-sm font-black block">91.4%</strong>
+                        <span class="text-slate-300 text-[9.5px]">107/117 Metas</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-amber-500/30 space-y-0.5 bg-amber-500/5">
+                        <span class="text-amber-400 text-[10px] uppercase font-sans font-bold">Desvio Físico</span>
+                        <strong class="text-amber-300 text-sm font-black block">-5.6 p.p.</strong>
+                        <span class="text-amber-400 text-[9.5px]">Atenção no Takt</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Gráficos Integrados: Curva S + PAC Semanal -->
+                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    
+                    <!-- Curva S Acumulada (8 Cols) -->
+                    <div class="lg:col-span-8 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-4">
+                      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div>
+                          <h3 class="text-base font-black text-slate-950 tracking-tight">Curva S Comparativa (Previsto vs Realizado)</h3>
+                          <p class="text-xs text-slate-600">Base contratual Linha de Balanço 16.03</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-bold">
+                          <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-sm bg-[#8eb3ff]"></span> Previsto LB (66.4%)</span>
+                          <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-sm bg-emerald-600"></span> Real Medido (61.8%)</span>
+                        </div>
+                      </div>
+
+                      <div class="relative w-full h-[320px] bg-slate-50/60 rounded-[16px] border border-slate-200 p-4">
+                        <svg viewBox="0 0 600 240" class="w-full h-full overflow-visible">
+                          <defs>
+                            <linearGradient id="curvaRealFull" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stop-color="#059669" stop-opacity="0.3" />
+                              <stop offset="100%" stop-color="#059669" stop-opacity="0.0" />
+                            </linearGradient>
+                          </defs>
+                          <path d="M 30,210 C 120,180 220,120 320,70 L 320,230 L 30,230 Z" fill="url(#curvaRealFull)" />
+                          <path d="M 30,200 C 120,165 220,100 320,55 C 420,35 520,18 570,10" fill="none" stroke="#8eb3ff" stroke-width="4" stroke-dasharray="6,4" stroke-linecap="round" />
+                          <path d="M 30,210 C 120,180 220,120 320,70" fill="none" stroke="#059669" stroke-width="5" stroke-linecap="round" />
+                          <circle cx="320" cy="70" r="7" fill="#059669" stroke="#ffffff" stroke-width="3" class="animate-pulse" />
+                        </svg>
+
+                        <div class="flex justify-between text-[11px] font-mono font-bold text-slate-500 pt-2 border-t border-slate-300">
+                          <span>Mai (51%)</span>
+                          <span class="text-emerald-800 font-black">Jun (62% - Hoje)</span>
+                          <span>Jul (71%)</span>
+                          <span>Ago (80%)</span>
+                          <span>Set (89%)</span>
+                          <span>Out (95%)</span>
+                          <span>Nov (100%)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- PAC Semanal & Causa-Raiz (4 Cols) -->
+                    <div class="lg:col-span-4 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-4">
+                      <div class="pb-3 border-b border-slate-100">
+                        <h3 class="text-base font-black text-slate-950 tracking-tight">Aderência Semanal ao PAC</h3>
+                        <p class="text-xs text-slate-600">Últimas 4 Semanas de Produção</p>
+                      </div>
+
+                      <div class="space-y-3 text-xs">
+                        <div>
+                          <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-slate-800">Semana 24 (Atual)</span>
+                            <strong class="text-emerald-700 font-mono font-black">94.2%</strong>
+                          </div>
+                          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="bg-emerald-600 h-full rounded-full" style="width: 94.2%;"></div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-slate-800">Semana 23</span>
+                            <strong class="text-emerald-700 font-mono font-black">91.8%</strong>
+                          </div>
+                          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="bg-emerald-600 h-full rounded-full" style="width: 91.8%;"></div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-slate-800">Semana 22</span>
+                            <strong class="text-amber-700 font-mono font-black">86.4%</strong>
+                          </div>
+                          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="bg-amber-500 h-full rounded-full" style="width: 86.4%;"></div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-slate-800">Semana 21</span>
+                            <strong class="text-emerald-700 font-mono font-black">93.0%</strong>
+                          </div>
+                          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="bg-emerald-600 h-full rounded-full" style="width: 93.0%;"></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="p-3 bg-slate-50 rounded-[12px] border border-slate-200 space-y-1 text-xs">
+                        <span class="text-[10.5px] font-bold text-slate-500 uppercase block">Análise de Causa de Não Cumprimento:</span>
+                        <div class="text-[11px] text-slate-700 space-y-0.5">
+                          <div>• <strong>Mão de Obra:</strong> 42% (Turno chuva)</div>
+                          <div>• <strong>Projetos/RFI:</strong> 33% (Passagem tubulação)</div>
+                          <div>• <strong>Suprimentos:</strong> 25% (Entrega aço)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              ` : ''}
+
+              <!-- ========================================================= -->
+              <!-- 3. CENTRAL DE SUPRIMENTOS & JUST-IN-TIME                  -->
+              <!-- ========================================================= -->
+              ${activeNav === 'Suprimentos' ? `
+                <div class="space-y-6 animate-card-fade">
+                  
+                  <!-- Top Banner Executivo -->
+                  <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
+                        ${getSvg('box', 'w-6 h-6 text-slate-950')}
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
+                            SUPRIMENTOS · JUST-IN-TIME (JIT)
+                          </span>
+                          <span class="text-xs text-slate-400 font-mono">Logística de Canteiro</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                          Central de Suprimentos & Materiais Críticos
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                          Rastreamento de insumos do caminho crítico, controle de estoque mínimo e entregas no prazo.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono shrink-0">
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Ordens Ativas</span>
+                        <strong class="text-white text-sm font-black block">${suppliesList.length} Insumos</strong>
+                        <span class="text-slate-400 text-[9.5px]">Cadastrados</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Taxa OTIF</span>
+                        <strong class="text-emerald-400 text-sm font-black block">94.2%</strong>
+                        <span class="text-slate-400 text-[9.5px]">No Prazo</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">No Canteiro</span>
+                        <strong class="text-[#d4ff00] text-sm font-black block">${suppliesList.filter(s => s.status === 'No Canteiro').length} Lotes</strong>
+                        <span class="text-slate-400 text-[9.5px]">Prontos p/ Uso</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-rose-500/40 space-y-0.5 bg-rose-500/5">
+                        <span class="text-rose-400 text-[10px] uppercase font-sans font-bold">Em Alerta</span>
+                        <strong class="text-rose-300 text-sm font-black block">1 Item</strong>
+                        <span class="text-rose-400 text-[9.5px]">Cobrar Entrega</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Lista de Suprimentos -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <h3 class="text-base font-black text-slate-950 tracking-tight">Relação de Materiais & Insumos Críticos</h3>
+                        <p class="text-xs text-slate-600">Status sincronizado em tempo real com o Lookahead R4</p>
+                      </div>
+
+                      ${accessLevel === 'Admin' || accessLevel === 'Engenharia' ? `
+                        <button
+                          type="button"
+                          onclick="showToast('Abrindo formulário de suprimento...');"
+                          class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ${getSvg('plus', 'w-4 h-4 text-slate-950')}
+                          <span>+ Cadastrar Suprimento</span>
+                        </button>
+                      ` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      ${suppliesList.map(sup => `
+                        <div class="p-4 bg-slate-50/90 rounded-[16px] border border-slate-200 shadow-2xs flex flex-col justify-between hover:border-slate-400 transition space-y-3">
+                          <div>
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${sup.badge || 'bg-slate-200 text-slate-800'}">
+                                ● ${sup.status}
+                              </span>
+                              <span class="text-[11px] font-mono text-slate-500 font-bold">${sup.date}</span>
+                            </div>
+
+                            <strong class="text-sm font-bold text-slate-950 block leading-snug">
+                              ${sup.name}
+                            </strong>
+                            <span class="text-xs text-slate-500 block mt-0.5">Fornecedor: <strong class="text-slate-800">${sup.supplier}</strong></span>
+
+                            <div class="mt-3 p-2.5 bg-white rounded-[10px] border border-slate-200/80 space-y-1 text-xs">
+                              <div class="flex justify-between items-center">
+                                <span class="text-slate-500 font-semibold">Quantidade:</span>
+                                <strong class="text-slate-950 font-mono font-bold">${sup.qtd}</strong>
+                              </div>
+                              <div class="flex justify-between items-center">
+                                <span class="text-slate-500 font-semibold">Frente de Destino:</span>
+                                <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-bold text-slate-800">${sup.sector}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="flex items-center gap-2 pt-2 border-t border-slate-200/60">
+                            ${sup.status !== 'No Canteiro' ? `
+                              <button
+                                type="button"
+                                onclick="confirmSupplyReceipt(${sup.id})"
+                                class="flex-1 py-2 bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs rounded-[10px] transition cursor-pointer flex items-center justify-center gap-1.5"
+                              >
+                                ${getSvg('checkCircle', 'w-3.5 h-3.5 text-white')}
+                                <span>Confirmar Recebimento</span>
+                              </button>
+                            ` : `
+                              <span class="flex-1 py-2 bg-emerald-50 text-emerald-800 text-center font-bold text-xs rounded-[10px] border border-emerald-200">
+                                ✓ Disponível no Canteiro
+                              </span>
+                            `}
+
+                            ${accessLevel === 'Admin' ? `
+                              <button
+                                type="button"
+                                onclick="openEditSupplyModal(${sup.id})"
+                                class="p-2 hover:bg-slate-200 text-slate-600 rounded-lg transition cursor-pointer"
+                                title="Editar Suprimento"
+                              >
+                                ${getSvg('edit', 'w-3.5 h-3.5')}
+                              </button>
+                            ` : ''}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                </div>
+              ` : ''}
+
+              <!-- ========================================================= -->
+              <!-- 4. GALERIA DO CLIENTE & VISTORIAS FOTOGRÁFICAS HD         -->
+              <!-- ========================================================= -->
+              ${activeNav === 'Galeria do Cliente' ? `
+                <div class="space-y-6 animate-card-fade">
+                  
+                  <!-- Top Banner Executivo -->
+                  <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
+                        ${getSvg('camera', 'w-6 h-6 text-slate-950')}
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
+                            REGISTRO VISUAL HD · TRANSPARÊNCIA & RT
+                          </span>
+                          <span class="text-xs text-slate-400 font-mono">Inspeções Georreferenciadas</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                          Galeria do Cliente & Vistorias Fotográficas HD
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                          Acompanhamento visual de cada avanço físico, relatórios fotográficos e comprovação técnica de etapas.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 shrink-0">
+                      <button
+                        type="button"
+                        onclick="showToast('✓ Link da galeria copiado para o WhatsApp do cliente!');"
+                        class="px-4 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] transition border border-slate-300 shadow-xs flex items-center gap-2 cursor-pointer"
+                      >
+                        ${getSvg('whatsapp', 'w-4 h-4 text-slate-950')}
+                        <span>Compartilhar Galeria com Cliente</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Grid de Fotos HD -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    ${galleryPhotos.map(photo => `
+                      <div class="white-bento-card p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition space-y-3 group">
+                        <div>
+                          <div class="relative w-full h-48 bg-slate-900 rounded-[16px] overflow-hidden flex flex-col justify-between p-3.5 border border-slate-800 shadow-inner">
+                            <div class="flex items-center justify-between z-10">
+                              <span class="bg-slate-950/90 text-white border border-slate-700 text-[10px] font-mono font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                                ${photo.badge}
+                              </span>
+                              <span class="bg-emerald-500/90 text-slate-950 font-bold text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md">
+                                ● ${photo.status}
+                              </span>
+                            </div>
+
+                            <div class="absolute inset-0 flex items-center justify-center opacity-30 group-hover:opacity-50 transition">
+                              ${getSvg('camera', 'w-16 h-16 text-slate-400')}
+                            </div>
+
+                            <div class="z-10 bg-slate-950/80 backdrop-blur-sm p-2 rounded-[10px] border border-slate-800/80">
+                              <span class="text-[11px] font-mono text-slate-300 block truncate">${photo.sector}</span>
+                              <span class="text-[10px] text-slate-400 font-mono">${photo.date}</span>
+                            </div>
+                          </div>
+
+                          <div class="mt-3.5 space-y-1">
+                            <strong class="text-sm font-bold text-slate-950 block leading-snug group-hover:text-emerald-900 transition">
+                              ${photo.title}
+                            </strong>
+                            <p class="text-xs text-slate-600 leading-relaxed">${photo.desc}</p>
+                            <span class="text-[11px] text-slate-400 font-mono block pt-1">Autor: ${photo.author}</span>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onclick="showToast('✓ Visualizando foto em alta resolução');"
+                            class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[10px] transition cursor-pointer"
+                          >
+                            Ver em Tela Cheia ↗
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                </div>
+              ` : ''}
+
+              <!-- ========================================================= -->
+              <!-- 5. GESTÃO DE USUÁRIOS & MATRIZ DE ACESSO RBAC             -->
+              <!-- ========================================================= -->
+              ${activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários' ? `
+                <div class="space-y-6 animate-card-fade">
+                  
+                  <!-- Top Banner Executivo -->
+                  <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
+                        ${getSvg('users', 'w-6 h-6 text-slate-950')}
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
+                            ADMIN MASTER · RBAC & LGPD
+                          </span>
+                          <span class="text-xs text-slate-400 font-mono">Auditoria Criptográfica</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                          Gestão de Usuários, Aprovações & Permissões RBAC
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                          Controle granular de acesso para perfis Engenharia, Campo, Canteiro, Diretoria, Cliente e Administrador Geral.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs font-mono shrink-0">
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Usuários Ativos</span>
+                        <strong class="text-white text-sm font-black block">${registeredUsers.length} Perfis</strong>
+                        <span class="text-emerald-400 text-[9.5px]">Aprovados</span>
+                      </div>
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-[#d4ff00]/40 space-y-0.5 bg-[#d4ff00]/5">
+                        <span class="text-[#d4ff00] text-[10px] uppercase font-sans font-bold">Novos Cadastros</span>
+                        <strong class="text-[#d4ff00] text-sm font-black block">${pendingUsers.length} Pendentes</strong>
+                        <span class="text-slate-300 text-[9.5px]">Aguardando Aprovação</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção 1: Fila de Usuários Pendentes de Aprovação (Badge 2) -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <h3 class="text-base font-black text-slate-950 tracking-tight">
+                          Solicitações de Acesso Pendentes (${pendingUsers.length})
+                        </h3>
+                        <p class="text-xs text-slate-600">Novos cadastros realizados pelo app mobile ou portal web</p>
+                      </div>
+                      <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                        ● Requer Validação do Admin Master
+                      </span>
+                    </div>
+
+                    ${pendingUsers.length === 0 ? `
+                      <div class="p-8 text-center bg-slate-50 rounded-[16px] text-xs text-slate-500">
+                        ✓ Nenhuma solicitação pendente no momento.
+                      </div>
+                    ` : `
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${pendingUsers.map(u => `
+                          <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 shadow-2xs flex flex-col justify-between space-y-3">
+                            <div>
+                              <div class="flex items-center justify-between mb-2">
+                                <strong class="text-sm font-bold text-slate-950">${u.name}</strong>
+                                <span class="bg-[#d4ff00] text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                  Solicita: ${u.requestedLevel || 'Campo'}
+                                </span>
+                              </div>
+                              <div class="text-xs text-slate-600 space-y-1">
+                                <div>• E-mail: <strong class="text-slate-900">${u.email}</strong></div>
+                                <div>• Empresa: <strong class="text-slate-900">${u.company || 'Planes ENG'}</strong></div>
+                                <div>• CPF: <strong class="font-mono text-slate-900">${u.cpf || '000.000.000-00'}</strong></div>
+                                <div>• Telefone: <strong class="text-slate-900">${u.phone || '+55 (81) 97333-2227'}</strong></div>
+                              </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-2 border-t border-slate-200">
+                              <button
+                                type="button"
+                                onclick="approvePendingUser(${u.id})"
+                                class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[10px] transition cursor-pointer"
+                              >
+                                ✓ Aprovar e Liberar Acesso
+                              </button>
+                              <button
+                                type="button"
+                                onclick="rejectPendingUser(${u.id})"
+                                class="px-3 py-2 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-[10px] transition cursor-pointer"
+                              >
+                                Recusar
+                              </button>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    `}
+                  </div>
+
+                  <!-- Seção 2: Usuários Registrados & Matriz RBAC -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <h3 class="text-base font-black text-slate-950 tracking-tight">Usuários Ativos & Níveis de Acesso (RBAC)</h3>
+                      <button
+                        type="button"
+                        onclick="openRegisterModal();"
+                        class="px-3.5 py-1.5 bg-slate-950 text-white text-xs font-bold rounded-[10px] hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        + Cadastrar Usuário
+                      </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <th class="p-3">Usuário / Nome</th>
+                            <th class="p-3">E-mail</th>
+                            <th class="p-3">Perfil RBAC</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-right">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                          ${registeredUsers.map(usr => `
+                            <tr class="hover:bg-slate-50 transition">
+                              <td class="p-3 font-bold text-slate-950 flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-full bg-slate-950 text-white flex items-center justify-center font-bold text-[10px]">
+                                  ${usr.avatar || 'US'}
+                                </div>
+                                <span>${usr.name}</span>
+                              </td>
+                              <td class="p-3 font-mono text-slate-600">${usr.email}</td>
+                              <td class="p-3">
+                                <span class="bg-slate-100 text-slate-900 border border-slate-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                  ${usr.level || usr.role || 'Campo'}
+                                </span>
+                              </td>
+                              <td class="p-3">
+                                <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                  ● Aprovado
+                                </span>
+                              </td>
+                              <td class="p-3 text-right space-x-1">
+                                <button
+                                  type="button"
+                                  onclick="showToast('Perfil de ${usr.name} sincronizado!');"
+                                  class="p-1 hover:bg-slate-200 rounded text-slate-600"
+                                  title="Editar"
+                                >
+                                  ${getSvg('edit', 'w-3.5 h-3.5')}
+                                </button>
+                              </td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              ` : ''}
+
 
               ${activeNav === 'Relatórios & Capa' ? `
                 <div class="space-y-6 animate-card-fade">
