@@ -1904,9 +1904,8 @@
           if (valEl) valEl.innerText = validations.length;
           if (spentEl) spentEl.innerText = 'R$ ' + financialSpent + 'M';
           if (graphRealEl) graphRealEl.innerText = physicalProgress + '%';
-          if (arenaBubble) arenaBubble.innerText = '72%';
-          if (aptsBubble) aptsBubble.innerText = '58%';
-          if (infraBubble) infraBubble.innerText = '45%';
+          const frentesAvgEl = document.getElementById('anim-frentes-avg');
+          if (frentesAvgEl) frentesAvgEl.innerText = '68%';
         }
       }
 
@@ -1925,10 +1924,12 @@
           if (target) b.style.width = target;
         });
 
-        const bubbles = document.querySelectorAll('.anim-bubble');
-        bubbles.forEach(b => {
-          b.style.transform = 'scale(1)';
-          b.style.opacity = '1';
+        const radialRings = document.querySelectorAll('.anim-radial-ring');
+        radialRings.forEach(r => {
+          const target = r.getAttribute('data-offset');
+          if (target !== null) {
+            r.style.strokeDashoffset = target;
+          }
         });
       }, 50);
     }
@@ -2593,89 +2594,93 @@
                     </div>
                   </div>
 
-                  <!-- Right: Frentes de Obra (4 Cols) — REDESENHO COMPLETO DE ALTO IMPACTO -->
-                  <div class="lg:col-span-4 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <!-- Right: Frentes de Obra (4 Cols) — BACKGROUND BRANCO & ANIMAÇÃO FLUIDA -->
+                  <div class="lg:col-span-4 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs flex flex-col justify-between bg-white">
                     <div>
                       <!-- Card Header -->
                       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                         <div class="flex items-center gap-2.5">
-                          <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs shrink-0">
-                            ${getSvg('mapPin', 'w-4 h-4 text-[#d4ff00]')}
+                          <div class="w-9 h-9 rounded-[12px] bg-slate-100 border border-slate-200 text-slate-900 flex items-center justify-center font-black shadow-2xs shrink-0">
+                            ${getSvg('mapPin', 'w-4 h-4 text-slate-800')}
                           </div>
                           <div>
                             <h3 class="text-base font-black text-slate-950 tracking-tight">Frentes de Obra</h3>
-                            <p class="text-[11px] text-slate-500 font-medium">Controle de Ritmo por Setor Operacional</p>
+                            <p class="text-[11px] text-slate-500 font-medium">Controle por Setor & Ritmo Takt</p>
                           </div>
                         </div>
-                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-900 text-[#d4ff00] border border-slate-800 font-mono">
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-300 font-mono">
                           ● 4 Frentes
                         </span>
                       </div>
 
-                      <!-- NOVO GRÁFICO RADIAL CONCÊNTRICO & CENTRO DE COMANDO (SUBSTITUINDO AS BOLHAS) -->
-                      <div class="p-4 bg-slate-950 rounded-[18px] text-white my-3 shadow-md relative overflow-hidden flex flex-col items-center justify-center">
-                        <div class="relative w-44 h-44 flex items-center justify-center">
+                      <!-- GRÁFICO RADIAL CONCÊNTRICO EM BACKGROUND BRANCO E ANIMAÇÃO DE ENTRADA -->
+                      <div class="p-4 bg-white rounded-[18px] border border-slate-200/90 my-3 shadow-2xs relative overflow-hidden flex flex-col items-center justify-center">
+                        <div class="relative w-48 h-48 flex items-center justify-center">
                           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
-                            <!-- Background Track Rings -->
-                            <circle cx="80" cy="80" r="68" fill="none" stroke="#1e293b" stroke-width="8" />
-                            <circle cx="80" cy="80" r="54" fill="none" stroke="#1e293b" stroke-width="8" />
-                            <circle cx="80" cy="80" r="40" fill="none" stroke="#1e293b" stroke-width="8" />
-                            <circle cx="80" cy="80" r="26" fill="none" stroke="#1e293b" stroke-width="8" />
+                            <!-- Background Light Track Rings -->
+                            <circle cx="80" cy="80" r="68" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
+                            <circle cx="80" cy="80" r="54" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
+                            <circle cx="80" cy="80" r="40" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
+                            <circle cx="80" cy="80" r="26" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
 
-                            <!-- Outer Ring: Arena Shows (92%) -->
+                            <!-- Outer Ring: Arena Shows (92%) - Animated -->
                             <circle
                               cx="80" cy="80" r="68"
-                              fill="none" stroke="#d4ff00" stroke-width="8"
+                              fill="none" stroke="#84cc16" stroke-width="8.5"
                               stroke-dasharray="427"
-                              stroke-dashoffset="${427 * (1 - 0.92)}"
+                              stroke-dashoffset="427"
+                              data-offset="${427 * (1 - 0.92)}"
                               stroke-linecap="round"
-                              class="transition-all duration-1000"
+                              class="anim-radial-ring transition-all duration-1000 ease-out"
                             />
 
-                            <!-- Middle Ring: Bloco Apts (74%) -->
+                            <!-- Middle Ring: Bloco Apts (74%) - Animated -->
                             <circle
                               cx="80" cy="80" r="54"
-                              fill="none" stroke="#60a5fa" stroke-width="8"
+                              fill="none" stroke="#3b82f6" stroke-width="8.5"
                               stroke-dasharray="339"
-                              stroke-dashoffset="${339 * (1 - 0.74)}"
+                              stroke-dashoffset="339"
+                              data-offset="${339 * (1 - 0.74)}"
                               stroke-linecap="round"
-                              class="transition-all duration-1000"
+                              class="anim-radial-ring transition-all duration-1000 ease-out"
                             />
 
-                            <!-- Inner Ring: Infraestrutura (62%) -->
+                            <!-- Inner Ring: Infraestrutura (62%) - Animated -->
                             <circle
                               cx="80" cy="80" r="40"
-                              fill="none" stroke="#10b981" stroke-width="8"
+                              fill="none" stroke="#059669" stroke-width="8.5"
                               stroke-dasharray="251"
-                              stroke-dashoffset="${251 * (1 - 0.62)}"
+                              stroke-dashoffset="251"
+                              data-offset="${251 * (1 - 0.62)}"
                               stroke-linecap="round"
-                              class="transition-all duration-1000"
+                              class="anim-radial-ring transition-all duration-1000 ease-out"
                             />
 
-                            <!-- Core Ring: Piscina Resort (54%) -->
+                            <!-- Core Ring: Piscina Resort (54%) - Animated -->
                             <circle
                               cx="80" cy="80" r="26"
-                              fill="none" stroke="#f59e0b" stroke-width="8"
+                              fill="none" stroke="#f59e0b" stroke-width="8.5"
                               stroke-dasharray="163"
-                              stroke-dashoffset="${163 * (1 - 0.54)}"
+                              stroke-dashoffset="163"
+                              data-offset="${163 * (1 - 0.54)}"
                               stroke-linecap="round"
-                              class="transition-all duration-1000"
+                              class="anim-radial-ring transition-all duration-1000 ease-out"
                             />
                           </svg>
 
-                          <!-- Center Core Text -->
+                          <!-- Center Core Text (Animated Digital Counter) -->
                           <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-[20px] font-black text-white leading-none">68%</span>
-                            <span class="text-[9px] text-[#d4ff00] font-bold uppercase tracking-tight mt-0.5">Média Real</span>
+                            <span id="anim-frentes-avg" class="text-2xl xl:text-3xl font-black text-slate-950 leading-none">0%</span>
+                            <span class="text-[9.5px] text-slate-500 font-bold uppercase tracking-tight mt-0.5">Média Real</span>
                           </div>
                         </div>
 
-                        <!-- Mini Legend -->
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 w-full text-[10.5px] pt-2 border-t border-slate-800 text-slate-300 font-medium">
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00]"></span> Arena: <strong>92%</strong></span>
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></span> Aptos: <strong>74%</strong></span>
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span> Infra: <strong>62%</strong></span>
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span> Piscina: <strong>54%</strong></span>
+                        <!-- Clean Light Legend -->
+                        <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 w-full text-[11px] pt-3 border-t border-slate-100 text-slate-700 font-medium">
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span> Arena: <strong class="text-slate-950 font-bold">92%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Aptos: <strong class="text-slate-950 font-bold">74%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#059669]"></span> Infra: <strong class="text-slate-950 font-bold">62%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span> Piscina: <strong class="text-slate-950 font-bold">54%</strong></span>
                         </div>
                       </div>
 
