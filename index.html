@@ -358,7 +358,7 @@
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp *</label>
-              <input id="new-mem-phone" type="text" placeholder="+55 (81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="new-mem-phone" type="text" placeholder="(81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
           </div>
 
@@ -630,7 +630,7 @@
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp</label>
-              <input id="edit-user-phone" type="text" placeholder="+55 (81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="edit-user-phone" type="text" placeholder="(81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
           </div>
 
@@ -2555,16 +2555,18 @@
       if (clean.startsWith('55') && clean.length > 11) {
         clean = clean.substring(2);
       }
+      clean = clean.substring(0, 11);
       if (clean.length === 0) return '';
-      if (clean.length <= 2) return `+55 (${clean}`;
-      if (clean.length <= 7) return `+55 (${clean.substring(0, 2)}) ${clean.substring(2)}`;
-      if (clean.length <= 10) return `+55 (${clean.substring(0, 2)}) ${clean.substring(2, 6)}-${clean.substring(6)}`;
-      return `+55 (${clean.substring(0, 2)}) ${clean.substring(2, 7)}-${clean.substring(7, 11)}`;
+      if (clean.length <= 2) return `(${clean}`;
+      if (clean.length <= 6) return `(${clean.substring(0, 2)}) ${clean.substring(2)}`;
+      if (clean.length <= 10) return `(${clean.substring(0, 2)}) ${clean.substring(2, 6)}-${clean.substring(6)}`;
+      return `(${clean.substring(0, 2)}) ${clean.substring(2, 7)}-${clean.substring(7, 11)}`;
     }
 
     function maskCpf(val) {
       if (!val) return '';
       let clean = String(val).replace(/\D/g, '').substring(0, 11);
+      if (clean.length === 0) return '';
       if (clean.length <= 3) return clean;
       if (clean.length <= 6) return `${clean.substring(0, 3)}.${clean.substring(3)}`;
       if (clean.length <= 9) return `${clean.substring(0, 3)}.${clean.substring(3, 6)}.${clean.substring(6)}`;
@@ -2573,13 +2575,9 @@
 
     function maskRg(val) {
       if (!val) return '';
-      let clean = String(val).trim();
-      let hasSSP = clean.toUpperCase().includes('SSP');
-      let digits = clean.replace(/\D/g, '').substring(0, 8);
-      let prefix = hasSSP ? 'SSP-' : '';
-      if (digits.length <= 2) return prefix ? `${prefix}${digits}` : digits;
-      if (digits.length <= 5) return `${prefix}${digits.substring(0, 2)}.${digits.substring(2)}`;
-      return `${prefix}${digits.substring(0, 2)}.${digits.substring(2, 5)}.${digits.substring(5, 8)}`;
+      let clean = String(val).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 12);
+      if (clean.length === 0) return '';
+      return clean;
     }
 
     // LISTA E CADASTRO DE SUPRIMENTOS
