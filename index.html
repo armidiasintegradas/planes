@@ -2626,15 +2626,44 @@
                           <p class="text-xs text-slate-600 font-medium">Previsto na Linha de Balanço 16.03 vs Real Medido e Comprovado em Campo</p>
                         </div>
                         <div class="flex items-center gap-2">
-                          <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-[10px] border border-slate-200">
-                            <button onclick="setChartView('colunas')" title="Pilares de Equilíbrio (Editorial)" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${chartViewType === 'colunas' ? 'bg-white text-slate-950 shadow-2xs' : 'text-slate-600'}">
-                              ${getSvg('layers', 'w-3.5 h-3.5')}
+                          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-[14px] border border-slate-200 shadow-2xs">
+                            <button
+                              type="button"
+                              onclick="setChartView('colunas')"
+                              title="Infográfico Editorial de Colunas (Pilares de Equilíbrio)"
+                              class="px-3 py-1.5 rounded-[10px] text-xs font-bold transition-all cursor-pointer flex items-center justify-center min-w-[36px] ${
+                                chartViewType === 'colunas'
+                                  ? 'bg-white text-blue-900 shadow-xs ring-2 ring-blue-600 border border-blue-500 font-black'
+                                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
+                              }"
+                            >
+                              ${getSvg('layers', `w-4 h-4 ${chartViewType === 'colunas' ? 'text-blue-900' : 'text-slate-700'}`)}
                             </button>
-                            <button onclick="setChartView('barras')" title="Barras Mensais" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${chartViewType === 'barras' ? 'bg-white text-slate-950 shadow-2xs' : 'text-slate-600'}">
-                              ${getSvg('barChart2', 'w-3.5 h-3.5')}
+
+                            <button
+                              type="button"
+                              onclick="setChartView('barras')"
+                              title="Barras Mensais Comparativas (Previsto vs Real)"
+                              class="px-3 py-1.5 rounded-[10px] text-xs font-bold transition-all cursor-pointer flex items-center justify-center min-w-[36px] ${
+                                chartViewType === 'barras'
+                                  ? 'bg-white text-blue-900 shadow-xs ring-2 ring-blue-600 border border-blue-500 font-black'
+                                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
+                              }"
+                            >
+                              ${getSvg('barChart2', `w-4 h-4 ${chartViewType === 'barras' ? 'text-blue-900' : 'text-slate-700'}`)}
                             </button>
-                            <button onclick="setChartView('linhas')" title="Curva S" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${chartViewType === 'linhas' ? 'bg-white text-slate-950 shadow-2xs' : 'text-slate-600'}">
-                              ${getSvg('trendingUp', 'w-3.5 h-3.5')}
+
+                            <button
+                              type="button"
+                              onclick="setChartView('linhas')"
+                              title="Curva S Acumulada de Desempenho"
+                              class="px-3 py-1.5 rounded-[10px] text-xs font-bold transition-all cursor-pointer flex items-center justify-center min-w-[36px] ${
+                                chartViewType === 'linhas'
+                                  ? 'bg-white text-blue-900 shadow-xs ring-2 ring-blue-600 border border-blue-500 font-black'
+                                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-200/60'
+                              }"
+                            >
+                              ${getSvg('trendingUp', `w-4 h-4 ${chartViewType === 'linhas' ? 'text-blue-900' : 'text-slate-700'}`)}
                             </button>
                           </div>
                         </div>
@@ -2655,136 +2684,169 @@
                       </div>
                     </div>
 
-                    <!-- Chart Canvas -->
-                    <div class="relative w-full pt-4">
-                      <div class="absolute inset-0 flex flex-col justify-between text-[10px] text-slate-400 font-mono pointer-events-none pb-7">
-                        <div class="border-b border-slate-200 pb-1">100%</div>
-                        <div class="border-b border-slate-200 pb-1">75%</div>
-                        <div class="border-b border-slate-200 pb-1">50%</div>
-                        <div class="border-b border-slate-200 pb-1">25%</div>
-                        <div>10%</div>
+                                        <!-- Chart Canvas (EXPANDIDO PARA BAIXO: h-[360px] xl:h-[420px]) -->
+                    <div class="relative w-full pt-4 my-2">
+                      <!-- Grid Horizontal Reference Lines -->
+                      <div class="absolute inset-0 flex flex-col justify-between text-[11px] text-slate-400 font-mono pointer-events-none pb-8">
+                        <div class="border-b border-slate-200/90 pb-1 flex justify-between"><span>100%</span><span class="text-[10px] text-slate-400 font-sans">Meta Final</span></div>
+                        <div class="border-b border-slate-200/90 pb-1 flex justify-between"><span>75%</span><span class="text-[10px] text-slate-400 font-sans">Revestimentos</span></div>
+                        <div class="border-b border-slate-200/90 pb-1 flex justify-between"><span>50%</span><span class="text-[10px] text-slate-400 font-sans">Alvenaria</span></div>
+                        <div class="border-b border-slate-200/90 pb-1 flex justify-between"><span>25%</span><span class="text-[10px] text-slate-400 font-sans">Fundações</span></div>
+                        <div class="flex justify-between"><span>0%</span><span class="text-[10px] text-slate-400 font-sans">Início</span></div>
                       </div>
 
-                                            ${chartViewType === 'colunas' ? `
-                        <!-- EXACT EDITORIAL INFOGRAPHIC DYNAMIC FROM REFERENCE IMAGE (MONTH-BY-MONTH ALTERNATING COLORS) -->
-                        <div class="relative z-10 w-full h-44 xl:h-52 grid grid-cols-7 border-b border-slate-300 items-stretch">
+                      ${chartViewType === 'colunas' ? `
+                        <!-- EXACT EDITORIAL INFOGRAPHIC DYNAMIC — PILARES ALTOS EXPANDIDOS PARA BAIXO -->
+                        <div class="relative z-10 w-full h-[360px] xl:h-[420px] grid grid-cols-7 border-b-2 border-slate-400 items-stretch">
+                          
                           <!-- Coluna: Mai -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 pr-2">
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 pr-2">
                             <div>
-                              <strong class="text-xs xl:text-sm font-bold text-slate-950 block leading-tight">Mai</strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-500 font-medium">(54% prev)</span>
+                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Mai</strong>
+                              <span class="text-[11px] text-slate-500 font-medium">(54% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">51%</span>
-                              <div data-height="51%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">51%</span>
+                              <div data-height="51%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
-                          <!-- Coluna: Jun (Verde Esmeralda do Padrão Feed TV) -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2 bg-emerald-50/40 rounded-t-lg">
+                          <!-- Coluna: Jun (Verde Esmeralda em Destaque) -->
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2 bg-emerald-50/60 rounded-t-2xl shadow-xs">
                             <div>
-                              <strong class="text-xs xl:text-sm font-black text-emerald-950 block leading-tight">Jun <span class="text-[9px] bg-emerald-700 text-white px-1.5 py-0.2 rounded-sm font-sans">Hoje</span></strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-emerald-800 font-bold">(R$ 3,85M)</span>
+                              <strong class="text-sm xl:text-base font-black text-emerald-950 block leading-tight">Jun <span class="text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded-md font-sans ml-1">Hoje</span></strong>
+                              <span class="text-[11px] text-emerald-800 font-bold">(R$ 3,85M)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none font-bold">62%</span>
-                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-emerald-600 border border-emerald-700 shadow-xs transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-4xl xl:text-5xl text-emerald-950 mb-1 z-10 leading-none font-black">62%</span>
+                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-emerald-600 border-2 border-emerald-700 shadow-md transition-all duration-1000 ease-out rounded-t-md"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Jul -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2">
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
                             <div>
-                              <strong class="text-xs xl:text-sm font-bold text-slate-950 block leading-tight">Jul</strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-500 font-medium">(75% prev)</span>
+                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Jul</strong>
+                              <span class="text-[11px] text-slate-500 font-medium">(75% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">71%</span>
-                              <div data-height="71%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">71%</span>
+                              <div data-height="71%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Ago -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2">
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
                             <div>
-                              <strong class="text-xs xl:text-sm font-bold text-slate-950 block leading-tight">Ago</strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-500 font-medium">(84% prev)</span>
+                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Ago</strong>
+                              <span class="text-[11px] text-slate-500 font-medium">(84% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">80%</span>
-                              <div data-height="80%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">80%</span>
+                              <div data-height="80%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Set -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2">
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
                             <div>
-                              <strong class="text-xs xl:text-sm font-bold text-slate-950 block leading-tight">Set</strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-500 font-medium">(92% prev)</span>
+                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Set</strong>
+                              <span class="text-[11px] text-slate-500 font-medium">(92% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">89%</span>
-                              <div data-height="89%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">89%</span>
+                              <div data-height="89%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Out -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2">
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
                             <div>
-                              <strong class="text-xs xl:text-sm font-bold text-slate-950 block leading-tight">Out</strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-500 font-medium">(97% prev)</span>
+                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Out</strong>
+                              <span class="text-[11px] text-slate-500 font-medium">(97% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">95%</span>
-                              <div data-height="95%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">95%</span>
+                              <div data-height="95%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Nov -->
-                          <div class="relative flex flex-col justify-between  pl-2">
+                          <div class="relative flex flex-col justify-between pl-2">
                             <div>
-                              <strong class="text-xs xl:text-sm font-bold text-slate-950 block leading-tight">Nov</strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-500 font-medium">(Entrega)</span>
+                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Nov</strong>
+                              <span class="text-[11px] text-slate-500 font-medium">(Entrega)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">100%</span>
-                              <div data-height="100%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
+                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">100%</span>
+                              <div data-height="100%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
                         </div>
                       ` : (chartViewType === 'barras' ? `
-                        <div class="relative z-10 flex justify-between items-end h-44 xl:h-52 px-4 sm:px-8 overflow-x-auto">
+                        <div class="relative z-10 flex justify-between items-end h-[360px] xl:h-[420px] px-4 sm:px-8 overflow-x-auto">
                           ${barChartData.map(item => `
                             <div onclick="setMonth('${item.month}')" class="flex flex-col items-center gap-2 group cursor-pointer">
-                              <div class="flex items-end gap-1.5 h-36 xl:h-44 relative">
+                              <div class="flex items-end gap-2 h-[280px] xl:h-[330px] relative">
                                 ${selectedMonth === item.month ? `
-                                  <div class="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
-                                    <div class="speech-bubble text-[11.5px] font-extrabold text-center">
+                                   <div class="absolute -top-14 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                                    <div class="speech-bubble text-xs font-black text-center shadow-lg">
                                       <div>${item.value} (${item.real}%)</div>
-                                      <div class="text-[9.5px] text-slate-300 font-normal">${item.month} 2026 · Desvio: ${item.deviation}</div>
+                                      <div class="text-[10px] text-slate-300 font-normal">${item.month} 2026 · Desvio: ${item.deviation}</div>
                                     </div>
-                                    <div class="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
                                   </div>
                                 ` : ''}
 
-                                <div data-height="${item.plan * 0.9}%" style="height: 0%;" class="anim-bar w-4 sm:w-5 xl:w-6 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-                                <div data-height="${item.real * 0.9}%" style="height: 0%;" class="anim-bar w-4 sm:w-5 xl:w-6 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+                                <div data-height="${item.plan * 0.9}%" style="height: 0%;" class="anim-bar w-6 sm:w-7 xl:w-8 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
+                                <div data-height="${item.real * 0.9}%" style="height: 0%;" class="anim-bar w-6 sm:w-7 xl:w-8 bg-emerald-600 rounded-t-full transition-all duration-1000 ease-out border border-emerald-700 shadow-xs"></div>
                               </div>
-                              <span class="text-[12px] transition ${selectedMonth === item.month ? 'font-black text-slate-950' : 'text-slate-600 font-semibold'}">
+                              <span class="text-xs transition ${selectedMonth === item.month ? 'font-black text-slate-950 scale-110' : 'text-slate-600 font-bold'}">
                                 ${item.month}
                               </span>
                             </div>
                           `).join('')}
                         </div>
                       ` : `
-                        <div class="relative z-10 w-full h-44 xl:h-52 px-4 sm:px-8 flex flex-col justify-between">
-                          <svg viewBox="0 0 500 140" class="w-full h-36 xl:h-44 overflow-visible">
-                            <path d="M 20,110 C 100,90 200,60 300,35 C 400,20 480,10 480,10" fill="none" stroke="#8eb3ff" stroke-width="3.5" stroke-linecap="round" />
-                            <path d="M 20,115 C 100,98 200,68 300,42" fill="none" stroke="#d4ff00" stroke-width="4.5" stroke-linecap="round" />
-                            <circle cx="300" cy="42" r="6" fill="#111827" stroke="#ffffff" stroke-width="2" />
+                        <div class="relative z-10 w-full h-[360px] xl:h-[420px] px-4 sm:px-8 flex flex-col justify-between">
+                          <svg viewBox="0 0 600 300" class="w-full h-[280px] xl:h-[330px] overflow-visible">
+                            <defs>
+                              <linearGradient id="curvaRealGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#059669" stop-opacity="0.35" />
+                                <stop offset="100%" stop-color="#059669" stop-opacity="0.0" />
+                              </linearGradient>
+                            </defs>
+                            
+                            <!-- Área Sombreada Real -->
+                            <path d="M 30,260 C 120,220 220,150 320,100 L 320,290 L 30,290 Z" fill="url(#curvaRealGrad)" />
+
+                            <!-- Curva Planejada (Azul Suave) -->
+                            <path d="M 30,250 C 120,210 220,130 320,80 C 420,50 520,25 570,15" fill="none" stroke="#8eb3ff" stroke-width="5" stroke-linecap="round" stroke-dasharray="8,5" />
+
+                            <!-- Curva Real Medida (Verde Esmeralda Sólido) -->
+                            <path d="M 30,260 C 120,220 220,150 320,100" fill="none" stroke="#059669" stroke-width="7" stroke-linecap="round" />
+
+                            <!-- Pontos de Medição -->
+                            <circle cx="30" cy="260" r="6" fill="#3b82f6" stroke="#ffffff" stroke-width="2" />
+                            <circle cx="175" cy="185" r="6" fill="#3b82f6" stroke="#ffffff" stroke-width="2" />
+                            <circle cx="320" cy="100" r="9" fill="#059669" stroke="#ffffff" stroke-width="3" class="animate-pulse" />
+
+                            <!-- Tooltip no Ponto Atual -->
+                            <g transform="translate(250, 35)">
+                              <rect x="0" y="0" width="140" height="42" rx="10" fill="#0f172a" opacity="0.95" />
+                              <text x="70" y="19" fill="#d4ff00" font-size="12" font-weight="900" text-anchor="middle">Junho: 61.8%</text>
+                              <text x="70" y="33" fill="#94a3b8" font-size="10" text-anchor="middle">Previsto: 66.4% (-4.6%)</text>
+                            </g>
                           </svg>
-                          <div class="flex justify-between text-[11px] text-slate-600 font-bold pt-1">
-                            <span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span>
+
+                          <div class="flex justify-between text-xs text-slate-700 font-bold pt-2 border-t-2 border-slate-300">
+                            <span class="text-center">Mai<br><small class="text-slate-400 font-normal">51%</small></span>
+                            <span class="text-center text-emerald-900 font-black">Jun (Hoje)<br><small class="text-emerald-700 font-bold">62%</small></span>
+                            <span class="text-center">Jul<br><small class="text-slate-400 font-normal">71%</small></span>
+                            <span class="text-center">Ago<br><small class="text-slate-400 font-normal">80%</small></span>
+                            <span class="text-center">Set<br><small class="text-slate-400 font-normal">89%</small></span>
+                            <span class="text-center">Out<br><small class="text-slate-400 font-normal">95%</small></span>
+                            <span class="text-center">Nov<br><small class="text-slate-400 font-normal">100%</small></span>
                           </div>
                         </div>
                       `)}
