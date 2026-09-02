@@ -992,6 +992,7 @@
         edit: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
         menu: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>`,
         trash: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
+        refresh: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
       };
       return svgs[name] || '';
     };
@@ -1278,6 +1279,48 @@
     } catch (e) {
       pendingUsers = [];
     }
+
+        let lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    function refreshPendingUsers(manual = false) {
+      try {
+        const savedPending = localStorage.getItem('planes_pending_users');
+        if (savedPending) {
+          const parsed = JSON.parse(savedPending);
+          pendingUsers = Array.isArray(parsed) ? parsed.filter(u => u.email !== 'rodrigo.tavares@empresa.com' && u.email !== 'luciana@japaratingaresort.com.br') : [];
+        } else {
+          pendingUsers = [];
+        }
+
+        const savedUsers = localStorage.getItem('planes_registered_users');
+        if (savedUsers) {
+          registeredUsers = JSON.parse(savedUsers);
+          if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
+            registeredUsers.unshift(defaultRegisteredUsers[0]);
+          }
+        }
+      } catch (e) {}
+
+      lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (manual) {
+        showToast(`✓ Fila de solicitações atualizada! (${pendingUsers.length} pendentes)`);
+      }
+
+      if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
+        render();
+      }
+    }
+
+    // Auto-sync em segundo plano a cada 60 segundos (1 minuto)
+    let pendingSyncInterval = null;
+    function initPendingSyncTimer() {
+      if (pendingSyncInterval) clearInterval(pendingSyncInterval);
+      pendingSyncInterval = setInterval(() => {
+        refreshPendingUsers(false);
+      }, 60000); // 60 segundos
+    }
+    initPendingSyncTimer();
 
     function saveUsersStorage() {
       try {
@@ -6727,18 +6770,37 @@ ${activeNav === 'Equipe & Contatos' ? `
                     </div>
                   </div>
 
-                  <!-- Seção 1: Fila de Usuários Pendentes de Aprovação (Badge 2) -->
+                  <!-- Seção 1: Fila de Usuários Pendentes de Aprovação -->
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                       <div>
-                        <h3 class="text-base font-black text-slate-950 tracking-tight">
-                          Solicitações de Acesso Pendentes (${pendingUsers.length})
-                        </h3>
-                        <p class="text-xs text-slate-600">Novos cadastros realizados pelo app mobile ou portal web</p>
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h3 class="text-base font-black text-slate-950 tracking-tight">
+                            Solicitações de Acesso Pendentes (${pendingUsers.length})
+                          </h3>
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Auto-sync (1 min)
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Novos cadastros de colaboradores · Última checagem: <strong class="font-mono text-slate-800">${lastPendingSyncTime}</strong>
+                        </p>
                       </div>
-                      <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-                        ● Requer Validação do Admin Master
-                      </span>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onclick="refreshPendingUsers(true)"
+                          class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 hover:text-slate-950 text-xs font-black rounded-[12px] border border-slate-300 transition flex items-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                          title="Buscar novas solicitações agora"
+                        >
+                          ${getSvg('refresh', 'w-3.5 h-3.5 text-slate-700')}
+                          <span>Atualizar Fila</span>
+                        </button>
+                        <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-[12px]">
+                          ● Requer Validação
+                        </span>
+                      </div>
                     </div>
 
                     ${pendingUsers.length === 0 ? `
