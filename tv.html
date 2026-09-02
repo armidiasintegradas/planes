@@ -2,7 +2,7 @@
 <html lang="pt-BR" class="h-full w-full overflow-hidden">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <!-- iOS Web App & PWA Standalone Optimization Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -31,6 +31,21 @@
       --text-muted: #64748b;
     }
     * { box-sizing: border-box; }
+    /* iOS Web App & Safe Area Optimizations */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      padding-top: max(0.6rem, env(safe-area-inset-top, 0px));
+      padding-bottom: max(0.6rem, env(safe-area-inset-bottom, 0px));
+      padding-left: max(0.6rem, env(safe-area-inset-left, 0px));
+      padding-right: max(0.6rem, env(safe-area-inset-right, 0px));
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
     html, body {
       min-height: 100vh;
       width: 100vw;
@@ -169,7 +184,7 @@
     <div class="col-span-12 lg:col-span-8 flex flex-col justify-between gap-3 min-h-0">
       
       <!-- TOP ROW: 4 MODERN HIGH-IMPACT FINANCIAL & BALANCE COCKPIT CARDS -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         
         <!-- Card 1: Teto Orçamentário & Queima de Saldo -->
         <div class="white-bento-card p-3.5 flex flex-col justify-between border border-slate-200">
@@ -276,7 +291,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-mai" class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-mai" class="font-card-number text-xs sm:text-xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="51%" style="height: 0%;" class="ref-block-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
             </div>
           </div>
@@ -289,7 +304,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-jun" class="font-card-number text-2xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-jun" class="font-card-number text-xs sm:text-xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="62%" style="height: 0%;" class="ref-block-bar w-full bg-emerald-600 border border-emerald-700 transition-all duration-1000 ease-out shadow-xs"></div>
             </div>
           </div>
@@ -302,7 +317,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-jul" class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-jul" class="font-card-number text-xs sm:text-xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="71%" style="height: 0%;" class="ref-block-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
             </div>
           </div>
@@ -315,7 +330,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-ago" class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-ago" class="font-card-number text-xs sm:text-xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="80%" style="height: 0%;" class="ref-block-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out"></div>
             </div>
           </div>
@@ -328,7 +343,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-set" class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-set" class="font-card-number text-xs sm:text-xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="89%" style="height: 0%;" class="ref-block-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
             </div>
           </div>
@@ -341,7 +356,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-out" class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-out" class="font-card-number text-xs sm:text-xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="95%" style="height: 0%;" class="ref-block-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out"></div>
             </div>
           </div>
@@ -354,7 +369,7 @@
             </div>
             
             <div class="w-full flex flex-col justify-end h-28 xl:h-36 relative">
-              <span id="tv-m-nov" class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
+              <span id="tv-m-nov" class="font-card-number text-xs sm:text-xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">0%</span>
               <div data-height="100%" style="height: 0%;" class="ref-block-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out"></div>
             </div>
           </div>
@@ -421,7 +436,7 @@
         </div>
 
         <!-- 4 Columns Ponta a Ponta -->
-        <div class="grid grid-cols-4 gap-2.5 my-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 my-2">
           
           <div class="bg-slate-50 p-2.5 rounded-[10px] border border-slate-200">
             <div class="flex items-center justify-between mb-1">
