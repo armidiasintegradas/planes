@@ -1,16 +1,19 @@
-<!-- Planes Build: 1788382226 -->
+<!-- Planes Build: 1788382361 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <!-- PWA & Mobile Web App Standalone Tags (iOS & Android) -->
+  <!-- iOS Web App & PWA Standalone Optimization Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Planes OS">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0f172a">
-  <link rel="apple-touch-icon" href="https://armidiasintegradas.github.io/planes/apple-touch-icon.png">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='120' fill='%230f172a'/%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='320' fill='%23d4ff00'%3EP%3C/text%3E%3C/svg%3E">
 
   <title>Planes Gestão de Engenharia — Full HD</title>
@@ -20,7 +23,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700,800&f[]=satoshi@400,500,700,800,900&display=swap" rel="stylesheet">
   <style>
-    /* Mobile Safe Area & Touch Optimizations */
+        /* iOS Web App & Cupertino Style Optimizations */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    /* Allow text selection in inputs and data tables */
+    input, textarea, select, table, [contenteditable="true"] {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+    .ios-blur-header {
+      padding-top: max(0.75rem, env(safe-area-inset-top));
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      background-color: rgba(255, 255, 255, 0.90);
+    }
+    .ios-blur-tabbar {
+      padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
+      background-color: rgba(255, 255, 255, 0.92);
+      border-top: 0.5px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 -4px 24px -2px rgba(15, 23, 42, 0.06);
+    }
+    .ios-press-action {
+      transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.12s ease;
+    }
+    .ios-press-action:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+    .touch-scroll {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
     @supports (padding: max(0px)) {
       body {
         padding-top: max(0px, env(safe-area-inset-top));
@@ -4889,75 +4935,75 @@
             </div>
           </div>
 
-          <!-- NATIVE-STYLE MOBILE BOTTOM TAB BAR (THUMB-FRIENDLY FOR IPHONE & ANDROID) -->
-          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 mobile-bottom-bar flex items-center justify-around px-1 py-1.5 shadow-2xl">
+          <!-- iOS CUPERTINO-STYLE BOTTOM TAB BAR (OPTIMIZED FOR IPHONE WEB APP) -->
+          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 ios-blur-tabbar flex items-center justify-around px-1.5 py-1">
             
             <!-- Tab 1: Visão Geral -->
             <button
               type="button"
               onclick="setNavWithHistory('Visão Geral')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Visão Geral' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('home', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Início</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Visão Geral' ? 'text-slate-950' : 'text-slate-500'}">Início</span>
             </button>
 
             <!-- Tab 2: Canteiro 1-Touch -->
             <button
               type="button"
               onclick="setNavWithHistory('Canteiro 1-Touch')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Canteiro 1-Touch' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('zap', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">1-Touch</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Canteiro 1-Touch' ? 'text-slate-950' : 'text-slate-500'}">1-Touch</span>
             </button>
 
             <!-- Tab 3: Linha de Balanço -->
             <button
               type="button"
               onclick="setNavWithHistory('Linha de Balanço')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Linha de Balanço' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('layers', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Linha</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Linha de Balanço' ? 'text-slate-950' : 'text-slate-500'}">Linha</span>
             </button>
 
             <!-- Tab 4: IA Copiloto -->
             <button
               type="button"
               onclick="setNavWithHistory('Planes Intelligence')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Planes Intelligence' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('bot', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">IA Copilot</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">IA Copilot</span>
             </button>
 
             <!-- Tab 5: Menu Completo (Abre Drawer) -->
             <button
               type="button"
               onclick="toggleMobileMenu()"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] text-slate-600 hover:text-slate-950 transition cursor-pointer min-h-[44px]"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px]"
             >
-              <div class="p-1.5 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200">
+              <div class="w-8 h-8 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center">
                 ${getSvg('menu', 'w-4 h-4 text-slate-900')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Menu</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 text-slate-600">Menu</span>
             </button>
 
           </nav>
@@ -5018,75 +5064,75 @@
             </div>
           </div>
 
-          <!-- NATIVE-STYLE MOBILE BOTTOM TAB BAR (THUMB-FRIENDLY FOR IPHONE & ANDROID) -->
-          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 mobile-bottom-bar flex items-center justify-around px-1 py-1.5 shadow-2xl">
+          <!-- iOS CUPERTINO-STYLE BOTTOM TAB BAR (OPTIMIZED FOR IPHONE WEB APP) -->
+          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 ios-blur-tabbar flex items-center justify-around px-1.5 py-1">
             
             <!-- Tab 1: Visão Geral -->
             <button
               type="button"
               onclick="setNavWithHistory('Visão Geral')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Visão Geral' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('home', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Início</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Visão Geral' ? 'text-slate-950' : 'text-slate-500'}">Início</span>
             </button>
 
             <!-- Tab 2: Canteiro 1-Touch -->
             <button
               type="button"
               onclick="setNavWithHistory('Canteiro 1-Touch')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Canteiro 1-Touch' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('zap', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">1-Touch</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Canteiro 1-Touch' ? 'text-slate-950' : 'text-slate-500'}">1-Touch</span>
             </button>
 
             <!-- Tab 3: Linha de Balanço -->
             <button
               type="button"
               onclick="setNavWithHistory('Linha de Balanço')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Linha de Balanço' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('layers', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Linha</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Linha de Balanço' ? 'text-slate-950' : 'text-slate-500'}">Linha</span>
             </button>
 
             <!-- Tab 4: IA Copiloto -->
             <button
               type="button"
               onclick="setNavWithHistory('Planes Intelligence')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Planes Intelligence' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('bot', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">IA Copilot</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">IA Copilot</span>
             </button>
 
             <!-- Tab 5: Menu Completo (Abre Drawer) -->
             <button
               type="button"
               onclick="toggleMobileMenu()"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] text-slate-600 hover:text-slate-950 transition cursor-pointer min-h-[44px]"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px]"
             >
-              <div class="p-1.5 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200">
+              <div class="w-8 h-8 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center">
                 ${getSvg('menu', 'w-4 h-4 text-slate-900')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Menu</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 text-slate-600">Menu</span>
             </button>
 
           </nav>
@@ -5446,7 +5492,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
         <div class="w-full min-h-screen flex flex-col justify-between">
           
           <!-- FULL HD PANORAMIC HEADER -->
-          <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 xl:px-10 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 shadow-xs sticky top-0 z-30">
+          <header class="w-full ios-blur-header border-b border-slate-200 px-3.5 sm:px-6 xl:px-10 py-2.5 sm:py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-xs sticky top-0 z-30">
             <div class="flex items-center justify-between lg:justify-start gap-4">
               <div class="flex items-center gap-3">
                 <button type="button" onclick="toggleMobileMenu()" class="lg:hidden p-2.5 rounded-[14px] bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200 cursor-pointer min-h-[40px] flex items-center justify-center">
@@ -10013,75 +10059,75 @@ ${activeNav === 'Equipe & Contatos' ? `
             </div>
           </div>
 
-          <!-- NATIVE-STYLE MOBILE BOTTOM TAB BAR (THUMB-FRIENDLY FOR IPHONE & ANDROID) -->
-          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 mobile-bottom-bar flex items-center justify-around px-1 py-1.5 shadow-2xl">
+          <!-- iOS CUPERTINO-STYLE BOTTOM TAB BAR (OPTIMIZED FOR IPHONE WEB APP) -->
+          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 ios-blur-tabbar flex items-center justify-around px-1.5 py-1">
             
             <!-- Tab 1: Visão Geral -->
             <button
               type="button"
               onclick="setNavWithHistory('Visão Geral')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Visão Geral' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('home', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Início</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Visão Geral' ? 'text-slate-950' : 'text-slate-500'}">Início</span>
             </button>
 
             <!-- Tab 2: Canteiro 1-Touch -->
             <button
               type="button"
               onclick="setNavWithHistory('Canteiro 1-Touch')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Canteiro 1-Touch' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('zap', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">1-Touch</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Canteiro 1-Touch' ? 'text-slate-950' : 'text-slate-500'}">1-Touch</span>
             </button>
 
             <!-- Tab 3: Linha de Balanço -->
             <button
               type="button"
               onclick="setNavWithHistory('Linha de Balanço')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Linha de Balanço' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('layers', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Linha</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Linha de Balanço' ? 'text-slate-950' : 'text-slate-500'}">Linha</span>
             </button>
 
             <!-- Tab 4: IA Copiloto -->
             <button
               type="button"
               onclick="setNavWithHistory('Planes Intelligence')"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px] ${
                 activeNav === 'Planes Intelligence' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
               }"
             >
-              <div class="p-1.5 rounded-[10px] ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+              <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('bot', 'w-4 h-4')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">IA Copilot</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">IA Copilot</span>
             </button>
 
             <!-- Tab 5: Menu Completo (Abre Drawer) -->
             <button
               type="button"
               onclick="toggleMobileMenu()"
-              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] text-slate-600 hover:text-slate-950 transition cursor-pointer min-h-[44px]"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[14px] ios-press-action cursor-pointer min-h-[44px]"
             >
-              <div class="p-1.5 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200">
+              <div class="w-8 h-8 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center">
                 ${getSvg('menu', 'w-4 h-4 text-slate-900')}
               </div>
-              <span class="text-[10px] font-bold tracking-tight mt-0.5">Menu</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 text-slate-600">Menu</span>
             </button>
 
           </nav>
