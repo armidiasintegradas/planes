@@ -103,37 +103,38 @@
       </div>
     </div>
 
-    <!-- Live Clock, Fullscreen & Status Badge -->
-    <div class="flex items-center gap-2.5">
-      <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-[10px]">
-        <span class="w-2 h-2 rounded-full bg-[#d4ff00] ring-4 ring-[#d4ff00]/30 animate-pulse"></span>
+    <!-- Redesigned Live Clock, Telemetry & TV Fullscreen (Filling space left by Hub Geral) -->
+    <div class="flex items-center gap-3">
+      
+      <!-- Telemetry Sync Pill -->
+      <div class="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-[10px] shadow-2xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00] ring-4 ring-[#d4ff00]/30 animate-pulse"></span>
         <div class="text-left">
-          <span class="text-[9px] text-slate-500 font-bold uppercase block leading-none">Sincronização</span>
-          <span class="text-[11px] font-bold text-slate-900">Tempo Real Ativo</span>
+          <span class="text-[9.5px] text-slate-500 font-black uppercase tracking-wider block leading-none">Telemetria</span>
+          <span class="text-[11px] font-black text-slate-900 leading-tight">Ao Vivo · 100% Sincronizado</span>
         </div>
       </div>
 
-      <div class="text-right bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-[10px]">
-        <span id="live-time" class="text-xs xl:text-sm font-black font-mono-num text-slate-950 block leading-none">19:48:00</span>
-        <span id="live-date" class="text-[10px] text-slate-600 font-semibold block mt-0.5">01 de Setembro, 2026</span>
+      <!-- Expanded Executive Digital Clock & Date Block -->
+      <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-1.5 rounded-[10px] shadow-2xs">
+        <div class="text-right">
+          <span id="live-time" class="text-sm xl:text-base font-black font-mono-num text-slate-950 block leading-none tracking-wider">19:48:00</span>
+          <span id="live-date" class="text-[10px] xl:text-[11px] text-slate-600 font-semibold block mt-0.5">01 de Setembro, 2026</span>
+        </div>
       </div>
 
-      <!-- TV Fullscreen Toggle Button -->
+      <!-- Enhanced TV Fullscreen Toggle Button (Prominent & Styled) -->
       <button
         type="button"
         onclick="toggleFullScreen()"
         id="fullscreen-btn"
-        class="p-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 border border-slate-300 rounded-[10px] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
+        class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 border border-slate-300 rounded-[10px] text-xs font-black transition flex items-center gap-2 shadow-xs cursor-pointer"
         title="Ativar / Sair do Modo Tela Cheia (TV Fullscreen)"
       >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-        <span class="hidden sm:inline font-black text-[11px]">Tela Cheia</span>
+        <svg class="w-4 h-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <span class="font-black text-xs tracking-tight uppercase">Tela Cheia</span>
       </button>
 
-      <a href="index.html" class="p-2 bg-slate-950 hover:bg-slate-800 text-white rounded-[10px] text-xs font-bold transition flex items-center gap-1 shadow-xs" title="Voltar para a Plataforma">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        <span class="hidden xl:inline text-[11px]">Hub Geral</span>
-      </a>
     </div>
   </header>
 
@@ -568,9 +569,9 @@
           </div>
         </div>
 
-        <!-- Main Photo Spotlight Frame (Elevated 10% Further Upward & Perfectly Aligned) -->
-        <div class="relative rounded-[10px] overflow-hidden border border-slate-200 flex-1 min-h-[136px] xl:min-h-[156px] group shadow-xs bg-slate-950 -mt-2.5">
-          <img id="live-carousel-img" src="https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80" alt="Evidência" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&auto=format&fit=crop&q=80';" class="w-full h-full object-cover object-[center_20%] transition-all duration-700 opacity-90 -translate-y-2 scale-105" />
+        <!-- Main Photo Spotlight Frame (Elevated 20% Further Upward & Perfectly Aligned) -->
+        <div class="relative rounded-[10px] overflow-hidden border border-slate-200 flex-1 min-h-[136px] xl:min-h-[156px] group shadow-xs bg-slate-950 -mt-5">
+          <img id="live-carousel-img" src="https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80" alt="Evidência" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&auto=format&fit=crop&q=80';" class="w-full h-full object-cover object-[center_5%] transition-all duration-700 opacity-90 -translate-y-4 scale-110" />
           
           <!-- Top Badges Overlay -->
           <div class="absolute top-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none">
