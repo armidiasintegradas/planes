@@ -1435,10 +1435,15 @@
 
     let registeredUsers = [];
     try {
+      const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
       const savedUsers = localStorage.getItem('planes_registered_users');
       if (savedUsers) {
         const parsed = JSON.parse(savedUsers);
-        registeredUsers = Array.isArray(parsed) ? parsed.filter(u => u.email.toLowerCase() !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves') : defaultRegisteredUsers;
+        registeredUsers = Array.isArray(parsed) ? parsed.filter(u => {
+          const e = (u.email || '').toLowerCase();
+          const id = String(u.id || '').toLowerCase();
+          return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves';
+        }) : defaultRegisteredUsers;
       } else {
         registeredUsers = defaultRegisteredUsers;
       }
@@ -3454,34 +3459,101 @@
     }
 
     function deleteUser(userId) {
-      const u = registeredUsers.find(x => String(x.id) === String(userId) || x.email.toLowerCase() === String(userId).toLowerCase());
-      if (!u) return;
-
-      if (u.email.toLowerCase() === 'armidiasintegradas@gmail.com') {
-        showToast('O Admin Master não pode ser excluído.');
+      if (!userId) return;
+      const strId = String(userId).toLowerCase();
+      const u = registeredUsers.find(x => String(x.id).toLowerCase() === strId || (x.email && x.email.toLowerCase() === strId) || (x.name && x.name.toLowerCase() === strId));
+      
+      if (!u) {
+        showToast('Usuário não encontrado na base.');
         return;
       }
 
-      if (confirm(`Deseja realmente excluir o usuário "${u.name}" permanentemente do sistema?`)) {
-        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && x.email.toLowerCase() !== u.email.toLowerCase());
-        pendingUsers = pendingUsers.filter(x => String(x.id) !== String(u.id) && x.email.toLowerCase() !== u.email.toLowerCase());
-        teamMembersList = teamMembersList.filter(x => String(x.id) !== String(u.id) && x.email.toLowerCase() !== u.email.toLowerCase() && x.name.toLowerCase() !== u.name.toLowerCase());
-        
-        // Remove de sessões online se houver
+      if (u.email && u.email.toLowerCase() === 'armidiasintegradas@gmail.com') {
+        showToast('O Administrador Master não pode ser excluído.');
+        return;
+      }
+
+      if (confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email}) da base de dados?`)) {
+        const userEmail = (u.email || '').toLowerCase();
+        const userName = (u.name || '').toLowerCase();
+        const userObjId = String(u.id || '').toLowerCase();
+
+        // 1. Grava na blacklist permanente de exclusão definitiva
+        try {
+          let blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+          if (userEmail && !blacklist.includes(userEmail)) blacklist.push(userEmail);
+          if (userObjId && !blacklist.includes(userObjId)) blacklist.push(userObjId);
+          localStorage.setItem('planes_deleted_users_blacklist', JSON.stringify(blacklist));
+        } catch (e) {}
+
+        // 2. Remove de registeredUsers
+        registeredUsers = registeredUsers.filter(x => {
+          const xEmail = (x.email || '').toLowerCase();
+          const xId = String(x.id || '').toLowerCase();
+          const xName = (x.name || '').toLowerCase();
+          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
+        });
+
+        // 3. Remove de pendingUsers
+        pendingUsers = pendingUsers.filter(x => {
+          const xEmail = (x.email || '').toLowerCase();
+          const xId = String(x.id || '').toLowerCase();
+          return xEmail !== userEmail && xId !== userObjId;
+        });
+
+        // 4. Remove de teamMembersList
+        teamMembersList = teamMembersList.filter(x => {
+          const xEmail = (x.email || '').toLowerCase();
+          const xId = String(x.id || '').toLowerCase();
+          const xName = (x.name || '').toLowerCase();
+          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
+        });
+
+        // 5. Remove de online sessions
         try {
           const raw = localStorage.getItem('planes_online_sessions');
           if (raw) {
             let sessions = JSON.parse(raw);
-            sessions = sessions.filter(s => s.email.toLowerCase() !== u.email.toLowerCase());
+            sessions = sessions.filter(s => (s.email || '').toLowerCase() !== userEmail);
             localStorage.setItem('planes_online_sessions', JSON.stringify(sessions));
           }
         } catch (e) {}
 
         saveUsersStorage();
         saveSessionState();
-        showToast(`✓ Usuário ${u.name} excluído permanentemente.`);
+        showToast(`✓ Usuário ${u.name} foi EXCLUÍDO PERMANENTEMENTE da base!`);
         render();
       }
+    }
+
+    function refreshUsersTable(manual = true) {
+      try {
+        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+        
+        // Recarrega e purga qualquer item excluído
+        const savedUsers = localStorage.getItem('planes_registered_users');
+        if (savedUsers) {
+          let parsed = JSON.parse(savedUsers);
+          if (Array.isArray(parsed)) {
+            registeredUsers = parsed.filter(u => {
+              const e = (u.email || '').toLowerCase();
+              const id = String(u.id || '').toLowerCase();
+              return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves';
+            });
+          }
+        }
+
+        if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
+          registeredUsers.unshift(defaultRegisteredUsers[0]);
+        }
+
+        saveUsersStorage();
+      } catch (e) {}
+
+      if (manual) {
+        showToast(`✓ Painel de usuários atualizado (${registeredUsers.length} perfis ativos)`);
+      }
+      render();
     }
 
     function openEditUserModal(userId) {
@@ -7588,15 +7660,31 @@ ${activeNav === 'Equipe & Contatos' ? `
 
                   <!-- Seção 2: Usuários Registrados & Matriz RBAC -->
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <h3 class="text-base font-black text-slate-950 tracking-tight">Usuários Ativos & Níveis de Acesso (RBAC)</h3>
-                      <button
-                        type="button"
-                        onclick="openRegisterModal();"
-                        class="px-3.5 py-1.5 bg-slate-950 text-white text-xs font-bold rounded-[10px] hover:bg-slate-800 transition cursor-pointer"
-                      >
-                        + Cadastrar Usuário
-                      </button>
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+                      <div class="flex items-center gap-2">
+                        <h3 class="text-base font-black text-slate-950 tracking-tight">Usuários Ativos & Níveis de Acesso (RBAC)</h3>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-800 border border-slate-300 font-mono">
+                          ${registeredUsers.length} Perfis
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onclick="refreshUsersTable(true);"
+                          class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 text-xs font-bold rounded-[10px] border border-slate-300 transition flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                          title="Atualizar lista de usuários e sincronizar dados"
+                        >
+                          ${getSvg('refresh', 'w-3.5 h-3.5 text-slate-700')}
+                          <span>Atualizar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onclick="openRegisterModal();"
+                          class="px-3.5 py-1.5 bg-slate-950 text-white text-xs font-bold rounded-[10px] hover:bg-slate-800 transition cursor-pointer shadow-xs"
+                        >
+                          + Cadastrar Usuário
+                        </button>
+                      </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -7655,9 +7743,9 @@ ${activeNav === 'Equipe & Contatos' ? `
                                 </button>
                                 <button
                                   type="button"
-                                  onclick="deleteUser('${usr.id}')"
+                                  onclick="deleteUser('${usr.id || usr.email}')"
                                   class="p-1.5 hover:bg-rose-100 text-slate-400 hover:text-rose-700 rounded-lg transition cursor-pointer shadow-2xs"
-                                  title="Excluir Usuário"
+                                  title="Excluir Usuário Permanentemente"
                                 >
                                   ${getSvg('trash', 'w-3.5 h-3.5')}
                                 </button>
