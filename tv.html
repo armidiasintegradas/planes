@@ -545,8 +545,8 @@
         </div>
       </div>
 
-      <!-- LIVE PHOTO CAROUSEL (CALIBRATED HEIGHT · MATCHED INNER MARGINS TO BOX · 3S INTERVAL) -->
-      <div class="white-bento-card p-3.5 space-y-2 border border-slate-200 shadow-xs flex flex-col justify-between">
+      <!-- LIVE PHOTO CAROUSEL (CLEAN NO-FOOTER · PERFECT BOTTOM ALIGNMENT WITH RADAR OPERACIONAL) -->
+      <div class="white-bento-card p-3.5 space-y-2 flex-1 flex flex-col justify-between border border-slate-200 shadow-xs min-h-0">
         
         <!-- Header -->
         <div class="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -562,8 +562,8 @@
           </div>
         </div>
 
-        <!-- Main Photo Spotlight Frame (Calibrated height & same margin rule as Segurança box) -->
-        <div class="relative rounded-[10px] overflow-hidden border border-slate-200 h-32 xl:h-36 group shadow-xs bg-slate-950">
+        <!-- Main Photo Spotlight Frame (Fills vertical space perfectly aligned with Radar Operacional) -->
+        <div class="relative rounded-[10px] overflow-hidden border border-slate-200 flex-1 min-h-[140px] xl:min-h-[170px] group shadow-xs bg-slate-950">
           <img id="live-carousel-img" src="https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80" alt="Evidência" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&auto=format&fit=crop&q=80';" class="w-full h-full object-cover transition-all duration-700 opacity-90" />
           
           <!-- Top Badges Overlay -->
@@ -586,15 +586,6 @@
               <span class="text-[#d4ff00] font-bold">Hoje 14:20</span>
             </div>
           </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-500 font-medium">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-            <span>Carrossel: <strong id="timer-sec" class="text-slate-950 font-bold">3s</strong></span>
-          </span>
-          <span class="text-emerald-800 font-bold">3/3 Evidências Conformes</span>
         </div>
 
       </div>
