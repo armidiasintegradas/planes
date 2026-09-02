@@ -545,8 +545,8 @@
         </div>
       </div>
 
-      <!-- LIVE PHOTO CAROUSEL (CLEAN EXPANDED FRAME · 3S INTERVAL · NO BOTTOM THUMBS) -->
-      <div class="white-bento-card p-3.5 space-y-2 flex-1 flex flex-col justify-between border border-slate-200 shadow-xs min-h-0">
+      <!-- LIVE PHOTO CAROUSEL (CALIBRATED HEIGHT · MATCHED INNER MARGINS TO BOX · 3S INTERVAL) -->
+      <div class="white-bento-card p-3.5 space-y-2 border border-slate-200 shadow-xs flex flex-col justify-between">
         
         <!-- Header -->
         <div class="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -562,27 +562,27 @@
           </div>
         </div>
 
-        <!-- Main Photo Spotlight Frame (Expands vertically with elegant telemetry overlay) -->
-        <div class="relative rounded-[10px] overflow-hidden border border-slate-200 flex-1 min-h-[160px] xl:min-h-[190px] group shadow-xs bg-slate-950">
+        <!-- Main Photo Spotlight Frame (Calibrated height & same margin rule as Segurança box) -->
+        <div class="relative rounded-[10px] overflow-hidden border border-slate-200 h-32 xl:h-36 group shadow-xs bg-slate-950">
           <img id="live-carousel-img" src="https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80" alt="Evidência" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&auto=format&fit=crop&q=80';" class="w-full h-full object-cover transition-all duration-700 opacity-90" />
           
           <!-- Top Badges Overlay -->
-          <div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-20 pointer-events-none">
-            <span id="live-carousel-badge" class="bg-slate-950/90 backdrop-blur-xs text-[#d4ff00] border border-[#d4ff00]/40 text-[9px] font-black px-2 py-0.5 rounded-md uppercase font-mono shadow-xs">
+          <div class="absolute top-2 inset-x-2 flex items-center justify-between z-20 pointer-events-none">
+            <span id="live-carousel-badge" class="bg-slate-950/90 backdrop-blur-xs text-[#d4ff00] border border-[#d4ff00]/40 text-[8.5px] font-black px-2 py-0.5 rounded-md uppercase font-mono shadow-xs">
               BLOCO APTOS
             </span>
-            <span class="bg-emerald-600/90 backdrop-blur-xs text-white text-[8.5px] font-black px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+            <span class="bg-emerald-600/90 backdrop-blur-xs text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-1">
               ✓ AUDITORIA TÉCNICA
             </span>
           </div>
 
           <!-- Bottom Floating Glass Plate -->
-          <div class="absolute inset-x-2 bottom-2 bg-slate-950/85 backdrop-blur-md rounded-[8px] p-2.5 border border-white/10 z-20 shadow-lg">
-            <h4 id="live-carousel-title" class="text-xs xl:text-[13px] font-black text-white leading-tight truncate">
+          <div class="absolute inset-x-1.5 bottom-1.5 bg-slate-950/85 backdrop-blur-md rounded-[6px] p-2 border border-white/10 z-20 shadow-md">
+            <h4 id="live-carousel-title" class="text-[11px] xl:text-xs font-black text-white leading-tight truncate">
               TORRE 3 - P2 Alvenaria e Concretagem (42 m³)
             </h4>
-            <div class="flex items-center justify-between text-[9.5px] text-white/80 font-mono mt-1 pt-1 border-t border-white/10">
-              <span id="live-carousel-meta">📍 Torre 3 - P2 · Carlos Lima (Encarregado)</span>
+            <div class="flex items-center justify-between text-[8.5px] text-white/80 font-mono mt-0.5 pt-0.5 border-t border-white/10">
+              <span id="live-carousel-meta">📍 Torre 3 - P2 · Carlos Lima</span>
               <span class="text-[#d4ff00] font-bold">Hoje 14:20</span>
             </div>
           </div>
