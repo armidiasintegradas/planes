@@ -1537,6 +1537,9 @@
       if (confirm('Deseja realmente encerrar a sessão e sair do sistema?')) {
         currentUser = null;
         currentScreen = 'login';
+        try {
+          localStorage.removeItem('planes_active_session');
+        } catch (e) {}
         showToast('✓ Sessão encerrada com sucesso!');
         render();
       }
@@ -2380,6 +2383,7 @@
         if (navHistory.length > 30) navHistory.shift();
       }
       activeNav = navName;
+      saveSessionState();
       render();
     }
 
@@ -2426,7 +2430,7 @@
 
     
     
-    // --- PERSISTÊNCIA DE SESSÃO NO BROWSER (NUNCA VAI PARA O LOGIN NO F5/REFRESH) ---
+    // --- PERSISTÊNCIA DE SESSÃO NO BROWSER (MANTÉM EXATAMENTE A TELA ATUAL NO F5/REFRESH) ---
     function saveSessionState() {
       try {
         if (currentUser && currentScreen !== 'login') {
@@ -2437,6 +2441,8 @@
             activeNav: activeNav,
             selectedProjectId: selectedProjectId
           }));
+        } else if (currentScreen === 'login') {
+          localStorage.removeItem('planes_active_session');
         }
       } catch (e) {}
     }
@@ -2449,7 +2455,7 @@
           if (data && data.user) {
             currentUser = data.user;
             accessLevel = data.accessLevel || data.user.level || 'Engenharia';
-            currentScreen = data.currentScreen || 'projects';
+            currentScreen = data.currentScreen || 'dashboard';
             activeNav = data.activeNav || 'Visão Geral';
             if (data.selectedProjectId) {
               selectedProjectId = data.selectedProjectId;
@@ -2683,14 +2689,15 @@
 
 
     function openProjectCockpit(projId) {
-      saveSessionState();
       selectedProjectId = projId;
       currentScreen = 'dashboard';
       activeNav = 'Visão Geral';
       const proj = projectsList.find(p => p.id === projId);
       if (proj) {
+        selectedProject = proj;
         showToast(`✓ Explorando projeto: ${proj.title}`);
       }
+      saveSessionState();
       render();
     }
 
@@ -3071,19 +3078,21 @@
 
     function goToProjects() {
       currentScreen = 'projects';
+      saveSessionState();
       render();
     }
 
     function doLogout() {
+      currentUser = null;
       currentScreen = 'login';
+      try {
+        localStorage.removeItem('planes_active_session');
+      } catch (e) {}
       showToast('Sessão encerrada com segurança.');
       render();
     }
 
-    function setNavWithHistory(nav) {
-      activeNav = nav;
-      render();
-    }
+
 
     function setMonth(m) {
       selectedMonth = m;
@@ -8044,6 +8053,8 @@ ${activeNav === 'Equipe & Contatos' ? `
           </div>
         </div>
       `;
+
+      saveSessionState();
 
       if (currentScreen === 'dashboard' && activeNav === 'Visão Geral') {
         triggerOverviewAnimations();
