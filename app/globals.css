@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700,800&f[]=satoshi@400,500,700,800,900&display=swap');
+
+:root {
+  --bg-outer: #e6ebf0;
+  --bg-canvas: #f2f5f8;
+  --card-white: #ffffff;
+  --lime-neon: #d4ff00;
+  --lime-light: #e4ff3a;
+  --soft-blue: #8eb3ff;
+  --badge-blue: #5d87ff;
+  --foundation-color: #f1efea;
+  --text-dark: #111827;
+  --text-muted: #9ca3af;
+  --text-subtle: #6b7280;
+  --border-subtle: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg-outer);
+  color: var(--text-dark);
+  font-family: 'General Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv01' on, 'ss01' on, 'calt' on, 'kern' on;
+}
+
+/* Wavy Background */
+.outer-viewport {
+  background: radial-gradient(circle at 10% 20%, #f7f9fb 0%, #e5eaf0 90%);
+}
+
+.dashboard-main-frame {
+  background: #f4f6f9;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.7);
+  border-radius: 2rem;
+}
+
+/* Ultra-Refined Typography Classes */
+.font-brand-logo {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.font-page-title {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.font-card-number {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  font-feature-settings: 'tnum' on, 'zero' on;
+}
+
+.font-nav-label {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.font-label-muted {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #9ca3af;
+}
+
+.font-bubble-number {
+  font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+/* Bento Card Styling */
+.white-bento-card {
+  background: #ffffff;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(17, 24, 39, 0.025);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.white-bento-card:hover {
+  box-shadow: 0 12px 28px -6px rgba(17, 24, 39, 0.055);
+}
+
+.lime-bento-card {
+  background: linear-gradient(140deg, #e4ff3a 0%, #d4ff00 55%, #c0f400 100%);
+  border-radius: 1.5rem;
+  box-shadow: 0 14px 32px -8px rgba(190, 242, 0, 0.45);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lime-bento-card:hover {
+  box-shadow: 0 18px 38px -6px rgba(190, 242, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Tooltip Black Speech Bubble */
+.speech-bubble {
+  position: relative;
+  background: #000000;
+  color: #ffffff;
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.35);
+}
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #000000;
+}
+
+/* Subtle icon circle button */
+.icon-circle-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  transition: all 0.2s ease;
+}
+.icon-circle-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: scale(1.04);
+}
+
+/* Nav Item Active Pill */
+.nav-pill-active {
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+.nav-pill-inactive {
+  color: #6b7280;
+}
+.nav-pill-inactive:hover {
+  color: #111827;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* SVG Line Animations */
+.svg-curve-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
