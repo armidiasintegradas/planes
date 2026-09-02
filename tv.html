@@ -440,7 +440,7 @@
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
             <span class="text-[9.5px] text-slate-500 font-bold block uppercase">Efetivo Ativo</span>
-            <span id="tv-anim-workers" class="text-base xl:text-lg font-black font-mono-num text-slate-950">0 Operários</span>
+            <span id="tv-anim-workers" class="text-base xl:text-lg font-black font-mono-num text-slate-950">0 Funcionários</span>
           </div>
           <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
             <span class="text-[9.5px] text-slate-500 font-bold block uppercase">Aderência PAC</span>
@@ -528,7 +528,7 @@
             <span> • </span>
             <span>🏗️ Próxima concretagem: Torre 3 Sexta 14h</span>
             <span> • </span>
-            <span>👷 64 Operários em campo</span>
+            <span>👷 64 Funcionários em campo</span>
           </div>
         </div>
       </div>
@@ -602,7 +602,7 @@
         if (spentEl) spentEl.innerText = 'R$ ' + (14.80 * ease).toFixed(2) + 'M';
         if (gainEl) gainEl.innerText = '+ R$ ' + (1.40 * ease).toFixed(2) + 'M';
         if (cpiEl) cpiEl.innerText = (1.00 + 0.09 * ease).toFixed(2);
-        if (workersEl) workersEl.innerText = Math.round(64 * ease) + ' Operários';
+        if (workersEl) workersEl.innerText = Math.round(64 * ease) + ' Funcionários';
         if (pacEl) pacEl.innerText = Math.round(78 * ease) + '%';
         if (balEl) balEl.innerText = (1.00 * ease).toFixed(2) + 'x';
 
@@ -619,7 +619,7 @@
           if (spentEl) spentEl.innerText = 'R$ 14.80M';
           if (gainEl) gainEl.innerText = '+ R$ 1.40M';
           if (cpiEl) cpiEl.innerText = '1.09';
-          if (workersEl) workersEl.innerText = '64 Operários';
+          if (workersEl) workersEl.innerText = '64 Funcionários';
           if (pacEl) pacEl.innerText = '78%';
           if (balEl) balEl.innerText = '1.00x';
           for (const [id, target] of Object.entries(mValues)) {
