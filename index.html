@@ -412,18 +412,18 @@
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp</label>
-              <input id="edit-user-phone" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="edit-user-phone" type="text" placeholder="+55 (81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
               <label class="font-bold text-slate-800 block mb-1">CPF</label>
-              <input id="edit-user-cpf" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="edit-user-cpf" type="text" placeholder="000.000.000-00" oninput="this.value = maskCpf(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">RG</label>
-              <input id="edit-user-rg" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="edit-user-rg" type="text" placeholder="SSP-00.000.000" oninput="this.value = maskRg(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Nascimento</label>
@@ -485,11 +485,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
               <label class="font-bold text-slate-800 block mb-1">CPF *</label>
-              <input id="reg-cpf" type="text" placeholder="000.000.000-00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="reg-cpf" type="text" placeholder="000.000.000-00" oninput="this.value = maskCpf(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Identidade (RG) *</label>
-              <input id="reg-rg" type="text" placeholder="AL-4.109.822" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="reg-rg" type="text" placeholder="SSP-00.000.000" oninput="this.value = maskRg(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
           </div>
 
@@ -500,7 +500,7 @@
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp *</label>
-              <input id="reg-phone" type="text" placeholder="+55 (82) 99822-1100" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+              <input id="reg-phone" type="text" placeholder="+55 (81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
             </div>
           </div>
 
@@ -931,8 +931,8 @@
         cpf: '000.000.000-00',
         rg: 'SSP-00.000.000',
         birthDate: '1985-05-15',
-        phone: '+55 (82) 99999-0000',
-        whatsapp: '5582999990000',
+        phone: '+55 (81) 97333-2227',
+        whatsapp: '5581973332227',
         status: 'Aprovado',
         avatar: 'AR'
       },
@@ -1399,6 +1399,41 @@
       render();
     }
 
+    
+    // --- FORMATADORES AUTOMÁTICOS DE NÚMEROS E MÁSCARAS (CPF, RG, CELULAR / WHATSAPP) ---
+    function maskPhone(val) {
+      if (!val) return '';
+      let clean = String(val).replace(/\D/g, '');
+      if (clean.startsWith('55') && clean.length > 11) {
+        clean = clean.substring(2);
+      }
+      if (clean.length === 0) return '';
+      if (clean.length <= 2) return `+55 (${clean}`;
+      if (clean.length <= 7) return `+55 (${clean.substring(0, 2)}) ${clean.substring(2)}`;
+      if (clean.length <= 10) return `+55 (${clean.substring(0, 2)}) ${clean.substring(2, 6)}-${clean.substring(6)}`;
+      return `+55 (${clean.substring(0, 2)}) ${clean.substring(2, 7)}-${clean.substring(7, 11)}`;
+    }
+
+    function maskCpf(val) {
+      if (!val) return '';
+      let clean = String(val).replace(/\D/g, '').substring(0, 11);
+      if (clean.length <= 3) return clean;
+      if (clean.length <= 6) return `${clean.substring(0, 3)}.${clean.substring(3)}`;
+      if (clean.length <= 9) return `${clean.substring(0, 3)}.${clean.substring(3, 6)}.${clean.substring(6)}`;
+      return `${clean.substring(0, 3)}.${clean.substring(3, 6)}.${clean.substring(6, 9)}-${clean.substring(9, 11)}`;
+    }
+
+    function maskRg(val) {
+      if (!val) return '';
+      let clean = String(val).trim();
+      let hasSSP = clean.toUpperCase().includes('SSP');
+      let digits = clean.replace(/\D/g, '').substring(0, 8);
+      let prefix = hasSSP ? 'SSP-' : '';
+      if (digits.length <= 2) return prefix ? `${prefix}${digits}` : digits;
+      if (digits.length <= 5) return `${prefix}${digits.substring(0, 2)}.${digits.substring(2)}`;
+      return `${prefix}${digits.substring(0, 2)}.${digits.substring(2, 5)}.${digits.substring(5, 8)}`;
+    }
+
     // LISTA E CADASTRO DE SUPRIMENTOS
     let suppliesList = [
       { id: 1, name: 'Aço CA-50 / CA-60 (Estrutura Arena)', supplier: 'Gerdau Nordeste', qtd: '45 Toneladas', date: '08/06/2026', sector: 'Arena Shows', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
@@ -1609,9 +1644,9 @@
 
       document.getElementById('edit-user-name').value = u.name;
       document.getElementById('edit-user-email').value = u.email;
-      document.getElementById('edit-user-phone').value = u.phone || '';
-      document.getElementById('edit-user-cpf').value = u.cpf || '';
-      document.getElementById('edit-user-rg').value = u.rg || '';
+      document.getElementById('edit-user-phone').value = maskPhone(u.phone || '+55 (81) 97333-2227');
+      document.getElementById('edit-user-cpf').value = maskCpf(u.cpf || '000.000.000-00');
+      document.getElementById('edit-user-rg').value = maskRg(u.rg || 'SSP-00.000.000');
       document.getElementById('edit-user-birth').value = u.birthDate || '1990-01-01';
       document.getElementById('edit-user-role').value = u.level;
       document.getElementById('edit-user-company').value = u.company || 'Planes ENG';
