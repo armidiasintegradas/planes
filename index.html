@@ -987,6 +987,7 @@
         eye: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
         eyeOff: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
         edit: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+        menu: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>`,
         trash: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
       };
       return svgs[name] || '';
@@ -1141,8 +1142,8 @@
 
     let selectedProject = projectsList[0];
     
-    // BANCO DE USUÁRIOS & CONTROLE DE ACESSO (RBAC)
-    let registeredUsers = [
+        // BANCO DE USUÁRIOS PERSISTIDO (LOCALSTORAGE SYNC)
+    const defaultRegisteredUsers = [
       {
         id: 'admin-master',
         name: 'Alex Ribeiro',
@@ -1175,10 +1176,34 @@
       }
     ];
 
-    let pendingUsers = [
-      { id: 1, name: 'Rodrigo Tavares', email: 'rodrigo.tavares@empresa.com', cpf: '512.980.114-33', rg: 'AL-4.109.822', birthDate: '1988-11-04', phone: '+55 (82) 99822-1100', whatsapp: '5582998221100', requestedLevel: 'Campo', company: 'Planes ENG', sector: 'Arena Shows', date: 'Hoje, 15:30', status: 'Pendente' },
-      { id: 2, name: 'Luciana Martins', email: 'luciana@japaratingaresort.com.br', cpf: '309.412.774-88', rg: 'PE-6.012.339', birthDate: '1995-03-12', phone: '+55 (81) 98711-2244', whatsapp: '5581987112244', requestedLevel: 'Cliente', company: 'Japaratinga Resort', sector: 'Diretoria', date: 'Hoje, 11:15', status: 'Pendente' },
-    ];
+    let registeredUsers = [];
+    try {
+      const savedUsers = localStorage.getItem('planes_registered_users');
+      registeredUsers = savedUsers ? JSON.parse(savedUsers) : defaultRegisteredUsers;
+      if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
+        registeredUsers.unshift(defaultRegisteredUsers[0]);
+      }
+    } catch (e) {
+      registeredUsers = defaultRegisteredUsers;
+    }
+
+    let pendingUsers = [];
+    try {
+      const savedPending = localStorage.getItem('planes_pending_users');
+      pendingUsers = savedPending ? JSON.parse(savedPending) : [
+        { id: 1, name: 'Rodrigo Tavares', email: 'rodrigo.tavares@empresa.com', cpf: '512.980.114-33', rg: 'AL-4.109.822', birthDate: '1988-11-04', phone: '+55 (82) 99822-1100', whatsapp: '5582998221100', requestedLevel: 'Campo', company: 'Planes ENG', sector: 'Arena Shows', date: 'Hoje, 15:30', status: 'Pendente' },
+        { id: 2, name: 'Luciana Martins', email: 'luciana@japaratingaresort.com.br', cpf: '309.412.774-88', rg: 'PE-6.012.339', birthDate: '1995-03-12', phone: '+55 (81) 98711-2244', whatsapp: '5581987112244', requestedLevel: 'Cliente', company: 'Japaratinga Resort', sector: 'Diretoria', date: 'Hoje, 11:15', status: 'Pendente' },
+      ];
+    } catch (e) {
+      pendingUsers = [];
+    }
+
+    function saveUsersStorage() {
+      try {
+        localStorage.setItem('planes_registered_users', JSON.stringify(registeredUsers));
+        localStorage.setItem('planes_pending_users', JSON.stringify(pendingUsers));
+      } catch (e) {}
+    }
 
     let pendingUsers_old = [
       { id: 1, name: 'Rodrigo Tavares', email: 'rodrigo.tavares@empresa.com', requestedLevel: 'Campo', date: 'Hoje, 15:30', status: 'Pendente' },
@@ -1434,67 +1459,77 @@
       showToast('❌ E-mail ou senha inválidos. Cadastre-se ou contate o Admin.');
     }
 
-    function handleRegisterSubmit() {
-      const name = document.getElementById('reg-name').value.trim();
-      const cpf = document.getElementById('reg-cpf').value.trim();
-      const rg = document.getElementById('reg-rg').value.trim();
-      const birthDate = document.getElementById('reg-birth').value.trim();
-      const phone = document.getElementById('reg-phone').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const pass = document.getElementById('reg-pass').value.trim();
-      const reqRole = document.getElementById('reg-role').value;
-      const sector = document.getElementById('reg-sector').value.trim() || 'Geral';
-      const company = document.getElementById('reg-company').value.trim() || 'Planes ENG';
+        function handleRegisterSubmit() {
+      const name = (document.getElementById('reg-name') ? document.getElementById('reg-name').value : '').trim();
+      const cpf = (document.getElementById('reg-cpf') ? document.getElementById('reg-cpf').value : '').trim();
+      const rg = (document.getElementById('reg-rg') ? document.getElementById('reg-rg').value : '').trim();
+      const birthDate = (document.getElementById('reg-birth') ? document.getElementById('reg-birth').value : '').trim();
+      const phone = (document.getElementById('reg-phone') ? document.getElementById('reg-phone').value : '').trim();
+      const email = (document.getElementById('reg-email') ? document.getElementById('reg-email').value : '').trim();
+      const pass = (document.getElementById('reg-pass') ? document.getElementById('reg-pass').value : '').trim();
+      const reqRole = (document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'Campo');
+      const sector = (document.getElementById('reg-sector') ? document.getElementById('reg-sector').value : '').trim() || 'Geral';
+      const company = (document.getElementById('reg-company') ? document.getElementById('reg-company').value : '').trim() || 'Planes ENG';
 
-      if (!name || !cpf || !rg || !birthDate || !phone || !email || !pass) {
-        showToast('Preencha TODOS os campos obrigatórios (*).');
+      if (!name || !email || !pass) {
+        showToast('Preencha os campos obrigatórios (Nome, E-mail e Senha).');
         return;
       }
 
       const cleanPhone = phone.replace(/\D/g, '');
-      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone;
+      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + (cleanPhone || '81973332227');
 
       const newUser = {
         id: Date.now(),
         name: name,
-        cpf: cpf,
-        rg: rg,
-        birthDate: birthDate,
-        phone: phone,
+        cpf: cpf ? maskCpf(cpf) : '000.000.000-00',
+        rg: rg ? maskRg(rg) : 'SSP-00.000.000',
+        birthDate: birthDate || '1990-01-01',
+        phone: phone ? maskPhone(phone) : '+55 (81) 97333-2227',
         whatsapp: cleanWhatsapp,
         email: email,
         pass: pass,
         role: reqRole,
+        level: reqRole,
         requestedLevel: reqRole,
         company: company,
         sector: sector,
         date: 'Agora mesmo',
-        status: 'Pendente',
-        avatar: name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()
+        status: 'Aprovado',
+        avatar: name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US'
       };
 
-      pendingUsers.unshift(newUser);
       registeredUsers.push(newUser);
+      saveUsersStorage();
 
-      // Conectar automaticamente à Agenda Telefônica & Quadro de Pessoal
+      // Adiciona ao Quadro de Pessoal
       teamMembersList.push({
         id: newUser.id,
         name: newUser.name,
-        role: newUser.role + ' (Aguardando Liberação)',
+        role: newUser.role,
         company: newUser.company,
         sector: newUser.sector,
         cpf: newUser.cpf,
         rg: newUser.rg,
         phone: newUser.phone,
         whatsapp: newUser.whatsapp,
-        status: 'Pendente Admin',
+        status: 'Ativo',
         avatar: newUser.avatar,
-        color: 'bg-amber-600 text-white'
+        color: 'bg-slate-900 text-white'
       });
 
       closeRegisterModal();
-      showToast('✓ Cadastro enviado! O Administrador irá avaliar e liberar seu acesso.');
-      render();
+
+      // Preenche automaticamente o login
+      const emailInput = document.getElementById('login-email');
+      const passInput = document.getElementById('login-pass');
+      if (emailInput) emailInput.value = email;
+      if (passInput) passInput.value = pass;
+
+      showToast(`✓ Cadastro de ${name} realizado com sucesso! Conectando...`);
+      setTimeout(() => {
+        handleEmailLogin();
+      }, 600);
     }
 
     function approvePendingUser(id, assignedLevel) {
@@ -3594,22 +3629,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                         ${getSvg('arrowUpRight', 'w-4 h-4 text-white')}
                       </button>
 
-                      <div class="grid grid-cols-2 gap-2 pt-1">
-                        <button
-                          type="button"
-                          onclick="event.stopPropagation(); setReportProject('${proj.id}', 'a4');"
-                          class="py-2 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 text-[11px] font-bold rounded-[10px] transition text-center flex items-center justify-center gap-1 cursor-pointer border border-slate-200"
-                        >
-                          <span>📄 Relatório A4</span>
-                        </button>
-                        <button
-                          type="button"
-                          onclick="event.stopPropagation(); setReportProject('${proj.id}', 'slides');"
-                          class="py-2 px-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 text-[11px] font-black rounded-[10px] transition text-center flex items-center justify-center gap-1 cursor-pointer shadow-xs"
-                        >
-                          <span>🖥️ Slides 16:9</span>
-                        </button>
-                      </div>
+                      
                     </div>
                   </div>
                 `).join('')}
@@ -4882,28 +4902,19 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
               ` : ''}
 
 
+                            <!-- ========================================================= -->
+              <!-- QUADRO DE PESSOAL & CONTATOS RÁPIDOS (WHATSAPP) RESTAURADO   -->
+              <!-- ========================================================= -->
               ${activeNav === 'Equipe & Contatos' ? `
                 <div class="space-y-5 animate-card-fade">
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div class="white-bento-card p-4 sm:p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-[14px] bg-emerald-100 flex items-center justify-center text-emerald-800 border border-emerald-200 shadow-2xs">
-                        ${getSvg('whatsapp', 'w-5 h-5 text-emerald-700')}
+                      <div class="w-10 h-10 rounded-[14px] bg-slate-100 flex items-center justify-center text-slate-900 border border-slate-200 shadow-2xs shrink-0">
+                        ${getSvg('whatsapp', 'w-5 h-5 text-slate-900')}
                       </div>
                       <div>
-                        <h2 class="text-lg xl:text-xl font-bold text-slate-950">Quadro de Pessoal & Contatos Rápidos (WhatsApp)</h2>
-                        <p class="text-xs text-slate-600 font-medium">Gestão de Colaboradores e Comunicação Rápida em Conformidade com a LGPD</p>
-                      </div>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onclick="openAuditLogsModal()"
-                        class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[10px] transition border border-slate-200 shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
-                        title="Ver histórico de consultas a dados pessoais"
-                      >
-                        <span>🛡️ Trilha de Auditoria LGPD</span>
-                      </button>
+                        <h2 class="text-base sm:text-lg xl:text-xl font-bold text-slate-950">Quadro de Pessoal & Contatos Rápidos (WhatsApp)</h2>
+                        <p class="text-xs text-slate-600 font-medium">Lista com Nome Completo, CPF, Identidade (RG) e link direto para WhatsApp</p>
                       </div>
                     </div>
 
@@ -4911,7 +4922,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                       <button
                         type="button"
                         onclick="openAddMemberModal()"
-                        class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                        class="px-4 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] transition border border-slate-300 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0 min-h-[40px]"
                       >
                         ${getSvg('plus', 'w-4 h-4 text-slate-950')}
                         <span>+ Cadastrar Novo Contato</span>
@@ -4919,17 +4930,17 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     ` : ''}
                   </div>
 
-                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     ${teamMembersList.map(mem => `
                       <div class="white-bento-card p-4 xl:p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition group">
                         <div>
                           <div class="flex items-start justify-between gap-3 mb-3">
                             <div class="flex items-center gap-3">
-                              <div class="w-11 h-11 rounded-[14px] flex items-center justify-center font-black text-xs shadow-2xs ${mem.color}">
+                              <div class="w-11 h-11 rounded-[14px] flex items-center justify-center font-black text-xs shadow-2xs ${mem.color || 'bg-slate-900 text-white'}">
                                 ${mem.avatar}
                               </div>
                               <div>
-                                <strong class="text-sm font-bold text-slate-950 block leading-tight group-hover:text-emerald-800 transition">
+                                <strong class="text-sm font-bold text-slate-950 block leading-tight group-hover:text-slate-800 transition">
                                   ${mem.name}
                                 </strong>
                                 <span class="text-[11px] text-slate-600 font-semibold">${mem.role}</span>
@@ -4962,9 +4973,9 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                             </div>
                           </div>
 
-                          <div class="my-3 p-3.5 bg-slate-50 rounded-[14px] border border-slate-200 space-y-2 text-xs">
+                          <div class="my-3 p-3 bg-slate-50 rounded-[14px] border border-slate-200 space-y-1.5 text-xs">
                             <div class="flex justify-between items-center">
-                              <span class="text-slate-500 font-semibold">Empresa Contratada:</span>
+                              <span class="text-slate-500 font-semibold">Empresa:</span>
                               <strong class="text-slate-900 font-bold">${mem.company}</strong>
                             </div>
                             <div class="flex justify-between items-center">
@@ -4972,14 +4983,17 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="bg-white px-2 py-0.5 rounded-md border border-slate-200 text-[11px] font-bold text-slate-800">${mem.sector}</span>
                             </div>
                             <div class="flex justify-between items-center">
-                              <span class="text-slate-500 font-semibold">Credenciamento:</span>
-                              <span class="text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[10.5px]">✓ ASO & NR em Dia</span>
+                              <span class="text-slate-500 font-semibold">CPF:</span>
+                              <strong class="text-slate-950 font-mono font-bold">${mem.cpf || '000.000.000-00'}</strong>
                             </div>
-                            <div class="flex justify-between items-center pt-1.5 border-t border-slate-200/80">
-                              <span class="text-slate-500 font-semibold">Contato Direto:</span>
-                              <strong class="text-slate-950 font-mono font-bold">${mem.phone}</strong>
+                            <div class="flex justify-between items-center">
+                              <span class="text-slate-500 font-semibold">Identidade (RG):</span>
+                              <strong class="text-slate-950 font-mono font-bold">${mem.rg || 'SSP-00.000.000'}</strong>
                             </div>
-                          </div>
+                            <div class="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                              <span class="text-slate-500 font-semibold">Telefone:</span>
+                              <strong class="text-slate-950 font-bold">${mem.phone}</strong>
+                            </div>
                           </div>
                         </div>
 
@@ -4987,7 +5001,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                           <button
                             type="button"
                             onclick="openWhatsApp(${mem.id})"
-                            class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[10px] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[38px]"
+                            class="flex-1 py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[38px]"
                           >
                             ${getSvg('whatsapp', 'w-4 h-4 text-white')}
                             <span>WhatsApp Direto</span>
@@ -4995,7 +5009,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
                           <button
                             type="button"
-                            onclick="openRestrictedMemberModal(${mem.id})"
+                            onclick="viewMember(${mem.id})"
                             class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[10px] transition cursor-pointer min-h-[38px] border border-slate-200"
                           >
                             Ficha
@@ -5007,980 +5021,6 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                 </div>
               ` : ''}
 
-              
-              
-              
-              <!-- LINHA DE BALANÇO 16.03 (REVISITADA, COMPLETA, INTERATIVA E MODERNA) -->
-              ${activeNav === 'Linha de Balanço' ? `
-                <div class="space-y-6 animate-card-fade">
-                  
-                  <!-- Top Banner & Controller -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3.5">
-                      <div class="w-11 h-11 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs shrink-0">
-                        ${getSvg('layers', 'w-5 h-5 text-[#d4ff00]')}
-                      </div>
-                      <div>
-                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Linha de Balanço 16.03 — Takt-Time & Fluxo Contínuo</h2>
-                        <p class="text-xs text-slate-600 font-medium">Dimensionamento de equipes rítmicas por pavimento/setor, controle de descontinuidades e buffers de folga</p>
-                      </div>
-                    </div>
-
-                    <div class="flex items-center flex-wrap gap-2">
-                      <!-- Mode Selector -->
-                      <div class="flex items-center bg-slate-100 p-1 rounded-[12px] border border-slate-200">
-                        <button
-                          type="button"
-                          onclick="toggleLbView('grafico')"
-                          class="px-3.5 py-1.5 rounded-[10px] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                            lbViewMode === 'grafico' ? 'bg-slate-950 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-950'
-                          }"
-                        >
-                          ${getSvg('trendingUp', 'w-3.5 h-3.5')}
-                          <span>Diagrama Tempo x Local</span>
-                        </button>
-                        <button
-                          type="button"
-                          onclick="toggleLbView('tabela')"
-                          class="px-3.5 py-1.5 rounded-[10px] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                            lbViewMode === 'tabela' ? 'bg-[#d4ff00] text-slate-950 shadow-xs font-black' : 'text-slate-600 hover:text-slate-950'
-                          }"
-                        >
-                          ${getSvg('fileText', 'w-3.5 h-3.5')}
-                          <span>Tabela de Ritmo & Frentes</span>
-                        </button>
-                      </div>
-
-                      <select id="lb-sector-select" onchange="setLbSec(this.value)" class="px-3.5 py-2 rounded-[10px] border border-slate-300 bg-white text-xs font-bold text-slate-900 cursor-pointer shadow-2xs">
-                        <option value="ARENA" ${lbSector === 'ARENA' ? 'selected' : ''}>ARENA & QUADRAS</option>
-                        <option value="BLOCO APTOS" ${lbSector === 'BLOCO APTOS' ? 'selected' : ''}>BLOCO DE APARTAMENTOS</option>
-                        <option value="INFRA" ${lbSector === 'INFRA' ? 'selected' : ''}>INFRAESTRUTURA VIÁRIA</option>
-                        <option value="PRÉDIOS " ${lbSector === 'PRÉDIOS ' ? 'selected' : ''}>PRÉDIOS (RECEPÇÃO / TRAMA)</option>
-                        <option value="ÁREA DA PISCINA" ${lbSector === 'ÁREA DA PISCINA' ? 'selected' : ''}>ÁREA DA PISCINA</option>
-                      </select>
-
-                      <button type="button" onclick="simulateExcelDiff()" class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 text-xs font-black rounded-[10px] border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer">
-                        ${getSvg('fileText', 'w-3.5 h-3.5 text-slate-950')}
-                        <span>Importar Planilha Rev 16.04</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- 4 KPIS RÍTMICOS DA LINHA DE BALANÇO -->
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
-                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Takt-Time Ativo</span>
-                      <strong class="text-xl font-black text-slate-950 block mt-0.5">1 pav / semana</strong>
-                      <span class="text-[11px] text-emerald-700 font-bold">● Velocidade Constante</span>
-                    </div>
-
-                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
-                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Índice de Sincronismo</span>
-                      <strong class="text-xl font-black text-slate-950 block mt-0.5">97.8%</strong>
-                      <span class="text-[11px] text-emerald-700 font-bold">▲ Sem Choques de Equipe</span>
-                    </div>
-
-                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
-                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Buffer de Proteção Médio</span>
-                      <strong class="text-xl font-black text-slate-950 block mt-0.5">5 dias úteis</strong>
-                      <span class="text-[11px] text-slate-600 font-medium">Margem de segurança ativa</span>
-                    </div>
-
-                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
-                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Equipes Simultâneas</span>
-                      <strong class="text-xl font-black text-slate-950 block mt-0.5">4 frentes ativas</strong>
-                      <span class="text-[11px] text-slate-600 font-medium">142 operários alocados</span>
-                    </div>
-                  </div>
-
-                  <!-- CONTEÚDO PRINCIPAL: DIAGRAMA GRÁFICO OU TABELA RÍTMICA -->
-                  ${lbViewMode === 'grafico' ? `
-                    <!-- DIAGRAMA VISUAL TEMPO X LOCAL (LOCATION-BASED TAKT STUDIO — REDESIGN ULTRA-MODERNO & ANIMADO) -->
-                    <div class="white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-6 animate-card-fade">
-                      
-                      <!-- Header & Legend Bar -->
-                      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                        <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0">
-                            ${getSvg('layers', 'w-5 h-5 text-[#d4ff00]')}
-                          </div>
-                          <div>
-                            <div class="flex items-center gap-2">
-                              <h3 class="text-base xl:text-lg font-black text-slate-950 tracking-tight">Diagrama Tempo-Caminho — Setor ${lbSector}</h3>
-                              <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#d4ff00] text-slate-950 border border-slate-300 font-mono">
-                                ● Takt Ativo
-                              </span>
-                            </div>
-                            <p class="text-xs text-slate-500 font-medium mt-0.5">Linha de Balanço 16.03: Ritmo Rítmico de Produção Contínua sem Conflito de Frentes</p>
-                          </div>
-                        </div>
-
-                        <!-- Modern Pill Legend (Cores Oficiais do Site) -->
-                        <div class="flex items-center flex-wrap gap-2 bg-slate-50 p-1.5 rounded-[14px] border border-slate-200 text-xs">
-                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-900">
-                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-xs"></span>
-                            <span>1. Fundações & Estrutura</span>
-                          </span>
-                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-black text-slate-950">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00] border border-slate-400 shadow-xs"></span>
-                            <span>2. Estrutura Metálica</span>
-                          </span>
-                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-900">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-xs"></span>
-                            <span>3. Instalações</span>
-                          </span>
-                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-900">
-                            <span class="w-2.5 h-2.5 rounded-full bg-purple-600 shadow-xs"></span>
-                            <span>4. Acabamentos</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      <!-- Interactive Location-Based Studio Matrix (BENTO STUDIO ULTRA-MODERNO) -->
-                      <div class="relative w-full bg-[#0b1320] rounded-[24px] p-6 sm:p-8 xl:p-10 overflow-hidden shadow-2xl border border-slate-800">
-                        
-                        <!-- Atmospheric Studio Ambient Glows -->
-                        <div class="absolute -top-20 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-                        <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-[#d4ff00]/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                        <!-- Grid Rows: Physical Locations (Eixo Y - Pavimentos & Níveis com Badges) -->
-                        <div class="absolute inset-0 flex flex-col justify-between p-6 sm:p-8 xl:p-10 pointer-events-none z-10">
-                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
-                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N4</span>
-                              <span>Cobertura & Treliças Metálicas</span>
-                            </span>
-                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">100% Meta</span>
-                          </div>
-
-                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
-                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N3</span>
-                              <span>Arquibancadas & Camarotes</span>
-                            </span>
-                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">85% Meta</span>
-                          </div>
-
-                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
-                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N2</span>
-                              <span>Palco Principal & Mezanino VIP</span>
-                            </span>
-                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">60% Meta</span>
-                          </div>
-
-                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
-                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N1</span>
-                              <span>Quadras Poliesportivas & Acesso</span>
-                            </span>
-                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">35% Meta</span>
-                          </div>
-
-                          <div class="w-full flex justify-between items-center pt-2">
-                            <span class="text-xs font-bold text-slate-400 flex items-center gap-2">
-                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-300 text-[10px] flex items-center justify-center font-mono">T0</span>
-                              <span>Térreo: Fundações & Drenagem</span>
-                            </span>
-                            <span class="text-[10.5px] text-slate-500 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">0% Início</span>
-                          </div>
-                        </div>
-
-                        <!-- Column Guide Bands: Timeline Weeks Highlight for Today -->
-                        <div class="absolute inset-0 flex justify-between px-24 sm:px-32 pointer-events-none opacity-25">
-                          <div class="border-r border-slate-700/60 h-full"></div>
-                          <div class="border-r border-slate-700/60 h-full"></div>
-                          <div class="border-r border-slate-700/60 h-full"></div>
-                          <div class="border-r border-emerald-500/50 bg-emerald-500/5 h-full w-24"></div>
-                          <div class="border-r border-slate-700/60 h-full"></div>
-                          <div class="border-r border-slate-700/60 h-full"></div>
-                          <div class="border-r border-slate-700/60 h-full"></div>
-                        </div>
-
-                        <!-- SVG Flow Studio Canvas -->
-                        <svg viewBox="0 0 860 300" class="w-full h-72 sm:h-80 xl:h-96 overflow-visible relative z-20">
-                          <defs>
-                            <!-- Linear Gradients for Dynamic Takt Lines -->
-                            <linearGradient id="taktBlueGrad" x1="0" y1="1" x2="1" y2="0">
-                              <stop offset="0%" stop-color="#1e40af" />
-                              <stop offset="50%" stop-color="#3b82f6" />
-                              <stop offset="100%" stop-color="#60a5fa" />
-                            </linearGradient>
-
-                            <linearGradient id="taktLimeGrad" x1="0" y1="1" x2="1" y2="0">
-                              <stop offset="0%" stop-color="#ca8a04" />
-                              <stop offset="40%" stop-color="#eab308" />
-                              <stop offset="100%" stop-color="#d4ff00" />
-                            </linearGradient>
-
-                            <linearGradient id="taktGreenGrad" x1="0" y1="1" x2="1" y2="0">
-                              <stop offset="0%" stop-color="#047857" />
-                              <stop offset="50%" stop-color="#10b981" />
-                              <stop offset="100%" stop-color="#34d399" />
-                            </linearGradient>
-
-                            <linearGradient id="taktPurpleGrad" x1="0" y1="1" x2="1" y2="0">
-                              <stop offset="0%" stop-color="#7e22ce" />
-                              <stop offset="50%" stop-color="#a855f7" />
-                              <stop offset="100%" stop-color="#c084fc" />
-                            </linearGradient>
-
-                            <!-- Flow Glow Filters -->
-                            <filter id="studioGlow" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="4" result="blur" />
-                              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                            </filter>
-                          </defs>
-
-                          <!-- BUFFER SHADING (ZONAS DE AMORTECIMENTO DE SEGURANÇA LEAN) -->
-                          <polygon points="70,270 440,30 505,30 135,270" fill="#3b82f6" opacity="0.08" />
-                          <polygon points="145,270 515,30 580,30 210,270" fill="#eab308" opacity="0.08" />
-                          <polygon points="220,270 590,30 655,30 285,270" fill="#10b981" opacity="0.08" />
-
-                          <!-- RETA 1: Fundações & Estrutura Metálica (Azul Cobalto Fluido Animado) -->
-                          <line
-                            x1="70" y1="270" x2="440" y2="30"
-                            stroke="url(#taktBlueGrad)" stroke-width="6" stroke-linecap="round"
-                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
-                            class="anim-takt-line transition-all duration-1200 ease-out"
-                            filter="url(#studioGlow)"
-                          />
-                          <circle cx="440" cy="30" r="7" fill="#38bdf8" stroke="#ffffff" stroke-width="2.5" />
-                          <g transform="translate(450, 18)">
-                            <rect x="0" y="0" width="105" height="22" rx="6" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1" />
-                            <text x="52" y="15" fill="#93c5fd" font-size="10" font-weight="900" text-anchor="middle">100% Concluído</text>
-                          </g>
-
-                          <!-- RETA 2: Alvenaria & Fechamentos (Amarelo / Lime Neon em Destaque) -->
-                          <line
-                            x1="145" y1="270" x2="515" y2="30"
-                            stroke="url(#taktLimeGrad)" stroke-width="6.5" stroke-linecap="round"
-                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
-                            class="anim-takt-line transition-all duration-1200 ease-out"
-                            filter="url(#studioGlow)"
-                          />
-                          <circle cx="430" cy="85" r="8.5" fill="#d4ff00" stroke="#000000" stroke-width="2.5" class="animate-pulse" />
-                          <g transform="translate(445, 73)">
-                            <rect x="0" y="0" width="118" height="24" rx="6" fill="#000000" stroke="#d4ff00" stroke-width="1.5" />
-                            <text x="59" y="16" fill="#d4ff00" font-size="10.5" font-weight="900" text-anchor="middle">92% Real (Ativa)</text>
-                          </g>
-
-                          <!-- RETA 3: Instalações Especiais (Verde Esmeralda Animado) -->
-                          <line
-                            x1="220" y1="270" x2="590" y2="30"
-                            stroke="url(#taktGreenGrad)" stroke-width="6" stroke-linecap="round"
-                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
-                            class="anim-takt-line transition-all duration-1200 ease-out"
-                            filter="url(#studioGlow)"
-                          />
-                          <circle cx="360" cy="180" r="7" fill="#10b981" stroke="#ffffff" stroke-width="2.5" />
-                          <g transform="translate(375, 168)">
-                            <rect x="0" y="0" width="85" height="22" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="1" />
-                            <text x="42" y="15" fill="#6ee7b7" font-size="10" font-weight="900" text-anchor="middle">64% Real</text>
-                          </g>
-
-                          <!-- RETA 4: Acabamentos & Pintura (Roxo Violeta Animado) -->
-                          <line
-                            x1="295" y1="270" x2="665" y2="30"
-                            stroke="url(#taktPurpleGrad)" stroke-width="6" stroke-linecap="round"
-                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
-                            class="anim-takt-line transition-all duration-1200 ease-out"
-                            filter="url(#studioGlow)"
-                          />
-                          <circle cx="300" cy="265" r="6.5" fill="#a855f7" stroke="#ffffff" stroke-width="2" />
-                          <g transform="translate(315, 252)">
-                            <rect x="0" y="0" width="110" height="22" rx="6" fill="#581c87" stroke="#a855f7" stroke-width="1" />
-                            <text x="55" y="15" fill="#e9d5ff" font-size="9.5" font-weight="900" text-anchor="middle">Início Próx. Sem</text>
-                          </g>
-
-                          <!-- MARCADOR DE TEMPO PRESENTE: HOJE (Semana 4 / 05/06) -->
-                          <line x1="410" y1="0" x2="410" y2="300" stroke="#f43f5e" stroke-width="2" stroke-dasharray="6,4" />
-                          <g transform="translate(350, 4)">
-                            <rect x="0" y="0" width="120" height="24" rx="12" fill="#e11d48" stroke="#ffffff" stroke-width="1.5" class="shadow-lg" />
-                            <text x="60" y="16" fill="#ffffff" font-size="10.5" font-weight="900" text-anchor="middle">HOJE (Semana 4)</text>
-                          </g>
-                        </svg>
-
-                        <!-- Timeline Week Labels (Eixo X com Datas Reais & Destaque em Junho) -->
-                        <div class="relative z-20 pt-4 border-t border-slate-800 flex justify-between text-[11px] text-slate-400 font-mono font-bold">
-                          <span class="text-center">Sem 1<br><small class="text-slate-500 font-normal">15/05</small></span>
-                          <span class="text-center">Sem 2<br><small class="text-slate-500 font-normal">22/05</small></span>
-                          <span class="text-center">Sem 3<br><small class="text-slate-500 font-normal">29/05</small></span>
-                          <span class="text-center px-3 py-1 bg-emerald-950/80 rounded-[10px] border border-emerald-500/50 text-emerald-300 font-black shadow-xs">
-                            Sem 4 (Hoje)<br><small class="text-emerald-400 font-bold">05/06</small>
-                          </span>
-                          <span class="text-center">Sem 5<br><small class="text-slate-500 font-normal">12/06</small></span>
-                          <span class="text-center">Sem 6<br><small class="text-slate-500 font-normal">19/06</small></span>
-                          <span class="text-center">Sem 7<br><small class="text-slate-500 font-normal">26/06</small></span>
-                          <span class="text-center">Sem 8<br><small class="text-slate-500 font-normal">03/07</small></span>
-                        </div>
-                      </div>
-
-                      <!-- Control & Buffer Guarantee Strip (3 Bento Cards Informativos) -->
-                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
-                        <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 space-y-1.5 shadow-2xs">
-                          <div class="flex items-center justify-between">
-                            <strong class="text-slate-900 font-bold">Velocidade da Frente Ativa</strong>
-                            <span class="text-[10px] bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-full">+14% Vel</span>
-                          </div>
-                          <div class="text-emerald-700 font-black text-base">2 dias / nível</div>
-                          <p class="text-[11.5px] text-slate-600 font-medium">Montagem da estrutura metálica mais rápida que o takt programado.</p>
-                        </div>
-
-                        <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 space-y-1.5 shadow-2xs">
-                          <div class="flex items-center justify-between">
-                            <strong class="text-slate-900 font-bold">Buffer de Segurança</strong>
-                            <span class="text-[10px] bg-blue-100 text-blue-900 font-black px-2 py-0.5 rounded-full">Protegido</span>
-                          </div>
-                          <div class="text-blue-700 font-black text-base">5 dias úteis</div>
-                          <p class="text-[11.5px] text-slate-600 font-medium">Distância segura entre a montagem metálica e as instalações elétricas.</p>
-                        </div>
-
-                        <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 space-y-1.5 shadow-2xs">
-                          <div class="flex items-center justify-between">
-                            <strong class="text-slate-900 font-bold">Previsão Setorial</strong>
-                            <span class="text-[10px] bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-full">No Prazo</span>
-                          </div>
-                          <div class="text-slate-950 font-black text-base">18 de Julho 2026</div>
-                          <p class="text-[11.5px] text-emerald-800 font-bold">Fluxo contínuo sem gargalos ou retrabalho no canteiro.</p>
-                        </div>
-                      </div>
-
-                    </div>
-                  ` : `
-                    <!-- TABELA RÍTMICA OPERACIONAL DE ATIVIDADES -->
-                    <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs overflow-x-auto space-y-4 animate-card-fade">
-                      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                        <strong class="text-sm font-black text-slate-950">Cronograma de Frentes & Takt-Time — Setor ${lbSector}</strong>
-                        <span class="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                          10 Atividades Ativas
-                        </span>
-                      </div>
-
-                      <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold">
-                            <th class="p-3">Frente / Atividade Operacional</th>
-                            <th class="p-3">Data Início</th>
-                            <th class="p-3">Data Término</th>
-                            <th class="p-3 text-center">Ritmo (Takt)</th>
-                            <th class="p-3 text-center">Status de Fluxo</th>
-                            <th class="p-3 text-right">Avanço Físico Medido</th>
-                          </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                          ${rawLinhaBalanco.filter(r => r.setor === lbSector).slice(0, 10).map((r, i) => `
-                            <tr class="hover:bg-slate-50 transition">
-                              <td class="p-3 font-semibold text-slate-950">
-                                <span class="text-[10px] text-slate-500 font-bold block">Frente #${i+1}</span>
-                                ${r.atividade || 'Atividade Operacional'}
-                              </td>
-                              <td class="p-3 font-mono text-slate-600">${r.inicio || '15/05/26'}</td>
-                              <td class="p-3 font-mono text-slate-600">${r.termino || '20/07/26'}</td>
-                              <td class="p-3 text-center">
-                                <span class="px-2.5 py-1 bg-slate-100 text-slate-900 rounded-md font-bold font-mono border border-slate-200">
-                                  ${r.ritmo || '1 pav/sem'}
-                                </span>
-                              </td>
-                              <td class="p-3 text-center">
-                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-bold text-[10px]">
-                                  ● Sincronizado
-                                </span>
-                              </td>
-                              <td class="p-3 text-right font-black text-emerald-700 font-mono text-sm">100% Medido</td>
-                            </tr>
-                          `).join('')}
-                        </tbody>
-                      </table>
-                    </div>
-                  `}
-
-                </div>
-              ` : ''}
-
-              <!-- MÉDIO PRAZO (R4 LOOKAHEAD REORGANIZADO) -->
-              ${activeNav === 'Médio Prazo (R4)' ? `
-                <div class="space-y-5 animate-card-fade">
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3.5">
-                      <div class="w-10 h-10 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs">
-                        ${getSvg('calendar', 'w-5 h-5 text-[#d4ff00]')}
-                      </div>
-                      <div>
-                        <h3 class="text-base xl:text-lg font-black text-slate-950">Planejamento de Médio Prazo (R4 Lookahead)</h3>
-                        <p class="text-xs text-slate-600 font-medium">Matriz de 4 Semanas para desimpedimento de restrições operacionais</p>
-                      </div>
-                    </div>
-                    <span class="bg-[#d4ff00] text-slate-950 text-xs font-black px-3 py-1 rounded-full border border-slate-300">
-                      R4 Ativo: 19/23 Frentes Desimpedidas (82%)
-                    </span>
-                  </div>
-
-                  <!-- 4 Semanas de Restrições -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="white-bento-card p-4 border border-slate-200 space-y-3">
-                      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-                        <strong class="text-xs font-black text-slate-950">Semana 1 (Imediata)</strong>
-                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-900 text-[10px] font-bold rounded-full">100% Liberado</span>
-                      </div>
-                      <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200 text-xs space-y-1">
-                        <strong class="text-slate-900 block font-bold">Concretagem Laje P2</strong>
-                        <span class="text-[11px] text-slate-500">Insumos e mão de obra no local</span>
-                      </div>
-                    </div>
-
-                    <div class="white-bento-card p-4 border border-slate-200 space-y-3">
-                      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-                        <strong class="text-xs font-black text-slate-950">Semana 2 (Curto Prazo)</strong>
-                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-900 text-[10px] font-bold rounded-full">Desimpedida</span>
-                      </div>
-                      <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200 text-xs space-y-1">
-                        <strong class="text-slate-900 block font-bold">Estrutura Metálica Arena</strong>
-                        <span class="text-[11px] text-slate-500">18 vigas recebidas no canteiro</span>
-                      </div>
-                    </div>
-
-                    <div class="white-bento-card p-4 border border-slate-200 space-y-3">
-                      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-                        <strong class="text-xs font-black text-slate-950">Semana 3 (Preparação)</strong>
-                        <span class="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-bold rounded-full">1 Restrição</span>
-                      </div>
-                      <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200 text-xs space-y-1">
-                        <strong class="text-slate-900 block font-bold">Alvenaria Estrutural P3</strong>
-                        <span class="text-[11px] text-amber-800">Aguardando entrega de blocos</span>
-                      </div>
-                    </div>
-
-                    <div class="white-bento-card p-4 border border-slate-200 space-y-3">
-                      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-                        <strong class="text-xs font-black text-slate-950">Semana 4 (Planejamento)</strong>
-                        <span class="px-2 py-0.5 bg-blue-100 text-blue-900 text-[10px] font-bold rounded-full">Em Análise</span>
-                      </div>
-                      <div class="p-3 bg-slate-50 rounded-[10px] border border-slate-200 text-xs space-y-1">
-                        <strong class="text-slate-900 block font-bold">Instalações Hidráulicas</strong>
-                        <span class="text-[11px] text-slate-500">Projeto executivo liberado</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ` : ''}
-
-              <!-- CURVA S & PAC -->
-              ${activeNav === 'Curva S & PAC' ? `
-                <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs animate-card-fade">
-                  <div class="flex justify-between items-center mb-5">
-                    <div>
-                      <h3 class="text-base xl:text-lg font-bold text-slate-950">Curva S e Aderência ao PAC</h3>
-                      <p class="text-xs text-slate-600">Paridade entre o cronograma rítmico e as medições físicas</p>
-                    </div>
-                    <span class="bg-[#d4ff00] text-slate-950 text-xs font-extrabold px-3 py-1 rounded-full border border-slate-300">PAC: 78%</span>
-                  </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="p-4 bg-slate-50 rounded-[14px] border border-slate-200">
-                      <span class="text-xs text-slate-500 font-bold block">Orçamento Base</span>
-                      <strong class="text-xl text-slate-950 font-black">R$ 24,00M</strong>
-                    </div>
-                    <div class="p-4 bg-slate-50 rounded-[14px] border border-slate-200">
-                      <span class="text-xs text-slate-500 font-bold block">Custo Medido Real</span>
-                      <strong class="text-xl text-slate-950 font-black">R$ 14,80M</strong>
-                    </div>
-                    <div class="p-4 bg-emerald-50 rounded-[14px] border border-emerald-300">
-                      <span class="text-xs text-emerald-800 font-bold block">Economia Acumulada</span>
-                      <strong class="text-xl text-emerald-950 font-black">+ R$ 1,40M (+8.6%)</strong>
-                    </div>
-                  </div>
-                </div>
-              ` : ''}
-
-              
-              <!-- MÓDULO DE SUPRIMENTOS & INSUMOS (CADASTRO E IMPORTAÇÃO EXCEL PARA ADMIN/ENG) -->
-              ${activeNav === 'Suprimentos' ? `
-                <div class="space-y-5 animate-card-fade">
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3.5">
-                      <div class="w-10 h-10 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs">
-                        ${getSvg('box', 'w-5 h-5 text-[#d4ff00]')}
-                      </div>
-                      <div>
-                        <h3 class="text-base xl:text-lg font-black text-slate-950">Central de Suprimentos & Materiais da Obra</h3>
-                        <p class="text-xs text-slate-600 font-medium">Rastreamento de pedidos, estoque físico e programação de entregas</p>
-                      </div>
-                    </div>
-
-                    ${(accessLevel === 'Admin' || accessLevel === 'Engenharia') ? `
-                      <div class="flex items-center gap-2">
-                        <div class="relative">
-                          <input
-                            type="file"
-                            accept=".xlsx, .xls, .csv"
-                            onchange="handleSupplyExcelUpload(event)"
-                            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                            title="Importar planilha de suprimentos"
-                          />
-                          <button type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-[10px] transition border border-slate-200 flex items-center gap-1.5 cursor-pointer">
-                            ${getSvg('fileText', 'w-3.5 h-3.5 text-slate-700')}
-                            <span>Importar Planilha</span>
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onclick="openAddSupplyModal()"
-                          class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer"
-                        >
-                          ${getSvg('plus', 'w-4 h-4 text-slate-950')}
-                          <span>+ Cadastrar Insumo</span>
-                        </button>
-                      </div>
-                    ` : ''}
-                  </div>
-
-                  <!-- Tabela / Cards de Suprimentos (Com Edição & Exclusão para Admin/Eng) -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    ${suppliesList.map(sup => `
-                      <div class="white-bento-card p-4 xl:p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition relative group">
-                        <div>
-                          <div class="flex items-start justify-between gap-2 mb-2">
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${sup.badge}">
-                              ● ${sup.status}
-                            </span>
-                            
-                            <div class="flex items-center gap-1">
-                              <span class="text-[11px] text-slate-500 font-mono font-bold">${sup.date}</span>
-                              ${(accessLevel === 'Admin' || accessLevel === 'Engenharia') ? `
-                                <div class="flex items-center gap-0.5 ml-1">
-                                  <button
-                                    type="button"
-                                    onclick="openEditSupplyModal(${sup.id})"
-                                    class="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-[6px] transition cursor-pointer"
-                                    title="Editar Insumo"
-                                  >
-                                    ${getSvg('edit', 'w-3.5 h-3.5')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onclick="deleteSupply(${sup.id})"
-                                    class="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-700 rounded-[6px] transition cursor-pointer"
-                                    title="Excluir Insumo"
-                                  >
-                                    ${getSvg('trash', 'w-3.5 h-3.5')}
-                                  </button>
-                                </div>
-                              ` : ''}
-                            </div>
-                          </div>
-                          
-                          <strong class="text-sm font-black text-slate-950 block leading-snug">${sup.name}</strong>
-                          <span class="text-xs text-slate-600 font-medium block mt-1">Fornecedor: <strong class="text-slate-800 font-bold">${sup.supplier}</strong></span>
-                        </div>
-
-                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                          <div class="p-1.5 bg-slate-50 rounded-[8px] border border-slate-200">
-                            <span class="text-slate-500 text-[11px]">Qtd:</span> <strong class="text-slate-950 font-black">${sup.qtd}</strong>
-                          </div>
-                          <div class="p-1.5 bg-slate-50 rounded-[8px] border border-slate-200">
-                            <span class="text-slate-500 text-[11px]">Frente:</span> <span class="font-bold text-slate-900">${sup.sector}</span>
-                          </div>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-
-              <!-- GALERIA DO CLIENTE -->
-              ${activeNav === 'Galeria do Cliente' ? `
-                <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs animate-card-fade">
-                  <div class="flex justify-between items-center mb-5">
-                    <div>
-                      <h3 class="text-base xl:text-lg font-bold text-slate-950">Galeria de Evidências Fotográficas da Obra</h3>
-                      <p class="text-xs text-slate-600">Fotos georreferenciadas auditadas pela equipe de Engenharia</p>
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    ${validations.map(val => `
-                      <div class="rounded-[14px] overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer" onclick="openLightbox('${val.foto}', '${val.item}', '${val.front}', '${val.resp}', '${val.data}', '${val.gps}')">
-                        <img src="${val.foto}" class="w-full h-44 object-cover hover:scale-105 transition" />
-                        <div class="p-3 text-xs">
-                          <strong class="text-slate-900 font-bold block truncate">${val.item}</strong>
-                          <span class="text-slate-500 text-[11px] block mt-0.5">${val.front} · ${val.data}</span>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-
-              
-              <!-- ABA DEDICADA: CADASTRO & GESTÃO DE PROJETOS EM CURSO -->
-              ${activeNav === 'Cadastro de Projetos' ? `
-                <div class="space-y-6 animate-card-fade">
-                  
-                  <!-- Header -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3.5">
-                      <div class="w-11 h-11 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center shadow-2xs shrink-0">
-                        ${getSvg('layers', 'w-5 h-5 text-[#d4ff00]')}
-                      </div>
-                      <div>
-                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Obras & Projetos em Curso</h2>
-                        <p class="text-xs text-slate-600 font-medium">Explore as obras ativas ou cadastre novos empreendimentos</p>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onclick="openNewProjectModal()"
-                        class="px-4 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer"
-                      >
-                        ${getSvg('plus', 'w-4 h-4 text-slate-950')}
-                        <span>Cadastrar Novo Projeto</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- DIFF COMPARISON DRAWER (Aparece quando acionado dentro de um projeto) -->
-                  ${excelDiffData ? `
-                    <div class="p-5 bg-amber-50/70 border border-amber-300 rounded-[16px] space-y-4 animate-card-fade shadow-md">
-                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-amber-200">
-                        <div class="flex items-center gap-2">
-                          <span class="w-3 h-3 rounded-full bg-amber-500 animate-ping"></span>
-                          <h4 class="text-sm font-black text-amber-950">Comparativo de Versões da Obra (${excelDiffData.fileName})</h4>
-                        </div>
-                        <span class="text-xs font-mono text-slate-600 bg-white px-2 py-0.5 rounded-md border border-amber-300">
-                          ${excelDiffData.currentVersion} ➔ <strong>${excelDiffData.newVersion}</strong>
-                        </span>
-                      </div>
-
-                      <div class="overflow-x-auto bg-white rounded-[12px] border border-amber-200">
-                        <table class="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr class="bg-amber-100/70 border-b border-amber-200 text-amber-950 font-bold">
-                              <th class="p-2.5">Frente / Atividade</th>
-                              <th class="p-2.5">Versão Atual (${excelDiffData.currentVersion})</th>
-                              <th class="p-2.5">Nova Planilha (${excelDiffData.newVersion})</th>
-                              <th class="p-2.5 text-right">Variação Detectada</th>
-                            </tr>
-                          </thead>
-                          <tbody class="divide-y divide-slate-100">
-                            ${excelDiffData.itemsChanged.map(item => `
-                              <tr class="hover:bg-amber-50/40 transition">
-                                <td class="p-2.5">
-                                  <span class="text-[10px] font-bold text-slate-500 block">${item.setor}</span>
-                                  <strong class="text-slate-950 font-semibold">${item.atividade}</strong>
-                                </td>
-                                <td class="p-2.5 text-slate-600 font-mono">${item.oldVal}</td>
-                                <td class="p-2.5 text-emerald-950 font-bold font-mono bg-emerald-50/50">${item.newVal}</td>
-                                <td class="p-2.5 text-right font-black text-emerald-700">${item.status}</td>
-                              </tr>
-                            `).join('')}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div class="flex items-center justify-end gap-2 pt-1">
-                        <button type="button" onclick="cancelExcelDiff()" class="px-4 py-2 border border-slate-300 bg-white text-slate-700 text-xs font-bold rounded-[10px] hover:bg-slate-50 cursor-pointer">Descartar</button>
-                        <button type="button" onclick="applyExcelProjectUpdate()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[10px] shadow-xs cursor-pointer flex items-center gap-2">
-                          ${getSvg('checkCircle', 'w-4 h-4 text-white')}
-                          <span>Confirmar e Atualizar Obra</span>
-                        </button>
-                      </div>
-                    </div>
-                  ` : ''}
-
-                  <!-- Grid com os Projetos em Curso -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    ${projectsList.map(proj => `
-                      <div class="white-bento-card border border-slate-200 p-5 xl:p-6 flex flex-col justify-between hover:border-slate-400 transition-all group">
-                        <div>
-                          <div class="flex items-start justify-between gap-2 mb-3">
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${proj.badgeColor}">● ${proj.status}</span>
-                            <span class="text-[11px] text-slate-500 font-mono font-bold">${proj.deadline}</span>
-                          </div>
-                          <h3 class="text-base xl:text-lg font-bold text-slate-900 group-hover:text-emerald-800 transition leading-snug">${proj.title}</h3>
-                          <p class="text-xs text-slate-600 mt-2 leading-relaxed">${proj.description}</p>
-                        </div>
-
-                        <div class="mt-5 space-y-3.5">
-                          <div class="p-3 bg-slate-50 rounded-[12px] border border-slate-200 space-y-2">
-                            <div class="flex justify-between items-center text-xs">
-                              <span class="text-slate-600 font-semibold">Avanço Físico Real:</span>
-                              <strong class="text-slate-950 font-bold">${proj.progress}%</strong>
-                            </div>
-                            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                              <div class="bg-emerald-600 h-full rounded-full" style="width: ${proj.progress}%"></div>
-                            </div>
-                            <div class="flex justify-between items-center text-[11px] text-slate-500 pt-0.5">
-                              <span>Gasto: <strong class="text-slate-900">${proj.spent}</strong></span>
-                              <span>Orçamento: <strong class="text-slate-900">${proj.budget}</strong></span>
-                            </div>
-                          </div>
-
-                          <div class="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onclick="openProjectCockpit('${proj.id}')"
-                              class="w-full py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-extrabold text-xs rounded-[10px] transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                              title="Explorar e gerenciar este projeto"
-                            >
-                              <span>Explorar</span>
-                              ${getSvg('arrowUpRight', 'w-3.5 h-3.5 text-white')}
-                            </button>
-
-                            <button
-                              type="button"
-                              onclick="simulateExcelDiff('${proj.title}')"
-                              class="w-full py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center justify-center gap-1 cursor-pointer"
-                              title="Demonstração Rápida: Simular Leitura da Planilha Rev 16.04"
-                            >
-                              ${getSvg('fileText', 'w-3.5 h-3.5 text-slate-950')}
-                              <span>Planilha .xlsx</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-
-                </div>
-              ` : ''}
-
-              <!-- MÓDULO GESTÃO DE USUÁRIOS & PERMISSÕES (ADMIN MASTER) -->
-              ${activeNav === 'Gestão de Usuários (Admin)' && accessLevel === 'Admin' ? `
-                <div class="space-y-5 animate-card-fade">
-                  
-                  <!-- Top Admin Header -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3.5">
-                      <div class="w-11 h-11 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center shadow-2xs shrink-0">
-                        ${getSvg('users', 'w-5 h-5 text-[#d4ff00]')}
-                      </div>
-                      <div>
-                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Gestão Central de Usuários, Acessos & Permissões</h2>
-                        <p class="text-xs text-slate-600 font-medium">Controle de novos cadastros, atribuição de perfis RBAC, edição e autorização de acessos</p>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onclick="openRegisterModal()"
-                        class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer"
-                      >
-                        ${getSvg('plus', 'w-4 h-4 text-slate-950')}
-                        <span>Cadastrar Novo Usuário</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- FILA DE CADASTROS PENDENTES DE AUTENTICAÇÃO -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                      <div>
-                        <h3 class="text-sm sm:text-base font-bold text-slate-950">Fila de Novos Cadastros para Autenticação</h3>
-                        <p class="text-xs text-slate-500 font-medium">Avalie as informações completas e determine o nível de acesso permitido</p>
-                      </div>
-                      <span class="text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full font-mono">
-                        ${pendingUsers.length} aguardando
-                      </span>
-                    </div>
-
-                    ${pendingUsers.length === 0 ? `
-                      <div class="p-6 text-center text-xs text-slate-500 font-medium bg-slate-50 rounded-[14px]">
-                        ✓ Nenhum cadastro pendente no momento. Todos os acessos foram autenticados.
-                      </div>
-                    ` : `
-                      <div class="space-y-4">
-                        ${pendingUsers.map(u => `
-                          <div class="p-4 bg-slate-50 rounded-[14px] border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                            <div class="space-y-1.5 text-xs">
-                              <div class="flex items-center gap-2">
-                                <strong class="text-sm font-black text-slate-950">${u.name}</strong>
-                                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">Pretende: ${u.requestedLevel || 'Campo'}</span>
-                                <span class="text-[11px] text-slate-500">${u.date || 'Hoje'}</span>
-                              </div>
-                              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-700 text-[11px]">
-                                <div><span class="text-slate-500">CPF:</span> <strong>${u.cpf || 'N/A'}</strong></div>
-                                <div><span class="text-slate-500">RG:</span> <strong>${u.rg || 'N/A'}</strong></div>
-                                <div><span class="text-slate-500">Nascimento:</span> <strong>${u.birthDate || 'N/A'}</strong></div>
-                                <div><span class="text-slate-500">WhatsApp:</span> <strong>${u.phone || 'N/A'}</strong></div>
-                              </div>
-                              <div class="text-[11px] text-slate-600">
-                                <span class="text-slate-500">E-mail:</span> <strong>${u.email}</strong> · <span class="text-slate-500">Empresa:</span> <strong>${u.company || 'Planes ENG'}</strong>
-                              </div>
-                            </div>
-
-                            <div class="flex items-center gap-2 shrink-0">
-                              <select id="assign-level-${u.id}" class="px-3 py-2 bg-white border border-slate-200 rounded-[10px] text-xs font-bold text-slate-900">
-                                <option value="Engenharia" ${u.requestedLevel === 'Engenharia' ? 'selected' : ''}>Engenharia</option>
-                                <option value="Campo" ${u.requestedLevel === 'Campo' ? 'selected' : ''}>Campo</option>
-                                <option value="Canteiro" ${u.requestedLevel === 'Canteiro' ? 'selected' : ''}>Canteiro</option>
-                                <option value="Diretoria" ${u.requestedLevel === 'Diretoria' ? 'selected' : ''}>Diretoria</option>
-                                <option value="Cliente" ${u.requestedLevel === 'Cliente' ? 'selected' : ''}>Cliente</option>
-                                <option value="Admin">Admin</option>
-                              </select>
-
-                              <button
-                                type="button"
-                                onclick="approvePendingUser(${u.id}, document.getElementById('assign-level-${u.id}').value)"
-                                class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer flex items-center gap-1.5"
-                              >
-                                ${getSvg('checkCircle', 'w-3.5 h-3.5')}
-                                <span>Aprovar Acesso</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onclick="rejectPendingUser(${u.id})"
-                                class="p-2 border border-slate-200 text-rose-600 hover:bg-rose-50 rounded-[10px] transition cursor-pointer"
-                                title="Recusar cadastro"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        `).join('')}
-                      </div>
-                    `}
-                  </div>
-
-                  
-                  <!-- CONFIGURAÇÃO DINÂMICA DA MATRIZ DE PERMISSÕES POR PERFIL (ADMIN MASTER) -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                      <div>
-                        <h3 class="text-sm sm:text-base font-black text-slate-950">Configuração de Acesso aos Módulos por Perfil (RBAC)</h3>
-                        <p class="text-xs text-slate-500 font-medium">Marque ou desmarque os módulos que cada perfil de usuário tem permissão para visualizar</p>
-                      </div>
-                      <span class="bg-slate-950 text-[#d4ff00] text-[10px] font-black px-3 py-1 rounded-full font-mono">
-                        Configuração Ativa
-                      </span>
-                    </div>
-
-                    <div class="overflow-x-auto bg-white rounded-[12px] border border-slate-200">
-                      <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold">
-                            <th class="p-3">Módulo da Plataforma</th>
-                            <th class="p-3 text-center">Engenharia</th>
-                            <th class="p-3 text-center">Campo</th>
-                            <th class="p-3 text-center">Canteiro</th>
-                            <th class="p-3 text-center">Diretoria</th>
-                            <th class="p-3 text-center">Cliente</th>
-                          </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700">
-                          ${[
-                            'Visão Geral',
-                            'Cadastro de Projetos',
-                            'Assistente de Voz',
-                            'Equipe & Contatos',
-                            'Linha de Balanço',
-                            'Médio Prazo (R4)',
-                            'Canteiro 1-Touch',
-                            'Fila de Validações',
-                            'Curva S & PAC',
-                            'Suprimentos',
-                            'Galeria do Cliente',
-                            'Relatórios & Capa'
-                          ].map(mod => `
-                            <tr class="hover:bg-slate-50">
-                              <td class="p-3 font-bold text-slate-950">${mod}</td>
-                              ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente'].map(role => `
-                                <td class="p-3 text-center">
-                                  <input
-                                    type="checkbox"
-                                    ${(rolePermissions[role] || []).includes(mod) ? 'checked' : ''}
-                                    onchange="toggleRolePermission('${role}', '${mod}')"
-                                    class="w-4 h-4 accent-slate-950 rounded cursor-pointer"
-                                  />
-                                </td>
-                              `).join('')}
-                            </tr>
-                          `).join('')}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <!-- USUÁRIOS ATIVOS & CONECTADOS À AGENDA (COM EDITAR, EXCLUIR E AUTORIZAR ACESSO) -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
-                      <div>
-                        <h3 class="text-sm sm:text-base font-bold text-slate-950">Usuários Ativos & Conectados à Agenda</h3>
-                        <p class="text-xs text-slate-500 font-medium">O Administrador pode editar, excluir, cadastrar e autorizar permissões diretamente</p>
-                      </div>
-                      <span class="text-xs font-bold text-slate-600 font-mono bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                        ${registeredUsers.length} Usuários Cadastrados
-                      </span>
-                    </div>
-
-                    <div class="divide-y divide-slate-100">
-                      ${registeredUsers.map(reg => `
-                        <div class="py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-                          <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-[12px] bg-slate-950 text-[#d4ff00] font-black text-xs flex items-center justify-center shadow-2xs shrink-0">
-                              ${reg.avatar || 'US'}
-                            </div>
-                            <div>
-                              <div class="flex items-center gap-2">
-                                <strong class="text-sm font-bold text-slate-950 leading-tight">${reg.name}</strong>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  reg.level === 'Admin' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                }">
-                                  ${reg.level}
-                                </span>
-                              </div>
-                              <span class="text-slate-500 text-[11px] block mt-0.5 font-medium">
-                                ${reg.email} · WhatsApp: <strong>${reg.phone || 'Sem fone'}</strong> · CPF: ${reg.cpf || 'N/A'}
-                              </span>
-                            </div>
-                          </div>
-
-                          <!-- Actions: Change Role, Edit & Delete -->
-                          <div class="flex items-center gap-2 shrink-0">
-                            <select
-                              onchange="changeUserRole('${reg.id}', this.value)"
-                              class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[8px] text-xs font-bold text-slate-900 cursor-pointer"
-                              title="Alterar Permissão / Nível de Acesso"
-                            >
-                              <option value="Engenharia" ${reg.level === 'Engenharia' ? 'selected' : ''}>Engenharia</option>
-                              <option value="Campo" ${reg.level === 'Campo' ? 'selected' : ''}>Campo</option>
-                              <option value="Canteiro" ${reg.level === 'Canteiro' ? 'selected' : ''}>Canteiro</option>
-                              <option value="Diretoria" ${reg.level === 'Diretoria' ? 'selected' : ''}>Diretoria</option>
-                              <option value="Cliente" ${reg.level === 'Cliente' ? 'selected' : ''}>Cliente</option>
-                              <option value="Admin" ${reg.level === 'Admin' ? 'selected' : ''}>Admin</option>
-                            </select>
-
-                            <button
-                              type="button"
-                              onclick="openEditUserModal('${reg.id}')"
-                              class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[8px] transition border border-slate-200 cursor-pointer flex items-center gap-1"
-                              title="Editar dados cadastrais"
-                            >
-                              <span>Editar</span>
-                            </button>
-
-                            ${reg.email !== 'armidiasintegradas@gmail.com' ? `
-                              <button
-                                type="button"
-                                onclick="deleteUser('${reg.id}')"
-                                class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-[8px] transition border border-rose-200 cursor-pointer flex items-center gap-1"
-                                title="Excluir usuário"
-                              >
-                                <span>Excluir</span>
-                              </button>
-                            ` : ''}
-                          </div>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-
-                </div>
-              ` : ''}
-
-              
-              <!-- RELATÓRIOS EXECUTIVOS MENSAIS & APRESENTAÇÕES DE TODOS OS PROJETOS EM CURSO -->
               ${activeNav === 'Relatórios & Capa' ? `
                 <div class="space-y-6 animate-card-fade">
                   
