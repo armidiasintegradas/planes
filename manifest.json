@@ -1,0 +1,19 @@
+{
+  "name": "Planes OS — Gestão de Engenharia",
+  "short_name": "Planes OS",
+  "description": "Plataforma de Gestão e Planejamento Lean para Construção Civil",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
