@@ -164,6 +164,41 @@
     }
 
   </style>
+
+  <style>
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      header, aside, #mobile-drawer, #toast, .no-print, button, select {
+        display: none !important;
+      }
+      #app, main, .main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      .print-page {
+        page-break-after: always !important;
+        break-after: page !important;
+        padding: 12mm 14mm !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        min-height: 270mm !important;
+      }
+      .avoid-break {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+    }
+  </style>
+
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -1479,7 +1514,43 @@
 
     // ESTADO DO MÓDULO DE RELATÓRIOS EXECUTIVOS
     let reportSelectedProjId = 'japaratinga-resort';
-    let reportFormatMode = 'a4'; // 'a4' ou 'slides'
+    let reportFormatMode = 'a4';
+
+    // ESTADO E CONTROLE DA APRESENTAÇÃO DE SLIDES 16:9
+    let currentSlideIndex = 0;
+    const totalSlides = 5;
+
+    function nextSlide() {
+      if (currentSlideIndex < totalSlides - 1) {
+        currentSlideIndex++;
+        render();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlideIndex > 0) {
+        currentSlideIndex--;
+        render();
+      }
+    }
+
+    function goToSlide(idx) {
+      currentSlideIndex = idx;
+      render();
+    }
+
+    function toggleFullscreenPresentation() {
+      const elem = document.getElementById('presentation-container');
+      if (!elem) return;
+      if (!document.fullscreenElement) {
+        elem.requestFullscreen().catch(err => {
+          showToast('Erro ao entrar em tela cheia.');
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+ // 'a4' ou 'slides'
 
     function setReportProject(projId, mode) {
       reportSelectedProjId = projId;
