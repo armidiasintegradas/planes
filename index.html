@@ -330,6 +330,74 @@
     </div>
 
     
+        <!-- MODAL DE CONFIGURAÇÃO DE CREDENCIAIS SIENGE ERP -->
+    <div id="sienge-config-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
+      <div class="bg-white border border-slate-200 rounded-[24px] max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">
+              <svg class="w-5 h-5 text-[#d4ff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Conector Sienge Plataforma (Softplan)</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Parâmetros de autenticação e Webhooks em tempo real</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeSiengeConfigModal()" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg">✕</button>
+        </div>
+
+        <div class="space-y-3.5 text-xs">
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Subdomínio Sienge da Construtora *</label>
+            <div class="flex items-center">
+              <span class="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-[10px] text-slate-500 font-mono text-xs">https://</span>
+              <input id="sienge-subdomain" type="text" value="planes.sienge.com.br" placeholder="suaempresa.sienge.com.br" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-r-[10px] text-slate-900 font-bold font-mono focus:bg-white focus:outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Token de Acesso / API Key Sienge (Bearer) *</label>
+            <input id="sienge-apikey" type="password" value="sng_live_89f1a238e9c04b88a912" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-mono focus:bg-white focus:outline-none" />
+            <span class="text-[10px] text-slate-500 mt-0.5 block">Gerado no painel do Sienge em Configurações > Integrações de API</span>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">URL de Endpoint para Webhooks (Planes)</label>
+            <input id="sienge-webhook-url" type="text" readonly value="https://armidiasintegradas.github.io/planes/api/sienge-webhook" class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-[10px] text-slate-600 font-mono text-[11px]" />
+            <span class="text-[10px] text-slate-500 mt-0.5 block">Cole este endpoint no módulo de Notificações Ativas do Sienge</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Frequência de Auto-Sync</label>
+              <select id="sienge-interval" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-bold focus:outline-none">
+                <option value="1 min">A cada 1 minuto</option>
+                <option value="5 min" selected>A cada 5 minutos (Recomendado)</option>
+                <option value="15 min">A cada 15 minutos</option>
+                <option value="Manual">Apenas Manual</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Ambiente de Execução</label>
+              <input type="text" readonly value="Produção (API v1 REST)" class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-[10px] text-slate-700 font-bold text-xs" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeSiengeConfigModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[12px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="handleSiengeConfigSubmit()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] border border-slate-300 shadow-xs">Salvar Conexão</button>
+        </div>
+      </div>
+    </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeSiengeConfigModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[12px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="handleSiengeConfigSubmit()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] border border-slate-300 shadow-xs">Salvar Conexão</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE CADASTRO DE NOVO CONTATO (ADMIN) -->
     <div id="add-member-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
       <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -1205,6 +1273,9 @@
         menu: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>`,
         trash: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
         refresh: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
+        server: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>`,
+        database: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>`,
+        link: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
       };
       return svgs[name] || '';
     };
@@ -3142,6 +3213,7 @@
       { name: 'Fila de Validações', icon: 'checkCircle', desc: 'Aprovações técnicas e auditoria de campo' },
       { name: 'Curva S & PAC', icon: 'chart', desc: 'Aderência física, financeira e PAC semanal' },
       { name: 'Suprimentos', icon: 'box', desc: 'Logística, compras e recebimento de materiais' },
+      { name: 'Integração Sienge ERP', icon: 'server', desc: 'Sincronização em tempo real de pedidos, medições e custos' },
       { name: 'Galeria do Cliente', icon: 'camera', desc: 'Fotos da obra e evolução visual para clientes' },
       { name: 'Relatórios & Capa', icon: 'fileText', desc: 'Emissão de Relatório A4 e Slides 16:9' }
     ];
@@ -3149,15 +3221,247 @@
     let selectedRbacTab = 'Engenharia';
 
     const defaultRolePermissions = {
-      'Engenharia': ['Visão Geral', 'Planes Intelligence', 'Assistente de Voz', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Fila de Validações', 'Curva S & PAC', 'Suprimentos', 'Galeria do Cliente', 'Relatórios & Capa'],
+      'Engenharia': ['Visão Geral', 'Planes Intelligence', 'Assistente de Voz', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Fila de Validações', 'Curva S & PAC', 'Suprimentos', 'Integração Sienge ERP', 'Galeria do Cliente', 'Relatórios & Capa'],
       'Campo': ['Visão Geral', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Galeria do Cliente'],
       'Canteiro': ['Visão Geral', 'Canteiro 1-Touch', 'Galeria do Cliente'],
-      'Diretoria': ['Visão Geral', 'Planes Intelligence', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Curva S & PAC', 'Galeria do Cliente', 'Relatórios & Capa'],
+      'Diretoria': ['Visão Geral', 'Planes Intelligence', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Curva S & PAC', 'Integração Sienge ERP', 'Galeria do Cliente', 'Relatórios & Capa'],
       'Cliente': ['Visão Geral', 'Galeria do Cliente', 'Relatórios & Capa'],
-      'Admin': ['Visão Geral', 'Planes Intelligence', 'Assistente de Voz', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Fila de Validações', 'Curva S & PAC', 'Suprimentos', 'Galeria do Cliente', 'Gestão de Usuários (Admin)', 'Relatórios & Capa']
+      'Admin': ['Visão Geral', 'Planes Intelligence', 'Assistente de Voz', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Fila de Validações', 'Curva S & PAC', 'Suprimentos', 'Integração Sienge ERP', 'Galeria do Cliente', 'Gestão de Usuários (Admin)', 'Relatórios & Capa']
     };
 
     let rolePermissions = {};
+
+    // =========================================================================
+    // MÓDULO DE INTEGRAÇÃO NATIVA SIENGE PLATAFORMA (SOFTPLAN)
+    // =========================================================================
+    let selectedSiengeTab = 'pedidos';
+
+    let defaultSiengeConfig = {
+      subdomain: 'planes.sienge.com.br',
+      apiKey: 'sng_live_89f1a238e9c04b88a912',
+      apiStatus: 'Conectado (API v1 REST)',
+      webhookUrl: 'https://armidiasintegradas.github.io/planes/api/sienge-webhook',
+      webhookSecret: 'whsec_sienge_planes_live_2026',
+      autoSyncInterval: '5 min',
+      lastSyncTime: 'Hoje, 14:45',
+      environment: 'Produção'
+    };
+
+    let siengeConfig = defaultSiengeConfig;
+    try {
+      const savedCfg = localStorage.getItem('planes_sienge_config');
+      if (savedCfg) siengeConfig = { ...defaultSiengeConfig, ...JSON.parse(savedCfg) };
+    } catch (e) {
+      siengeConfig = defaultSiengeConfig;
+    }
+
+    const defaultSiengeOrders = [
+      {
+        id: 'PED-88210',
+        supplier: 'Gerdau Aços Brasil S.A.',
+        item: 'Aço CA-50 10.0mm & 12.5mm (Barras 12m)',
+        qty: '18.000 kg',
+        value: 'R$ 142.500,00',
+        deliveryDate: '08/06/2026',
+        costCenter: 'CC-1010 (Japaratinga)',
+        status: 'Em Trânsito',
+        statusColor: 'bg-amber-100 text-amber-900 border-amber-300',
+        leanImpact: 'Estrutura 3º Pav. Bloco A (Restrição R4)',
+        approvedBy: 'Suprimentos Sienge (Eng. Carlos)'
+      },
+      {
+        id: 'PED-88214',
+        supplier: 'Polimix Concreto Alagoas Ltda',
+        item: 'Concreto Usinado Fck 35 MPa com Bombeamento',
+        qty: '220 m³',
+        value: 'R$ 89.400,00',
+        deliveryDate: '12/06/2026',
+        costCenter: 'CC-1010 (Japaratinga)',
+        status: 'Aprovado no ERP',
+        statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        leanImpact: 'Concretagem Laje 3 Bloco A',
+        approvedBy: 'Diretoria Financeira'
+      },
+      {
+        id: 'PED-88220',
+        supplier: 'Portobello Cerâmicas Maceió',
+        item: 'Porcelanato 80x80 Polido Extra White',
+        qty: '2.400 m²',
+        value: 'R$ 215.800,00',
+        deliveryDate: '22/06/2026',
+        costCenter: 'CC-1010 (Japaratinga)',
+        status: 'Aprovado no ERP',
+        statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        leanImpact: 'Revestimento Bloco B (Semana 4)',
+        approvedBy: 'Coordenação Suprimentos'
+      },
+      {
+        id: 'PED-88195',
+        supplier: 'Prysmian Cabos e Sistemas',
+        item: 'Cabos Cobre Flexível 2,5mm² e 4,0mm² 750V',
+        qty: '3.500 m',
+        value: 'R$ 44.200,00',
+        deliveryDate: '01/06/2026',
+        costCenter: 'CC-1010 (Japaratinga)',
+        status: 'Entregue no Canteiro',
+        statusColor: 'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold',
+        leanImpact: 'Instalações Elétricas Bloco A',
+        approvedBy: 'Almoxarifado Obra (Recebido)'
+      },
+      {
+        id: 'PED-88232',
+        supplier: 'Tigre Tubos e Conexões S.A.',
+        item: 'Tubos PVC Esgoto Série Reforçada 100mm/150mm',
+        qty: '450 un',
+        value: 'R$ 36.800,00',
+        deliveryDate: '18/06/2026',
+        costCenter: 'CC-1010 (Japaratinga)',
+        status: 'Em Cotação',
+        statusColor: 'bg-slate-100 text-slate-800 border-slate-300',
+        leanImpact: 'Prumadas Hidrossanitárias',
+        approvedBy: 'Comprador Júnior Sienge'
+      }
+    ];
+
+    let siengeOrders = defaultSiengeOrders;
+    try {
+      const savedOrders = localStorage.getItem('planes_sienge_orders');
+      if (savedOrders) siengeOrders = JSON.parse(savedOrders);
+    } catch (e) {
+      siengeOrders = defaultSiengeOrders;
+    }
+
+    const defaultSiengeMeasurements = [
+      {
+        id: 'MED-2026-05',
+        contractor: 'Alagoas Estruturas & Pré-Moldados',
+        service: 'Alvenaria Estrutural & Armação Bloco A',
+        costCenter: 'CC-1010 (Japaratinga)',
+        siengeProgress: '65.0%',
+        planesProgress: '68.0%',
+        value: 'R$ 78.400,00',
+        status: 'Medição Aprovada',
+        statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold',
+        period: 'Maio 2026 (Quinzenal)'
+      },
+      {
+        id: 'MED-2026-06',
+        contractor: 'Nordeste Instalações Elétricas & Hidráulicas',
+        service: 'Tubulações Embutidas & Caixas de Passagem',
+        costCenter: 'CC-1010 (Japaratinga)',
+        siengeProgress: '42.0%',
+        planesProgress: '45.0%',
+        value: 'R$ 52.100,00',
+        status: 'Aguardando Visto Fiscal',
+        statusColor: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
+        period: 'Maio 2026 (Mensal)'
+      },
+      {
+        id: 'MED-2026-07',
+        contractor: 'Pinturas & Texturas Litoral Maceió',
+        service: 'Emboço Técnico e Reboco Externo',
+        costCenter: 'CC-1010 (Japaratinga)',
+        siengeProgress: '28.0%',
+        planesProgress: '30.0%',
+        value: 'R$ 34.600,00',
+        status: 'Medição Aprovada',
+        statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold',
+        period: 'Maio 2026 (Quinzenal)'
+      },
+      {
+        id: 'MED-2026-08',
+        contractor: 'Impermeabilizações Alagoas Ltda',
+        service: 'Manta Asfáltica Parque Piscinas & Reservatório',
+        costCenter: 'CC-1010 (Japaratinga)',
+        siengeProgress: '85.0%',
+        planesProgress: '88.0%',
+        value: 'R$ 61.200,00',
+        status: 'Medição Aprovada',
+        statusColor: 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold',
+        period: 'Maio 2026 (Final)'
+      }
+    ];
+
+    let siengeMeasurements = defaultSiengeMeasurements;
+    try {
+      const savedMeas = localStorage.getItem('planes_sienge_measurements');
+      if (savedMeas) siengeMeasurements = JSON.parse(savedMeas);
+    } catch (e) {
+      siengeMeasurements = defaultSiengeMeasurements;
+    }
+
+    const siengeCostCenters = [
+      { code: 'CC-1010', name: 'Japaratinga Lounge Resort (Obra Principal)', status: 'Sincronizado', projectsMapped: '1 Projeto Mapeado' },
+      { code: 'CC-1020', name: 'Residencial Vista Mar — Torre Coral & Pérola', status: 'Sincronizado', projectsMapped: '1 Projeto Mapeado' },
+      { code: 'CC-1030', name: 'Condomínio Reserva da Lagoa — Infra & Clube', status: 'Sincronizado', projectsMapped: '1 Projeto Mapeado' },
+      { code: 'CC-1040', name: 'Villas de Alagoas Beach Club & Spa', status: 'Stand-by', projectsMapped: 'Aguardando Início' }
+    ];
+
+    let siengeLogs = [
+      { time: 'Hoje, 14:48:12', event: 'purchase_order.updated', payload: 'PED-88210 (Status: Em Trânsito · Aço CA-50 18t)', code: '200 OK' },
+      { time: 'Hoje, 14:45:00', event: 'measurement.approved', payload: 'MED-2026-05 (R$ 78.400,00 · Alagoas Estruturas)', code: '200 OK' },
+      { time: 'Hoje, 14:30:22', event: 'cost_center.synced', payload: '4 Centros de Custo Sincronizados com Sienge ERP', code: '200 OK' },
+      { time: 'Hoje, 14:15:10', event: 'supplier_invoice.received', payload: 'NF-e 44921 Vinculada ao Pedido PED-88195', code: '200 OK' }
+    ];
+
+    function syncSiengeData(manual = false) {
+      siengeConfig.lastSyncTime = 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      siengeLogs.unshift({
+        time: siengeConfig.lastSyncTime,
+        event: 'manual_sync_trigger',
+        payload: `Sincronização Completa Sienge API: ${siengeOrders.length} Pedidos, ${siengeMeasurements.length} Medições`,
+        code: '200 OK'
+      });
+      if (siengeLogs.length > 20) siengeLogs.pop();
+
+      try {
+        localStorage.setItem('planes_sienge_config', JSON.stringify(siengeConfig));
+        localStorage.setItem('planes_sienge_orders', JSON.stringify(siengeOrders));
+        localStorage.setItem('planes_sienge_measurements', JSON.stringify(siengeMeasurements));
+      } catch (e) {}
+
+      if (manual) {
+        showToast('✓ Sienge ERP: Pedidos de compra, medições e centros de custo sincronizados em tempo real!');
+      }
+      render();
+    }
+
+    function openSiengeConfigModal() {
+      const el = document.getElementById('sienge-config-modal');
+      if (el) {
+        if (document.getElementById('sienge-subdomain')) document.getElementById('sienge-subdomain').value = siengeConfig.subdomain;
+        if (document.getElementById('sienge-apikey')) document.getElementById('sienge-apikey').value = siengeConfig.apiKey;
+        if (document.getElementById('sienge-webhook-url')) document.getElementById('sienge-webhook-url').value = siengeConfig.webhookUrl;
+        if (document.getElementById('sienge-interval')) document.getElementById('sienge-interval').value = siengeConfig.autoSyncInterval;
+        el.classList.remove('hidden');
+      }
+    }
+
+    function closeSiengeConfigModal() {
+      const el = document.getElementById('sienge-config-modal');
+      if (el) el.classList.add('hidden');
+    }
+
+    function handleSiengeConfigSubmit() {
+      const sub = (document.getElementById('sienge-subdomain') ? document.getElementById('sienge-subdomain').value : '').trim();
+      const key = (document.getElementById('sienge-apikey') ? document.getElementById('sienge-apikey').value : '').trim();
+      const interval = (document.getElementById('sienge-interval') ? document.getElementById('sienge-interval').value : '5 min');
+
+      if (sub) siengeConfig.subdomain = sub;
+      if (key) siengeConfig.apiKey = key;
+      siengeConfig.autoSyncInterval = interval;
+      siengeConfig.lastSyncTime = 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      try {
+        localStorage.setItem('planes_sienge_config', JSON.stringify(siengeConfig));
+      } catch (e) {}
+
+      closeSiengeConfigModal();
+      showToast('✓ Configurações do Sienge salvas com sucesso!');
+      render();
+    }
+
+
     try {
       const savedPerms = localStorage.getItem('planes_role_permissions');
       rolePermissions = savedPerms ? JSON.parse(savedPerms) : defaultRolePermissions;
@@ -4721,6 +5025,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
         { name: 'Fila de Validações', icon: 'checkCircle', badge: validations.length, show: allowedModules.includes('Fila de Validações') },
         { name: 'Curva S & PAC', icon: 'chart', show: allowedModules.includes('Curva S & PAC') },
         { name: 'Suprimentos', icon: 'box', show: allowedModules.includes('Suprimentos') },
+        { name: 'Integração Sienge ERP', icon: 'server', badge: 'API REST', show: (allowedModules.includes('Integração Sienge ERP') || accessLevel === 'Admin' || accessLevel === 'Engenharia') },
         { name: 'Galeria do Cliente', icon: 'camera', show: allowedModules.includes('Galeria do Cliente') },
         { name: 'Gestão de Usuários (Admin)', icon: 'users', badge: pendingUsers.length, show: accessLevel === 'Admin' },
         { name: 'Relatórios & Capa', icon: 'fileText', badge: 'A4', show: allowedModules.includes('Relatórios & Capa') },
@@ -7552,6 +7857,341 @@ ${activeNav === 'Equipe & Contatos' ? `
                       `).join('')}
                     </div>
                   </div>
+
+                </div>
+              ` : ''}
+
+              <!-- ========================================================= -->
+              <!-- 4.1. INTEGRAÇÃO NATIVA SIENGE PLATAFORMA (SOFTPLAN)        -->
+              <!-- ========================================================= -->
+              ${activeNav === 'Integração Sienge ERP' ? `
+                <div class="space-y-6 animate-card-fade">
+                  
+                  <!-- Top Banner Executivo Sienge -->
+                  <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
+                        ${getSvg('server', 'w-6 h-6 text-slate-950')}
+                      </div>
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
+                            SOFTPLAN · SIENGE PLATAFORMA API v1
+                          </span>
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            ● Conectado (Ping: 85ms)
+                          </span>
+                          <span class="text-xs text-slate-400 font-mono">Webhooks Ativos</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+                          Integração Sienge ERP & Sincronização Físico-Financeira
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300">
+                          Sincronização em tempo real de Pedidos de Compra, Medições de Empreiteiros, Centros de Custo e Apropriação Lean.
+                        </p>
+                        <div class="pt-2 flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onclick="syncSiengeData(true)"
+                            class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] active:bg-[#b5dc00] text-slate-950 font-black text-xs rounded-[12px] transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 border border-slate-300"
+                            title="Buscar atualizações na API do Sienge agora"
+                          >
+                            ${getSvg('refresh', 'w-4 h-4 text-slate-950')}
+                            <span>Sincronizar Sienge Agora</span>
+                          </button>
+                          <button
+                            type="button"
+                            onclick="openSiengeConfigModal()"
+                            class="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white font-bold text-xs rounded-[12px] border border-slate-800 transition flex items-center gap-2 cursor-pointer shadow-2xs hover:border-slate-700"
+                          >
+                            ${getSvg('shield', 'w-4 h-4 text-[#d4ff00]')}
+                            <span>Configurar Credenciais</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 4 Stat Cards Interativos -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 text-xs font-mono shrink-0">
+                      
+                      <!-- Card 1: Centros de Custo -->
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Centros de Custo</span>
+                        <strong class="text-white text-base font-black block">4 Obras</strong>
+                        <span class="text-emerald-400 text-[9.5px]">Mapeadas</span>
+                      </div>
+
+                      <!-- Card 2: Pedidos de Compra -->
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Pedidos ERP</span>
+                        <strong class="text-white text-base font-black block">${siengeOrders.length} Sincronizados</strong>
+                        <span class="text-[#d4ff00] text-[9.5px]">R$ 528k em aberto</span>
+                      </div>
+
+                      <!-- Card 3: Medições -->
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Medições</span>
+                        <strong class="text-white text-base font-black block">${siengeMeasurements.length} Contratos</strong>
+                        <span class="text-emerald-400 text-[9.5px]">98% Aderência</span>
+                      </div>
+
+                      <!-- Card 4: Status do Sync -->
+                      <div class="p-3 bg-slate-900 rounded-[14px] border border-emerald-500/40 space-y-0.5 bg-emerald-500/5">
+                        <span class="text-emerald-400 text-[10px] uppercase font-sans font-bold flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                          Último Sync
+                        </span>
+                        <strong class="text-white text-xs font-bold block truncate">${siengeConfig.lastSyncTime}</strong>
+                        <span class="text-emerald-400 text-[9.5px]">Webhook Ativo</span>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <!-- Seletor de Abas Especializadas Sienge -->
+                  <div class="flex items-center gap-2 bg-white p-2 rounded-[18px] border border-slate-200 shadow-2xs overflow-x-auto">
+                    <button
+                      type="button"
+                      onclick="selectedSiengeTab = 'pedidos'; render();"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-xs font-bold transition cursor-pointer shrink-0 ${
+                        selectedSiengeTab === 'pedidos' ? 'bg-slate-950 text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+                      }"
+                    >
+                      ${getSvg('box', 'w-4 h-4')}
+                      <span>Pedidos de Compra & Suprimentos (${siengeOrders.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onclick="selectedSiengeTab = 'medicoes'; render();"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-xs font-bold transition cursor-pointer shrink-0 ${
+                        selectedSiengeTab === 'medicoes' ? 'bg-slate-950 text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+                      }"
+                    >
+                      ${getSvg('chart', 'w-4 h-4')}
+                      <span>Medições Físico-Financeiras (${siengeMeasurements.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onclick="selectedSiengeTab = 'centros_custo'; render();"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-xs font-bold transition cursor-pointer shrink-0 ${
+                        selectedSiengeTab === 'centros_custo' ? 'bg-slate-950 text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+                      }"
+                    >
+                      ${getSvg('layers', 'w-4 h-4')}
+                      <span>Centros de Custo & Obras (4)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onclick="selectedSiengeTab = 'logs'; render();"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-xs font-bold transition cursor-pointer shrink-0 ${
+                        selectedSiengeTab === 'logs' ? 'bg-slate-950 text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+                      }"
+                    >
+                      ${getSvg('shield', 'w-4 h-4')}
+                      <span>Logs de Auditoria & Webhooks</span>
+                    </button>
+                  </div>
+
+                  <!-- CONTEÚDO DA ABA 1: PEDIDOS DE COMPRA & SUPRIMENTOS -->
+                  ${selectedSiengeTab === 'pedidos' ? `
+                    <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <h3 class="text-base font-black text-slate-950 tracking-tight">Pedidos de Compra Importados do Sienge</h3>
+                            <span class="bg-[#d4ff00] text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-slate-300 font-mono">
+                              ● Tempo Real
+                            </span>
+                          </div>
+                          <p class="text-xs text-slate-500 mt-0.5">Rastreamento de insumos críticos amarrados às restrições do Planejamento Lean e Linha de Balanço</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onclick="syncSiengeData(true)"
+                            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-[10px] border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+                          >
+                            ${getSvg('refresh', 'w-3.5 h-3.5 text-slate-700')}
+                            <span>Atualizar Pedidos</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                              <th class="p-3">Código Pedido / ERP</th>
+                              <th class="p-3">Fornecedor</th>
+                              <th class="p-3">Material / Insumo</th>
+                              <th class="p-3">Qtd / Volume</th>
+                              <th class="p-3">Valor Total</th>
+                              <th class="p-3">Previsão no Canteiro</th>
+                              <th class="p-3">Status Sienge</th>
+                              <th class="p-3">Impacto Lean (Restrição)</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-slate-100">
+                            ${siengeOrders.map(order => `
+                              <tr class="hover:bg-slate-50 transition">
+                                <td class="p-3 font-mono font-black text-slate-950">
+                                  <span class="bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-[11px]">${order.id}</span>
+                                </td>
+                                <td class="p-3 font-bold text-slate-900">${order.supplier}</td>
+                                <td class="p-3 text-slate-700 max-w-[220px] truncate" title="${order.item}">${order.item}</td>
+                                <td class="p-3 font-mono font-bold text-slate-900">${order.qty}</td>
+                                <td class="p-3 font-mono font-bold text-slate-950">${order.value}</td>
+                                <td class="p-3 font-mono text-slate-700">${order.deliveryDate}</td>
+                                <td class="p-3">
+                                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${order.statusColor}">
+                                    ${order.status}
+                                  </span>
+                                </td>
+                                <td class="p-3">
+                                  <span class="text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[10.5px] font-medium block truncate max-w-[200px]" title="${order.leanImpact}">
+                                    ${order.leanImpact}
+                                  </span>
+                                </td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- CONTEÚDO DA ABA 2: MEDIÇÕES FÍSICO-FINANCEIRAS -->
+                  ${selectedSiengeTab === 'medicoes' ? `
+                    <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <h3 class="text-base font-black text-slate-950 tracking-tight">Medições de Contratos de Empreiteiros (Sienge ↔ Planes)</h3>
+                            <span class="bg-emerald-100 text-emerald-950 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300 font-mono">
+                              ● Auditoria Cruzada
+                            </span>
+                          </div>
+                          <p class="text-xs text-slate-500 mt-0.5">Comparativo automático entre o avanço financeiro medido no Sienge e o avanço físico real executado na Linha de Balanço</p>
+                        </div>
+                        <button
+                          type="button"
+                          onclick="syncSiengeData(true)"
+                          class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-[10px] border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ${getSvg('refresh', 'w-3.5 h-3.5 text-slate-700')}
+                          <span>Sincronizar Medições</span>
+                        </button>
+                      </div>
+
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                              <th class="p-3">Medição / Contrato</th>
+                              <th class="p-3">Empreiteiro / Parceiro</th>
+                              <th class="p-3">Serviço / Frente de Obra</th>
+                              <th class="p-3">% Medido Sienge</th>
+                              <th class="p-3">% Linha de Balanço</th>
+                              <th class="p-3">Valor da Medição</th>
+                              <th class="p-3">Status Liberação</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-slate-100">
+                            ${siengeMeasurements.map(meas => `
+                              <tr class="hover:bg-slate-50 transition">
+                                <td class="p-3 font-mono font-black text-slate-950">
+                                  <span class="bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-[11px]">${meas.id}</span>
+                                </td>
+                                <td class="p-3 font-bold text-slate-900">${meas.contractor}</td>
+                                <td class="p-3 text-slate-700">${meas.service}</td>
+                                <td class="p-3 font-mono font-black text-slate-900">${meas.siengeProgress}</td>
+                                <td class="p-3 font-mono font-black text-emerald-700">
+                                  <span class="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">${meas.planesProgress}</span>
+                                </td>
+                                <td class="p-3 font-mono font-bold text-slate-950">${meas.value}</td>
+                                <td class="p-3">
+                                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border ${meas.statusColor}">
+                                    ${meas.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- CONTEÚDO DA ABA 3: CENTROS DE CUSTO & DE-PARA -->
+                  ${selectedSiengeTab === 'centros_custo' ? `
+                    <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div>
+                          <h3 class="text-base font-black text-slate-950 tracking-tight">Mapeamento De-Para: Centros de Custo Sienge ↔ Obras Planes</h3>
+                          <p class="text-xs text-slate-500 mt-0.5">Vínculo automático para alocação de compras e apropriação de despesas</p>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${siengeCostCenters.map(cc => `
+                          <div class="p-4 bg-slate-50 rounded-[18px] border border-slate-200 shadow-2xs space-y-3">
+                            <div class="flex items-center justify-between">
+                              <span class="font-mono font-black text-xs px-2.5 py-1 bg-slate-950 text-[#d4ff00] rounded-[8px]">
+                                ${cc.code}
+                              </span>
+                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${cc.status === 'Sincronizado' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-slate-200 text-slate-700'}">
+                                ● ${cc.status}
+                              </span>
+                            </div>
+                            <div>
+                              <strong class="text-sm font-bold text-slate-950 block">${cc.name}</strong>
+                              <span class="text-xs text-slate-500 font-mono mt-0.5 block">${cc.projectsMapped}</span>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+                              <span>Apropriação Lean: <strong class="text-slate-900 font-bold">Ativa</strong></span>
+                              <span class="font-mono text-emerald-700 font-bold">Sincronizado</span>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- CONTEÚDO DA ABA 4: LOGS DE AUDITORIA & WEBHOOKS -->
+                  ${selectedSiengeTab === 'logs' ? `
+                    <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-4">
+                      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <h3 class="text-base font-black text-slate-950 tracking-tight">Console de Eventos & Webhooks em Tempo Real</h3>
+                            <span class="bg-slate-950 text-[#d4ff00] text-[10px] font-black px-2.5 py-0.5 rounded-full border border-slate-800 font-mono">
+                              Stream Live
+                            </span>
+                          </div>
+                          <p class="text-xs text-slate-500 mt-0.5">Histórico de requisições enviadas pelo Sienge Plataforma diretamente para o Planes OS</p>
+                        </div>
+                      </div>
+
+                      <div class="space-y-2 font-mono text-xs">
+                        ${siengeLogs.map(log => `
+                          <div class="p-3 bg-slate-900 text-slate-200 rounded-[12px] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                              <span class="text-slate-400 text-[10.5px]">${log.time}</span>
+                              <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 text-[10px] font-bold">${log.event}</span>
+                              <span class="text-white font-sans text-xs">${log.payload}</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-black shrink-0">
+                              ✓ ${log.code}
+                            </span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
 
                 </div>
               ` : ''}
