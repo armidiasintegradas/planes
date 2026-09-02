@@ -2114,6 +2114,14 @@
             r.style.strokeDashoffset = target;
           }
         });
+
+        const taktLines = document.querySelectorAll('.anim-takt-line');
+        taktLines.forEach(l => {
+          const target = l.getAttribute('data-offset');
+          if (target !== null) {
+            l.style.strokeDashoffset = target;
+          }
+        });
       }, 50);
     }
 
@@ -3535,139 +3543,220 @@
 
                   <!-- CONTEÚDO PRINCIPAL: DIAGRAMA GRÁFICO OU TABELA RÍTMICA -->
                   ${lbViewMode === 'grafico' ? `
-                    <!-- DIAGRAMA VISUAL TEMPO X LOCAL (LOCATION-BASED TAKT STUDIO — REDESENHADO) -->
-                    <div class="white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-5 animate-card-fade">
+                    <!-- DIAGRAMA VISUAL TEMPO X LOCAL (LOCATION-BASED TAKT STUDIO — REDESIGN ULTRA-MODERNO & ANIMADO) -->
+                    <div class="white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-6 animate-card-fade">
                       
                       <!-- Header & Legend Bar -->
-                      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                        <div>
-                          <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-[#d4ff00] ring-2 ring-slate-400 animate-pulse"></span>
-                            <h3 class="text-base xl:text-lg font-black text-slate-950 tracking-tight">Diagrama Tempo-Caminho — Setor ${lbSector}</h3>
+                      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0">
+                            ${getSvg('layers', 'w-5 h-5 text-[#d4ff00]')}
                           </div>
-                          <p class="text-xs text-slate-500 font-medium mt-0.5">Gestão de fluxo contínuo por localização física (Eixo Y: Pavimentos / Níveis · Eixo X: Semanas)</p>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <h3 class="text-base xl:text-lg font-black text-slate-950 tracking-tight">Diagrama Tempo-Caminho — Setor ${lbSector}</h3>
+                              <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-[#d4ff00] text-slate-950 border border-slate-300 font-mono">
+                                ● Takt Ativo
+                              </span>
+                            </div>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Linha de Balanço 16.03: Ritmo Rítmico de Produção Contínua sem Conflito de Frentes</p>
+                          </div>
                         </div>
 
-                        <!-- Modern Pill Legend -->
-                        <div class="flex items-center flex-wrap gap-2 bg-slate-50 p-1.5 rounded-[12px] border border-slate-200 text-xs">
-                          <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-800">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#38bdf8]"></span>
+                        <!-- Modern Pill Legend (Cores Oficiais do Site) -->
+                        <div class="flex items-center flex-wrap gap-2 bg-slate-50 p-1.5 rounded-[14px] border border-slate-200 text-xs">
+                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-900">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-xs"></span>
                             <span>1. Fundações & Estrutura</span>
                           </span>
-                          <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-800">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#fbbf24]"></span>
-                            <span>2. Estrutura Metálica & Fechamento</span>
+                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-black text-slate-950">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00] border border-slate-400 shadow-xs"></span>
+                            <span>2. Estrutura Metálica</span>
                           </span>
-                          <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-800">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#4ade80]"></span>
-                            <span>3. Instalações Especiais & Iluminação</span>
+                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-900">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 shadow-xs"></span>
+                            <span>3. Instalações</span>
                           </span>
-                          <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-800">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#c084fc]"></span>
-                            <span>4. Piso Esportivo & Acabamentos</span>
+                          <span class="flex items-center gap-1.5 px-3 py-1 rounded-[10px] bg-white border border-slate-200 shadow-2xs font-bold text-slate-900">
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-600 shadow-xs"></span>
+                            <span>4. Acabamentos</span>
                           </span>
                         </div>
                       </div>
 
-                      <!-- Interactive Location-Based Studio Matrix -->
-                      <div class="relative w-full bg-[#090d16] rounded-[20px] p-6 sm:p-8 overflow-hidden shadow-2xl border border-slate-800">
+                      <!-- Interactive Location-Based Studio Matrix (BENTO STUDIO ULTRA-MODERNO) -->
+                      <div class="relative w-full bg-[#0b1320] rounded-[24px] p-6 sm:p-8 xl:p-10 overflow-hidden shadow-2xl border border-slate-800">
                         
-                        <!-- Grid Rows: Physical Locations (Eixo Y) -->
-                        <div class="absolute inset-0 flex flex-col justify-between p-6 sm:p-8 pointer-events-none">
-                          <div class="border-b border-slate-800/80 w-full text-[11px] text-slate-400 font-bold flex justify-between items-center pb-1">
-                            <span>Nível 4: Cobertura & Treliças Metálicas</span>
-                            <span class="text-[10px] text-slate-500 font-mono">100% Prev</span>
+                        <!-- Atmospheric Studio Ambient Glows -->
+                        <div class="absolute -top-20 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-[#d4ff00]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <!-- Grid Rows: Physical Locations (Eixo Y - Pavimentos & Níveis com Badges) -->
+                        <div class="absolute inset-0 flex flex-col justify-between p-6 sm:p-8 xl:p-10 pointer-events-none z-10">
+                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N4</span>
+                              <span>Cobertura & Treliças Metálicas</span>
+                            </span>
+                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">100% Meta</span>
                           </div>
-                          <div class="border-b border-slate-800/80 w-full text-[11px] text-slate-400 font-bold flex justify-between items-center pb-1">
-                            <span>Nível 3: Arquibancadas Superiores & Camarotes</span>
-                            <span class="text-[10px] text-slate-500 font-mono">85% Prev</span>
+
+                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N3</span>
+                              <span>Arquibancadas & Camarotes</span>
+                            </span>
+                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">85% Meta</span>
                           </div>
-                          <div class="border-b border-slate-800/80 w-full text-[11px] text-slate-400 font-bold flex justify-between items-center pb-1">
-                            <span>Nível 2: Palco Principal & Mezanino VIP</span>
-                            <span class="text-[10px] text-slate-500 font-mono">60% Prev</span>
+
+                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N2</span>
+                              <span>Palco Principal & Mezanino VIP</span>
+                            </span>
+                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">60% Meta</span>
                           </div>
-                          <div class="border-b border-slate-800/80 w-full text-[11px] text-slate-400 font-bold flex justify-between items-center pb-1">
-                            <span>Nível 1: Quadras Poliesportivas & Acesso Geral</span>
-                            <span class="text-[10px] text-slate-500 font-mono">35% Prev</span>
+
+                          <div class="border-b border-slate-800/80 w-full flex justify-between items-center pb-2">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-200 text-[10px] flex items-center justify-center font-mono">N1</span>
+                              <span>Quadras Poliesportivas & Acesso</span>
+                            </span>
+                            <span class="text-[10.5px] text-slate-400 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">35% Meta</span>
                           </div>
-                          <div class="w-full text-[11px] text-slate-400 font-bold flex justify-between items-center pt-1">
-                            <span>Térreo: Fundações, Drenagem & Contenções</span>
-                            <span class="text-[10px] text-slate-500 font-mono">0% Início</span>
+
+                          <div class="w-full flex justify-between items-center pt-2">
+                            <span class="text-xs font-bold text-slate-400 flex items-center gap-2">
+                              <span class="w-5 h-5 rounded-md bg-slate-800/90 text-slate-300 text-[10px] flex items-center justify-center font-mono">T0</span>
+                              <span>Térreo: Fundações & Drenagem</span>
+                            </span>
+                            <span class="text-[10.5px] text-slate-500 font-mono font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">0% Início</span>
                           </div>
                         </div>
 
-                        <!-- Grid Columns: Timeline Weeks (Eixo X) -->
-                        <div class="absolute inset-0 flex justify-between px-24 sm:px-32 pointer-events-none opacity-20">
-                          <div class="border-r border-slate-700 h-full"></div>
-                          <div class="border-r border-slate-700 h-full"></div>
-                          <div class="border-r border-slate-700 h-full"></div>
-                          <div class="border-r border-slate-700 h-full"></div>
-                          <div class="border-r border-slate-700 h-full"></div>
-                          <div class="border-r border-slate-700 h-full"></div>
-                          <div class="border-r border-slate-700 h-full"></div>
+                        <!-- Column Guide Bands: Timeline Weeks Highlight for Today -->
+                        <div class="absolute inset-0 flex justify-between px-24 sm:px-32 pointer-events-none opacity-25">
+                          <div class="border-r border-slate-700/60 h-full"></div>
+                          <div class="border-r border-slate-700/60 h-full"></div>
+                          <div class="border-r border-slate-700/60 h-full"></div>
+                          <div class="border-r border-emerald-500/50 bg-emerald-500/5 h-full w-24"></div>
+                          <div class="border-r border-slate-700/60 h-full"></div>
+                          <div class="border-r border-slate-700/60 h-full"></div>
+                          <div class="border-r border-slate-700/60 h-full"></div>
                         </div>
 
-                        <!-- SVG Flow Studio -->
-                        <svg viewBox="0 0 800 280" class="w-full h-64 sm:h-72 xl:h-80 overflow-visible relative z-10">
+                        <!-- SVG Flow Studio Canvas -->
+                        <svg viewBox="0 0 860 300" class="w-full h-72 sm:h-80 xl:h-96 overflow-visible relative z-20">
                           <defs>
-                            <!-- Glow Filters -->
-                            <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="3" result="blur" />
-                              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                            </filter>
-                            <filter id="glowGold" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="3" result="blur" />
-                              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                            </filter>
-                            <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="3" result="blur" />
-                              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                            </filter>
-                            <filter id="glowPurple" x="-20%" y="-20%" width="140%" height="140%">
-                              <feGaussianBlur stdDeviation="3" result="blur" />
+                            <!-- Linear Gradients for Dynamic Takt Lines -->
+                            <linearGradient id="taktBlueGrad" x1="0" y1="1" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#1e40af" />
+                              <stop offset="50%" stop-color="#3b82f6" />
+                              <stop offset="100%" stop-color="#60a5fa" />
+                            </linearGradient>
+
+                            <linearGradient id="taktLimeGrad" x1="0" y1="1" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#ca8a04" />
+                              <stop offset="40%" stop-color="#eab308" />
+                              <stop offset="100%" stop-color="#d4ff00" />
+                            </linearGradient>
+
+                            <linearGradient id="taktGreenGrad" x1="0" y1="1" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#047857" />
+                              <stop offset="50%" stop-color="#10b981" />
+                              <stop offset="100%" stop-color="#34d399" />
+                            </linearGradient>
+
+                            <linearGradient id="taktPurpleGrad" x1="0" y1="1" x2="1" y2="0">
+                              <stop offset="0%" stop-color="#7e22ce" />
+                              <stop offset="50%" stop-color="#a855f7" />
+                              <stop offset="100%" stop-color="#c084fc" />
+                            </linearGradient>
+
+                            <!-- Flow Glow Filters -->
+                            <filter id="studioGlow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feGaussianBlur stdDeviation="4" result="blur" />
                               <feComposite in="SourceGraphic" in2="blur" operator="over" />
                             </filter>
                           </defs>
 
-                          <!-- Buffer Shading (Zonas de Amortecimento entre Equipes) -->
-                          <polygon points="50,250 420,30 480,30 110,250" fill="#38bdf8" opacity="0.07" />
-                          <polygon points="120,250 490,30 550,30 180,250" fill="#fbbf24" opacity="0.07" />
-                          <polygon points="190,250 560,30 620,30 250,250" fill="#4ade80" opacity="0.07" />
+                          <!-- BUFFER SHADING (ZONAS DE AMORTECIMENTO DE SEGURANÇA LEAN) -->
+                          <polygon points="70,270 440,30 505,30 135,270" fill="#3b82f6" opacity="0.08" />
+                          <polygon points="145,270 515,30 580,30 210,270" fill="#eab308" opacity="0.08" />
+                          <polygon points="220,270 590,30 655,30 285,270" fill="#10b981" opacity="0.08" />
 
-                          <!-- RETA 1: Fundações & Estrutura (Ciano Neon) -->
-                          <line x1="50" y1="250" x2="420" y2="30" stroke="#38bdf8" stroke-width="5.5" stroke-linecap="round" filter="url(#glowCyan)" />
-                          <circle cx="420" cy="30" r="6" fill="#38bdf8" stroke="#ffffff" stroke-width="2" />
-                          <text x="390" y="20" fill="#38bdf8" font-size="10" font-weight="bold">100% Concluído</text>
+                          <!-- RETA 1: Fundações & Estrutura Metálica (Azul Cobalto Fluido Animado) -->
+                          <line
+                            x1="70" y1="270" x2="440" y2="30"
+                            stroke="url(#taktBlueGrad)" stroke-width="6" stroke-linecap="round"
+                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
+                            class="anim-takt-line transition-all duration-1200 ease-out"
+                            filter="url(#studioGlow)"
+                          />
+                          <circle cx="440" cy="30" r="7" fill="#38bdf8" stroke="#ffffff" stroke-width="2.5" />
+                          <g transform="translate(450, 18)">
+                            <rect x="0" y="0" width="105" height="22" rx="6" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1" />
+                            <text x="52" y="15" fill="#93c5fd" font-size="10" font-weight="900" text-anchor="middle">100% Concluído</text>
+                          </g>
 
-                          <!-- RETA 2: Estrutura Metálica & Fechamento (Amarelo Ouro) -->
-                          <line x1="120" y1="250" x2="490" y2="30" stroke="#fbbf24" stroke-width="5.5" stroke-linecap="round" filter="url(#glowGold)" />
-                          <circle cx="410" cy="80" r="7" fill="#fbbf24" stroke="#ffffff" stroke-width="2" class="animate-pulse" />
-                          <text x="420" y="80" fill="#fbbf24" font-size="10" font-weight="bold">92% Real (Ativa)</text>
+                          <!-- RETA 2: Alvenaria & Fechamentos (Amarelo / Lime Neon em Destaque) -->
+                          <line
+                            x1="145" y1="270" x2="515" y2="30"
+                            stroke="url(#taktLimeGrad)" stroke-width="6.5" stroke-linecap="round"
+                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
+                            class="anim-takt-line transition-all duration-1200 ease-out"
+                            filter="url(#studioGlow)"
+                          />
+                          <circle cx="430" cy="85" r="8.5" fill="#d4ff00" stroke="#000000" stroke-width="2.5" class="animate-pulse" />
+                          <g transform="translate(445, 73)">
+                            <rect x="0" y="0" width="118" height="24" rx="6" fill="#000000" stroke="#d4ff00" stroke-width="1.5" />
+                            <text x="59" y="16" fill="#d4ff00" font-size="10.5" font-weight="900" text-anchor="middle">92% Real (Ativa)</text>
+                          </g>
 
-                          <!-- RETA 3: Instalações Especiais & Iluminação (Verde Neon) -->
-                          <line x1="190" y1="250" x2="560" y2="30" stroke="#4ade80" stroke-width="5.5" stroke-linecap="round" filter="url(#glowGreen)" />
-                          <circle cx="340" cy="160" r="6" fill="#4ade80" stroke="#ffffff" stroke-width="2" />
-                          <text x="350" y="165" fill="#4ade80" font-size="10" font-weight="bold">64% Real</text>
+                          <!-- RETA 3: Instalações Especiais (Verde Esmeralda Animado) -->
+                          <line
+                            x1="220" y1="270" x2="590" y2="30"
+                            stroke="url(#taktGreenGrad)" stroke-width="6" stroke-linecap="round"
+                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
+                            class="anim-takt-line transition-all duration-1200 ease-out"
+                            filter="url(#studioGlow)"
+                          />
+                          <circle cx="360" cy="180" r="7" fill="#10b981" stroke="#ffffff" stroke-width="2.5" />
+                          <g transform="translate(375, 168)">
+                            <rect x="0" y="0" width="85" height="22" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="1" />
+                            <text x="42" y="15" fill="#6ee7b7" font-size="10" font-weight="900" text-anchor="middle">64% Real</text>
+                          </g>
 
-                          <!-- RETA 4: Piso Esportivo & Acabamentos (Roxo Elétrico) -->
-                          <line x1="260" y1="250" x2="630" y2="30" stroke="#c084fc" stroke-width="5.5" stroke-linecap="round" filter="url(#glowPurple)" />
-                          <circle cx="280" cy="235" r="5" fill="#c084fc" stroke="#ffffff" stroke-width="2" />
-                          <text x="290" y="240" fill="#c084fc" font-size="10" font-weight="bold">Início Próx Sem</text>
+                          <!-- RETA 4: Acabamentos & Pintura (Roxo Violeta Animado) -->
+                          <line
+                            x1="295" y1="270" x2="665" y2="30"
+                            stroke="url(#taktPurpleGrad)" stroke-width="6" stroke-linecap="round"
+                            stroke-dasharray="600" stroke-dashoffset="600" data-offset="0"
+                            class="anim-takt-line transition-all duration-1200 ease-out"
+                            filter="url(#studioGlow)"
+                          />
+                          <circle cx="300" cy="265" r="6.5" fill="#a855f7" stroke="#ffffff" stroke-width="2" />
+                          <g transform="translate(315, 252)">
+                            <rect x="0" y="0" width="110" height="22" rx="6" fill="#581c87" stroke="#a855f7" stroke-width="1" />
+                            <text x="55" y="15" fill="#e9d5ff" font-size="9.5" font-weight="900" text-anchor="middle">Início Próx. Sem</text>
+                          </g>
 
-                          <!-- LINHA VERTICAL TEMPO PRESENTE: HOJE (Semana 4 / Junho) -->
-                          <line x1="380" y1="0" x2="380" y2="280" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="5,4" />
-                          <g transform="translate(325, 8)">
-                            <rect x="0" y="0" width="110" height="24" rx="8" fill="#ef4444" />
-                            <text x="55" y="16" fill="#ffffff" font-size="10" font-weight="900" text-anchor="middle">HOJE (Semana 4)</text>
+                          <!-- MARCADOR DE TEMPO PRESENTE: HOJE (Semana 4 / 05/06) -->
+                          <line x1="410" y1="0" x2="410" y2="300" stroke="#f43f5e" stroke-width="2" stroke-dasharray="6,4" />
+                          <g transform="translate(350, 4)">
+                            <rect x="0" y="0" width="120" height="24" rx="12" fill="#e11d48" stroke="#ffffff" stroke-width="1.5" class="shadow-lg" />
+                            <text x="60" y="16" fill="#ffffff" font-size="10.5" font-weight="900" text-anchor="middle">HOJE (Semana 4)</text>
                           </g>
                         </svg>
 
-                        <!-- Timeline Week Labels (Eixo X) -->
+                        <!-- Timeline Week Labels (Eixo X com Datas Reais & Destaque em Junho) -->
                         <div class="relative z-20 pt-4 border-t border-slate-800 flex justify-between text-[11px] text-slate-400 font-mono font-bold">
                           <span class="text-center">Sem 1<br><small class="text-slate-500 font-normal">15/05</small></span>
                           <span class="text-center">Sem 2<br><small class="text-slate-500 font-normal">22/05</small></span>
                           <span class="text-center">Sem 3<br><small class="text-slate-500 font-normal">29/05</small></span>
-                          <span class="text-center text-emerald-400 font-black">Sem 4 (Hoje)<br><small class="text-emerald-300 font-bold">05/06</small></span>
+                          <span class="text-center px-3 py-1 bg-emerald-950/80 rounded-[10px] border border-emerald-500/50 text-emerald-300 font-black shadow-xs">
+                            Sem 4 (Hoje)<br><small class="text-emerald-400 font-bold">05/06</small>
+                          </span>
                           <span class="text-center">Sem 5<br><small class="text-slate-500 font-normal">12/06</small></span>
                           <span class="text-center">Sem 6<br><small class="text-slate-500 font-normal">19/06</small></span>
                           <span class="text-center">Sem 7<br><small class="text-slate-500 font-normal">26/06</small></span>
@@ -3675,22 +3764,33 @@
                         </div>
                       </div>
 
-                      <!-- Control & Buffer Guarantee Strip -->
-                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                        <div class="p-3 bg-slate-50 rounded-[12px] border border-slate-200 space-y-1">
-                          <strong class="text-slate-900 block font-bold">Velocidade da Frente Ativa</strong>
-                          <span class="text-emerald-700 font-black text-sm">2 dias / nível</span>
-                          <p class="text-[11px] text-slate-500">Montagem de estrutura metálica 14% mais rápida que a meta.</p>
+                      <!-- Control & Buffer Guarantee Strip (3 Bento Cards Informativos) -->
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs">
+                        <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 space-y-1.5 shadow-2xs">
+                          <div class="flex items-center justify-between">
+                            <strong class="text-slate-900 font-bold">Velocidade da Frente Ativa</strong>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-full">+14% Vel</span>
+                          </div>
+                          <div class="text-emerald-700 font-black text-base">2 dias / nível</div>
+                          <p class="text-[11.5px] text-slate-600 font-medium">Montagem da estrutura metálica mais rápida que o takt programado.</p>
                         </div>
-                        <div class="p-3 bg-slate-50 rounded-[12px] border border-slate-200 space-y-1">
-                          <strong class="text-slate-900 block font-bold">Buffer de Segurança</strong>
-                          <span class="text-blue-700 font-black text-sm">5 dias úteis</span>
-                          <p class="text-[11px] text-slate-500">Distância segura entre a montagem metálica e as instalações.</p>
+
+                        <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 space-y-1.5 shadow-2xs">
+                          <div class="flex items-center justify-between">
+                            <strong class="text-slate-900 font-bold">Buffer de Segurança</strong>
+                            <span class="text-[10px] bg-blue-100 text-blue-900 font-black px-2 py-0.5 rounded-full">Protegido</span>
+                          </div>
+                          <div class="text-blue-700 font-black text-base">5 dias úteis</div>
+                          <p class="text-[11.5px] text-slate-600 font-medium">Distância segura entre a montagem metálica e as instalações elétricas.</p>
                         </div>
-                        <div class="p-3 bg-slate-50 rounded-[12px] border border-slate-200 space-y-1">
-                          <strong class="text-slate-900 block font-bold">Previsão de Conclusão Setor</strong>
-                          <span class="text-slate-950 font-black text-sm">18 de Julho 2026</span>
-                          <p class="text-[11px] text-emerald-800 font-bold">Sem descontinuidades operacionais.</p>
+
+                        <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200 space-y-1.5 shadow-2xs">
+                          <div class="flex items-center justify-between">
+                            <strong class="text-slate-900 font-bold">Previsão Setorial</strong>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-full">No Prazo</span>
+                          </div>
+                          <div class="text-slate-950 font-black text-base">18 de Julho 2026</div>
+                          <p class="text-[11.5px] text-emerald-800 font-bold">Fluxo contínuo sem gargalos ou retrabalho no canteiro.</p>
                         </div>
                       </div>
 
