@@ -183,6 +183,76 @@
     
     <!-- MODAL DE CADASTRO DE NOVO PROJETO (ADMIN) -->
     
+    
+    <!-- MODAL DE EDIÇÃO DE SUPRIMENTO (ADMIN / ENGENHARIA) -->
+    <div id="edit-supply-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
+      <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Editar Insumo / Suprimento</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Alteração de quantitativos, fornecedores e status</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeEditSupplyModal()" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg">✕</button>
+        </div>
+
+        <input type="hidden" id="edit-sup-id" />
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Descrição do Material / Insumo *</label>
+            <input id="edit-sup-name" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Fornecedor *</label>
+              <input id="edit-sup-supplier" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Quantidade / Unidade *</label>
+              <input id="edit-sup-qtd" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Frente / Setor</label>
+              <select id="edit-sup-sector" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-bold">
+                <option value="Arena Shows">Arena Shows</option>
+                <option value="Bloco Aptos">Bloco Aptos</option>
+                <option value="Área da Piscina">Área da Piscina</option>
+                <option value="Infraestrutura">Infraestrutura</option>
+                <option value="Prédios">Prédios</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Data / Previsão</label>
+              <input id="edit-sup-date" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Status</label>
+              <select id="edit-sup-status" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-bold">
+                <option value="Programado">Programado</option>
+                <option value="Em Transporte">Em Transporte</option>
+                <option value="No Canteiro">No Canteiro</option>
+                <option value="Atrasado">Atrasado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeEditSupplyModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[10px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="handleEditSupplySubmit()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] border border-slate-300 shadow-xs">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE CADASTRO DE SUPRIMENTOS (ADMIN / ENGENHARIA) -->
     <div id="add-supply-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
       <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -692,9 +762,96 @@
         logOut: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
         bot: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`,
         user: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+        eye: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+        eyeOff: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+        edit: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+        trash: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
       };
       return svgs[name] || '';
     };
+
+    
+    // VER / OCULTAR SENHA NO LOGIN
+    function toggleShowPassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input) {
+        if (input.type === 'password') {
+          input.type = 'text';
+          if (btn) btn.innerHTML = getSvg('eyeOff', 'w-4 h-4 text-slate-800');
+          showToast('Senha visível');
+        } else {
+          input.type = 'password';
+          if (btn) btn.innerHTML = getSvg('eye', 'w-4 h-4 text-slate-400');
+          showToast('Senha oculta');
+        }
+      }
+    }
+
+    // EDIÇÃO E EXCLUSÃO DE SUPRIMENTOS (ADMIN / ENGENHARIA)
+    let editingSupplyId = null;
+
+    function openEditSupplyModal(supId) {
+      const sup = suppliesList.find(s => s.id === supId);
+      if (!sup) return;
+      editingSupplyId = supId;
+      document.getElementById('edit-sup-id').value = sup.id;
+      document.getElementById('edit-sup-name').value = sup.name;
+      document.getElementById('edit-sup-supplier').value = sup.supplier;
+      document.getElementById('edit-sup-qtd').value = sup.qtd;
+      document.getElementById('edit-sup-date').value = sup.date;
+      document.getElementById('edit-sup-sector').value = sup.sector;
+      document.getElementById('edit-sup-status').value = sup.status;
+      document.getElementById('edit-supply-modal').classList.remove('hidden');
+    }
+
+    function closeEditSupplyModal() {
+      document.getElementById('edit-supply-modal').classList.add('hidden');
+      editingSupplyId = null;
+    }
+
+    function handleEditSupplySubmit() {
+      const sup = suppliesList.find(s => s.id === editingSupplyId);
+      if (!sup) return;
+
+      const name = document.getElementById('edit-sup-name').value.trim();
+      const supplier = document.getElementById('edit-sup-supplier').value.trim();
+      const qtd = document.getElementById('edit-sup-qtd').value.trim();
+      const date = document.getElementById('edit-sup-date').value.trim();
+      const sector = document.getElementById('edit-sup-sector').value;
+      const status = document.getElementById('edit-sup-status').value;
+
+      if (!name || !supplier || !qtd) {
+        showToast('Preencha todos os campos obrigatórios.');
+        return;
+      }
+
+      sup.name = name;
+      sup.supplier = supplier;
+      sup.qtd = qtd;
+      sup.date = date || 'Programado';
+      sup.sector = sector;
+      sup.status = status;
+
+      let badge = 'bg-blue-100 text-blue-900 border-blue-300';
+      if (status === 'No Canteiro') badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      if (status === 'Em Transporte') badge = 'bg-amber-100 text-amber-900 border-amber-300';
+      if (status === 'Atrasado') badge = 'bg-rose-100 text-rose-900 border-rose-300';
+      sup.badge = badge;
+
+      closeEditSupplyModal();
+      showToast(`✓ Insumo "${name}" atualizado com sucesso!`);
+      render();
+    }
+
+    function deleteSupply(supId) {
+      const idx = suppliesList.findIndex(s => s.id === supId);
+      if (idx !== -1) {
+        const item = suppliesList[idx];
+        suppliesList.splice(idx, 1);
+        showToast(`✓ Insumo "${item.name}" excluído.`);
+        render();
+      }
+    }
 
     let currentScreen = 'login';
     let authMode = 'login';
@@ -2059,14 +2216,24 @@
                     </div>
                     <div>
                       <label class="text-xs font-bold text-slate-700 block mb-1">Senha de Acesso</label>
-                      <input
-                        id="login-pass"
-                        type="password"
-                        value="${(typeof localStorage !== 'undefined' && localStorage.getItem('planes_remember') === 'true') ? (localStorage.getItem('planes_saved_pass') || '') : ''}"
-                        placeholder="••••••••"
-                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-hidden focus:border-slate-400"
-                        onkeydown="if (event.key === 'Enter') handleEmailLogin()"
-                      />
+                      <div class="relative flex items-center">
+                        <input
+                          id="login-pass"
+                          type="password"
+                          value="${(typeof localStorage !== 'undefined' && localStorage.getItem('planes_remember') === 'true') ? (localStorage.getItem('planes_saved_pass') || '') : ''}"
+                          placeholder="••••••••"
+                          class="w-full pl-3.5 pr-11 py-2.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-hidden focus:border-slate-400"
+                          onkeydown="if (event.key === 'Enter') handleEmailLogin()"
+                        />
+                        <button
+                          type="button"
+                          onclick="toggleShowPassword('login-pass', this)"
+                          class="absolute right-2.5 p-1 text-slate-400 hover:text-slate-800 transition cursor-pointer"
+                          title="Ver / Ocultar Senha"
+                        >
+                          ${getSvg('eye', 'w-4 h-4')}
+                        </button>
+                      </div>
                     </div>
                     <div class="flex items-center justify-between text-xs pt-0.5">
                       <label class="flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium">
@@ -3645,24 +3812,52 @@
                     ` : ''}
                   </div>
 
-                  <!-- Tabela / Cards de Suprimentos -->
+                  <!-- Tabela / Cards de Suprimentos (Com Edição & Exclusão para Admin/Eng) -->
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     ${suppliesList.map(sup => `
-                      <div class="white-bento-card p-4 xl:p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition">
+                      <div class="white-bento-card p-4 xl:p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition relative group">
                         <div>
                           <div class="flex items-start justify-between gap-2 mb-2">
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${sup.badge}">
                               ● ${sup.status}
                             </span>
-                            <span class="text-[11px] text-slate-500 font-mono font-bold">${sup.date}</span>
+                            
+                            <div class="flex items-center gap-1">
+                              <span class="text-[11px] text-slate-500 font-mono font-bold">${sup.date}</span>
+                              ${(accessLevel === 'Admin' || accessLevel === 'Engenharia') ? `
+                                <div class="flex items-center gap-0.5 ml-1">
+                                  <button
+                                    type="button"
+                                    onclick="openEditSupplyModal(${sup.id})"
+                                    class="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-[6px] transition cursor-pointer"
+                                    title="Editar Insumo"
+                                  >
+                                    ${getSvg('edit', 'w-3.5 h-3.5')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onclick="deleteSupply(${sup.id})"
+                                    class="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-700 rounded-[6px] transition cursor-pointer"
+                                    title="Excluir Insumo"
+                                  >
+                                    ${getSvg('trash', 'w-3.5 h-3.5')}
+                                  </button>
+                                </div>
+                              ` : ''}
+                            </div>
                           </div>
-                          <strong class="text-sm font-bold text-slate-950 block leading-snug">${sup.name}</strong>
-                          <span class="text-xs text-slate-600 font-medium block mt-1">Fornecedor: <strong>${sup.supplier}</strong></span>
+                          
+                          <strong class="text-sm font-black text-slate-950 block leading-snug">${sup.name}</strong>
+                          <span class="text-xs text-slate-600 font-medium block mt-1">Fornecedor: <strong class="text-slate-800 font-bold">${sup.supplier}</strong></span>
                         </div>
 
-                        <div class="mt-4 p-2.5 bg-slate-50 rounded-[10px] border border-slate-200 text-xs flex justify-between items-center">
-                          <div><span class="text-slate-500">Qtd:</span> <strong class="text-slate-900 font-bold">${sup.qtd}</strong></div>
-                          <div><span class="text-slate-500">Frente:</span> <span class="bg-white px-2 py-0.5 rounded-md border border-slate-200 text-[10px] font-bold text-slate-800">${sup.sector}</span></div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                          <div class="p-1.5 bg-slate-50 rounded-[8px] border border-slate-200">
+                            <span class="text-slate-500 text-[11px]">Qtd:</span> <strong class="text-slate-950 font-black">${sup.qtd}</strong>
+                          </div>
+                          <div class="p-1.5 bg-slate-50 rounded-[8px] border border-slate-200">
+                            <span class="text-slate-500 text-[11px]">Frente:</span> <span class="font-bold text-slate-900">${sup.sector}</span>
+                          </div>
                         </div>
                       </div>
                     `).join('')}
