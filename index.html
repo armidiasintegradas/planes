@@ -146,6 +146,23 @@
     .sound-wave-bar:nth-child(5) { animation-delay: 0.48s; }
     .sound-wave-bar:nth-child(6) { animation-delay: 0.6s; }
     .sound-wave-bar:nth-child(7) { animation-delay: 0.72s; }
+  
+    @keyframes orbit-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .anim-orbit {
+      animation: orbit-spin 18s linear infinite;
+    }
+    .anim-pulse-slow {
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+
   </style>
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
@@ -2626,125 +2643,163 @@
                     </div>
                   </div>
 
-                  <!-- Right: Frentes de Obra (4 Cols) — BACKGROUND BRANCO & ANIMAÇÃO FLUIDA -->
+                  <!-- Right: Frentes de Obra (4 Cols) — NOVO GRÁFICO RADIAL SPEED-ORBIT + CARDS FLUIDOS -->
                   <div class="lg:col-span-4 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs flex flex-col justify-between bg-white">
                     <div>
                       <!-- Card Header -->
                       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                         <div class="flex items-center gap-2.5">
-                          <div class="w-9 h-9 rounded-[12px] bg-slate-100 border border-slate-200 text-slate-900 flex items-center justify-center font-black shadow-2xs shrink-0">
-                            ${getSvg('mapPin', 'w-4 h-4 text-slate-800')}
+                          <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs shrink-0">
+                            ${getSvg('mapPin', 'w-4 h-4 text-[#d4ff00]')}
                           </div>
                           <div>
                             <h3 class="text-base font-black text-slate-950 tracking-tight">Frentes de Obra</h3>
-                            <p class="text-[11px] text-slate-500 font-medium">Controle por Setor & Ritmo Takt</p>
+                            <p class="text-[11px] text-slate-500 font-medium">Radar Rítmico de Produção em Canteiro</p>
                           </div>
                         </div>
-                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-300 font-mono">
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-900 text-[#d4ff00] border border-slate-800 font-mono">
                           ● 4 Frentes
                         </span>
                       </div>
 
-                      <!-- GRÁFICO RADIAL CONCÊNTRICO EM BACKGROUND BRANCO E ANIMAÇÃO DE ENTRADA -->
-                      <div class="p-4 bg-white rounded-[18px] border border-slate-200/90 my-3 shadow-2xs relative overflow-hidden flex flex-col items-center justify-center">
-                        <div class="relative w-48 h-48 flex items-center justify-center">
-                          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
-                            <!-- Background Light Track Rings -->
-                            <circle cx="80" cy="80" r="68" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
-                            <circle cx="80" cy="80" r="54" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
-                            <circle cx="80" cy="80" r="40" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
-                            <circle cx="80" cy="80" r="26" fill="none" stroke="#f1f5f9" stroke-width="8.5" />
+                      <!-- NOVO GRÁFICO ANIMADO FLUIDO (SEMI-CIRCULAR SPEED ORBIT RADIAL COM BACKGROUND BRANCO) -->
+                      <div class="p-5 bg-gradient-to-b from-slate-50/70 to-white rounded-[22px] border border-slate-200/90 my-2 shadow-2xs relative overflow-hidden flex flex-col items-center justify-center">
+                        
+                        <!-- Dynamic SVG Wave Speed Gauge -->
+                        <div class="relative w-56 h-40 flex items-end justify-center">
+                          
+                          <svg class="w-full h-full overflow-visible" viewBox="0 0 220 130">
+                            <defs>
+                              <linearGradient id="arenaGradient" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#a3e635" />
+                                <stop offset="100%" stop-color="#d4ff00" />
+                              </linearGradient>
+                              <linearGradient id="aptsGradient" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#38bdf8" />
+                                <stop offset="100%" stop-color="#2563eb" />
+                              </linearGradient>
+                              <linearGradient id="infraGradient" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#34d399" />
+                                <stop offset="100%" stop-color="#059669" />
+                              </linearGradient>
+                            </defs>
 
-                            <!-- Outer Ring: Arena Shows (92%) - Animated -->
-                            <circle
-                              cx="80" cy="80" r="68"
-                              fill="none" stroke="#84cc16" stroke-width="8.5"
-                              stroke-dasharray="427"
-                              stroke-dashoffset="427"
-                              data-offset="${427 * (1 - 0.92)}"
+                            <!-- Background Speed Track (180 deg Arch) -->
+                            <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e2e8f0" stroke-width="12" stroke-linecap="round" />
+                            <path d="M 40 120 A 70 70 0 0 1 180 120" fill="none" stroke="#f1f5f9" stroke-width="10" stroke-linecap="round" />
+                            <path d="M 58 120 A 52 52 0 0 1 162 120" fill="none" stroke="#f8fafc" stroke-width="8" stroke-linecap="round" />
+
+                            <!-- Outer Arch: Arena Shows (92% of 180 deg) -->
+                            <path
+                              d="M 20 120 A 90 90 0 0 1 200 120"
+                              fill="none" stroke="url(#arenaGradient)" stroke-width="12"
+                              stroke-dasharray="283"
+                              stroke-dashoffset="283"
+                              data-offset="${283 * (1 - 0.92)}"
                               stroke-linecap="round"
-                              class="anim-radial-ring transition-all duration-1000 ease-out"
+                              class="anim-radial-ring transition-all duration-1200 ease-out"
                             />
 
-                            <!-- Middle Ring: Bloco Apts (74%) - Animated -->
-                            <circle
-                              cx="80" cy="80" r="54"
-                              fill="none" stroke="#3b82f6" stroke-width="8.5"
-                              stroke-dasharray="339"
-                              stroke-dashoffset="339"
-                              data-offset="${339 * (1 - 0.74)}"
+                            <!-- Middle Arch: Bloco Aptos (74% of 180 deg) -->
+                            <path
+                              d="M 40 120 A 70 70 0 0 1 180 120"
+                              fill="none" stroke="url(#aptsGradient)" stroke-width="10"
+                              stroke-dasharray="220"
+                              stroke-dashoffset="220"
+                              data-offset="${220 * (1 - 0.74)}"
                               stroke-linecap="round"
-                              class="anim-radial-ring transition-all duration-1000 ease-out"
+                              class="anim-radial-ring transition-all duration-1200 ease-out"
                             />
 
-                            <!-- Inner Ring: Infraestrutura (62%) - Animated -->
-                            <circle
-                              cx="80" cy="80" r="40"
-                              fill="none" stroke="#059669" stroke-width="8.5"
-                              stroke-dasharray="251"
-                              stroke-dashoffset="251"
-                              data-offset="${251 * (1 - 0.62)}"
-                              stroke-linecap="round"
-                              class="anim-radial-ring transition-all duration-1000 ease-out"
-                            />
-
-                            <!-- Core Ring: Piscina Resort (54%) - Animated -->
-                            <circle
-                              cx="80" cy="80" r="26"
-                              fill="none" stroke="#f59e0b" stroke-width="8.5"
+                            <!-- Inner Arch: Infraestrutura (62% of 180 deg) -->
+                            <path
+                              d="M 58 120 A 52 52 0 0 1 162 120"
+                              fill="none" stroke="url(#infraGradient)" stroke-width="8"
                               stroke-dasharray="163"
                               stroke-dashoffset="163"
-                              data-offset="${163 * (1 - 0.54)}"
+                              data-offset="${163 * (1 - 0.62)}"
                               stroke-linecap="round"
-                              class="anim-radial-ring transition-all duration-1000 ease-out"
+                              class="anim-radial-ring transition-all duration-1200 ease-out"
                             />
+
+                            <!-- Pulsing Nodes on Current Heads -->
+                            <circle cx="188" cy="70" r="5" fill="#a3e635" stroke="#ffffff" stroke-width="2" class="anim-pulse-slow" />
+                            <circle cx="160" cy="62" r="4.5" fill="#38bdf8" stroke="#ffffff" stroke-width="2" />
+                            <circle cx="138" cy="68" r="4" fill="#059669" stroke="#ffffff" stroke-width="1.5" />
                           </svg>
 
-                          <!-- Center Core Text (Animated Digital Counter) -->
-                          <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span id="anim-frentes-avg" class="text-2xl xl:text-3xl font-black text-slate-950 leading-none">0%</span>
-                            <span class="text-[9.5px] text-slate-500 font-bold uppercase tracking-tight mt-0.5">Média Real</span>
+                          <!-- Center Core Info Hub -->
+                          <div class="absolute inset-x-0 bottom-1 flex flex-col items-center text-center">
+                            <span id="anim-frentes-avg" class="text-3xl font-black text-slate-950 tracking-tight leading-none">0%</span>
+                            <span class="text-[9.5px] font-extrabold text-emerald-800 uppercase tracking-wider mt-1 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                              ● Ritmo Global
+                            </span>
                           </div>
                         </div>
 
-                        <!-- Clean Light Legend -->
-                        <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 w-full text-[11px] pt-3 border-t border-slate-100 text-slate-700 font-medium">
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span> Arena: <strong class="text-slate-950 font-bold">92%</strong></span>
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Aptos: <strong class="text-slate-950 font-bold">74%</strong></span>
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#059669]"></span> Infra: <strong class="text-slate-950 font-bold">62%</strong></span>
-                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span> Piscina: <strong class="text-slate-950 font-bold">54%</strong></span>
+                        <!-- Micro Metrics Strip -->
+                        <div class="flex items-center justify-between w-full pt-3 mt-3 border-t border-slate-100 text-[11px] font-semibold text-slate-700">
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#a3e635]"></span> Arena: <strong class="text-slate-950">92%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#38bdf8]"></span> Aptos: <strong class="text-slate-950">74%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#059669]"></span> Infra: <strong class="text-slate-950">62%</strong></span>
                         </div>
                       </div>
 
-                      <!-- SETORES COM CONTROLE DE TAKT & CLIQUE RÁPIDO -->
-                      <div class="space-y-2 mt-4">
+                      <!-- CARDS FLUIDOS & MODERNOS: ARENA SHOWS E BLOCOS DE APARTAMENTOS REVISITADOS -->
+                      <div class="space-y-3 mt-3">
+                        
+                        <!-- 1. ARENA DE SHOWS & QUADRAS (FLUIDO, MODERNO E ANIMADO) -->
                         <div
                           onclick="setLbSec('ARENA'); setNavWithHistory('Linha de Balanço');"
-                          class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[12px] transition cursor-pointer flex items-center justify-between group shadow-2xs"
+                          class="p-3.5 bg-gradient-to-r from-lime-50/70 via-white to-slate-50 hover:from-lime-100/90 hover:to-white border border-lime-200/80 hover:border-lime-400 rounded-[16px] transition-all duration-300 cursor-pointer group shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative overflow-hidden"
                         >
-                          <div class="flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00] ring-2 ring-slate-400"></span>
-                            <div>
-                              <strong class="text-xs font-black text-slate-900 group-hover:text-emerald-800 transition block leading-tight">Arena Shows</strong>
-                              <span class="text-[10px] text-slate-500">Takt: 2 pav/sem · 38 operários</span>
+                          <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                              <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-xs shadow-2xs group-hover:scale-105 transition">
+                                🏟️
+                              </div>
+                              <div>
+                                <strong class="text-xs font-black text-slate-950 group-hover:text-emerald-900 transition block leading-tight">Arena Shows & Quadras</strong>
+                                <span class="text-[10.5px] text-slate-500 font-medium">38 operários · 2 pav/sem</span>
+                              </div>
+                            </div>
+                            <div class="text-right">
+                              <span class="text-sm font-black text-slate-950 font-mono block">92%</span>
+                              <span class="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-md">● +3% Acel</span>
                             </div>
                           </div>
-                          <span class="text-xs font-black text-slate-950 font-mono">92%</span>
+
+                          <div class="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden relative">
+                            <div class="h-full bg-gradient-to-r from-lime-500 to-[#d4ff00] rounded-full transition-all duration-1000 ease-out shadow-xs" style="width: 92%;"></div>
+                          </div>
                         </div>
 
+                        <!-- 2. BLOCO DE APARTAMENTOS (FLUIDO, MODERNO E ANIMADO) -->
                         <div
                           onclick="setLbSec('BLOCO APTOS'); setNavWithHistory('Linha de Balanço');"
-                          class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[12px] transition cursor-pointer flex items-center justify-between group shadow-2xs"
+                          class="p-3.5 bg-gradient-to-r from-blue-50/70 via-white to-slate-50 hover:from-blue-100/90 hover:to-white border border-blue-200/80 hover:border-blue-400 rounded-[16px] transition-all duration-300 cursor-pointer group shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative overflow-hidden"
                         >
-                          <div class="flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#60a5fa] ring-2 ring-slate-400"></span>
-                            <div>
-                              <strong class="text-xs font-black text-slate-900 group-hover:text-emerald-800 transition block leading-tight">Bloco Aptos</strong>
-                              <span class="text-[10px] text-slate-500">Takt: 1 pav/sem · 54 operários</span>
+                          <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                              <div class="w-8 h-8 rounded-[10px] bg-blue-900 text-white flex items-center justify-center font-black text-xs shadow-2xs group-hover:scale-105 transition">
+                                🏢
+                              </div>
+                              <div>
+                                <strong class="text-xs font-black text-slate-950 group-hover:text-blue-900 transition block leading-tight">Bloco de Apartamentos</strong>
+                                <span class="text-[10.5px] text-slate-500 font-medium">54 operários · 1 pav/sem</span>
+                              </div>
+                            </div>
+                            <div class="text-right">
+                              <span class="text-sm font-black text-slate-950 font-mono block">74%</span>
+                              <span class="text-[9px] font-bold text-blue-800 bg-blue-100 px-1.5 py-0.2 rounded-md">● No Ritmo</span>
                             </div>
                           </div>
-                          <span class="text-xs font-black text-slate-950 font-mono">74%</span>
+
+                          <div class="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden relative">
+                            <div class="h-full bg-gradient-to-r from-blue-500 to-[#38bdf8] rounded-full transition-all duration-1000 ease-out shadow-xs" style="width: 74%;"></div>
+                          </div>
                         </div>
+
                       </div>
                     </div>
 
