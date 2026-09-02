@@ -1500,49 +1500,84 @@
       } catch (e) {}
     }
 
-    function handleCloudSyncMessage(payload, shouldRender = true) {
+        function handleCloudSyncMessage(payload, shouldRender = true) {
       if (!payload || !payload.action) return;
       const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
 
-      // 1. NOVO USUÁRIO CADASTRADO EM QUALQUER COMPUTADOR / CIDADE
-      if (payload.action === 'USER_REGISTER' && payload.user) {
+      // A. SOLICITAÇÃO DE ACESSO PENDENTE RECEBIDA DE QUALQUER COMPUTADOR / CIDADE
+      if (payload.action === 'USER_REQUEST_ACCESS' && payload.user) {
         const u = payload.user;
         const uEmail = (u.email || '').toLowerCase();
         const uId = String(u.id || '').toLowerCase();
 
         if (!blacklist.includes(uEmail) && !blacklist.includes(uId) && uEmail !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves') {
-          // Adiciona ou atualiza em registeredUsers
-          const existingIdx = registeredUsers.findIndex(x => (x.email || '').toLowerCase() === uEmail);
-          if (existingIdx >= 0) {
-            registeredUsers[existingIdx] = { ...registeredUsers[existingIdx], ...u };
-          } else {
-            registeredUsers.push(u);
+          // Se ainda não estiver aprovado nem na fila, insere em pendingUsers
+          const isAlreadyRegistered = registeredUsers.some(x => (x.email || '').toLowerCase() === uEmail);
+          const isAlreadyPending = pendingUsers.some(x => (x.email || '').toLowerCase() === uEmail || String(x.id) === uId);
+          
+          if (!isAlreadyRegistered && !isAlreadyPending) {
+            pendingUsers.unshift(u);
+            saveUsersStorage();
           }
-
-          // Adiciona ao Quadro de Pessoal
-          const existingTm = teamMembersList.find(x => (x.email || '').toLowerCase() === uEmail);
-          if (!existingTm) {
-            teamMembersList.push({
-              id: u.id || ('tm-' + Date.now()),
-              name: u.name,
-              role: u.role || u.level || 'Campo',
-              company: u.company || 'Planes ENG',
-              sector: u.sector || 'Geral',
-              cpf: u.cpf || '000.000.000-00',
-              rg: u.rg || 'SSP-00.000.000',
-              phone: u.phone || '(82) 99822-1100',
-              whatsapp: u.whatsapp || '5581973332227',
-              status: 'No Canteiro',
-              avatar: u.avatar || 'US',
-              color: 'bg-slate-900 text-white'
-            });
-          }
-
-          saveUsersStorage();
         }
       }
 
-      // 2. EXCLUSÃO DEFINITIVA DE USUÁRIO
+      // B. USUÁRIO APROVADO PELO ADMIN MASTER
+      else if (payload.action === 'USER_APPROVED' && payload.user) {
+        const u = payload.user;
+        const uEmail = (u.email || '').toLowerCase();
+        const uId = String(u.id || '').toLowerCase();
+
+        // Remove de pendingUsers
+        pendingUsers = pendingUsers.filter(x => (x.email || '').toLowerCase() !== uEmail && String(x.id) !== uId);
+
+        // Insere ou atualiza em registeredUsers
+        const existingIdx = registeredUsers.findIndex(x => (x.email || '').toLowerCase() === uEmail);
+        if (existingIdx >= 0) {
+          registeredUsers[existingIdx] = { ...registeredUsers[existingIdx], ...u, status: 'Aprovado' };
+        } else {
+          registeredUsers.push({ ...u, status: 'Aprovado' });
+        }
+
+        // Atualiza Quadro de Pessoal
+        const existingTm = teamMembersList.find(x => (x.email || '').toLowerCase() === uEmail);
+        if (!existingTm) {
+          teamMembersList.push({
+            id: u.id || ('tm-' + Date.now()),
+            name: u.name,
+            role: u.role || u.level || 'Campo',
+            company: u.company || 'Planes ENG',
+            sector: u.sector || 'Geral',
+            cpf: u.cpf || '000.000.000-00',
+            rg: u.rg || 'SSP-00.000.000',
+            phone: u.phone || '(82) 99822-1100',
+            whatsapp: u.whatsapp || '5581973332227',
+            status: 'No Canteiro',
+            avatar: u.avatar || 'US',
+            color: 'bg-slate-900 text-white'
+          });
+        }
+
+        saveUsersStorage();
+
+        // Se for a conta do usuário atual que estava aguardando, libera imediatamente
+        if (currentUser && currentUser.email && currentUser.email.toLowerCase() === uEmail && currentUser.status === 'Pendente') {
+          currentUser = { ...currentUser, ...u, status: 'Aprovado' };
+          accessLevel = u.level || u.role || 'Campo';
+          saveSessionState();
+          showToast(`✓ Seu acesso foi APROVADO pelo Administrador Master como ${accessLevel}!`);
+        }
+      }
+
+      // C. SOLICITAÇÃO RECUSADA
+      else if (payload.action === 'USER_REJECTED' && (payload.userEmail || payload.userId)) {
+        const rejEmail = (payload.userEmail || '').toLowerCase();
+        const rejId = String(payload.userId || '').toLowerCase();
+        pendingUsers = pendingUsers.filter(x => (x.email || '').toLowerCase() !== rejEmail && String(x.id) !== rejId);
+        saveUsersStorage();
+      }
+
+      // D. EXCLUSÃO DEFINITIVA DE USUÁRIO
       else if (payload.action === 'USER_DELETE' && payload.userEmail) {
         const delEmail = payload.userEmail.toLowerCase();
         const delId = String(payload.userId || '').toLowerCase();
@@ -1558,7 +1593,6 @@
 
         saveUsersStorage();
 
-        // Se for o usuário conectado atualmente, desconecta
         if (currentUser && currentUser.email.toLowerCase() === delEmail) {
           currentUser = null;
           currentScreen = 'login';
@@ -1567,7 +1601,7 @@
         }
       }
 
-      // 3. HEARTBEAT DE PRESENÇA ONLINE EM TEMPO REAL
+      // E. HEARTBEAT DE PRESENÇA ONLINE EM TEMPO REAL
       else if (payload.action === 'PRESENCE_HEARTBEAT' && payload.session) {
         const sess = payload.session;
         if (sess && sess.email) {
@@ -1578,7 +1612,7 @@
         }
       }
 
-      // 4. ENCERRAMENTO FORÇADO DE SESSÃO PELO ADMIN MASTER
+      // F. ENCERRAMENTO FORÇADO DE SESSÃO PELO ADMIN MASTER
       else if (payload.action === 'TERMINATE_SESSION' && payload.userEmail) {
         const targetEmail = payload.userEmail.toLowerCase();
         delete cloudOnlineSessions[targetEmail];
@@ -1593,7 +1627,7 @@
         }
       }
 
-      // 5. ATUALIZAÇÃO DA MATRIZ RBAC
+      // G. ATUALIZAÇÃO DA MATRIZ RBAC
       else if (payload.action === 'RBAC_UPDATE' && payload.rolePermissions) {
         rolePermissions = payload.rolePermissions;
         saveRolePermissions();
@@ -2044,7 +2078,7 @@
       return re.test(String(email).toLowerCase());
     }
 
-    function handleEmailLogin() {
+        function handleEmailLogin() {
       const emailInput = document.getElementById('login-email');
       const passInput = document.getElementById('login-pass');
       const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
@@ -2091,11 +2125,12 @@
         showToast('✓ Bem-vindo, Admin Master! Acesso Total Liberado.');
         saveSessionState();
         updateUserPresence();
+        broadcastPresenceHeartbeat();
         render();
         return;
       }
 
-      // 2. Check Registered Users
+      // 2. Check Approved Registered Users
       const user = registeredUsers.find(u => u.email.toLowerCase() === email);
       if (user) {
         if (user.pass === pass || pass === 'planes123' || !user.pass) {
@@ -2105,6 +2140,7 @@
           showToast('✓ Bem-vindo(a), ' + user.name + '! Nível de Acesso: ' + accessLevel);
           saveSessionState();
           updateUserPresence();
+          broadcastPresenceHeartbeat();
           render();
           return;
         } else {
@@ -2113,31 +2149,19 @@
         }
       }
 
-      // 3. Auto-Promote Pending User if found in local storage
+      // 3. Check Pending Users awaiting Admin approval
       const pendingUser = pendingUsers.find(u => u.email.toLowerCase() === email);
       if (pendingUser) {
-        if (pendingUser.pass === pass || pass === 'planes123' || !pendingUser.pass) {
-          pendingUser.status = 'Aprovado';
-          registeredUsers.push(pendingUser);
-          pendingUsers = pendingUsers.filter(u => u.email.toLowerCase() !== email);
-          saveUsersStorage();
-
-          currentUser = pendingUser;
-          accessLevel = pendingUser.level || pendingUser.role || 'Campo';
-          currentScreen = 'projects';
-          showToast('✓ Acesso Liberado com Sucesso! Bem-vindo(a), ' + currentUser.name + '!');
-          saveSessionState();
-          updateUserPresence();
-          render();
-          return;
+        if (pendingUser.pass === pass || !pendingUser.pass) {
+          showToast('Cadastro em análise pelo Admin Master. Aguarde a autorização ou solicite a liberação no painel.');
         } else {
-          showToast('Senha incorreta. Verifique a digitação.');
-          return;
+          showToast('Senha incorreta para o cadastro pendente.');
         }
+        return;
       }
 
-      // 4. User not found in system
-      showToast('E-mail não cadastrado. Clique no botão "Cadastre-se na Plataforma" logo abaixo para criar seu acesso imediato!');
+      // 4. User not found
+      showToast('E-mail não cadastrado. Clique em "Cadastre-se na Plataforma" para solicitar seu acesso.');
     }
 
     function handleRegisterSubmit() {
@@ -2174,12 +2198,21 @@
         return;
       }
 
+      if (registeredUsers.some(u => u.email.toLowerCase() === email)) {
+        showToast('Este e-mail já possui cadastro aprovado. Realize o login.');
+        return;
+      }
+
+      if (pendingUsers.some(u => u.email.toLowerCase() === email)) {
+        showToast('Sua solicitação já está na fila de aprovação do Admin Master.');
+        return;
+      }
+
       const cleanPhone = phone.replace(/\D/g, '');
       const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + (cleanPhone || '81973332227');
       const userAvatar = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US';
 
-      // Criação de usuário com LIBERAÇÃO IMEDIATA para que qualquer pessoa em qualquer computador/cidade acesse na hora
-      const newUser = {
+      const newPendingUser = {
         id: 'usr-' + Date.now(),
         name: name,
         cpf: cpf ? maskCpf(cpf) : '000.000.000-00',
@@ -2195,74 +2228,48 @@
         company: company,
         sector: sector,
         date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'Aprovado',
+        status: 'Pendente',
         avatar: userAvatar
       };
 
-      // Atualiza base de usuários registrados
-      registeredUsers = registeredUsers.filter(u => u.email.toLowerCase() !== email);
-      registeredUsers.push(newUser);
-
-      // Remove de pendentes se houver
-      pendingUsers = pendingUsers.filter(u => u.email.toLowerCase() !== email);
-
-      // Adiciona ao Quadro de Pessoal
-      const existingTm = teamMembersList.find(x => x.email === email || x.name === name);
-      if (!existingTm) {
-        teamMembersList.push({
-          id: newUser.id,
-          name: name,
-          role: reqRole,
-          company: company,
-          sector: sector,
-          cpf: newUser.cpf,
-          rg: newUser.rg,
-          phone: newUser.phone,
-          whatsapp: cleanWhatsapp,
-          status: 'No Canteiro',
-          avatar: userAvatar,
-          color: 'bg-slate-900 text-white'
-        });
-      }
-
+      pendingUsers.unshift(newPendingUser);
       saveUsersStorage();
+
+      // Transmite a solicitação em tempo real para a nuvem do Admin Master
+      broadcastCloudAction('USER_REQUEST_ACCESS', { user: newPendingUser });
+
       closeRegisterModal();
 
-      // Transmite cadastro imediatamente para a nuvem (para o Admin ver na hora no seu computador)
-      broadcastCloudAction('USER_REGISTER', { user: newUser });
-      broadcastPresenceHeartbeat();
+      // Preenche os campos do login para facilitar
+      const emailInput = document.getElementById('login-email');
+      const passInput = document.getElementById('login-pass');
+      if (emailInput) emailInput.value = email;
+      if (passInput) passInput.value = pass;
 
-      // EFETUA O LOGIN AUTOMÁTICO E IMEDIATO DO NOVO USUÁRIO
-      currentUser = newUser;
-      accessLevel = reqRole;
-      currentScreen = 'projects';
-      saveSessionState();
-      updateUserPresence();
-
-      showToast('✓ Cadastro aprovado e liberado com sucesso! Bem-vindo(a), ' + name + '!');
+      showToast(`✓ Solicitação de ${name} enviada com sucesso! Aguardando aprovação do Admin Master.`);
       render();
     }
 
-    function approvePendingUser(id, assignedLevel) {
-      const idx = pendingUsers.findIndex(u => String(u.id) === String(id));
+        function approvePendingUser(id, assignedLevel) {
+      const idx = pendingUsers.findIndex(u => String(u.id) === String(id) || (u.email && u.email.toLowerCase() === String(id).toLowerCase()));
       if (idx !== -1) {
         const u = pendingUsers.splice(idx, 1)[0];
         const finalLevel = assignedLevel || u.requestedLevel || u.level || 'Campo';
         u.status = 'Aprovado';
         u.level = finalLevel;
         u.role = finalLevel;
-        
+
         // Evita duplicatas em registeredUsers
-        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && x.email.toLowerCase() !== u.email.toLowerCase());
+        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
         registeredUsers.push(u);
 
-        // Adiciona ou atualiza no Quadro de Pessoal
-        const existingTm = teamMembersList.find(x => String(x.id) === String(u.id) || x.email === u.email);
+        // Adiciona ao Quadro de Pessoal
+        const existingTm = teamMembersList.find(x => (x.email || '').toLowerCase() === (u.email || '').toLowerCase());
         if (!existingTm) {
           teamMembersList.push({
             id: u.id,
             name: u.name,
-            role: u.role,
+            role: finalLevel,
             company: u.company || 'Planes ENG',
             sector: u.sector || 'Geral',
             cpf: u.cpf,
@@ -2274,24 +2281,32 @@
             color: 'bg-slate-900 text-white'
           });
         } else {
-          existingTm.status = 'No Canteiro';
-          existingTm.role = u.role;
+          existingTm.role = finalLevel;
         }
 
         saveUsersStorage();
-        showToast(`✓ Acesso de ${u.name} APROVADO como ${finalLevel}! E-mail de liberação enviado para ${u.email}.`);
+
+        // Transmite aprovação para a nuvem
+        broadcastCloudAction('USER_APPROVED', { user: u });
+
+        showToast(`✓ Acesso de ${u.name} APROVADO com perfil "${finalLevel}"!`);
         render();
       }
     }
 
     function rejectPendingUser(id) {
-      const idx = pendingUsers.findIndex(u => String(u.id) === String(id));
+      const idx = pendingUsers.findIndex(u => String(u.id) === String(id) || (u.email && u.email.toLowerCase() === String(id).toLowerCase()));
       if (idx !== -1) {
         const u = pendingUsers.splice(idx, 1)[0];
         saveUsersStorage();
-        showToast(`✕ Solicitação de ${u.name} recusada.`);
+
+        // Transmite recusa para a nuvem
+        broadcastCloudAction('USER_REJECTED', { userId: u.id, userEmail: u.email });
+
+        showToast(`✕ Cadastro de ${u.name} recusado.`);
         render();
       }
+    }
     }
 
     function openRegisterModal() {
@@ -6458,80 +6473,6 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                           </tr>
                         </tbody>
                       </table>
-                    </div>
-                  </div>
-
-                                    <!-- Seção 3: Matriz de Permissões por Nível de Acesso (RBAC) -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-5">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                      <div>
-                        <div class="flex items-center gap-2">
-                          <h3 class="text-base font-black text-slate-950 tracking-tight">
-                            Matriz de Permissões por Nível de Acesso (RBAC)
-                          </h3>
-                          <span class="bg-slate-950 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-slate-800 font-mono">
-                            Controle Granular
-                          </span>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-0.5">Defina quais telas e módulos cada perfil de usuário tem autorização para acessar na plataforma</p>
-                      </div>
-                      <button
-                        type="button"
-                        onclick="resetRolePermissions()"
-                        class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 text-xs font-bold rounded-[10px] border border-slate-200 transition cursor-pointer"
-                        title="Restaurar padrões de fábrica das permissões"
-                      >
-                        Restaurar Padrões
-                      </button>
-                    </div>
-
-                    <!-- Role Selector Tabs -->
-                    <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-[16px] border border-slate-200 overflow-x-auto">
-                      ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente'].map(r => `
-                        <button
-                          type="button"
-                          onclick="selectedRbacTab = '${r}'; render();"
-                          class="flex-1 min-w-[100px] py-2 px-3 rounded-[12px] text-xs font-bold transition cursor-pointer text-center ${
-                            selectedRbacTab === r ? 'bg-slate-950 text-white shadow-xs font-black' : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
-                          }"
-                        >
-                          ${r}
-                        </button>
-                      `).join('')}
-                    </div>
-
-                    <!-- Module Permissions List for Selected Role -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      ${allPlatformModules.map(mod => {
-                        const isAllowed = (rolePermissions[selectedRbacTab] || []).includes(mod.name);
-                        return `
-                          <div class="p-3.5 rounded-[16px] border transition flex items-center justify-between gap-3 ${
-                            isAllowed ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50 border-slate-200 opacity-60'
-                          }">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                              <div class="w-8 h-8 rounded-[10px] ${isAllowed ? 'bg-slate-950 text-[#d4ff00]' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
-                                ${getSvg(mod.icon, 'w-4 h-4')}
-                              </div>
-                              <div class="truncate">
-                                <strong class="text-xs font-bold text-slate-950 block truncate">${mod.name}</strong>
-                                <span class="text-[10px] text-slate-500 font-medium block truncate">${mod.desc}</span>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onclick="toggleRolePermission('${selectedRbacTab}', '${mod.name}')"
-                              class="px-3 py-1.5 rounded-[10px] text-xs font-black transition cursor-pointer shrink-0 ${
-                                isAllowed
-                                  ? 'bg-emerald-100 text-emerald-950 border border-emerald-300 hover:bg-rose-100 hover:text-rose-900 hover:border-rose-300'
-                                  : 'bg-slate-200 text-slate-700 hover:bg-emerald-100 hover:text-emerald-950'
-                              }"
-                              title="Clique para alternar permissão deste módulo"
-                            >
-                              ${isAllowed ? '✓ Liberado' : '✕ Bloqueado'}
-                            </button>
-                          </div>
-                        `;
-                      }).join('')}
                     </div>
                   </div>
 
