@@ -29,17 +29,29 @@
     }
     * { box-sizing: border-box; }
     html, body {
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
       margin: 0;
       padding: 0;
-      overflow: hidden;
       background: #f2f5f8;
       color: #0f172a;
       font-family: 'General Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
+    }
+    @media (min-width: 1024px) {
+      html, body {
+        height: 100vh;
+        overflow: hidden;
+      }
+    }
+    @media (max-width: 1023px) {
+      html, body {
+        height: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
     }
     .font-mono-num {
       font-family: 'JetBrains Mono', monospace;
@@ -83,7 +95,7 @@
     ::-webkit-scrollbar { display: none; }
   </style>
 </head>
-<body class="h-full w-full flex flex-col justify-between p-3.5 xl:p-5 select-none relative font-sans">
+<body class="min-h-full lg:h-full w-full flex flex-col justify-between p-3 sm:p-3.5 xl:p-5 select-none relative font-sans">
 
   <!-- Background Watermark at Exactly 5% Opacity -->
   <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">

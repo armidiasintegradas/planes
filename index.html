@@ -1,9 +1,9 @@
-<!-- Planes Build: 1788371968 -->
+<!-- Planes Build: 1788382226 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <!-- PWA & Mobile Web App Standalone Tags (iOS & Android) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,6 +20,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700,800&f[]=satoshi@400,500,700,800,900&display=swap" rel="stylesheet">
   <style>
+    /* Mobile Safe Area & Touch Optimizations */
+    @supports (padding: max(0px)) {
+      body {
+        padding-top: max(0px, env(safe-area-inset-top));
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+      }
+    }
+    .mobile-bottom-bar {
+      padding-bottom: max(0.4rem, env(safe-area-inset-bottom));
+      box-shadow: 0 -4px 20px -2px rgba(15, 23, 42, 0.08);
+    }
+    .touch-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+
     :root {
       --bg-outer: #f2f5f8;
       --bg-canvas: #f2f5f8;
@@ -4872,6 +4888,79 @@
               </button>
             </div>
           </div>
+
+          <!-- NATIVE-STYLE MOBILE BOTTOM TAB BAR (THUMB-FRIENDLY FOR IPHONE & ANDROID) -->
+          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 mobile-bottom-bar flex items-center justify-around px-1 py-1.5 shadow-2xl">
+            
+            <!-- Tab 1: Visão Geral -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Visão Geral')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Visão Geral' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('home', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Início</span>
+            </button>
+
+            <!-- Tab 2: Canteiro 1-Touch -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Canteiro 1-Touch')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Canteiro 1-Touch' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('zap', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">1-Touch</span>
+            </button>
+
+            <!-- Tab 3: Linha de Balanço -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Linha de Balanço')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Linha de Balanço' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('layers', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Linha</span>
+            </button>
+
+            <!-- Tab 4: IA Copiloto -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Planes Intelligence')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Planes Intelligence' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('bot', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">IA Copilot</span>
+            </button>
+
+            <!-- Tab 5: Menu Completo (Abre Drawer) -->
+            <button
+              type="button"
+              onclick="toggleMobileMenu()"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] text-slate-600 hover:text-slate-950 transition cursor-pointer min-h-[44px]"
+            >
+              <div class="p-1.5 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200">
+                ${getSvg('menu', 'w-4 h-4 text-slate-900')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Menu</span>
+            </button>
+
+          </nav>
         </div>
       `;
     }
@@ -4928,6 +5017,79 @@
               <button onclick="document.getElementById('audit-logs-modal').remove();" class="px-4 py-2 bg-slate-950 text-white font-bold rounded-xl">Fechar</button>
             </div>
           </div>
+
+          <!-- NATIVE-STYLE MOBILE BOTTOM TAB BAR (THUMB-FRIENDLY FOR IPHONE & ANDROID) -->
+          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 mobile-bottom-bar flex items-center justify-around px-1 py-1.5 shadow-2xl">
+            
+            <!-- Tab 1: Visão Geral -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Visão Geral')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Visão Geral' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('home', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Início</span>
+            </button>
+
+            <!-- Tab 2: Canteiro 1-Touch -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Canteiro 1-Touch')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Canteiro 1-Touch' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('zap', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">1-Touch</span>
+            </button>
+
+            <!-- Tab 3: Linha de Balanço -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Linha de Balanço')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Linha de Balanço' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('layers', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Linha</span>
+            </button>
+
+            <!-- Tab 4: IA Copiloto -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Planes Intelligence')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Planes Intelligence' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('bot', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">IA Copilot</span>
+            </button>
+
+            <!-- Tab 5: Menu Completo (Abre Drawer) -->
+            <button
+              type="button"
+              onclick="toggleMobileMenu()"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] text-slate-600 hover:text-slate-950 transition cursor-pointer min-h-[44px]"
+            >
+              <div class="p-1.5 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200">
+                ${getSvg('menu', 'w-4 h-4 text-slate-900')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Menu</span>
+            </button>
+
+          </nav>
         </div>
       `;
     }
@@ -5372,8 +5534,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
             </div>
           </header>
 
-          <!-- MAIN FULL HD CONTAINER -->
-          <div class="flex-1 w-full max-w-[1840px] mx-auto px-4 sm:px-6 xl:px-10 py-5 flex flex-col lg:flex-row gap-6">
+          <!-- MAIN FULL HD CONTAINER (MOBILE OPTIMIZED WITH SAFE BOTTOM PADDING) -->
+          <div class="flex-1 w-full max-w-[1840px] mx-auto px-3.5 sm:px-6 xl:px-10 py-4 sm:py-5 flex flex-col lg:flex-row gap-5 sm:gap-6 pb-24 lg:pb-6">
             
             <!-- SIDEBAR NAVIGATION WITH PINNED USER & LOGOUT -->
             <aside class="w-full lg:w-64 hidden lg:flex flex-col justify-between shrink-0">
@@ -9850,6 +10012,79 @@ ${activeNav === 'Equipe & Contatos' ? `
 
             </div>
           </div>
+
+          <!-- NATIVE-STYLE MOBILE BOTTOM TAB BAR (THUMB-FRIENDLY FOR IPHONE & ANDROID) -->
+          <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 mobile-bottom-bar flex items-center justify-around px-1 py-1.5 shadow-2xl">
+            
+            <!-- Tab 1: Visão Geral -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Visão Geral')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Visão Geral' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Visão Geral' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('home', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Início</span>
+            </button>
+
+            <!-- Tab 2: Canteiro 1-Touch -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Canteiro 1-Touch')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Canteiro 1-Touch' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Canteiro 1-Touch' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('zap', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">1-Touch</span>
+            </button>
+
+            <!-- Tab 3: Linha de Balanço -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Linha de Balanço')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Linha de Balanço' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Linha de Balanço' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('layers', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Linha</span>
+            </button>
+
+            <!-- Tab 4: IA Copiloto -->
+            <button
+              type="button"
+              onclick="setNavWithHistory('Planes Intelligence')"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] transition cursor-pointer min-h-[44px] ${
+                activeNav === 'Planes Intelligence' ? 'text-slate-950 font-black' : 'text-slate-500 hover:text-slate-800'
+              }"
+            >
+              <div class="p-1.5 rounded-[10px] ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-2xs' : ''}">
+                ${getSvg('bot', 'w-4 h-4')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">IA Copilot</span>
+            </button>
+
+            <!-- Tab 5: Menu Completo (Abre Drawer) -->
+            <button
+              type="button"
+              onclick="toggleMobileMenu()"
+              class="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-[12px] text-slate-600 hover:text-slate-950 transition cursor-pointer min-h-[44px]"
+            >
+              <div class="p-1.5 rounded-[10px] bg-slate-100 text-slate-900 border border-slate-200">
+                ${getSvg('menu', 'w-4 h-4 text-slate-900')}
+              </div>
+              <span class="text-[10px] font-bold tracking-tight mt-0.5">Menu</span>
+            </button>
+
+          </nav>
         </div>
       `;
 
