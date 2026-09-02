@@ -2701,6 +2701,21 @@
     // --- RASTREAMENTO DE USUÁRIOS ONLINE EM TEMPO REAL ---
     function updateUserPresence() {
       if (!currentUser || currentScreen === 'login') return;
+
+      // Verifica se a sessão deste usuário foi encerrada remotamente pelo Admin Master
+      try {
+        const terminated = JSON.parse(localStorage.getItem('planes_terminated_sessions')) || [];
+        if (currentUser.email && terminated.includes(currentUser.email.toLowerCase())) {
+          currentUser = null;
+          currentScreen = 'login';
+          try {
+            localStorage.removeItem('planes_active_session');
+          } catch (e) {}
+          showToast('● Sua sessão foi encerrada pelo Administrador Master.');
+          render();
+          return;
+        }
+      } catch (e) {}
       try {
         const raw = localStorage.getItem('planes_online_sessions');
         let sessions = raw ? JSON.parse(raw) : [];
@@ -2801,8 +2816,26 @@
       render();
     }
 
-    // MATRIZ DINÂMICA DE PERMISSÕES RBAC CONFIGURADA PELO ADMIN
-    let rolePermissions = {
+        // --- MATRIZ RBAC DE MÓDULOS & PERMISSÕES GRANULARES ---
+    const allPlatformModules = [
+      { name: 'Visão Geral', icon: 'home', desc: 'Cockpit executivo e KPIs da obra' },
+      { name: 'Planes Intelligence', icon: 'sparkles', desc: 'Copiloto de IA e diagnósticos preditivos' },
+      { name: 'Assistente de Voz', icon: 'mic', desc: 'Comandos e lançamentos por voz' },
+      { name: 'Cadastro de Projetos', icon: 'plus', desc: 'Gestão de portfólio, planilhas e obras' },
+      { name: 'Equipe & Contatos', icon: 'users', desc: 'Quadro de pessoal e agenda de contatos' },
+      { name: 'Linha de Balanço', icon: 'layers', desc: 'Programação de fluxo contínuo Takt-Time' },
+      { name: 'Médio Prazo (R4)', icon: 'calendar', desc: 'Lookahead 4 semanas e remoção de restrições' },
+      { name: 'Canteiro 1-Touch', icon: 'zap', desc: 'Apontamento rápido com foto e GPS' },
+      { name: 'Fila de Validações', icon: 'checkCircle', desc: 'Aprovações técnicas e auditoria de campo' },
+      { name: 'Curva S & PAC', icon: 'chart', desc: 'Aderência física, financeira e PAC semanal' },
+      { name: 'Suprimentos', icon: 'box', desc: 'Logística, compras e recebimento de materiais' },
+      { name: 'Galeria do Cliente', icon: 'camera', desc: 'Fotos da obra e evolução visual para clientes' },
+      { name: 'Relatórios & Capa', icon: 'fileText', desc: 'Emissão de Relatório A4 e Slides 16:9' }
+    ];
+
+    let selectedRbacTab = 'Engenharia';
+
+    const defaultRolePermissions = {
       'Engenharia': ['Visão Geral', 'Planes Intelligence', 'Assistente de Voz', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Fila de Validações', 'Curva S & PAC', 'Suprimentos', 'Galeria do Cliente', 'Relatórios & Capa'],
       'Campo': ['Visão Geral', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Galeria do Cliente'],
       'Canteiro': ['Visão Geral', 'Canteiro 1-Touch', 'Galeria do Cliente'],
@@ -2811,8 +2844,34 @@
       'Admin': ['Visão Geral', 'Planes Intelligence', 'Assistente de Voz', 'Cadastro de Projetos', 'Equipe & Contatos', 'Linha de Balanço', 'Médio Prazo (R4)', 'Canteiro 1-Touch', 'Fila de Validações', 'Curva S & PAC', 'Suprimentos', 'Galeria do Cliente', 'Gestão de Usuários (Admin)', 'Relatórios & Capa']
     };
 
+    let rolePermissions = {};
+    try {
+      const savedPerms = localStorage.getItem('planes_role_permissions');
+      rolePermissions = savedPerms ? JSON.parse(savedPerms) : defaultRolePermissions;
+    } catch (e) {
+      rolePermissions = defaultRolePermissions;
+    }
+
+    function saveRolePermissions() {
+      try {
+        localStorage.setItem('planes_role_permissions', JSON.stringify(rolePermissions));
+      } catch (e) {}
+    }
+
+    function resetRolePermissions() {
+      if (confirm('Deseja restaurar as permissões de fábrica para todos os perfis?')) {
+        rolePermissions = JSON.parse(JSON.stringify(defaultRolePermissions));
+        saveRolePermissions();
+        showToast('✓ Permissões restauradas para o padrão oficial.');
+        render();
+      }
+    }
+
     function toggleRolePermission(role, moduleName) {
-      if (role === 'Admin') return; // Admin sempre tem acesso total
+      if (role === 'Admin') {
+        showToast('O perfil Admin Master sempre possui acesso integral a todos os módulos.');
+        return;
+      }
       if (!rolePermissions[role]) rolePermissions[role] = [];
       const idx = rolePermissions[role].indexOf(moduleName);
       if (idx >= 0) {
@@ -2820,9 +2879,36 @@
         showToast(`Módulo "${moduleName}" desativado para ${role}.`);
       } else {
         rolePermissions[role].push(moduleName);
-        showToast(`Módulo "${moduleName}" ativado para ${role}!`);
+        showToast(`✓ Módulo "${moduleName}" ativado para ${role}!`);
       }
+      saveRolePermissions();
       render();
+    }
+
+    // --- ENCERRAMENTO REMOTO DE SESSÕES ONLINE PELO ADMIN MASTER ---
+    function terminateSession(sessionId, userEmail, userName) {
+      if (userEmail.toLowerCase() === 'armidiasintegradas@gmail.com') {
+        showToast('A sessão do Administrador Master não pode ser encerrada remotamente.');
+        return;
+      }
+      if (confirm(`Deseja realmente desconectar a sessão de "${userName}" (${userEmail}) imediatamente?`)) {
+        try {
+          const raw = localStorage.getItem('planes_online_sessions');
+          if (raw) {
+            let sessions = JSON.parse(raw);
+            sessions = sessions.filter(s => s.email.toLowerCase() !== userEmail.toLowerCase() && s.sessionId !== sessionId);
+            localStorage.setItem('planes_online_sessions', JSON.stringify(sessions));
+          }
+          let terminated = JSON.parse(localStorage.getItem('planes_terminated_sessions')) || [];
+          if (!terminated.includes(userEmail.toLowerCase())) {
+            terminated.push(userEmail.toLowerCase());
+            localStorage.setItem('planes_terminated_sessions', JSON.stringify(terminated));
+          }
+        } catch (e) {}
+
+        showToast(`✓ Conexão de ${userName} encerrada com sucesso!`);
+        render();
+      }
     }
 
     
@@ -4522,16 +4608,27 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
             <!-- Role Selector & Action Center -->
             <div class="flex items-center flex-wrap gap-2.5">
-              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200 overflow-x-auto max-w-full scrollbar-none py-0.5">
-                ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente', 'Admin'].map(lvl => `
-                  <button
-                    onclick="accessLevel = '${lvl}'; showToast('Nível: ${lvl}'); render();"
-                    class="px-3 py-1 rounded-full text-[11px] xl:text-xs font-bold transition cursor-pointer min-h-[30px] ${accessLevel === lvl ? 'bg-slate-950 text-white shadow-xs' : 'text-slate-700 hover:text-slate-950'}"
-                  >
-                    ${lvl}
-                  </button>
-                `).join('')}
-              </div>
+              ${(currentUser && (currentUser.level === 'Admin' || currentUser.email === 'armidiasintegradas@gmail.com')) ? `
+                <!-- Admin Master: Visualiza seletor de simulação de papéis com indicador -->
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200 overflow-x-auto max-w-full scrollbar-none py-0.5">
+                  <span class="pl-2.5 pr-1 text-[10px] font-black uppercase text-slate-500 font-mono hidden sm:inline">Simular RBAC:</span>
+                  ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente', 'Admin'].map(lvl => `
+                    <button
+                      type="button"
+                      onclick="accessLevel = '${lvl}'; showToast('Visão de teste alterada para: ${lvl}'); render();"
+                      class="px-3 py-1 rounded-full text-[11px] xl:text-xs font-bold transition cursor-pointer min-h-[30px] ${accessLevel === lvl ? 'bg-slate-950 text-white shadow-xs' : 'text-slate-700 hover:text-slate-950'}"
+                    >
+                      ${lvl}
+                    </button>
+                  `).join('')}
+                </div>
+              ` : `
+                <!-- Usuário Conectado Comum: Enxerga APENAS o seu próprio nível de privilégio concedido -->
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 text-white border border-slate-800 shadow-2xs">
+                  <span class="w-2 h-2 rounded-full bg-[#d4ff00] animate-pulse"></span>
+                  <span class="text-xs font-bold tracking-tight">Nível: <strong class="text-[#d4ff00] font-mono">${currentUser ? (currentUser.level || currentUser.role || accessLevel) : accessLevel}</strong></span>
+                </div>
+              ` }
 
               ${isEngOrAdmin ? `
                 <button
@@ -5984,6 +6081,80 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     </div>
                   </div>
 
+                                    <!-- Seção 3: Matriz de Permissões por Nível de Acesso (RBAC) -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h3 class="text-base font-black text-slate-950 tracking-tight">
+                            Matriz de Permissões por Nível de Acesso (RBAC)
+                          </h3>
+                          <span class="bg-slate-950 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-slate-800 font-mono">
+                            Controle Granular
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Defina quais telas e módulos cada perfil de usuário tem autorização para acessar na plataforma</p>
+                      </div>
+                      <button
+                        type="button"
+                        onclick="resetRolePermissions()"
+                        class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 text-xs font-bold rounded-[10px] border border-slate-200 transition cursor-pointer"
+                        title="Restaurar padrões de fábrica das permissões"
+                      >
+                        Restaurar Padrões
+                      </button>
+                    </div>
+
+                    <!-- Role Selector Tabs -->
+                    <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-[16px] border border-slate-200 overflow-x-auto">
+                      ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente'].map(r => `
+                        <button
+                          type="button"
+                          onclick="selectedRbacTab = '${r}'; render();"
+                          class="flex-1 min-w-[100px] py-2 px-3 rounded-[12px] text-xs font-bold transition cursor-pointer text-center ${
+                            selectedRbacTab === r ? 'bg-slate-950 text-white shadow-xs font-black' : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
+                          }"
+                        >
+                          ${r}
+                        </button>
+                      `).join('')}
+                    </div>
+
+                    <!-- Module Permissions List for Selected Role -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      ${allPlatformModules.map(mod => {
+                        const isAllowed = (rolePermissions[selectedRbacTab] || []).includes(mod.name);
+                        return `
+                          <div class="p-3.5 rounded-[16px] border transition flex items-center justify-between gap-3 ${
+                            isAllowed ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50 border-slate-200 opacity-60'
+                          }">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <div class="w-8 h-8 rounded-[10px] ${isAllowed ? 'bg-slate-950 text-[#d4ff00]' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
+                                ${getSvg(mod.icon, 'w-4 h-4')}
+                              </div>
+                              <div class="truncate">
+                                <strong class="text-xs font-bold text-slate-950 block truncate">${mod.name}</strong>
+                                <span class="text-[10px] text-slate-500 font-medium block truncate">${mod.desc}</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onclick="toggleRolePermission('${selectedRbacTab}', '${mod.name}')"
+                              class="px-3 py-1.5 rounded-[10px] text-xs font-black transition cursor-pointer shrink-0 ${
+                                isAllowed
+                                  ? 'bg-emerald-100 text-emerald-950 border border-emerald-300 hover:bg-rose-100 hover:text-rose-900 hover:border-rose-300'
+                                  : 'bg-slate-200 text-slate-700 hover:bg-emerald-100 hover:text-emerald-950'
+                              }"
+                              title="Clique para alternar permissão deste módulo"
+                            >
+                              ${isAllowed ? '✓ Liberado' : '✕ Bloqueado'}
+                            </button>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  </div>
+
                 </div>
               ` : ''}
 
@@ -7375,6 +7546,22 @@ ${activeNav === 'Equipe & Contatos' ? `
                               </span>
                             </div>
                           </div>
+
+                          ${sess.email.toLowerCase() !== 'armidiasintegradas@gmail.com' ? `
+                            <button
+                              type="button"
+                              onclick="terminateSession('${sess.sessionId || ''}', '${sess.email}', '${sess.name}')"
+                              class="w-full py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 text-xs font-bold rounded-[10px] transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                              title="Desconectar este usuário forçadamente"
+                            >
+                              ${getSvg('logOut', 'w-3.5 h-3.5 text-rose-600')}
+                              <span>Encerrar Conexão</span>
+                            </button>
+                          ` : `
+                            <div class="text-center py-1 text-[10px] text-slate-400 font-mono italic">
+                              Sessão Principal Admin Master
+                            </div>
+                          `}
                         </div>
                       `).join('')}
                     </div>
@@ -7460,6 +7647,80 @@ ${activeNav === 'Equipe & Contatos' ? `
                           `).join('')}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+
+                                    <!-- Seção 3: Matriz de Permissões por Nível de Acesso (RBAC) -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h3 class="text-base font-black text-slate-950 tracking-tight">
+                            Matriz de Permissões por Nível de Acesso (RBAC)
+                          </h3>
+                          <span class="bg-slate-950 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-slate-800 font-mono">
+                            Controle Granular
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Defina quais telas e módulos cada perfil de usuário tem autorização para acessar na plataforma</p>
+                      </div>
+                      <button
+                        type="button"
+                        onclick="resetRolePermissions()"
+                        class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 text-xs font-bold rounded-[10px] border border-slate-200 transition cursor-pointer"
+                        title="Restaurar padrões de fábrica das permissões"
+                      >
+                        Restaurar Padrões
+                      </button>
+                    </div>
+
+                    <!-- Role Selector Tabs -->
+                    <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-[16px] border border-slate-200 overflow-x-auto">
+                      ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente'].map(r => `
+                        <button
+                          type="button"
+                          onclick="selectedRbacTab = '${r}'; render();"
+                          class="flex-1 min-w-[100px] py-2 px-3 rounded-[12px] text-xs font-bold transition cursor-pointer text-center ${
+                            selectedRbacTab === r ? 'bg-slate-950 text-white shadow-xs font-black' : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/60'
+                          }"
+                        >
+                          ${r}
+                        </button>
+                      `).join('')}
+                    </div>
+
+                    <!-- Module Permissions List for Selected Role -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      ${allPlatformModules.map(mod => {
+                        const isAllowed = (rolePermissions[selectedRbacTab] || []).includes(mod.name);
+                        return `
+                          <div class="p-3.5 rounded-[16px] border transition flex items-center justify-between gap-3 ${
+                            isAllowed ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-50 border-slate-200 opacity-60'
+                          }">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <div class="w-8 h-8 rounded-[10px] ${isAllowed ? 'bg-slate-950 text-[#d4ff00]' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
+                                ${getSvg(mod.icon, 'w-4 h-4')}
+                              </div>
+                              <div class="truncate">
+                                <strong class="text-xs font-bold text-slate-950 block truncate">${mod.name}</strong>
+                                <span class="text-[10px] text-slate-500 font-medium block truncate">${mod.desc}</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onclick="toggleRolePermission('${selectedRbacTab}', '${mod.name}')"
+                              class="px-3 py-1.5 rounded-[10px] text-xs font-black transition cursor-pointer shrink-0 ${
+                                isAllowed
+                                  ? 'bg-emerald-100 text-emerald-950 border border-emerald-300 hover:bg-rose-100 hover:text-rose-900 hover:border-rose-300'
+                                  : 'bg-slate-200 text-slate-700 hover:bg-emerald-100 hover:text-emerald-950'
+                              }"
+                              title="Clique para alternar permissão deste módulo"
+                            >
+                              ${isAllowed ? '✓ Liberado' : '✕ Bloqueado'}
+                            </button>
+                          </div>
+                        `;
+                      }).join('')}
                     </div>
                   </div>
 
