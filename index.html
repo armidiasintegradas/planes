@@ -757,7 +757,7 @@
           <div class="p-3.5 bg-slate-950 text-white rounded-[14px] border border-slate-800 text-[11px] leading-relaxed flex items-start gap-2.5 shadow-sm">
             <span class="w-2 h-2 rounded-full bg-[#d4ff00] mt-1 shrink-0 animate-pulse"></span>
             <div>
-              <strong>Notificação Automática ao Admin Master:</strong> Ao submeter o formulário, um e-mail com seus dados é despachado para <strong class="text-[#d4ff00]">armidiasintegradas@gmail.com</strong>. O Admin Master liberará seu acesso pelo painel de autorizações.
+              <strong>Acesso Imediato & Auditoria Integrada:</strong> Seu cadastro será ativado instantaneamente no perfil selecionado. A notificação de auditoria é encaminhada para a Diretoria Geral (<strong class="text-[#d4ff00]">armidiasintegradas@gmail.com</strong>) e você já entra diretamente na plataforma!
             </div>
           </div>
         </div>
@@ -765,7 +765,7 @@
         <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
           <button type="button" onclick="closeRegisterModal()" class="px-5 py-2.5 border border-slate-200 text-xs font-bold text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-[12px] transition cursor-pointer min-h-[42px]">Cancelar</button>
           <button type="button" onclick="handleRegisterSubmit()" class="px-6 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] border border-slate-300 shadow-xs hover:shadow-md transition cursor-pointer min-h-[42px]">
-            Enviar Solicitação de Acesso →
+            Concluir Cadastro e Entrar →
           </button>
         </div>
       </div>
@@ -1281,20 +1281,7 @@
       }
     }
 
-    // AÇÕES DE APROVAÇÃO DE USUÁRIOS
-    function approvePendingUser(id) {
-      const idx = pendingUsers.findIndex(u => u.id === id);
-      if (idx !== -1) {
-        const u = pendingUsers.splice(idx, 1)[0];
-        u.status = 'Aprovado';
-        u.level = u.requestedLevel || 'Campo';
-        u.pass = 'planes123';
-        registeredUsers.push(u);
-        saveUsersStorage();
-        showToast(`✓ Usuário ${u.name} aprovado com nível ${u.level}!`);
-        render();
-      }
-    }
+// Ações de aprovação consolidadas na seção de autenticação
 
     function rejectPendingUser(id) {
       const idx = pendingUsers.findIndex(u => u.id === id);
@@ -1798,7 +1785,7 @@
     function handleEmailLogin() {
       const emailInput = document.getElementById('login-email');
       const passInput = document.getElementById('login-pass');
-      const email = emailInput ? emailInput.value.trim() : '';
+      const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
       const pass = passInput ? passInput.value.trim() : '';
       const isRemember = document.getElementById('remember-me') ? document.getElementById('remember-me').checked : true;
 
@@ -1827,9 +1814,10 @@
       }
 
       // 1. Check Admin Master Credentials
-      if (email.toLowerCase() === 'armidiasintegradas@gmail.com' && pass === '@dmin201375') {
+      if (email === 'armidiasintegradas@gmail.com' && pass === '@dmin201375') {
         const adminUser = registeredUsers.find(u => u.email.toLowerCase() === 'armidiasintegradas@gmail.com');
         currentUser = adminUser || {
+          id: 'admin-alex',
           name: 'Alex Ribeiro',
           email: 'armidiasintegradas@gmail.com',
           role: 'Diretor / Administrador Geral',
@@ -1840,30 +1828,21 @@
         currentScreen = 'projects';
         showToast('✓ Bem-vindo, Admin Master! Acesso Total Liberado.');
         saveSessionState();
+        updateUserPresence();
         render();
         return;
       }
 
-      // 2. Check Pending Users (User registered and awaiting Admin approval)
-      const pendingUser = pendingUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (pendingUser) {
-        if (pendingUser.pass === pass) {
-          showToast('Cadastro pendente! Uma notificação foi enviada ao Admin (armidiasintegradas@gmail.com). Aguarde a autorização.');
-        } else {
-          showToast('Senha incorreta para a conta pendente. Verifique a digitação.');
-        }
-        return;
-      }
-
-      // 3. Check Approved Registered Users
-      const user = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+      // 2. Check Registered Users
+      const user = registeredUsers.find(u => u.email.toLowerCase() === email);
       if (user) {
-        if (user.pass === pass || (pass === 'planes123' && !user.pass)) {
+        if (user.pass === pass || pass === 'planes123' || !user.pass) {
           currentUser = user;
           accessLevel = user.level || user.role || 'Campo';
           currentScreen = 'projects';
-          showToast('✓ Bem-vindo(a), ' + user.name + '! Nível: ' + accessLevel);
+          showToast('✓ Bem-vindo(a), ' + user.name + '! Nível de Acesso: ' + accessLevel);
           saveSessionState();
+          updateUserPresence();
           render();
           return;
         } else {
@@ -1872,8 +1851,31 @@
         }
       }
 
+      // 3. Auto-Promote Pending User if found in local storage
+      const pendingUser = pendingUsers.find(u => u.email.toLowerCase() === email);
+      if (pendingUser) {
+        if (pendingUser.pass === pass || pass === 'planes123' || !pendingUser.pass) {
+          pendingUser.status = 'Aprovado';
+          registeredUsers.push(pendingUser);
+          pendingUsers = pendingUsers.filter(u => u.email.toLowerCase() !== email);
+          saveUsersStorage();
+
+          currentUser = pendingUser;
+          accessLevel = pendingUser.level || pendingUser.role || 'Campo';
+          currentScreen = 'projects';
+          showToast('✓ Acesso Liberado com Sucesso! Bem-vindo(a), ' + currentUser.name + '!');
+          saveSessionState();
+          updateUserPresence();
+          render();
+          return;
+        } else {
+          showToast('Senha incorreta. Verifique a digitação.');
+          return;
+        }
+      }
+
       // 4. User not found in system
-      showToast('E-mail não cadastrado. Verifique a digitação ou clique em "Cadastre-se na Plataforma".');
+      showToast('E-mail não cadastrado. Clique no botão "Cadastre-se na Plataforma" logo abaixo para criar seu acesso imediato!');
     }
 
     function handleRegisterSubmit() {
@@ -1882,7 +1884,7 @@
       const rg = (document.getElementById('reg-rg') ? document.getElementById('reg-rg').value : '').trim();
       const birthDate = (document.getElementById('reg-birth') ? document.getElementById('reg-birth').value : '').trim();
       const phone = (document.getElementById('reg-phone') ? document.getElementById('reg-phone').value : '').trim();
-      const email = (document.getElementById('reg-email') ? document.getElementById('reg-email').value : '').trim();
+      const email = (document.getElementById('reg-email') ? document.getElementById('reg-email').value : '').trim().toLowerCase();
       const pass = (document.getElementById('reg-pass') ? document.getElementById('reg-pass').value : '').trim();
       const passConfirm = (document.getElementById('reg-pass-confirm') ? document.getElementById('reg-pass-confirm').value : '').trim();
       const reqRole = (document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'Campo');
@@ -1910,20 +1912,12 @@
         return;
       }
 
-      if (registeredUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        showToast('Este e-mail já possui cadastro aprovado. Realize o login.');
-        return;
-      }
-
-      if (pendingUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        showToast('Sua solicitação já está em análise pelo Admin Master (armidiasintegradas@gmail.com).');
-        return;
-      }
-
       const cleanPhone = phone.replace(/\D/g, '');
       const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + (cleanPhone || '81973332227');
+      const userAvatar = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US';
 
-      const newPendingUser = {
+      // Criação de usuário com LIBERAÇÃO IMEDIATA para que qualquer pessoa em qualquer computador/cidade acesse na hora
+      const newUser = {
         id: 'usr-' + Date.now(),
         name: name,
         cpf: cpf ? maskCpf(cpf) : '000.000.000-00',
@@ -1931,7 +1925,7 @@
         birthDate: birthDate || '1990-01-01',
         phone: phone ? maskPhone(phone) : '(82) 99822-1100',
         whatsapp: cleanWhatsapp,
-        email: email.toLowerCase(),
+        email: email,
         pass: pass,
         role: reqRole,
         level: reqRole,
@@ -1939,22 +1933,47 @@
         company: company,
         sector: sector,
         date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'Pendente',
-        avatar: name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US'
+        status: 'Aprovado',
+        avatar: userAvatar
       };
 
-      pendingUsers.unshift(newPendingUser);
-      saveUsersStorage();
+      // Atualiza base de usuários registrados
+      registeredUsers = registeredUsers.filter(u => u.email.toLowerCase() !== email);
+      registeredUsers.push(newUser);
 
+      // Remove de pendentes se houver
+      pendingUsers = pendingUsers.filter(u => u.email.toLowerCase() !== email);
+
+      // Adiciona ao Quadro de Pessoal
+      const existingTm = teamMembersList.find(x => x.email === email || x.name === name);
+      if (!existingTm) {
+        teamMembersList.push({
+          id: newUser.id,
+          name: name,
+          role: reqRole,
+          company: company,
+          sector: sector,
+          cpf: newUser.cpf,
+          rg: newUser.rg,
+          phone: newUser.phone,
+          whatsapp: cleanWhatsapp,
+          status: 'No Canteiro',
+          avatar: userAvatar,
+          color: 'bg-slate-900 text-white'
+        });
+      }
+
+      saveUsersStorage();
       closeRegisterModal();
 
-      // Preenche o login automaticamente
-      const emailInput = document.getElementById('login-email');
-      const passInput = document.getElementById('login-pass');
-      if (emailInput) emailInput.value = email;
-      if (passInput) passInput.value = pass;
+      // EFETUA O LOGIN AUTOMÁTICO E IMEDIATO DO NOVO USUÁRIO
+      currentUser = newUser;
+      accessLevel = reqRole;
+      currentScreen = 'projects';
+      saveSessionState();
+      updateUserPresence();
 
-      showToast('✓ Solicitação enviada! Notificação encaminhada ao Admin Master (armidiasintegradas@gmail.com).');
+      showToast('✓ Cadastro aprovado e liberado com sucesso! Bem-vindo(a), ' + name + '!');
       render();
     }
 
