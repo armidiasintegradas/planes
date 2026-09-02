@@ -38,6 +38,12 @@
       line-height: 0.95;
       font-feature-settings: 'tnum' on, 'zero' on;
     }
+    .font-bubble-number {
+      font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+    }
     .font-nav-label {
       font-family: 'General Sans', 'Plus Jakarta Sans', sans-serif;
       font-weight: 600;
@@ -59,6 +65,26 @@
       border: 1px solid rgba(190, 242, 0, 0.6);
       box-shadow: 0 14px 32px -8px rgba(190, 242, 0, 0.45);
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .speech-bubble {
+      position: relative;
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 1rem;
+      padding: 0.5rem 0.85rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #0f172a transparent;
+      display: block;
+      width: 0;
     }
     .nav-pill-active {
       background: #ffffff;
@@ -291,12 +317,14 @@
     const getSvg = (name, cls = 'w-4 h-4') => {
       const svgs = {
         home: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+        ruler: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/></svg>`,
+        target: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
         mic: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`,
-        layers: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 17 22 12"/></svg>`,
+        layers: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
         calendar: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
         zap: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
         checkCircle: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-        chart: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>`,
+        chart: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>`,
         box: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></svg>`,
         camera: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`,
         users: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
@@ -312,6 +340,8 @@
         checkSquare: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
         sparkles: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>`,
         mapPin: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+        barChart2: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+        trendingUp: `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
       };
       return svgs[name] || '';
     };
@@ -389,6 +419,7 @@
     let activeNav = 'Visão Geral';
     let selectedMonth = 'Jun';
     let chartMetric = 'Físico';
+    let chartViewType = 'barras';
     let lbSector = 'ARENA';
     let mpHorizon = 'MAI.JUN.JUL.AGO';
     let mpStatusFilter = 'Todos';
@@ -535,6 +566,11 @@
 
     function setMetric(m) {
       chartMetric = m;
+      render();
+    }
+
+    function setChartView(v) {
+      chartViewType = v;
       render();
     }
 
@@ -832,6 +868,7 @@
         const pacEl = document.getElementById('anim-pac');
         const valEl = document.getElementById('anim-validations');
         const spentEl = document.getElementById('anim-spent');
+        const graphRealEl = document.getElementById('anim-graph-real');
         const arenaBubble = document.getElementById('anim-arena-bubble');
         const aptsBubble = document.getElementById('anim-apts-bubble');
         const infraBubble = document.getElementById('anim-infra-bubble');
@@ -841,6 +878,7 @@
         if (pacEl) pacEl.innerText = Math.round(pacScore * ease) + '%';
         if (valEl) valEl.innerText = Math.round(validations.length * ease);
         if (spentEl) spentEl.innerText = 'R$ ' + (financialSpent * ease).toFixed(1) + 'M';
+        if (graphRealEl) graphRealEl.innerText = (physicalProgress * ease).toFixed(1) + '%';
         if (workersEl) workersEl.innerText = Math.round(workersCount * ease) + ' operários';
 
         if (arenaBubble) arenaBubble.innerText = Math.round(72 * ease) + '%';
@@ -854,6 +892,7 @@
           if (pacEl) pacEl.innerText = pacScore + '%';
           if (valEl) valEl.innerText = validations.length;
           if (spentEl) spentEl.innerText = 'R$ ' + financialSpent + 'M';
+          if (graphRealEl) graphRealEl.innerText = physicalProgress + '%';
           if (arenaBubble) arenaBubble.innerText = '72%';
           if (aptsBubble) aptsBubble.innerText = '58%';
           if (infraBubble) infraBubble.innerText = '45%';
@@ -868,6 +907,18 @@
         bars.forEach(b => {
           const target = b.getAttribute('data-height');
           if (target) b.style.height = target;
+        });
+
+        const targetBars = document.querySelectorAll('.anim-target-bar');
+        targetBars.forEach(b => {
+          const target = b.getAttribute('data-width');
+          if (target) b.style.width = target;
+        });
+
+        const bubbles = document.querySelectorAll('.anim-bubble');
+        bubbles.forEach(b => {
+          b.style.transform = 'scale(1)';
+          b.style.opacity = '1';
         });
       }, 50);
     }
@@ -1079,7 +1130,7 @@
         return;
       }
 
-      // SCREEN 3: DASHBOARD DO PROJETO COM TODAS AS ABAS RICAS RESTAURADAS + ASSISTENTE DE VOZ
+      // SCREEN 3: DASHBOARD DO PROJETO COM VISÃO GERAL COMPLETA RESTAURADA + ASSISTENTE DE VOZ
       app.innerHTML = `
         <div class="w-full min-h-screen flex flex-col justify-between">
           <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
@@ -1175,110 +1226,237 @@
 
             <div class="flex-1 flex flex-col gap-6">
               
-              <!-- VISÃO GERAL COM ANIMAÇÃO PROGRESSIVA -->
+              <!-- ========================================================================= -->
+              <!-- VISÃO GERAL COMPLETA ORIGINAL RESTAURADA (COM ANIMAÇÃO DE BARRAS/BOLHAS) -->
+              <!-- ========================================================================= -->
               ${activeNav === 'Visão Geral' ? `
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      ${getSvg('calendar', 'w-4 h-4 text-slate-900')}
-                      <span>Filtrar Período de Análise:</span>
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                    ${['Semana Atual', 'Lookahead (3 Semanas)', 'Mensal (Jun 26)', 'Trimestral (Q2/Q3)', 'Ciclo Completo'].map(p => `
-                      <button
-                        onclick="setPeriod('${p}')"
-                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${selectedPeriod === p ? 'bg-slate-950 text-white shadow-2xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}"
-                      >
-                        ${p}
-                      </button>
-                    `).join('')}
-                  </div>
-                </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 animate-card-fade">
-                  <div class="lime-bento-card p-5 flex flex-col justify-between min-h-[148px]">
-                    <div id="anim-progress" class="font-card-number text-[32px] text-slate-950 mb-1.5">0.0%</div>
-                    <span class="text-slate-900 font-bold text-xs">Avanço Físico Ponderado</span>
+                  
+                  <div class="lime-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-300/60">
+                    <div class="flex items-center justify-between">
+                      <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-slate-900 shadow-2xs border border-slate-200">
+                        ${getSvg('ruler', 'w-4 h-4 text-slate-900')}
+                      </div>
+                      <button onclick="setNav('Curva S & PAC')" class="w-9 h-9 rounded-full border border-slate-900/20 hover:bg-black/5 flex items-center justify-center text-slate-900 transition min-h-[36px]">
+                        ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-900')}
+                      </button>
+                    </div>
+                    <div>
+                      <div id="anim-progress" class="font-card-number text-[32px] text-slate-950 mb-1.5">0.0%</div>
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-900 font-bold">Avanço Físico Ponderado</span>
+                        <span class="text-rose-900 font-black text-[11px]">Meta: 66.4%</span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-200">
-                    <div id="anim-pac" class="font-card-number text-[32px] text-slate-950 mb-1.5">0%</div>
-                    <span class="text-slate-600 font-bold text-xs">Aderência ao PAC</span>
+
+                  <div class="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between">
+                      <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800">
+                        ${getSvg('target', 'w-4 h-4 text-slate-800')}
+                      </div>
+                      <button onclick="setNav('Curva S & PAC')" class="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-800 transition min-h-[36px]">
+                        ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-800')}
+                      </button>
+                    </div>
+                    <div>
+                      <div class="flex items-baseline gap-1.5 mb-1.5">
+                        <span id="anim-pac" class="font-card-number text-[32px] text-slate-950">0%</span>
+                        <span class="text-slate-600 text-[12px] font-semibold">18 de 23 itens</span>
+                      </div>
+                      <span class="text-slate-600 text-[12px] font-bold">Aderência ao PAC (${selectedPeriod.split(' ')[0]})</span>
+                    </div>
                   </div>
-                  <div class="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-200">
-                    <div id="anim-validations" class="font-card-number text-[32px] text-slate-950 mb-1.5">0</div>
-                    <span class="text-slate-600 font-bold text-xs">Fila de Engenharia</span>
+
+                  <div class="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between">
+                      <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800">
+                        ${getSvg('checkCircle', 'w-4 h-4 text-slate-800')}
+                      </div>
+                      <button onclick="setNav('Fila de Validações')" class="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-800 transition min-h-[36px]">
+                        ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-800')}
+                      </button>
+                    </div>
+                    <div>
+                      <div class="flex items-baseline gap-1.5 mb-1.5">
+                        <span id="anim-validations" class="font-card-number text-[32px] text-slate-950">0</span>
+                        <span class="text-slate-600 text-[12px] font-semibold">pendentes</span>
+                      </div>
+                      <span class="text-slate-600 text-[12px] font-bold">Fila de Engenharia (Aprovações)</span>
+                    </div>
                   </div>
-                  <div class="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-200">
-                    <div id="anim-spent" class="font-card-number text-[32px] text-slate-950 mb-1.5">R$ 0.0M</div>
-                    <span class="text-slate-600 font-bold text-xs">Custo Medido</span>
+
+                  <div class="white-bento-card p-5 flex flex-col justify-between min-h-[148px] border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between">
+                      <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800">
+                        ${getSvg('chart', 'w-4 h-4 text-slate-800')}
+                      </div>
+                      <button onclick="setNav('Curva S & PAC')" class="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-800 transition min-h-[36px]">
+                        ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-800')}
+                      </button>
+                    </div>
+                    <div>
+                      <div id="anim-spent" class="font-card-number text-[32px] text-slate-950 mb-1.5">R$ 0.0M</div>
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-bold">Custo Medido Real</span>
+                        <span class="text-slate-500 font-bold text-[11px]">Base: R$ 24,0M</span>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div class="lg:col-span-2 white-bento-card p-6 border border-slate-200 shadow-xs">
-                    <div class="flex justify-between items-center mb-6">
-                      <div>
-                        <h3 class="text-base font-bold text-slate-950">Evolução Físico-Financeira Acumulada</h3>
-                        <span class="text-xs text-slate-500 font-medium">Paridade entre previsto da Linha de Balanço e realizado em campo</span>
-                      </div>
-                      <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                        <button onclick="setMetric('Físico')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${chartMetric === 'Físico' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600'}">Físico (%)</button>
-                        <button onclick="setMetric('Financeiro')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${chartMetric === 'Financeiro' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600'}">Financeiro (R$)</button>
-                      </div>
-                    </div>
-
-                    <div class="h-56 flex items-end justify-between gap-3 pt-6 border-b border-slate-100 pb-2">
-                      ${barChartData.map(d => `
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end cursor-pointer group" onclick="setMonth('${d.month}')">
-                          <div class="w-full flex items-end justify-center gap-1.5 h-full">
-                            <div class="w-3.5 sm:w-5 bg-slate-200 rounded-t-md anim-bar" data-height="${d.plan * 1.8}px" style="height: 0px; transition: height 1s ease-out;"></div>
-                            <div class="w-3.5 sm:w-5 bg-slate-950 rounded-t-md anim-bar relative group-hover:bg-[#d4ff00] transition-colors" data-height="${d.real * 1.8}px" style="height: 0px; transition: height 1s ease-out;"></div>
-                          </div>
-                          <span class="text-xs font-bold ${selectedMonth === d.month ? 'text-slate-950 font-black' : 'text-slate-500'}">${d.month}</span>
-                        </div>
-                      `).join('')}
-                    </div>
-
-                    <div class="flex justify-between items-center mt-4 text-xs text-slate-600 font-medium">
-                      <div class="flex items-center gap-4">
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-slate-200 rounded-xs"></span> Previsto LB</span>
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-slate-950 rounded-xs"></span> Real Medido</span>
-                      </div>
-                      <span class="text-slate-900 font-bold">Mês Ativo: ${selectedMonth} 2026</span>
-                    </div>
-                  </div>
-
-                  <div class="white-bento-card p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  
+                  <!-- Main Chart Bento Card -->
+                  <div class="lg:col-span-7 xl:col-span-8 white-bento-card p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <h3 class="text-base font-bold text-slate-950 mb-1">Setores da Linha de Balanço</h3>
-                      <span class="text-xs text-slate-500 font-medium">Aderência por frente operacional</span>
-                      
-                      <div class="mt-4 space-y-3">
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="setLbSec('ARENA'); setNav('Linha de Balanço');">
-                          <span class="text-xs font-bold text-slate-900">Arena & Quadras</span>
-                          <span id="anim-arena-bubble" class="px-2 py-0.5 bg-[#d4ff00] text-slate-950 font-black text-xs rounded-full border border-slate-300">0%</span>
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                          <h3 class="text-[17px] font-bold text-slate-950 tracking-tight">Avanço Físico vs Financeiro Acumulado</h3>
+                          <p class="text-xs text-slate-600 font-medium">Comparativo entre Previsto na Linha de Balanço e Real Medido em Campo</p>
                         </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="setLbSec('BLOCO APTOS'); setNav('Linha de Balanço');">
-                          <span class="text-xs font-bold text-slate-900">Bloco de Apartamentos</span>
-                          <span id="anim-apts-bubble" class="px-2 py-0.5 bg-slate-200 text-slate-900 font-bold text-xs rounded-full">0%</span>
+                        <div class="flex items-center gap-2">
+                          <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <button onclick="setChartView('barras')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${chartViewType === 'barras' ? 'bg-white text-slate-950 shadow-2xs' : 'text-slate-600'}">
+                              ${getSvg('barChart2', 'w-3.5 h-3.5')}
+                            </button>
+                            <button onclick="setChartView('linhas')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${chartViewType === 'linhas' ? 'bg-white text-slate-950 shadow-2xs' : 'text-slate-600'}">
+                              ${getSvg('trendingUp', 'w-3.5 h-3.5')}
+                            </button>
+                          </div>
                         </div>
-                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="setLbSec('INFRA'); setNav('Linha de Balanço');">
-                          <span class="text-xs font-bold text-slate-900">Infraestrutura Viária</span>
-                          <span id="anim-infra-bubble" class="px-2 py-0.5 bg-slate-200 text-slate-900 font-bold text-xs rounded-full">0%</span>
+                      </div>
+
+                      <div class="flex flex-wrap items-center justify-between gap-4 mb-6 pt-2 border-t border-slate-100">
+                        <div class="flex items-center gap-5 text-xs">
+                          <span class="flex items-center gap-1.5 font-bold text-slate-800">
+                            <span class="w-3.5 h-3.5 rounded-sm bg-[#8eb3ff]"></span> Previsto LB (16.03)
+                          </span>
+                          <span class="flex items-center gap-1.5 font-bold text-slate-950">
+                            <span class="w-3.5 h-3.5 rounded-sm bg-[#d4ff00] border border-slate-400/40"></span> Real Medido (61.8%)
+                          </span>
+                        </div>
+                        <div class="text-xs text-slate-600 font-medium">
+                          Mês selecionado: <strong class="text-slate-950 font-bold">${selectedMonth} 2026</strong>
                         </div>
                       </div>
                     </div>
 
-                    <div class="pt-4 border-t border-slate-100 flex justify-between items-center text-xs">
-                      <span class="text-slate-500 font-semibold">Efetivo de Campo:</span>
-                      <strong id="anim-workers" class="text-slate-950 font-bold">0 operários</strong>
+                    <div class="relative w-full pt-4">
+                      <div class="absolute inset-0 flex flex-col justify-between text-[10px] text-slate-400 font-mono pointer-events-none pb-8">
+                        <div class="border-b border-slate-200 pb-1">100%</div>
+                        <div class="border-b border-slate-200 pb-1">75%</div>
+                        <div class="border-b border-slate-200 pb-1">50%</div>
+                        <div class="border-b border-slate-200 pb-1">25%</div>
+                        <div>10%</div>
+                      </div>
+
+                      ${chartViewType === 'barras' ? `
+                        <div class="relative z-10 flex justify-between items-end h-44 px-4 sm:px-8 overflow-x-auto">
+                          ${barChartData.map(item => `
+                            <div onclick="setMonth('${item.month}')" class="flex flex-col items-center gap-2 group cursor-pointer">
+                              <div class="flex items-end gap-1.5 h-36 relative">
+                                ${selectedMonth === item.month ? `
+                                  <div class="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                                    <div class="speech-bubble text-[12px] font-extrabold text-center">
+                                      <div>${item.value} (${item.real}%)</div>
+                                      <div class="text-[9.5px] text-slate-300 font-normal">${item.month} 2026 · Desvio: ${item.deviation}</div>
+                                    </div>
+                                    <div class="w-2 h-2 rounded-full bg-slate-950 mx-auto -mt-1 ring-2 ring-white"></div>
+                                  </div>
+                                ` : ''}
+
+                                <div data-height="${item.plan * 0.9}%" style="height: 0%;" class="anim-bar w-4 sm:w-5 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
+                                <div data-height="${item.real * 0.9}%" style="height: 0%;" class="anim-bar w-4 sm:w-5 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out"></div>
+                              </div>
+                              <span class="text-[12px] transition ${selectedMonth === item.month ? 'font-black text-slate-950' : 'text-slate-600 font-semibold'}">
+                                ${item.month}
+                              </span>
+                            </div>
+                          `).join('')}
+                        </div>
+                      ` : `
+                        <div class="relative z-10 w-full h-44 px-4 sm:px-8 flex flex-col justify-between">
+                          <svg viewBox="0 0 500 140" class="w-full h-36 overflow-visible">
+                            <path d="M 20,110 C 100,90 200,60 300,35 C 400,20 480,10 480,10" fill="none" stroke="#8eb3ff" stroke-width="3.5" stroke-linecap="round" />
+                            <path d="M 20,115 C 100,98 200,68 300,42" fill="none" stroke="#d4ff00" stroke-width="4.5" stroke-linecap="round" />
+                            <circle cx="300" cy="42" r="6" fill="#111827" stroke="#ffffff" stroke-width="2" />
+                          </svg>
+                          <div class="flex justify-between text-[11px] text-slate-600 font-bold pt-1">
+                            <span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span>
+                          </div>
+                        </div>
+                      `}
                     </div>
                   </div>
+
+                  <!-- Frentes de Obra Card com Bolhas Animadas -->
+                  <div class="lg:col-span-5 xl:col-span-4 white-bento-card p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800">
+                            ${getSvg('mapPin', 'w-4 h-4')}
+                          </div>
+                          <h3 class="text-[17px] font-bold text-slate-950 tracking-tight">Frentes de Obra</h3>
+                        </div>
+                        <span class="text-xs text-slate-600 font-bold">${selectedProject.title.split('—')[0]}</span>
+                      </div>
+
+                      <div class="relative h-44 my-4 flex items-center justify-center">
+                        <div onclick="setLbSec('ARENA'); setNav('Linha de Balanço');" class="anim-bubble absolute left-6 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-all duration-700 cursor-pointer border border-slate-300" style="transform: scale(0.3); opacity: 0;">
+                          <span id="anim-arena-bubble" class="font-bubble-number text-[27px] text-slate-950">0%</span>
+                          <span class="text-[11.5px] font-bold text-slate-900 mt-0.5">Arena Shows</span>
+                        </div>
+
+                        <div onclick="setLbSec('BLOCO APTOS'); setNav('Linha de Balanço');" class="anim-bubble absolute right-6 top-8 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-all duration-700 delay-100 cursor-pointer border border-slate-300" style="transform: scale(0.3); opacity: 0;">
+                          <span id="anim-apts-bubble" class="font-bubble-number text-[23px] text-slate-950">0%</span>
+                          <span class="text-[11.5px] font-bold text-slate-900 mt-0.5">Bloco Apts</span>
+                        </div>
+
+                        <div onclick="setLbSec('INFRA'); setNav('Linha de Balanço');" class="anim-bubble absolute left-24 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-300 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-all duration-700 delay-200 cursor-pointer" style="transform: scale(0.3); opacity: 0;">
+                          <span id="anim-infra-bubble" class="font-bubble-number text-[15px] text-slate-900 font-bold">0%</span>
+                          <span class="text-[10px] font-bold text-slate-700 mt-0.5">Infraestrutura</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="space-y-3.5 pt-4 border-t border-slate-200">
+                      <div>
+                        <div class="flex justify-between text-[12.5px] mb-1.5 font-bold">
+                          <span class="text-slate-700">Arena de Shows Target</span>
+                          <span class="text-slate-950">92%</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div data-width="92%" style="width: 0%;" class="anim-target-bar h-full bg-[#d4ff00] rounded-full transition-all duration-1000 ease-out"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="flex justify-between text-[12.5px] mb-1.5 font-bold">
+                          <span class="text-slate-700">Bloco Apartamentos Target</span>
+                          <span class="text-slate-950">67%</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div data-width="67%" style="width: 0%;" class="anim-target-bar h-full bg-[#8eb3ff] rounded-full transition-all duration-1000 ease-out"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="flex justify-between text-[12.5px] mb-1.5 font-bold">
+                          <span class="text-slate-700">Área da Piscina Target</span>
+                          <span class="text-slate-950">54%</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div data-width="54%" style="width: 0%;" class="anim-target-bar h-full bg-[#e5e2dc] rounded-full transition-all duration-1000 ease-out"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               ` : ''}
 
-              <!-- PÁGINA REFINADA: ASSISTENTE DE VOZ (EXCLUSIVO PERFIL ENGENHARIA) -->
+              <!-- PÁGINA REFINADA: ASSISTENTE DE VOZ (EXCLUSIVO ENGENHARIA) -->
               ${activeNav === 'Assistente de Voz' && isEngOrAdmin ? `
                 <div class="space-y-6 animate-card-fade">
                   <div class="white-bento-card p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1300,7 +1478,6 @@
                     </div>
                   </div>
 
-                  <!-- Hero Bento Card: Microfone Central & Transcrição -->
                   <div class="white-bento-card p-6 sm:p-8 border border-slate-200 shadow-xs flex flex-col items-center text-center relative overflow-hidden">
                     <div class="relative my-4 flex flex-col items-center">
                       ${isListening ? `
@@ -1341,7 +1518,6 @@
                       </div>
                     ` : ''}
 
-                    <!-- Pílulas Minimalistas de Sugestões de Comandos (Sem Emojis, com Ícones SVG) -->
                     <div class="w-full max-w-4xl pt-3 border-t border-slate-100 mt-2">
                       <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-3">Comandos Rápidos Recomendados:</span>
                       <div class="flex flex-wrap items-center justify-center gap-2">
@@ -1384,7 +1560,6 @@
                     </div>
                   </div>
 
-                  <!-- 3 Colunas Bento Grid: Calendário, Lembretes & Tarefas -->
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="white-bento-card p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
                       <div>
@@ -1483,7 +1658,6 @@
                     </div>
                   </div>
 
-                  <!-- Log de Interações e Respostas Faladas -->
                   <div class="white-bento-card p-6 border border-slate-200 shadow-xs">
                     <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                       <div class="flex items-center gap-2">
