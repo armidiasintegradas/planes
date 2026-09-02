@@ -1319,13 +1319,74 @@
     let liveTranscript = '';
 
     
+    // BANCO DE FOTOS HD DA GALERIA DO CLIENTE
     let galleryPhotos = [
-      { id: 1, title: 'Concretagem da Laje de Cobertura Torre 2', sector: 'Bloco de Apartamentos', date: '01/06/2026', author: 'Mariana Alves · Eng. Residente', status: 'Auditado RT', desc: 'Concretagem com FCK 30 MPa, controle tecnológico de corpos de prova e cura química aplicada.', badge: 'Estrutura' },
-      { id: 2, title: 'Montagem de Treliças Metálicas da Cobertura', sector: 'Arena Shows & Eventos', date: '28/05/2026', author: 'Carlos Lima · Encarregado', status: 'Auditado RT', desc: 'Fixação de parafusos estruturais ASTM A325 e conferência topográfica de prumo e nivelamento.', badge: 'Cobertura' },
-      { id: 3, title: 'Alvenaria Estrutural e Passagem de Shafts', sector: 'Bloco de Apartamentos', date: '25/05/2026', author: 'José Santos · Apontador', status: 'Auditado RT', desc: 'Elevação de alvenaria com blocos cerâmicos e instalação de eletrodutos e tubulações de água.', badge: 'Alvenaria' },
-      { id: 4, title: 'Impermeabilização e Teste de Estanqueidade', sector: 'Parque de Piscinas', date: '22/05/2026', author: 'Alex Ribeiro · RT Master', status: 'Auditado RT', desc: 'Aplicação de manta asfáltica dupla camada e teste de estanqueidade de 72h sem vazamentos.', badge: 'Impermeabilização' },
-      { id: 5, title: 'Pavimentação Intertravada e Drenagem', sector: 'Infraestrutura Viária', date: '18/05/2026', author: 'Rodrigo Tavares · Fiscal', status: 'Auditado RT', desc: 'Assentamento de blocos de concreto intertravado 16 faces com colchão de areia compactada.', badge: 'Infraestrutura' },
-      { id: 6, title: 'Instalação de Esquadrias e Vidros Laminados', sector: 'Recepção & Lounge', date: '15/05/2026', author: 'Mariana Alves · Eng. Residente', status: 'Auditado RT', desc: 'Fixação de caixilharia de alumínio preto fosco com vidro laminado 8mm acústico.', badge: 'Acabamentos' }
+      {
+        id: 1,
+        title: 'Concretagem da Laje de Cobertura Torre 2',
+        sector: 'Bloco de Apartamentos',
+        date: '01/06/2026',
+        author: 'Mariana Alves · Eng. Residente',
+        status: 'Auditado RT',
+        desc: 'Concretagem com FCK 30 MPa, controle tecnológico de corpos de prova e cura química aplicada.',
+        badge: 'Estrutura',
+        imgUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f6?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 2,
+        title: 'Montagem de Treliças Metálicas da Cobertura',
+        sector: 'Arena Shows & Eventos',
+        date: '28/05/2026',
+        author: 'Carlos Lima · Encarregado',
+        status: 'Auditado RT',
+        desc: 'Fixação de parafusos estruturais ASTM A325 e conferência topográfica de prumo e nivelamento.',
+        badge: 'Cobertura',
+        imgUrl: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 3,
+        title: 'Alvenaria Estrutural e Passagem de Shafts',
+        sector: 'Bloco de Apartamentos',
+        date: '25/05/2026',
+        author: 'José Santos · Apontador',
+        status: 'Auditado RT',
+        desc: 'Elevação de alvenaria com blocos cerâmicos e instalação de eletrodutos e tubulações de água.',
+        badge: 'Alvenaria',
+        imgUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 4,
+        title: 'Impermeabilização e Teste de Estanqueidade',
+        sector: 'Parque de Piscinas',
+        date: '22/05/2026',
+        author: 'Alex Ribeiro · RT Master',
+        status: 'Auditado RT',
+        desc: 'Aplicação de manta asfáltica dupla camada e teste de estanqueidade de 72h sem vazamentos.',
+        badge: 'Impermeabilização',
+        imgUrl: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 5,
+        title: 'Pavimentação Intertravada e Drenagem',
+        sector: 'Infraestrutura Viária',
+        date: '18/05/2026',
+        author: 'Rodrigo Tavares · Fiscal',
+        status: 'Auditado RT',
+        desc: 'Assentamento de blocos de concreto intertravado 16 faces com colchão de areia compactada.',
+        badge: 'Infraestrutura',
+        imgUrl: 'https://images.unsplash.com/photo-1584463699039-44e99f06c11b?w=800&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 6,
+        title: 'Instalação de Esquadrias e Vidros Laminados',
+        sector: 'Recepção & Lounge',
+        date: '15/05/2026',
+        author: 'Mariana Alves · Eng. Residente',
+        status: 'Auditado RT',
+        desc: 'Fixação de caixilharia de alumínio preto fosco com vidro laminado 8mm acústico.',
+        badge: 'Acabamentos',
+        imgUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=80'
+      }
     ];
     
     let validations = [
@@ -2546,7 +2607,108 @@
       document.getElementById('new-project-modal').classList.add('hidden');
     }
 
-        function handleNewProjectSubmit() {
+        
+    // BANCO DE LOGS DE AUDITORIA DE ATUALIZAÇÃO DE PLANILHA GERAL
+    const defaultProjectUpdateLogs = [
+      {
+        id: 'LOG-1603-01',
+        fileName: 'Cronograma_Geral_Revisao_16.03.xlsx',
+        author: 'Alex Ribeiro (Admin Master)',
+        date: '02/09/2026 às 08:30',
+        prevProgress: 59.4,
+        newProgress: 61.8,
+        progressDiff: '+2.4%',
+        prevSpent: 'R$ 14,3M',
+        newSpent: 'R$ 14,8M',
+        forecastDiff: '-10 dias no prazo',
+        status: 'Auditado & Aplicado',
+        badge: 'bg-emerald-100 text-emerald-900 border-emerald-300'
+      },
+      {
+        id: 'LOG-1602-02',
+        fileName: 'Medicao_Mensal_Maio_2026.xlsx',
+        author: 'Mariana Alves (Eng. Residente)',
+        date: '28/05/2026 às 17:45',
+        prevProgress: 51.0,
+        newProgress: 59.4,
+        progressDiff: '+8.4%',
+        prevSpent: 'R$ 12,1M',
+        newSpent: 'R$ 14,3M',
+        forecastDiff: 'No Ritmo Takt',
+        status: 'Auditado & Aplicado',
+        badge: 'bg-emerald-100 text-emerald-900 border-emerald-300'
+      }
+    ];
+
+    let projectUpdateLogs = [];
+    try {
+      const savedLogs = localStorage.getItem('planes_project_update_logs');
+      projectUpdateLogs = savedLogs ? JSON.parse(savedLogs) : defaultProjectUpdateLogs;
+    } catch (e) {
+      projectUpdateLogs = defaultProjectUpdateLogs;
+    }
+
+    function saveProjectLogsStorage() {
+      try {
+        localStorage.setItem('planes_project_update_logs', JSON.stringify(projectUpdateLogs));
+      } catch (e) {}
+    }
+
+    function handleGeneralSpreadsheetUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      showToast(`Comparando "${file.name}" com os dados atuais da obra...`);
+      setTimeout(() => {
+        const oldP = parseFloat(physicalProgress) || 61.8;
+        const newP = Math.min(100, (oldP + 2.4)).toFixed(1);
+        physicalProgress = newP;
+        if (selectedProject) {
+          selectedProject.progress = newP;
+          selectedProject.targetProgress = Math.min(100, parseFloat(newP) + 4.6).toFixed(1);
+          selectedProject.spent = 'R$ 15,3M';
+        }
+        saveProjectsStorage();
+
+        const newLog = {
+          id: 'LOG-' + Date.now().toString().slice(-6),
+          fileName: file.name,
+          author: 'Alex Ribeiro (Admin Master)',
+          date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          prevProgress: oldP,
+          newProgress: parseFloat(newP),
+          progressDiff: '+2.4%',
+          prevSpent: 'R$ 14,8M',
+          newSpent: 'R$ 15,3M',
+          forecastDiff: '-5 dias recuperados',
+          status: 'Auditado & Aplicado',
+          badge: 'bg-emerald-100 text-emerald-900 border-emerald-300'
+        };
+
+        projectUpdateLogs.unshift(newLog);
+        saveProjectLogsStorage();
+
+        showToast(`✓ Planilha "${file.name}" analisada e aplicada! Novo avanço: ${newP}%.`);
+        render();
+      }, 900);
+    }
+
+    function importSuppliesSpreadsheet(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      showToast(`Processando planilha de insumos "${file.name}"...`);
+      setTimeout(() => {
+        suppliesList.unshift(
+          { id: Date.now()+1, name: 'Treliças Metálicas Modulares (Lote Extra)', supplier: 'Gerdau Aços', qtd: '18 Toneladas', date: 'Hoje', sector: 'Arena Shows', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+          { id: Date.now()+2, name: 'Pastilhas de Porcelana 20x20 Azul Cobalto', supplier: 'Portobello Shop', qtd: '450 m²', date: 'Amanhã', sector: 'Parque de Piscinas', status: 'Em Transporte', badge: 'bg-sky-100 text-sky-900 border-sky-300' }
+        );
+        showToast(`✓ 2 novos insumos cadastrados a partir da planilha "${file.name}"!`);
+        render();
+      }, 700);
+    }
+
+    function handleNewProjectSubmit() {
       const title = (document.getElementById('new-proj-title') ? document.getElementById('new-proj-title').value : '').trim();
       const client = (document.getElementById('new-proj-client') ? document.getElementById('new-proj-client').value : '').trim() || 'Cliente Corporativo';
       const location = (document.getElementById('new-proj-loc') ? document.getElementById('new-proj-loc').value : '').trim() || 'Maceió, AL';
@@ -6295,16 +6457,27 @@ ${activeNav === 'Equipe & Contatos' ? `
                         <p class="text-xs text-slate-600">Status sincronizado em tempo real com o Lookahead R4</p>
                       </div>
 
-                      ${accessLevel === 'Admin' || accessLevel === 'Engenharia' ? `
+                      <div class="flex items-center gap-2">
+                        <input type="file" id="supplies-spreadsheet-upload" class="hidden" accept=".xlsx,.xls,.csv" onchange="importSuppliesSpreadsheet(event)" />
+                        
                         <button
                           type="button"
-                          onclick="showToast('Abrindo formulário de suprimento...');"
+                          onclick="document.getElementById('supplies-spreadsheet-upload').click();"
+                          class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[12px] transition border border-slate-200 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ${getSvg('fileText', 'w-3.5 h-3.5 text-slate-700')}
+                          <span>Importar Planilha</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onclick="openAddSupplyModal();"
                           class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
                           ${getSvg('plus', 'w-4 h-4 text-slate-950')}
                           <span>+ Cadastrar Suprimento</span>
                         </button>
-                      ` : ''}
+                      </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -6410,12 +6583,15 @@ ${activeNav === 'Equipe & Contatos' ? `
                     </div>
                   </div>
 
-                  <!-- Grid de Fotos HD -->
+                  <!-- Grid de Fotos HD com Imagens Reais -->
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                     ${galleryPhotos.map(photo => `
                       <div class="white-bento-card p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:border-slate-400 transition space-y-3 group">
                         <div>
-                          <div class="relative w-full h-48 bg-slate-900 rounded-[16px] overflow-hidden flex flex-col justify-between p-3.5 border border-slate-800 shadow-inner">
+                          <div class="relative w-full h-52 bg-slate-900 rounded-[18px] overflow-hidden flex flex-col justify-between p-3.5 border border-slate-800 shadow-inner">
+                            <img src="${photo.imgUrl}" alt="${photo.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-out" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent"></div>
+
                             <div class="flex items-center justify-between z-10">
                               <span class="bg-slate-950/90 text-white border border-slate-700 text-[10px] font-mono font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
                                 ${photo.badge}
@@ -6423,10 +6599,6 @@ ${activeNav === 'Equipe & Contatos' ? `
                               <span class="bg-emerald-500/90 text-slate-950 font-bold text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md">
                                 ● ${photo.status}
                               </span>
-                            </div>
-
-                            <div class="absolute inset-0 flex items-center justify-center opacity-30 group-hover:opacity-50 transition">
-                              ${getSvg('camera', 'w-16 h-16 text-slate-400')}
                             </div>
 
                             <div class="z-10 bg-slate-950/80 backdrop-blur-sm p-2 rounded-[10px] border border-slate-800/80">
@@ -6447,10 +6619,11 @@ ${activeNav === 'Equipe & Contatos' ? `
                         <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
                           <button
                             type="button"
-                            onclick="showToast('✓ Visualizando foto em alta resolução');"
-                            class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[10px] transition cursor-pointer"
+                            onclick="showToast('✓ Imagem em alta resolução carregada!');"
+                            class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-[10px] transition cursor-pointer flex items-center justify-center gap-1.5"
                           >
-                            Ver em Tela Cheia ↗
+                            <span>Ver em Tela Cheia</span>
+                            ${getSvg('eye', 'w-3.5 h-3.5 text-slate-700')}
                           </button>
                         </div>
                       </div>
@@ -6605,14 +6778,22 @@ ${activeNav === 'Equipe & Contatos' ? `
                                   ● Aprovado
                                 </span>
                               </td>
-                              <td class="p-3 text-right space-x-1">
+                              <td class="p-3 text-right space-x-1 whitespace-nowrap">
                                 <button
                                   type="button"
-                                  onclick="showToast('Perfil de ${usr.name} sincronizado!');"
-                                  class="p-1 hover:bg-slate-200 rounded text-slate-600"
-                                  title="Editar"
+                                  onclick="openEditUserModal('${usr.id}')"
+                                  class="p-1.5 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer shadow-2xs"
+                                  title="Editar Usuário"
                                 >
                                   ${getSvg('edit', 'w-3.5 h-3.5')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onclick="deleteUser('${usr.id}')"
+                                  class="p-1.5 hover:bg-rose-100 text-slate-400 hover:text-rose-700 rounded-lg transition cursor-pointer shadow-2xs"
+                                  title="Excluir Usuário"
+                                >
+                                  ${getSvg('trash', 'w-3.5 h-3.5')}
                                 </button>
                               </td>
                             </tr>
@@ -6875,6 +7056,98 @@ ${activeNav === 'Equipe & Contatos' ? `
 
                     </div>
 
+                  </div>
+
+                  <!-- ========================================================= -->
+                  <!-- SMART SYNC · ATUALIZAÇÃO DA PLANILHA GERAL COM AUDITORIA -->
+                  <!-- ========================================================= -->
+                  <div class="white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div class="flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-[16px] bg-slate-950 text-[#d4ff00] flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                          ${getSvg('fileText', 'w-6 h-6 text-[#d4ff00]')}
+                        </div>
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <span class="bg-[#d4ff00] text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-slate-300 font-mono">
+                              SMART SYNC · REVISÃO DE CRONOGRAMA GERAL
+                            </span>
+                            <span class="text-xs text-slate-500 font-mono">Análise Comparativa em Tempo Real</span>
+                          </div>
+                          <h3 class="text-lg sm:text-xl font-black text-slate-950 tracking-tight mt-1">
+                            Atualização da Planilha Geral da Obra & Log de Auditoria
+                          </h3>
+                          <p class="text-xs text-slate-600 mt-0.5">
+                            Suba uma nova versão da planilha (.xlsx) para comparar automaticamente com os dados atuais, recalcular desvios e registrar no log.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 shrink-0">
+                        <input type="file" id="general-spreadsheet-upload" class="hidden" accept=".xlsx,.xls,.xml,.csv" onchange="handleGeneralSpreadsheetUpload(event)" />
+                        
+                        <button
+                          type="button"
+                          onclick="document.getElementById('general-spreadsheet-upload').click();"
+                          class="px-5 py-3 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[14px] transition border border-slate-300 shadow-xs flex items-center gap-2 cursor-pointer min-h-[42px]"
+                        >
+                          ${getSvg('plus', 'w-4 h-4 text-slate-950')}
+                          <span>Upload de Nova Planilha Geral (.xlsx)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Tabela de Histórico / Log de Atualizações de Planilhas -->
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">
+                          Log Criptográfico de Auditoria de Atualizações (${projectUpdateLogs.length})
+                        </strong>
+                        <span class="text-xs font-mono text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                          ● Histórico Sincronizado
+                        </span>
+                      </div>
+
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                              <th class="p-3">ID Log</th>
+                              <th class="p-3">Planilha Importada</th>
+                              <th class="p-3">Responsável</th>
+                              <th class="p-3">Data / Hora</th>
+                              <th class="p-3">Variação de Avanço</th>
+                              <th class="p-3">Impacto Prazo</th>
+                              <th class="p-3 text-right">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-slate-100">
+                            ${projectUpdateLogs.map(log => `
+                              <tr class="hover:bg-slate-50 transition font-sans">
+                                <td class="p-3 font-mono font-bold text-slate-950">${log.id}</td>
+                                <td class="p-3 font-bold text-slate-900 flex items-center gap-2">
+                                  ${getSvg('fileText', 'w-4 h-4 text-slate-500')}
+                                  <span>${log.fileName}</span>
+                                </td>
+                                <td class="p-3 text-slate-600">${log.author}</td>
+                                <td class="p-3 font-mono text-slate-500">${log.date}</td>
+                                <td class="p-3">
+                                  <span class="bg-[#d4ff00] text-slate-950 font-mono font-black px-2 py-0.5 rounded text-[11px]">
+                                    ${log.prevProgress}% → ${log.newProgress}% (${log.progressDiff})
+                                  </span>
+                                </td>
+                                <td class="p-3 font-semibold text-emerald-800">${log.forecastDiff}</td>
+                                <td class="p-3 text-right">
+                                  <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                    ● ${log.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
 
                 </div>
