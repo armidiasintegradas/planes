@@ -253,6 +253,151 @@
       </div>
     </div>
 
+    
+    <!-- MODAL DE CADASTRO DE NOVO CONTATO (ADMIN) -->
+    <div id="add-member-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
+      <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-[10px] bg-emerald-600 text-white flex items-center justify-center font-black">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Novo Contato / Profissional</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Cadastre membros da equipe para o Quadro de Pessoal da Obra</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeAddMemberModal()" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Nome Completo *</label>
+            <input id="new-mem-name" type="text" placeholder="Ex: Lucas Ferreira de Souza" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Cargo / Função *</label>
+              <input id="new-mem-role" type="text" placeholder="Ex: Mestre de Obras / Encarregado" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp *</label>
+              <input id="new-mem-phone" type="text" placeholder="+55 (81) 97333-2227" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Empresa</label>
+              <input id="new-mem-company" type="text" value="Planes ENG" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Frente / Setor</label>
+              <input id="new-mem-sector" type="text" placeholder="Ex: Arena Shows / Geral" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">CPF</label>
+              <input id="new-mem-cpf" type="text" placeholder="000.000.000-00" oninput="this.value = maskCpf(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">RG</label>
+              <input id="new-mem-rg" type="text" placeholder="SSP-00.000.000" oninput="this.value = maskRg(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Status</label>
+              <select id="new-mem-status" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-bold">
+                <option value="No Canteiro" selected>No Canteiro</option>
+                <option value="Disponível">Disponível</option>
+                <option value="Em Trânsito">Em Trânsito</option>
+                <option value="Plantão">Plantão</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeAddMemberModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[10px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="handleAddMemberSubmit()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] border border-slate-300 shadow-xs">Salvar Contato</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO DE CONTATO (ADMIN) -->
+    <div id="edit-member-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
+      <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Editar Contato & Função</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Altere as informações cadastrais do profissional</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeEditMemberModal()" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Nome Completo *</label>
+            <input id="edit-mem-name" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Cargo / Função *</label>
+              <input id="edit-mem-role" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp *</label>
+              <input id="edit-mem-phone" type="text" oninput="this.value = maskPhone(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Empresa</label>
+              <input id="edit-mem-company" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Frente / Setor</label>
+              <input id="edit-mem-sector" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">CPF</label>
+              <input id="edit-mem-cpf" type="text" oninput="this.value = maskCpf(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">RG</label>
+              <input id="edit-mem-rg" type="text" oninput="this.value = maskRg(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Status</label>
+              <select id="edit-mem-status" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-bold">
+                <option value="No Canteiro">No Canteiro</option>
+                <option value="Disponível">Disponível</option>
+                <option value="Em Trânsito">Em Trânsito</option>
+                <option value="Plantão">Plantão</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeEditMemberModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[10px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="handleEditMemberSubmit()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] border border-slate-300 shadow-xs">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL DE CADASTRO DE SUPRIMENTOS (ADMIN / ENGENHARIA) -->
     <div id="add-supply-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
       <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -1188,6 +1333,7 @@
         accessLevel = 'Admin';
         currentScreen = 'projects';
         showToast('✓ Bem-vindo, Admin Master! Acesso Total Liberado.');
+        saveSessionState();
         render();
         return;
       }
@@ -1203,6 +1349,7 @@
         accessLevel = user.level;
         currentScreen = 'projects';
         showToast('✓ Bem-vindo(a), ' + user.name + '! Nível: ' + user.level);
+        saveSessionState();
         render();
         return;
       }
@@ -1400,6 +1547,171 @@
     }
 
     
+    
+    // --- PERSISTÊNCIA DE SESSÃO NO BROWSER (NUNCA VAI PARA O LOGIN NO F5/REFRESH) ---
+    function saveSessionState() {
+      try {
+        if (currentUser && currentScreen !== 'login') {
+          localStorage.setItem('planes_active_session', JSON.stringify({
+            user: currentUser,
+            accessLevel: accessLevel,
+            currentScreen: currentScreen,
+            activeNav: activeNav,
+            selectedProjectId: selectedProjectId
+          }));
+        }
+      } catch (e) {}
+    }
+
+    function restoreSessionState() {
+      try {
+        const saved = localStorage.getItem('planes_active_session');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data && data.user) {
+            currentUser = data.user;
+            accessLevel = data.accessLevel || data.user.level || 'Engenharia';
+            currentScreen = data.currentScreen || 'projects';
+            activeNav = data.activeNav || 'Visão Geral';
+            if (data.selectedProjectId) {
+              selectedProjectId = data.selectedProjectId;
+              const p = projectsList.find(x => x.id === selectedProjectId);
+              if (p) selectedProject = p;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // --- CRUD DE QUADRO DE PESSOAL & CONTATOS RÁPIDOS (ADMIN) ---
+    let editingMemberId = null;
+
+    function openAddMemberModal() {
+      document.getElementById('new-mem-name').value = '';
+      document.getElementById('new-mem-role').value = '';
+      document.getElementById('new-mem-company').value = 'Planes ENG';
+      document.getElementById('new-mem-sector').value = 'Arena Shows';
+      document.getElementById('new-mem-cpf').value = '';
+      document.getElementById('new-mem-rg').value = '';
+      document.getElementById('new-mem-phone').value = '';
+      document.getElementById('new-mem-status').value = 'No Canteiro';
+      document.getElementById('add-member-modal').classList.remove('hidden');
+    }
+
+    function closeAddMemberModal() {
+      document.getElementById('add-member-modal').classList.add('hidden');
+    }
+
+    function handleAddMemberSubmit() {
+      const name = document.getElementById('new-mem-name').value.trim();
+      const role = document.getElementById('new-mem-role').value.trim();
+      const company = document.getElementById('new-mem-company').value.trim() || 'Planes ENG';
+      const sector = document.getElementById('new-mem-sector').value.trim() || 'Geral';
+      const cpf = document.getElementById('new-mem-cpf').value.trim();
+      const rg = document.getElementById('new-mem-rg').value.trim();
+      const phone = document.getElementById('new-mem-phone').value.trim();
+      const status = document.getElementById('new-mem-status').value;
+
+      if (!name || !role || !phone) {
+        showToast('Preencha os campos obrigatórios (Nome, Função e Telefone).');
+        return;
+      }
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone;
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+      const newMem = {
+        id: Date.now(),
+        name,
+        role,
+        company,
+        sector,
+        cpf: cpf ? maskCpf(cpf) : '000.000.000-00',
+        rg: rg ? maskRg(rg) : 'SSP-00.000.000',
+        phone: maskPhone(phone),
+        whatsapp: cleanWhatsapp,
+        status,
+        avatar: initials || 'CO',
+        color: 'bg-emerald-700 text-white'
+      };
+
+      teamMembersList.unshift(newMem);
+      closeAddMemberModal();
+      showToast(`✓ Contato "${name}" adicionado ao Quadro de Pessoal!`);
+      saveSessionState();
+      render();
+    }
+
+    function openEditMemberModal(memId) {
+      const mem = teamMembersList.find(m => m.id === memId);
+      if (!mem) return;
+      editingMemberId = memId;
+
+      document.getElementById('edit-mem-name').value = mem.name;
+      document.getElementById('edit-mem-role').value = mem.role;
+      document.getElementById('edit-mem-company').value = mem.company;
+      document.getElementById('edit-mem-sector').value = mem.sector;
+      document.getElementById('edit-mem-cpf').value = maskCpf(mem.cpf || '');
+      document.getElementById('edit-mem-rg').value = maskRg(mem.rg || '');
+      document.getElementById('edit-mem-phone').value = maskPhone(mem.phone || '');
+      document.getElementById('edit-mem-status').value = mem.status;
+      document.getElementById('edit-member-modal').classList.remove('hidden');
+    }
+
+    function closeEditMemberModal() {
+      document.getElementById('edit-member-modal').classList.add('hidden');
+      editingMemberId = null;
+    }
+
+    function handleEditMemberSubmit() {
+      const mem = teamMembersList.find(m => m.id === editingMemberId);
+      if (!mem) return;
+
+      const name = document.getElementById('edit-mem-name').value.trim();
+      const role = document.getElementById('edit-mem-role').value.trim();
+      const company = document.getElementById('edit-mem-company').value.trim();
+      const sector = document.getElementById('edit-mem-sector').value.trim();
+      const cpf = document.getElementById('edit-mem-cpf').value.trim();
+      const rg = document.getElementById('edit-mem-rg').value.trim();
+      const phone = document.getElementById('edit-mem-phone').value.trim();
+      const status = document.getElementById('edit-mem-status').value;
+
+      if (!name || !role || !phone) {
+        showToast('Preencha os campos obrigatórios.');
+        return;
+      }
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone;
+
+      mem.name = name;
+      mem.role = role;
+      mem.company = company;
+      mem.sector = sector;
+      mem.cpf = cpf ? maskCpf(cpf) : mem.cpf;
+      mem.rg = rg ? maskRg(rg) : mem.rg;
+      mem.phone = maskPhone(phone);
+      mem.whatsapp = cleanWhatsapp;
+      mem.status = status;
+
+      closeEditMemberModal();
+      showToast(`✓ Contato "${name}" atualizado com sucesso!`);
+      saveSessionState();
+      render();
+    }
+
+    function deleteMember(memId) {
+      const idx = teamMembersList.findIndex(m => m.id === memId);
+      if (idx !== -1) {
+        const item = teamMembersList[idx];
+        teamMembersList.splice(idx, 1);
+        showToast(`✓ Contato "${item.name}" excluído.`);
+        saveSessionState();
+        render();
+      }
+    }
+
     // --- FORMATADORES AUTOMÁTICOS DE NÚMEROS E MÁSCARAS (CPF, RG, CELULAR / WHATSAPP) ---
     function maskPhone(val) {
       if (!val) return '';
@@ -1495,6 +1807,7 @@
 
 
     function openProjectCockpit(projId) {
+      saveSessionState();
       selectedProjectId = projId;
       currentScreen = 'dashboard';
       activeNav = 'Visão Geral';
@@ -3411,7 +3724,7 @@
                 <div class="space-y-5 animate-card-fade">
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-[14px] bg-emerald-100 flex items-center justify-center text-emerald-800 border border-emerald-200">
+                      <div class="w-10 h-10 rounded-[14px] bg-emerald-100 flex items-center justify-center text-emerald-800 border border-emerald-200 shadow-2xs">
                         ${getSvg('whatsapp', 'w-5 h-5 text-emerald-700')}
                       </div>
                       <div>
@@ -3419,6 +3732,17 @@
                         <p class="text-xs text-slate-600 font-medium">Lista com Nome Completo, CPF, Identidade (RG) e link direto para WhatsApp</p>
                       </div>
                     </div>
+
+                    ${accessLevel === 'Admin' ? `
+                      <button
+                        type="button"
+                        onclick="openAddMemberModal()"
+                        class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      >
+                        ${getSvg('plus', 'w-4 h-4 text-slate-950')}
+                        <span>+ Cadastrar Novo Contato</span>
+                      </button>
+                    ` : ''}
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -3437,9 +3761,31 @@
                                 <span class="text-[11px] text-slate-600 font-semibold">${mem.role}</span>
                               </div>
                             </div>
-                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                              ● ${mem.status}
-                            </span>
+                            <div class="flex items-center gap-1.5">
+                              <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                                ● ${mem.status}
+                              </span>
+                              ${accessLevel === 'Admin' ? `
+                                <div class="flex items-center gap-0.5">
+                                  <button
+                                    type="button"
+                                    onclick="openEditMemberModal(${mem.id})"
+                                    class="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-900 rounded-md transition cursor-pointer"
+                                    title="Editar Contato"
+                                  >
+                                    ${getSvg('edit', 'w-3.5 h-3.5')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onclick="deleteMember(${mem.id})"
+                                    class="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-700 rounded-md transition cursor-pointer"
+                                    title="Excluir Contato"
+                                  >
+                                    ${getSvg('trash', 'w-3.5 h-3.5')}
+                                  </button>
+                                </div>
+                              ` : ''}
+                            </div>
                           </div>
 
                           <div class="my-3 p-3 bg-slate-50 rounded-[14px] border border-slate-200 space-y-1.5 text-xs">
@@ -4770,6 +5116,7 @@
       }
     }
 
+    restoreSessionState();
     render();
   </script>
 </body>
