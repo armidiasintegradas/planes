@@ -1473,8 +1473,218 @@
       syncAllAdminData(manual);
     }
 
+    // =========================================================================
+    // PLANES GLOBAL REAL-TIME CLOUD SYNC ENGINE (CROSS-DEVICE / CROSS-NETWORK)
+    // =========================================================================
+    const CLOUD_SYNC_TOPIC = 'planes_realtime_sync_v2_alagoas_japaratinga';
+    const CLOUD_SYNC_PUB_URL = 'https://ntfy.sh/' + CLOUD_SYNC_TOPIC;
+    const CLOUD_SYNC_POLL_URL = 'https://ntfy.sh/' + CLOUD_SYNC_TOPIC + '/json?poll=1&since=all';
+    const CLOUD_SYNC_SSE_URL = 'https://ntfy.sh/' + CLOUD_SYNC_TOPIC + '/sse';
+
+    let cloudEventSource = null;
+    let cloudOnlineSessions = {}; // Map of email -> sessionData
+
+    function broadcastCloudAction(actionType, data = {}) {
+      try {
+        const payload = {
+          action: actionType,
+          sender: currentUser ? currentUser.email : 'guest',
+          timestamp: Date.now(),
+          ...data
+        };
+        fetch(CLOUD_SYNC_PUB_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    function handleCloudSyncMessage(payload, shouldRender = true) {
+      if (!payload || !payload.action) return;
+      const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+
+      // 1. NOVO USUÁRIO CADASTRADO EM QUALQUER COMPUTADOR / CIDADE
+      if (payload.action === 'USER_REGISTER' && payload.user) {
+        const u = payload.user;
+        const uEmail = (u.email || '').toLowerCase();
+        const uId = String(u.id || '').toLowerCase();
+
+        if (!blacklist.includes(uEmail) && !blacklist.includes(uId) && uEmail !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves') {
+          // Adiciona ou atualiza em registeredUsers
+          const existingIdx = registeredUsers.findIndex(x => (x.email || '').toLowerCase() === uEmail);
+          if (existingIdx >= 0) {
+            registeredUsers[existingIdx] = { ...registeredUsers[existingIdx], ...u };
+          } else {
+            registeredUsers.push(u);
+          }
+
+          // Adiciona ao Quadro de Pessoal
+          const existingTm = teamMembersList.find(x => (x.email || '').toLowerCase() === uEmail);
+          if (!existingTm) {
+            teamMembersList.push({
+              id: u.id || ('tm-' + Date.now()),
+              name: u.name,
+              role: u.role || u.level || 'Campo',
+              company: u.company || 'Planes ENG',
+              sector: u.sector || 'Geral',
+              cpf: u.cpf || '000.000.000-00',
+              rg: u.rg || 'SSP-00.000.000',
+              phone: u.phone || '(82) 99822-1100',
+              whatsapp: u.whatsapp || '5581973332227',
+              status: 'No Canteiro',
+              avatar: u.avatar || 'US',
+              color: 'bg-slate-900 text-white'
+            });
+          }
+
+          saveUsersStorage();
+        }
+      }
+
+      // 2. EXCLUSÃO DEFINITIVA DE USUÁRIO
+      else if (payload.action === 'USER_DELETE' && payload.userEmail) {
+        const delEmail = payload.userEmail.toLowerCase();
+        const delId = String(payload.userId || '').toLowerCase();
+
+        if (!blacklist.includes(delEmail)) blacklist.push(delEmail);
+        if (delId && !blacklist.includes(delId)) blacklist.push(delId);
+        localStorage.setItem('planes_deleted_users_blacklist', JSON.stringify(blacklist));
+
+        registeredUsers = registeredUsers.filter(x => (x.email || '').toLowerCase() !== delEmail && String(x.id || '').toLowerCase() !== delId);
+        pendingUsers = pendingUsers.filter(x => (x.email || '').toLowerCase() !== delEmail && String(x.id || '').toLowerCase() !== delId);
+        teamMembersList = teamMembersList.filter(x => (x.email || '').toLowerCase() !== delEmail && String(x.id || '').toLowerCase() !== delId);
+        delete cloudOnlineSessions[delEmail];
+
+        saveUsersStorage();
+
+        // Se for o usuário conectado atualmente, desconecta
+        if (currentUser && currentUser.email.toLowerCase() === delEmail) {
+          currentUser = null;
+          currentScreen = 'login';
+          try { localStorage.removeItem('planes_active_session'); } catch (e) {}
+          showToast('Sua conta foi excluída pelo Administrador Master.');
+        }
+      }
+
+      // 3. HEARTBEAT DE PRESENÇA ONLINE EM TEMPO REAL
+      else if (payload.action === 'PRESENCE_HEARTBEAT' && payload.session) {
+        const sess = payload.session;
+        if (sess && sess.email) {
+          const sEmail = sess.email.toLowerCase();
+          if (!blacklist.includes(sEmail)) {
+            cloudOnlineSessions[sEmail] = { ...sess, lastSeen: Date.now() };
+          }
+        }
+      }
+
+      // 4. ENCERRAMENTO FORÇADO DE SESSÃO PELO ADMIN MASTER
+      else if (payload.action === 'TERMINATE_SESSION' && payload.userEmail) {
+        const targetEmail = payload.userEmail.toLowerCase();
+        delete cloudOnlineSessions[targetEmail];
+
+        if (currentUser && currentUser.email.toLowerCase() === targetEmail) {
+          currentUser = null;
+          currentScreen = 'login';
+          try { localStorage.removeItem('planes_active_session'); } catch (e) {}
+          showToast('Sua sessão foi encerrada pelo Administrador Master.');
+          render();
+          return;
+        }
+      }
+
+      // 5. ATUALIZAÇÃO DA MATRIZ RBAC
+      else if (payload.action === 'RBAC_UPDATE' && payload.rolePermissions) {
+        rolePermissions = payload.rolePermissions;
+        saveRolePermissions();
+      }
+
+      if (shouldRender && currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
+        render();
+      }
+    }
+
+    // Inicializa a escuta em tempo real via Server-Sent Events (SSE)
+    function initCloudLiveStream() {
+      try {
+        if (cloudEventSource) cloudEventSource.close();
+        cloudEventSource = new EventSource(CLOUD_SYNC_SSE_URL);
+        cloudEventSource.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg && msg.message) {
+              const payload = JSON.parse(msg.message);
+              handleCloudSyncMessage(payload, true);
+            }
+          } catch (err) {}
+        };
+        cloudEventSource.onerror = () => {
+          setTimeout(initCloudLiveStream, 5000);
+        };
+      } catch (e) {}
+    }
+
+    // Consulta histórico completo de sincronização na nuvem
+    async function pollCloudSyncHistory(manual = false) {
+      try {
+        const res = await fetch(CLOUD_SYNC_POLL_URL, { cache: 'no-store' });
+        if (res.ok) {
+          const raw = await res.text();
+          const lines = raw.trim().split('\n');
+          for (const line of lines) {
+            if (line) {
+              try {
+                const msg = JSON.parse(line);
+                if (msg && msg.message) {
+                  const payload = JSON.parse(msg.message);
+                  handleCloudSyncMessage(payload, false);
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (manual) {
+        showToast(`✓ Sincronização em nuvem concluída! (${registeredUsers.length} usuários ativos, ${getOnlineSessions().length} online)`);
+      }
+      if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
+        render();
+      }
+    }
+
+    // Disparo periódico do heartbeat de presença para a nuvem
+    function broadcastPresenceHeartbeat() {
+      if (!currentUser || currentScreen === 'login') return;
+      const sessionData = {
+        sessionId: 'sess-' + (currentUser.id || currentUser.email),
+        userId: currentUser.id || currentUser.email,
+        name: currentUser.name,
+        email: currentUser.email,
+        role: currentUser.level || currentUser.role || 'Admin',
+        avatar: currentUser.avatar || 'US',
+        company: currentUser.company || 'Planes ENG',
+        sector: currentUser.sector || 'Geral',
+        currentScreen: currentScreen,
+        activeNav: activeNav,
+        device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile Web' : 'Web Desktop',
+        loginTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      // Atualiza local e nuvem
+      cloudOnlineSessions[currentUser.email.toLowerCase()] = { ...sessionData, lastSeen: Date.now() };
+      broadcastCloudAction('PRESENCE_HEARTBEAT', { session: sessionData });
+    }
+
+    // Inicialização da nuvem
+    initCloudLiveStream();
+    pollCloudSyncHistory(false);
+    setInterval(broadcastPresenceHeartbeat, 15000); // Heartbeat em nuvem a cada 15s
+    setInterval(() => { pollCloudSyncHistory(false); }, 12000); // Poller a cada 12s
+
     function syncAllAdminData(manual = false) {
       try {
+        pollCloudSyncHistory(manual);
+        broadcastPresenceHeartbeat();
         const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
         
         // Sincroniza registeredUsers
@@ -2017,6 +2227,10 @@
 
       saveUsersStorage();
       closeRegisterModal();
+
+      // Transmite cadastro imediatamente para a nuvem (para o Admin ver na hora no seu computador)
+      broadcastCloudAction('USER_REGISTER', { user: newUser });
+      broadcastPresenceHeartbeat();
 
       // EFETUA O LOGIN AUTOMÁTICO E IMEDIATO DO NOVO USUÁRIO
       currentUser = newUser;
@@ -2819,19 +3033,40 @@
 
     function getOnlineSessions() {
       try {
-        const raw = localStorage.getItem('planes_online_sessions');
-        let sessions = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(sessions)) sessions = [];
         const now = Date.now();
-        const active = sessions.filter(s => (now - s.lastSeen) < 180000);
-        // Se currentUser está ativo, garante que ele conste
-        if (currentUser && currentScreen !== 'login' && !active.some(s => s.email.toLowerCase() === currentUser.email.toLowerCase())) {
-          active.unshift({
+        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+        let combined = [];
+
+        // 1. Sessões sincronizadas pela nuvem (usuários em outros computadores/celulares)
+        if (typeof cloudOnlineSessions === 'object') {
+          for (const email in cloudOnlineSessions) {
+            const sess = cloudOnlineSessions[email];
+            if (sess && (now - sess.lastSeen) < 120000 && !blacklist.includes(email.toLowerCase())) {
+              combined.push(sess);
+            }
+          }
+        }
+
+        // 2. Sessões locais
+        const raw = localStorage.getItem('planes_online_sessions');
+        let localSessions = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(localSessions)) {
+          for (const s of localSessions) {
+            const sEmail = (s.email || '').toLowerCase();
+            if ((now - s.lastSeen) < 120000 && !blacklist.includes(sEmail) && !combined.some(c => (c.email || '').toLowerCase() === sEmail)) {
+              combined.push(s);
+            }
+          }
+        }
+
+        // 3. Garante que o usuário logado atualmente esteja na lista
+        if (currentUser && currentScreen !== 'login' && !combined.some(s => (s.email || '').toLowerCase() === currentUser.email.toLowerCase())) {
+          combined.unshift({
             sessionId: 'sess-current',
             name: currentUser.name,
             email: currentUser.email,
             role: currentUser.level || currentUser.role || 'Admin',
-            avatar: currentUser.avatar || 'US',
+            avatar: currentUser.avatar || 'AR',
             company: currentUser.company || 'Planes ENG',
             sector: currentUser.sector || 'Geral',
             activeNav: activeNav,
@@ -2840,7 +3075,7 @@
             loginTime: 'Agora'
           });
         }
-        return active;
+        return combined;
       } catch (e) {
         return currentUser ? [{ name: currentUser.name, email: currentUser.email, role: currentUser.level || 'Admin', avatar: currentUser.avatar || 'AR', activeNav: activeNav, device: 'Web Desktop', lastSeen: Date.now() }] : [];
       }
@@ -2953,6 +3188,7 @@
         showToast(`✓ Módulo "${moduleName}" ativado para ${role}!`);
       }
       saveRolePermissions();
+      broadcastCloudAction('RBAC_UPDATE', { rolePermissions: rolePermissions });
       render();
     }
 
@@ -2976,6 +3212,9 @@
             localStorage.setItem('planes_terminated_sessions', JSON.stringify(terminated));
           }
         } catch (e) {}
+
+        // Transmite encerramento de conexão para a nuvem
+        broadcastCloudAction('TERMINATE_SESSION', { userEmail: userEmail });
 
         showToast(`✓ Conexão de ${userName} encerrada com sucesso!`);
         render();
@@ -3565,6 +3804,9 @@
             localStorage.setItem('planes_online_sessions', JSON.stringify(sessions));
           }
         } catch (e) {}
+
+        // Transmite exclusão para a nuvem para todos os dispositivos
+        broadcastCloudAction('USER_DELETE', { userEmail: userEmail, userId: userObjId, userName: u.name });
 
         saveUsersStorage();
         saveSessionState();
