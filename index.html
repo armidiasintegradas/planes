@@ -794,6 +794,15 @@
     let chartMetric = 'Físico';
     let chartViewType = 'colunas';
     let lbSector = 'ARENA';
+
+    // ESTADO REVISITADO DA LINHA DE BALANÇO 16.03
+    let lbViewMode = 'grafico'; // 'grafico' ou 'tabela'
+
+    function toggleLbView(mode) {
+      lbViewMode = mode;
+      render();
+    }
+
     let mpHorizon = 'MAI.JUN.JUL.AGO';
     let mpStatusFilter = 'Todos';
     let physicalProgress = 61.8;
@@ -3054,23 +3063,48 @@
 
               
               
-              <!-- LINHA DE BALANÇO 16.03 (REVISITADA, COMPLETA E ULTRA MODERNA) -->
+              
+              <!-- LINHA DE BALANÇO 16.03 (REVISITADA, COMPLETA, INTERATIVA E MODERNA) -->
               ${activeNav === 'Linha de Balanço' ? `
                 <div class="space-y-6 animate-card-fade">
                   
-                  <!-- Top Banner -->
+                  <!-- Top Banner & Controller -->
                   <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3.5">
                       <div class="w-11 h-11 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs shrink-0">
                         ${getSvg('layers', 'w-5 h-5 text-[#d4ff00]')}
                       </div>
                       <div>
-                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Linha de Balanço 16.03 — Gestão de Fluxo Contínuo (Takt-Time)</h2>
-                        <p class="text-xs text-slate-600 font-medium">Controle rítmico operacional, velocidade de avanço por pavimento e sincronismo de equipes</p>
+                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Linha de Balanço 16.03 — Takt-Time & Fluxo Contínuo</h2>
+                        <p class="text-xs text-slate-600 font-medium">Dimensionamento de equipes rítmicas por pavimento/setor, controle de descontinuidades e buffers de folga</p>
                       </div>
                     </div>
 
                     <div class="flex items-center flex-wrap gap-2">
+                      <!-- Mode Selector -->
+                      <div class="flex items-center bg-slate-100 p-1 rounded-[12px] border border-slate-200">
+                        <button
+                          type="button"
+                          onclick="toggleLbView('grafico')"
+                          class="px-3.5 py-1.5 rounded-[10px] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                            lbViewMode === 'grafico' ? 'bg-slate-950 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-950'
+                          }"
+                        >
+                          ${getSvg('trendingUp', 'w-3.5 h-3.5')}
+                          <span>Diagrama Tempo x Local</span>
+                        </button>
+                        <button
+                          type="button"
+                          onclick="toggleLbView('tabela')"
+                          class="px-3.5 py-1.5 rounded-[10px] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                            lbViewMode === 'tabela' ? 'bg-[#d4ff00] text-slate-950 shadow-xs font-black' : 'text-slate-600 hover:text-slate-950'
+                          }"
+                        >
+                          ${getSvg('fileText', 'w-3.5 h-3.5')}
+                          <span>Tabela de Ritmo & Frentes</span>
+                        </button>
+                      </div>
+
                       <select id="lb-sector-select" onchange="setLbSec(this.value)" class="px-3.5 py-2 rounded-[10px] border border-slate-300 bg-white text-xs font-bold text-slate-900 cursor-pointer shadow-2xs">
                         <option value="ARENA" ${lbSector === 'ARENA' ? 'selected' : ''}>ARENA & QUADRAS</option>
                         <option value="BLOCO APTOS" ${lbSector === 'BLOCO APTOS' ? 'selected' : ''}>BLOCO DE APARTAMENTOS</option>
@@ -3078,6 +3112,7 @@
                         <option value="PRÉDIOS " ${lbSector === 'PRÉDIOS ' ? 'selected' : ''}>PRÉDIOS (RECEPÇÃO / TRAMA)</option>
                         <option value="ÁREA DA PISCINA" ${lbSector === 'ÁREA DA PISCINA' ? 'selected' : ''}>ÁREA DA PISCINA</option>
                       </select>
+
                       <button type="button" onclick="simulateExcelDiff()" class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 text-xs font-black rounded-[10px] border border-slate-300 shadow-xs flex items-center gap-1.5 cursor-pointer">
                         ${getSvg('fileText', 'w-3.5 h-3.5 text-slate-950')}
                         <span>Importar Planilha Rev 16.04</span>
@@ -3085,95 +3120,152 @@
                     </div>
                   </div>
 
-                  <!-- DIAGRAMA VISUAL DE LINHA DE BALANÇO (FLUXO RÍTMICO TEMPO X LOCAL) -->
-                  <div class="white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                      <div>
-                        <h3 class="text-base font-black text-slate-950">Diagrama Tempo-Caminho (Linha de Balanço 16.03)</h3>
-                        <p class="text-xs text-slate-500 font-medium">Visualização da velocidade rítmica das equipes operacionais sem interferência de frentes</p>
-                      </div>
-                      <div class="flex items-center gap-4 text-xs font-bold">
-                        <span class="flex items-center gap-1.5 text-blue-900"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Estrutura</span>
-                        <span class="flex items-center gap-1.5 text-amber-900"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Alvenaria</span>
-                        <span class="flex items-center gap-1.5 text-emerald-900"><span class="w-3 h-3 rounded-full bg-emerald-600"></span> Instalações</span>
-                        <span class="flex items-center gap-1.5 text-purple-900"><span class="w-3 h-3 rounded-full bg-purple-500"></span> Acabamento</span>
-                      </div>
+                  <!-- 4 KPIS RÍTMICOS DA LINHA DE BALANÇO -->
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
+                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Takt-Time Ativo</span>
+                      <strong class="text-xl font-black text-slate-950 block mt-0.5">1 pav / semana</strong>
+                      <span class="text-[11px] text-emerald-700 font-bold">● Velocidade Constante</span>
                     </div>
 
-                    <!-- Diagrama Gráfico em SVG Fluido -->
-                    <div class="relative w-full h-56 xl:h-64 bg-slate-950 rounded-[16px] p-4 overflow-hidden shadow-inner">
-                      <div class="absolute inset-0 flex justify-between px-6 pointer-events-none opacity-20">
-                        <div class="border-r border-slate-400 h-full text-[10px] text-slate-300 pt-2">Sem 1</div>
-                        <div class="border-r border-slate-400 h-full text-[10px] text-slate-300 pt-2">Sem 2</div>
-                        <div class="border-r border-slate-400 h-full text-[10px] text-slate-300 pt-2">Sem 3</div>
-                        <div class="border-r border-slate-400 h-full text-[10px] text-slate-300 pt-2">Sem 4</div>
-                        <div class="border-r border-slate-400 h-full text-[10px] text-slate-300 pt-2">Sem 5</div>
-                        <div class="border-r border-slate-400 h-full text-[10px] text-slate-300 pt-2">Sem 6</div>
-                        <div class="text-[10px] text-slate-300 pt-2">Sem 7</div>
-                      </div>
+                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
+                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Índice de Sincronismo</span>
+                      <strong class="text-xl font-black text-slate-950 block mt-0.5">97.8%</strong>
+                      <span class="text-[11px] text-emerald-700 font-bold">▲ Sem Choques de Equipe</span>
+                    </div>
 
-                      <svg viewBox="0 0 600 200" class="w-full h-full overflow-visible relative z-10">
-                        <!-- Linha 1: Estrutura (Azul) -->
-                        <line x1="20" y1="180" x2="380" y2="20" stroke="#3b82f6" stroke-width="4" stroke-linecap="round" />
-                        <!-- Linha 2: Alvenaria (Amarela) -->
-                        <line x1="80" y1="180" x2="440" y2="20" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
-                        <!-- Linha 3: Instalações (Verde) -->
-                        <line x1="140" y1="180" x2="500" y2="20" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
-                        <!-- Linha 4: Acabamentos (Roxa) -->
-                        <line x1="200" y1="180" x2="560" y2="20" stroke="#a855f7" stroke-width="4" stroke-linecap="round" />
+                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
+                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Buffer de Proteção Médio</span>
+                      <strong class="text-xl font-black text-slate-950 block mt-0.5">5 dias úteis</strong>
+                      <span class="text-[11px] text-slate-600 font-medium">Margem de segurança ativa</span>
+                    </div>
 
-                        <!-- Marcador de Hoje (Linha Pontilhada Vermelha) -->
-                        <line x1="260" y1="0" x2="260" y2="200" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4" />
-                        <text x="265" y="20" fill="#ef4444" font-size="10" font-weight="bold">HOJE (Sem 3)</text>
-                      </svg>
+                    <div class="white-bento-card p-4 border border-slate-200 shadow-xs">
+                      <span class="text-[11px] font-bold text-slate-500 uppercase block">Equipes Simultâneas</span>
+                      <strong class="text-xl font-black text-slate-950 block mt-0.5">4 frentes ativas</strong>
+                      <span class="text-[11px] text-slate-600 font-medium">142 operários alocados</span>
                     </div>
                   </div>
 
-                  <!-- Tabela Rítmica Detalhada -->
-                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs overflow-x-auto space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                      <strong class="text-sm font-black text-slate-950">Atividades e Ritmo Operacional — Setor ${lbSector}</strong>
-                      <span class="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                        10 Frentes Mapeadas
-                      </span>
-                    </div>
+                  <!-- CONTEÚDO PRINCIPAL: DIAGRAMA GRÁFICO OU TABELA RÍTMICA -->
+                  ${lbViewMode === 'grafico' ? `
+                    <!-- DIAGRAMA VISUAL TEMPO X LOCAL (LOCATION-BASED MANAGEMENT) -->
+                    <div class="white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs space-y-4 animate-card-fade">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                        <div>
+                          <h3 class="text-base font-black text-slate-950">Diagrama Tempo-Caminho — Setor ${lbSector}</h3>
+                          <p class="text-xs text-slate-500 font-medium">Inclinação das retas representa a velocidade de cada equipe de produção</p>
+                        </div>
+                        <div class="flex items-center flex-wrap gap-4 text-xs font-bold">
+                          <span class="flex items-center gap-1.5 text-blue-900"><span class="w-3 h-3 rounded-full bg-blue-500"></span> 1. Estrutura</span>
+                          <span class="flex items-center gap-1.5 text-amber-900"><span class="w-3 h-3 rounded-full bg-amber-500"></span> 2. Alvenaria</span>
+                          <span class="flex items-center gap-1.5 text-emerald-900"><span class="w-3 h-3 rounded-full bg-emerald-600"></span> 3. Instalações</span>
+                          <span class="flex items-center gap-1.5 text-purple-900"><span class="w-3 h-3 rounded-full bg-purple-500"></span> 4. Acabamento</span>
+                        </div>
+                      </div>
 
-                    <table class="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold">
-                          <th class="p-3">Frente / Atividade Operacional</th>
-                          <th class="p-3">Data Início</th>
-                          <th class="p-3">Data Término</th>
-                          <th class="p-3 text-center">Ritmo (Takt)</th>
-                          <th class="p-3 text-center">Status de Fluxo</th>
-                          <th class="p-3 text-right">Avanço Físico Medido</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-100">
-                        ${rawLinhaBalanco.filter(r => r.setor === lbSector).slice(0, 10).map((r, i) => `
-                          <tr class="hover:bg-slate-50 transition">
-                            <td class="p-3 font-semibold text-slate-950">
-                              <span class="text-[10px] text-slate-500 font-bold block">Frente #${i+1}</span>
-                              ${r.atividade || 'Atividade Operacional'}
-                            </td>
-                            <td class="p-3 font-mono text-slate-600">${r.inicio || '15/05/26'}</td>
-                            <td class="p-3 font-mono text-slate-600">${r.termino || '20/07/26'}</td>
-                            <td class="p-3 text-center">
-                              <span class="px-2.5 py-1 bg-slate-100 text-slate-900 rounded-md font-bold font-mono border border-slate-200">
-                                ${r.ritmo || '1 pav/sem'}
-                              </span>
-                            </td>
-                            <td class="p-3 text-center">
-                              <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-bold text-[10px]">
-                                ● Sincronizado
-                              </span>
-                            </td>
-                            <td class="p-3 text-right font-black text-emerald-700 font-mono text-sm">100% Medido</td>
+                      <!-- Eixos e Gráfico Tempo x Local -->
+                      <div class="relative w-full h-72 xl:h-84 bg-slate-950 rounded-[18px] p-6 overflow-hidden shadow-2xl">
+                        
+                        <!-- Grid de Fundo com Pavimentos (Eixo Y) e Semanas (Eixo X) -->
+                        <div class="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none opacity-25">
+                          <div class="border-b border-slate-400 w-full text-[10px] text-slate-200 pb-1">Pavimento 4 (Cobertura)</div>
+                          <div class="border-b border-slate-400 w-full text-[10px] text-slate-200 pb-1">Pavimento 3 (Aptos Superiores)</div>
+                          <div class="border-b border-slate-400 w-full text-[10px] text-slate-200 pb-1">Pavimento 2 (Aptos Intermediários)</div>
+                          <div class="border-b border-slate-400 w-full text-[10px] text-slate-200 pb-1">Pavimento 1 (Térreo & Lazer)</div>
+                          <div class="text-[10px] text-slate-200">Fundações & Infraestrutura</div>
+                        </div>
+
+                        <!-- Colunas Semanais -->
+                        <div class="absolute inset-0 flex justify-between px-20 pointer-events-none opacity-15">
+                          <div class="border-r border-slate-400 h-full"></div>
+                          <div class="border-r border-slate-400 h-full"></div>
+                          <div class="border-r border-slate-400 h-full"></div>
+                          <div class="border-r border-slate-400 h-full"></div>
+                          <div class="border-r border-slate-400 h-full"></div>
+                          <div class="border-r border-slate-400 h-full"></div>
+                        </div>
+
+                        <svg viewBox="0 0 700 240" class="w-full h-full overflow-visible relative z-10">
+                          <!-- Faixa de Buffer entre equipes -->
+                          <polygon points="40,210 400,20 450,20 90,210" fill="#3b82f6" opacity="0.08" />
+                          <polygon points="100,210 460,20 510,20 150,210" fill="#f59e0b" opacity="0.08" />
+
+                          <!-- Reta 1: Estrutura (Azul) -->
+                          <line x1="40" y1="210" x2="400" y2="20" stroke="#3b82f6" stroke-width="5" stroke-linecap="round" />
+                          <!-- Reta 2: Alvenaria (Amarela) -->
+                          <line x1="100" y1="210" x2="460" y2="20" stroke="#f59e0b" stroke-width="5" stroke-linecap="round" />
+                          <!-- Reta 3: Instalações (Verde) -->
+                          <line x1="160" y1="210" x2="520" y2="20" stroke="#10b981" stroke-width="5" stroke-linecap="round" />
+                          <!-- Reta 4: Acabamentos (Roxa) -->
+                          <line x1="220" y1="210" x2="580" y2="20" stroke="#a855f7" stroke-width="5" stroke-linecap="round" />
+
+                          <!-- Marcador da Linha do Tempo: HOJE (Semana 3) -->
+                          <line x1="300" y1="0" x2="300" y2="240" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="6,4" />
+                          <rect x="250" y="5" width="100" height="22" rx="6" fill="#ef4444" />
+                          <text x="300" y="19" fill="#ffffff" font-size="10" font-weight="900" text-anchor="middle">HOJE (Semana 3)</text>
+                        </svg>
+
+                        <!-- Eixo X Labels -->
+                        <div class="absolute bottom-2 inset-x-6 flex justify-between text-[11px] text-slate-400 font-mono font-bold">
+                          <span>Sem 1</span>
+                          <span>Sem 2</span>
+                          <span>Sem 3</span>
+                          <span>Sem 4</span>
+                          <span>Sem 5</span>
+                          <span>Sem 6</span>
+                          <span>Sem 7</span>
+                          <span>Sem 8</span>
+                        </div>
+                      </div>
+                    </div>
+                  ` : `
+                    <!-- TABELA RÍTMICA OPERACIONAL DE ATIVIDADES -->
+                    <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs overflow-x-auto space-y-4 animate-card-fade">
+                      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                        <strong class="text-sm font-black text-slate-950">Cronograma de Frentes & Takt-Time — Setor ${lbSector}</strong>
+                        <span class="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                          10 Atividades Ativas
+                        </span>
+                      </div>
+
+                      <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold">
+                            <th class="p-3">Frente / Atividade Operacional</th>
+                            <th class="p-3">Data Início</th>
+                            <th class="p-3">Data Término</th>
+                            <th class="p-3 text-center">Ritmo (Takt)</th>
+                            <th class="p-3 text-center">Status de Fluxo</th>
+                            <th class="p-3 text-right">Avanço Físico Medido</th>
                           </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                          ${rawLinhaBalanco.filter(r => r.setor === lbSector).slice(0, 10).map((r, i) => `
+                            <tr class="hover:bg-slate-50 transition">
+                              <td class="p-3 font-semibold text-slate-950">
+                                <span class="text-[10px] text-slate-500 font-bold block">Frente #${i+1}</span>
+                                ${r.atividade || 'Atividade Operacional'}
+                              </td>
+                              <td class="p-3 font-mono text-slate-600">${r.inicio || '15/05/26'}</td>
+                              <td class="p-3 font-mono text-slate-600">${r.termino || '20/07/26'}</td>
+                              <td class="p-3 text-center">
+                                <span class="px-2.5 py-1 bg-slate-100 text-slate-900 rounded-md font-bold font-mono border border-slate-200">
+                                  ${r.ritmo || '1 pav/sem'}
+                                </span>
+                              </td>
+                              <td class="p-3 text-center">
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-bold text-[10px]">
+                                  ● Sincronizado
+                                </span>
+                              </td>
+                              <td class="p-3 text-right font-black text-emerald-700 font-mono text-sm">100% Medido</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  `}
 
                 </div>
               ` : ''}
