@@ -140,208 +140,257 @@
   <!-- MAIN 1080p WAR ROOM GRID (Zero Vertical Overflow) -->
   <main class="relative z-20 flex-1 w-full grid grid-cols-12 gap-3.5 xl:gap-4 my-2.5 items-stretch min-h-0">
     
-    <!-- LEFT 8 COLUMNS: FINANCIAL METRICS, S-CURVE & TARGET BARS -->
+    <!-- LEFT 8 COLUMNS: REDESIGNED MODERN PHYSICAL & FINANCIAL BALANCE COCKPIT -->
     <div class="col-span-12 lg:col-span-8 flex flex-col justify-between gap-3 min-h-0">
       
-      <!-- 4 EXECUTIVE FINANCIAL BENTO CARDS -->
+      <!-- TOP ROW: 4 MODERN HIGH-IMPACT FINANCIAL & BALANCE COCKPIT CARDS -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         
-        <!-- Card 1: Orçamento Total -->
-        <div class="white-bento-card p-3.5 flex flex-col justify-between">
+        <!-- Card 1: Teto Orçamentário & Queima de Saldo -->
+        <div class="white-bento-card p-3.5 flex flex-col justify-between border border-slate-200">
           <div class="flex items-center justify-between">
-            <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Orçamento Base</span>
-            <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-800 border border-slate-200">
+            <span class="text-[10px] xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Teto Orçamentário</span>
+            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
             </div>
           </div>
-          <div>
-            <div class="font-card-number text-[24px] xl:text-[26px] text-slate-950 mb-0.5">R$ 24,00M</div>
-            <span class="text-[10px] text-slate-500 font-semibold">Teto Aprovado</span>
+          <div class="my-0.5">
+            <div class="font-card-number text-[22px] xl:text-[25px] text-slate-950 leading-none">R$ 24,00M</div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
+              <div class="bg-slate-950 h-full rounded-full" style="width: 61.6%;"></div>
+            </div>
+          </div>
+          <div class="flex justify-between text-[9.5px] font-semibold text-slate-500 pt-0.5">
+            <span>Medido: <strong class="text-slate-900">R$ 14,8M</strong></span>
+            <span>Saldo: <strong class="text-emerald-700 font-bold">R$ 9,2M</strong></span>
           </div>
         </div>
 
-        <!-- Card 2: Custo Real Medido (Animated) -->
-        <div class="white-bento-card p-3.5 flex flex-col justify-between">
+        <!-- Card 2: Índice de Equilíbrio Físico x Financeiro (Hero Parity Metric) -->
+        <div class="white-bento-card p-3.5 flex flex-col justify-between border border-slate-200 relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Custo Real Medido</span>
-            <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-800 border border-slate-200">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-          </div>
-          <div>
-            <div id="tv-anim-spent" class="font-card-number text-[24px] xl:text-[26px] text-slate-950 mb-0.5">R$ 0.00M</div>
-            <span class="text-[10px] text-emerald-800 font-bold flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-              <span>61.6% do Orçamento</span>
+            <span class="text-[10px] xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Equilíbrio Físico/Fin</span>
+            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+              100% PARIDADE
             </span>
           </div>
+          <div class="my-0.5">
+            <div class="flex items-baseline gap-1.5">
+              <span id="tv-anim-balance" class="font-card-number text-[22px] xl:text-[25px] text-emerald-800 leading-none">1.00x</span>
+              <span class="text-[10px] font-black text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">Perfeito</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-1 text-[9.5px] font-bold">
+              <span class="text-slate-600">Físico: <strong class="text-slate-950">61.8%</strong></span>
+              <span class="text-slate-300">|</span>
+              <span class="text-slate-600">Fin: <strong class="text-slate-950">61.6%</strong></span>
+            </div>
+          </div>
+          <span class="text-[9px] text-slate-500 font-medium">Zero risco de desembolso descompassado</span>
         </div>
 
         <!-- Card 3: Economia Acumulada (Lime Neon) -->
-        <div class="lime-bento-card p-3.5 flex flex-col justify-between shadow-2xs">
+        <div class="lime-bento-card p-3.5 flex flex-col justify-between shadow-2xs border border-[#bef200]/70">
           <div class="flex items-center justify-between">
-            <span class="text-[10.5px] font-bold text-slate-900 uppercase tracking-wider">Economia (Gain)</span>
-            <span class="bg-slate-950 text-white text-[9.5px] font-black px-1.5 py-0.5 rounded-full">+8.6%</span>
+            <span class="text-[10px] xl:text-[10.5px] font-black text-slate-950 uppercase tracking-wider">Economia (Gain)</span>
+            <span class="bg-slate-950 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">+8.6%</span>
           </div>
-          <div>
-            <div id="tv-anim-gain" class="font-card-number text-[24px] xl:text-[26px] text-slate-950 mb-0.5">+ R$ 0.00M</div>
-            <span class="text-[10px] text-slate-900 font-bold">Abaixo do Orçamento</span>
+          <div class="my-0.5">
+            <div id="tv-anim-gain" class="font-card-number text-[22px] xl:text-[25px] text-slate-950 leading-none">+ R$ 0.00M</div>
+            <div class="text-[10px] font-black text-slate-900 mt-1">
+              R$ 1.400.000,00 poupados
+            </div>
           </div>
+          <span class="text-[9.5px] text-slate-900 font-bold">Abaixo do orçamento previsto LB</span>
         </div>
 
-        <!-- Card 4: IDC / CPI -->
-        <div class="white-bento-card p-3.5 flex flex-col justify-between">
+        <!-- Card 4: Eficiência de Custo (IDC 1.09) -->
+        <div class="white-bento-card p-3.5 flex flex-col justify-between border border-slate-200">
           <div class="flex items-center justify-between">
-            <span class="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">Eficiência Custo</span>
-            <span class="bg-emerald-100 text-emerald-900 text-[9.5px] font-black px-1.5 py-0.5 rounded-full border border-emerald-300">IDC 1.09</span>
+            <span class="text-[10px] xl:text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Eficiência de Custo</span>
+            <span class="bg-blue-100 text-blue-900 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-blue-300">CPI 1.09</span>
           </div>
-          <div>
-            <div id="tv-anim-cpi" class="font-card-number text-[24px] xl:text-[26px] text-emerald-800 mb-0.5">1.00</div>
-            <span class="text-[10px] text-slate-600 font-semibold">R$ 1,09 de valor / R$ 1,00 gasto</span>
+          <div class="my-0.5">
+            <div id="tv-anim-cpi" class="font-card-number text-[22px] xl:text-[25px] text-slate-950 leading-none">1.00</div>
+            <div class="text-[10px] text-emerald-800 font-bold mt-1">
+              R$ 1,09 entregue / R$ 1,00 gasto
+            </div>
           </div>
+          <span class="text-[9px] text-slate-500 font-medium">Índice de Desempenho de Custos</span>
         </div>
 
       </div>
 
-      <!-- MIDDLE: CURVA S FÍSICO x FINANCEIRO & EAC FORECAST -->
-      <div class="white-bento-card p-4 xl:p-5 border border-slate-200 flex-1 flex flex-col justify-between min-h-0">
+      <!-- MAIN ANALYTICAL CARD: HIGH-IMPACT PHYSICAL VS FINANCIAL BALANCE CANVAS -->
+      <div class="white-bento-card p-4 xl:p-5 border border-slate-200 flex-1 flex flex-col justify-between min-h-0 shadow-xs">
+        
+        <!-- Header with Comparative Metrics -->
         <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
           <div>
             <div class="flex items-center gap-2">
-              <h2 class="text-sm xl:text-base font-bold text-slate-950 tracking-tight">
-                Equilíbrio Físico x Financeiro & Previsão de Encerramento (EAC)
+              <h2 class="text-sm xl:text-base font-black text-slate-950 tracking-tight">
+                Curva de Equilíbrio Físico vs Financeiro Acumulado
               </h2>
-              <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                ● Paridade 100% Auditada
+              <span class="bg-slate-950 text-[#d4ff00] text-[9.5px] font-black px-2 py-0.5 rounded-full font-mono">
+                LB 16.03 AUDITADA
               </span>
             </div>
-            <span class="text-[11px] text-slate-600 font-medium">O cliente só paga pelo que está fisicamente comprovado no canteiro.</span>
+            <span class="text-[10.5px] text-slate-600 font-medium">Comparativo mensal entre o cronograma rítmico planejado e a medição real em campo</span>
           </div>
 
-          <div class="flex items-center gap-3 text-xs font-bold">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-[#8eb3ff]"></span>
-              <span class="text-slate-700 text-[11px]">Previsto (66.4%)</span>
+          <!-- Interactive Legend Pills -->
+          <div class="flex items-center gap-2 text-xs">
+            <div class="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
+              <span class="w-2.5 h-2.5 rounded-sm bg-[#8eb3ff]"></span>
+              <span class="text-[10.5px] text-slate-700 font-bold">Previsto (66.4%)</span>
             </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00] border border-slate-300"></span>
-              <span class="text-slate-950 text-[11px]">Real Físico (61.8%)</span>
+            <div class="flex items-center gap-1.5 bg-[#d4ff00]/20 px-2.5 py-1 rounded-xl border border-[#d4ff00]/60">
+              <span class="w-2.5 h-2.5 rounded-sm bg-[#d4ff00] border border-slate-400"></span>
+              <span class="text-[10.5px] text-slate-950 font-black">Real Medido (61.8%)</span>
             </div>
           </div>
         </div>
 
-        <!-- Monthly Comparison Bars -->
-        <div class="grid grid-cols-7 gap-3 my-2 items-end h-28 xl:h-32 px-4 sm:px-8">
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="54%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="51%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
-            </div>
-            <span class="text-[11px] font-bold text-slate-600">Mai</span>
+        <!-- High-Impact Bars with Subtle Tracks & Clean Values -->
+        <div class="relative w-full pt-2">
+          <!-- Background Grid Lines -->
+          <div class="absolute inset-0 flex flex-col justify-between text-[9px] text-slate-400 font-mono pointer-events-none pb-6">
+            <div class="border-b border-slate-100 pb-0.5">100%</div>
+            <div class="border-b border-slate-100 pb-0.5">75%</div>
+            <div class="border-b border-slate-100 pb-0.5">50%</div>
+            <div class="border-b border-slate-100 pb-0.5">25%</div>
           </div>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="66%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="62%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+
+          <div class="relative z-10 grid grid-cols-7 gap-3 xl:gap-4 items-end h-28 xl:h-32 px-3 sm:px-6">
+            
+            <!-- Mai -->
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-slate-50/60 rounded-xl p-1 border border-slate-100">
+                <div data-height="54%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out" title="Previsto: 54%"></div>
+                <div data-height="51%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-300" title="Real: 51%"></div>
+              </div>
+              <span class="text-[10.5px] font-bold text-slate-500">Mai</span>
             </div>
-            <span class="text-[11px] font-black text-slate-950 bg-slate-100 px-2 py-0.5 rounded-full">Jun</span>
-          </div>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="75%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="71%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+
+            <!-- Jun (Destaque Atual) -->
+            <div class="flex flex-col items-center gap-1 relative">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md whitespace-nowrap z-20 border border-slate-800">
+                62% Medido · R$ 3,85M
+              </div>
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-[#d4ff00]/10 rounded-xl p-1 border-2 border-[#d4ff00]">
+                <div data-height="66%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out"></div>
+                <div data-height="62%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-400"></div>
+              </div>
+              <span class="text-[11px] font-black text-slate-950 bg-slate-950 text-white px-2 py-0.5 rounded-full">Jun (Hoje)</span>
             </div>
-            <span class="text-[11px] font-bold text-slate-600">Jul</span>
-          </div>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="84%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="80%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+
+            <!-- Jul -->
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-slate-50/60 rounded-xl p-1 border border-slate-100">
+                <div data-height="75%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out"></div>
+                <div data-height="71%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-300"></div>
+              </div>
+              <span class="text-[10.5px] font-bold text-slate-500">Jul</span>
             </div>
-            <span class="text-[11px] font-bold text-slate-600">Ago</span>
-          </div>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="92%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="89%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+
+            <!-- Ago -->
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-slate-50/60 rounded-xl p-1 border border-slate-100">
+                <div data-height="84%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out"></div>
+                <div data-height="80%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-300"></div>
+              </div>
+              <span class="text-[10.5px] font-bold text-slate-500">Ago</span>
             </div>
-            <span class="text-[11px] font-bold text-slate-600">Set</span>
-          </div>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="97%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="95%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+
+            <!-- Set -->
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-slate-50/60 rounded-xl p-1 border border-slate-100">
+                <div data-height="92%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out"></div>
+                <div data-height="89%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-300"></div>
+              </div>
+              <span class="text-[10.5px] font-bold text-slate-500">Set</span>
             </div>
-            <span class="text-[11px] font-bold text-slate-600">Out</span>
-          </div>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full flex items-end justify-center gap-1 h-20 xl:h-24">
-              <div data-height="100%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#8eb3ff] rounded-t-full transition-all duration-1000 ease-out"></div>
-              <div data-height="100%" style="height: 0%;" class="tv-bar w-3.5 xl:w-4 bg-[#d4ff00] rounded-t-full transition-all duration-1000 ease-out border border-slate-300"></div>
+
+            <!-- Out -->
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-slate-50/60 rounded-xl p-1 border border-slate-100">
+                <div data-height="97%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out"></div>
+                <div data-height="95%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-300"></div>
+              </div>
+              <span class="text-[10.5px] font-bold text-slate-500">Out</span>
             </div>
-            <span class="text-[11px] font-bold text-slate-600">Nov</span>
+
+            <!-- Nov -->
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-full flex items-end justify-center gap-1.5 h-20 xl:h-24 bg-slate-50/60 rounded-xl p-1 border border-slate-100">
+                <div data-height="100%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#8eb3ff] rounded-t-lg transition-all duration-1000 ease-out"></div>
+                <div data-height="100%" style="height: 0%;" class="tv-bar w-3 xl:w-4 bg-[#d4ff00] rounded-t-lg transition-all duration-1000 ease-out border border-slate-300"></div>
+              </div>
+              <span class="text-[10.5px] font-bold text-slate-500">Nov</span>
+            </div>
+
           </div>
         </div>
 
-        <!-- 3 Forecast Summary Widgets (EAC / Saldo / Margem) -->
+        <!-- 3 High-Impact Forecast Summary Bento Widgets -->
         <div class="grid grid-cols-3 gap-2.5 pt-2.5 border-t border-slate-100">
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <span class="text-[9.5px] font-bold text-slate-600 uppercase block">Custo Final Estimado (EAC)</span>
-            <div class="text-base xl:text-lg font-black font-mono-num text-slate-950 my-0.5">R$ 22,60M</div>
-            <span class="text-[9px] text-emerald-800 font-bold">Previsão: R$ 1,4M abaixo</span>
+          <div class="bg-slate-50 p-2 xl:p-2.5 rounded-xl border border-slate-200">
+            <span class="text-[9px] xl:text-[9.5px] font-bold text-slate-500 uppercase block">Custo Estimado na Entrega (EAC)</span>
+            <div class="text-sm xl:text-base font-black font-mono-num text-slate-950 my-0.5">R$ 22,60M</div>
+            <span class="text-[9px] text-emerald-800 font-bold">Economia projetada: R$ 1,4M</span>
           </div>
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <span class="text-[9.5px] font-bold text-slate-600 uppercase block">Saldo p/ Conclusão</span>
-            <div class="text-base xl:text-lg font-black font-mono-num text-slate-950 my-0.5">R$ 9,20M</div>
-            <span class="text-[9px] text-slate-600 font-medium">Recursos restantes</span>
+
+          <div class="bg-slate-50 p-2 xl:p-2.5 rounded-xl border border-slate-200">
+            <span class="text-[9px] xl:text-[9.5px] font-bold text-slate-500 uppercase block">Saldo Necessário Conclusão</span>
+            <div class="text-sm xl:text-base font-black font-mono-num text-slate-950 my-0.5">R$ 9,20M</div>
+            <span class="text-[9px] text-slate-500 font-medium">Recursos disponíveis: R$ 9,2M</span>
           </div>
-          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <span class="text-[9.5px] font-bold text-slate-600 uppercase block">Reserva de Contingência</span>
-            <div class="text-base xl:text-lg font-black font-mono-num text-slate-950 my-0.5">R$ 850 mil</div>
-            <span class="text-[9px] text-emerald-800 font-bold">74% intacta</span>
+
+          <div class="bg-slate-50 p-2 xl:p-2.5 rounded-xl border border-slate-200">
+            <span class="text-[9px] xl:text-[9.5px] font-bold text-slate-500 uppercase block">Reserva de Contingência</span>
+            <div class="text-sm xl:text-base font-black font-mono-num text-slate-950 my-0.5">R$ 850 mil</div>
+            <span class="text-[9px] text-emerald-800 font-bold">74% intacta (baixo risco)</span>
           </div>
         </div>
 
       </div>
 
       <!-- BOTTOM ROW: FRENTES DE OBRA METAS -->
-      <div class="grid grid-cols-3 gap-3">
-        <div class="white-bento-card p-3 border border-slate-200">
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="white-bento-card p-2.5 xl:p-3 border border-slate-200">
           <div class="flex justify-between items-center text-xs font-bold mb-1">
-            <span class="text-slate-800 text-[11px]">Arena Shows & Quadras</span>
+            <span class="text-slate-800 text-[10.5px] xl:text-[11px]">Arena Shows & Quadras</span>
             <span class="text-slate-950 font-black text-[11px]">72%</span>
           </div>
           <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
             <div data-width="72%" style="width: 0%;" class="tv-target-bar h-full bg-[#d4ff00] rounded-full transition-all duration-1000 ease-out"></div>
           </div>
-          <span class="text-[9.5px] text-slate-500 font-medium mt-1 block">Estrutura metálica concluída</span>
+          <span class="text-[9px] text-slate-500 font-medium mt-1 block">Estrutura metálica concluída</span>
         </div>
 
-        <div class="white-bento-card p-3 border border-slate-200">
+        <div class="white-bento-card p-2.5 xl:p-3 border border-slate-200">
           <div class="flex justify-between items-center text-xs font-bold mb-1">
-            <span class="text-slate-800 text-[11px]">Bloco Apartamentos</span>
+            <span class="text-slate-800 text-[10.5px] xl:text-[11px]">Bloco Apartamentos</span>
             <span class="text-slate-950 font-black text-[11px]">58%</span>
           </div>
           <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
             <div data-width="58%" style="width: 0%;" class="tv-target-bar h-full bg-[#8eb3ff] rounded-full transition-all duration-1000 ease-out"></div>
           </div>
-          <span class="text-[9.5px] text-slate-500 font-medium mt-1 block">Alvenaria Torre 3 em avanço</span>
+          <span class="text-[9px] text-slate-500 font-medium mt-1 block">Alvenaria Torre 3 em avanço</span>
         </div>
 
-        <div class="white-bento-card p-3 border border-slate-200">
+        <div class="white-bento-card p-2.5 xl:p-3 border border-slate-200">
           <div class="flex justify-between items-center text-xs font-bold mb-1">
-            <span class="text-slate-800 text-[11px]">Infraestrutura & Piscinas</span>
+            <span class="text-slate-800 text-[10.5px] xl:text-[11px]">Infraestrutura & Piscinas</span>
             <span class="text-slate-950 font-black text-[11px]">45%</span>
           </div>
           <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
             <div data-width="45%" style="width: 0%;" class="tv-target-bar h-full bg-slate-400 rounded-full transition-all duration-1000 ease-out"></div>
           </div>
-          <span class="text-[9.5px] text-slate-500 font-medium mt-1 block">Tubulações e impermeabilização</span>
+          <span class="text-[9px] text-slate-500 font-medium mt-1 block">Tubulações e impermeabilização</span>
         </div>
       </div>
 
     </div>
-
     <!-- RIGHT 4 COLUMNS: WEATHER FORECAST (JAPARATINGA) & FIELD INSPECTIONS -->
     <div class="col-span-12 lg:col-span-4 flex flex-col justify-between gap-3 min-h-0">
       
@@ -565,12 +614,14 @@
         const cpiEl = document.getElementById('tv-anim-cpi');
         const workersEl = document.getElementById('tv-anim-workers');
         const pacEl = document.getElementById('tv-anim-pac');
+        const balEl = document.getElementById('tv-anim-balance');
 
         if (spentEl) spentEl.innerText = 'R$ ' + (14.80 * ease).toFixed(2) + 'M';
         if (gainEl) gainEl.innerText = '+ R$ ' + (1.40 * ease).toFixed(2) + 'M';
         if (cpiEl) cpiEl.innerText = (1.00 + 0.09 * ease).toFixed(2);
         if (workersEl) workersEl.innerText = Math.round(64 * ease) + ' Operários';
         if (pacEl) pacEl.innerText = Math.round(78 * ease) + '%';
+        if (balEl) balEl.innerText = (1.00 * ease).toFixed(2) + 'x';
 
         if (progressRatio < 1) {
           requestAnimationFrame(update);
@@ -580,6 +631,7 @@
           if (cpiEl) cpiEl.innerText = '1.09';
           if (workersEl) workersEl.innerText = '64 Operários';
           if (pacEl) pacEl.innerText = '78%';
+          if (balEl) balEl.innerText = '1.00x';
         }
       }
 
