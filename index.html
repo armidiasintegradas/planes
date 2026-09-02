@@ -2593,65 +2593,135 @@
                     </div>
                   </div>
 
-                  <!-- Right: Frentes de Obra & Bolhas (4 Cols) -->
-                  <div class="lg:col-span-4 white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <!-- Right: Frentes de Obra (4 Cols) — REDESENHO COMPLETO DE ALTO IMPACTO -->
+                  <div class="lg:col-span-4 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                          <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800">
-                            ${getSvg('mapPin', 'w-4 h-4')}
+                      <!-- Card Header -->
+                      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs shrink-0">
+                            ${getSvg('mapPin', 'w-4 h-4 text-[#d4ff00]')}
                           </div>
-                          <h3 class="text-base font-bold text-slate-950 tracking-tight">Frentes de Obra</h3>
+                          <div>
+                            <h3 class="text-base font-black text-slate-950 tracking-tight">Frentes de Obra</h3>
+                            <p class="text-[11px] text-slate-500 font-medium">Controle de Ritmo por Setor Operacional</p>
+                          </div>
                         </div>
-                        <span class="text-xs text-slate-600 font-bold">Setores Ativos</span>
+                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-900 text-[#d4ff00] border border-slate-800 font-mono">
+                          ● 4 Frentes
+                        </span>
                       </div>
 
-                      <div class="relative h-44 xl:h-48 my-3 flex items-center justify-center">
-                        <div onclick="setLbSec('ARENA'); setNavWithHistory('Linha de Balanço');" class="anim-bubble absolute left-4 top-2 w-32 h-32 rounded-full bg-[#d4ff00] flex flex-col items-center justify-center text-slate-950 shadow-sm z-10 hover:scale-105 transition-all duration-700 cursor-pointer border border-slate-300" style="transform: scale(0.3); opacity: 0;">
-                          <span id="anim-arena-bubble" class="font-bubble-number text-[28px] text-slate-950">0%</span>
-                          <span class="text-[11.5px] font-bold text-slate-900 mt-0.5">Arena Shows</span>
+                      <!-- NOVO GRÁFICO RADIAL CONCÊNTRICO & CENTRO DE COMANDO (SUBSTITUINDO AS BOLHAS) -->
+                      <div class="p-4 bg-slate-950 rounded-[18px] text-white my-3 shadow-md relative overflow-hidden flex flex-col items-center justify-center">
+                        <div class="relative w-44 h-44 flex items-center justify-center">
+                          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
+                            <!-- Background Track Rings -->
+                            <circle cx="80" cy="80" r="68" fill="none" stroke="#1e293b" stroke-width="8" />
+                            <circle cx="80" cy="80" r="54" fill="none" stroke="#1e293b" stroke-width="8" />
+                            <circle cx="80" cy="80" r="40" fill="none" stroke="#1e293b" stroke-width="8" />
+                            <circle cx="80" cy="80" r="26" fill="none" stroke="#1e293b" stroke-width="8" />
+
+                            <!-- Outer Ring: Arena Shows (92%) -->
+                            <circle
+                              cx="80" cy="80" r="68"
+                              fill="none" stroke="#d4ff00" stroke-width="8"
+                              stroke-dasharray="427"
+                              stroke-dashoffset="${427 * (1 - 0.92)}"
+                              stroke-linecap="round"
+                              class="transition-all duration-1000"
+                            />
+
+                            <!-- Middle Ring: Bloco Apts (74%) -->
+                            <circle
+                              cx="80" cy="80" r="54"
+                              fill="none" stroke="#60a5fa" stroke-width="8"
+                              stroke-dasharray="339"
+                              stroke-dashoffset="${339 * (1 - 0.74)}"
+                              stroke-linecap="round"
+                              class="transition-all duration-1000"
+                            />
+
+                            <!-- Inner Ring: Infraestrutura (62%) -->
+                            <circle
+                              cx="80" cy="80" r="40"
+                              fill="none" stroke="#10b981" stroke-width="8"
+                              stroke-dasharray="251"
+                              stroke-dashoffset="${251 * (1 - 0.62)}"
+                              stroke-linecap="round"
+                              class="transition-all duration-1000"
+                            />
+
+                            <!-- Core Ring: Piscina Resort (54%) -->
+                            <circle
+                              cx="80" cy="80" r="26"
+                              fill="none" stroke="#f59e0b" stroke-width="8"
+                              stroke-dasharray="163"
+                              stroke-dashoffset="${163 * (1 - 0.54)}"
+                              stroke-linecap="round"
+                              class="transition-all duration-1000"
+                            />
+                          </svg>
+
+                          <!-- Center Core Text -->
+                          <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                            <span class="text-[20px] font-black text-white leading-none">68%</span>
+                            <span class="text-[9px] text-[#d4ff00] font-bold uppercase tracking-tight mt-0.5">Média Real</span>
+                          </div>
                         </div>
 
-                        <div onclick="setLbSec('BLOCO APTOS'); setNavWithHistory('Linha de Balanço');" class="anim-bubble absolute right-4 top-6 w-28 h-28 rounded-full bg-[#8eb3ff] flex flex-col items-center justify-center text-slate-950 shadow-sm z-0 hover:scale-105 transition-all duration-700 delay-100 cursor-pointer border border-slate-300" style="transform: scale(0.3); opacity: 0;">
-                          <span id="anim-apts-bubble" class="font-bubble-number text-[24px] text-slate-950">0%</span>
-                          <span class="text-[11.5px] font-bold text-slate-900 mt-0.5">Bloco Apts</span>
+                        <!-- Mini Legend -->
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 w-full text-[10.5px] pt-2 border-t border-slate-800 text-slate-300 font-medium">
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00]"></span> Arena: <strong>92%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></span> Aptos: <strong>74%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span> Infra: <strong>62%</strong></span>
+                          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span> Piscina: <strong>54%</strong></span>
+                        </div>
+                      </div>
+
+                      <!-- SETORES COM CONTROLE DE TAKT & CLIQUE RÁPIDO -->
+                      <div class="space-y-2 mt-4">
+                        <div
+                          onclick="setLbSec('ARENA'); setNavWithHistory('Linha de Balanço');"
+                          class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[12px] transition cursor-pointer flex items-center justify-between group shadow-2xs"
+                        >
+                          <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#d4ff00] ring-2 ring-slate-400"></span>
+                            <div>
+                              <strong class="text-xs font-black text-slate-900 group-hover:text-emerald-800 transition block leading-tight">Arena Shows</strong>
+                              <span class="text-[10px] text-slate-500">Takt: 2 pav/sem · 38 operários</span>
+                            </div>
+                          </div>
+                          <span class="text-xs font-black text-slate-950 font-mono">92%</span>
                         </div>
 
-                        <div onclick="setLbSec('INFRA'); setNavWithHistory('Linha de Balanço');" class="anim-bubble absolute left-20 bottom-1 w-20 h-20 rounded-full bg-[#f1efea] border border-slate-300 flex flex-col items-center justify-center text-slate-900 shadow-sm z-20 hover:scale-105 transition-all duration-700 delay-200 cursor-pointer" style="transform: scale(0.3); opacity: 0;">
-                          <span id="anim-infra-bubble" class="font-bubble-number text-[16px] text-slate-900 font-bold">0%</span>
-                          <span class="text-[10px] font-bold text-slate-700 mt-0.5">Infraestrutura</span>
+                        <div
+                          onclick="setLbSec('BLOCO APTOS'); setNavWithHistory('Linha de Balanço');"
+                          class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[12px] transition cursor-pointer flex items-center justify-between group shadow-2xs"
+                        >
+                          <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#60a5fa] ring-2 ring-slate-400"></span>
+                            <div>
+                              <strong class="text-xs font-black text-slate-900 group-hover:text-emerald-800 transition block leading-tight">Bloco Aptos</strong>
+                              <span class="text-[10px] text-slate-500">Takt: 1 pav/sem · 54 operários</span>
+                            </div>
+                          </div>
+                          <span class="text-xs font-black text-slate-950 font-mono">74%</span>
                         </div>
                       </div>
                     </div>
 
-                    <div class="space-y-3 pt-3 border-t border-slate-200">
-                      <div>
-                        <div class="flex justify-between text-xs mb-1 font-bold">
-                          <span class="text-slate-700">Arena de Shows Target</span>
-                          <span class="text-slate-950">92%</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                          <div data-width="92%" style="width: 0%;" class="anim-target-bar h-full bg-[#d4ff00] rounded-full transition-all duration-1000 ease-out"></div>
-                        </div>
-                      </div>
-                      <div>
-                        <div class="flex justify-between text-xs mb-1 font-bold">
-                          <span class="text-slate-700">Bloco Apartamentos Target</span>
-                          <span class="text-slate-950">67%</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                          <div data-width="67%" style="width: 0%;" class="anim-target-bar h-full bg-[#8eb3ff] rounded-full transition-all duration-1000 ease-out"></div>
-                        </div>
-                      </div>
-                      <div>
-                        <div class="flex justify-between text-xs mb-1 font-bold">
-                          <span class="text-slate-700">Área da Piscina Target</span>
-                          <span class="text-slate-950">54%</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                          <div data-width="54%" style="width: 0%;" class="anim-target-bar h-full bg-[#e5e2dc] rounded-full transition-all duration-1000 ease-out"></div>
-                        </div>
-                      </div>
+                    <!-- Card Footer -->
+                    <div class="pt-3 border-t border-slate-100 mt-3 flex items-center justify-between text-xs text-slate-600">
+                      <span>Total em Canteiro: <strong class="text-slate-950">142 operários</strong></span>
+                      <button
+                        type="button"
+                        onclick="setNavWithHistory('Linha de Balanço')"
+                        class="text-emerald-700 font-black hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Ver Linha 16.03</span>
+                        ${getSvg('arrowUpRight', 'w-3 h-3 text-emerald-700')}
+                      </button>
                     </div>
                   </div>
 
