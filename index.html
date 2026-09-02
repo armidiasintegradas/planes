@@ -159,7 +159,96 @@
     />
   </div>
 
-  <div id="toast" class="hidden fixed top-5 right-5 z-50 bg-slate-950 text-white border border-slate-700 px-4 py-2.5 rounded-[10px] shadow-2xl flex items-center gap-2.5 text-xs font-semibold max-w-sm">
+  
+    <!-- MODAL DE CADASTRO COMPLETO DE USUÁRIOS (CAMPOS OBRIGATÓRIOS) -->
+    <div id="register-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
+      <div class="bg-white border border-slate-200 rounded-[20px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-[10px] bg-[#d4ff00] text-slate-950 flex items-center justify-center font-black">
+              ${getSvg('user', 'w-4 h-4')}
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-black text-slate-950 uppercase tracking-tight">Cadastro de Novo Usuário</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Preencha as informações para liberação pelo Administrador</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeRegisterModal()" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Nome Completo *</label>
+            <input id="reg-name" type="text" placeholder="Ex: Rodrigo Tavares de Oliveira" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">CPF *</label>
+              <input id="reg-cpf" type="text" placeholder="000.000.000-00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Identidade (RG) *</label>
+              <input id="reg-rg" type="text" placeholder="AL-4.109.822" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Data de Nascimento *</label>
+              <input id="reg-birth" type="date" value="1990-01-01" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Celular / WhatsApp *</label>
+              <input id="reg-phone" type="text" placeholder="+55 (82) 99822-1100" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">E-mail Corporativo *</label>
+              <input id="reg-email" type="email" placeholder="rodrigo@empresa.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Senha de Acesso *</label>
+              <input id="reg-pass" type="password" placeholder="Mínimo 6 dígitos" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Nível Pretendido</label>
+              <select id="reg-role" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-bold">
+                <option value="Engenharia">Engenharia</option>
+                <option value="Campo" selected>Campo</option>
+                <option value="Canteiro">Canteiro</option>
+                <option value="Diretoria">Diretoria</option>
+                <option value="Cliente">Cliente</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Empresa</label>
+              <input id="reg-company" type="text" value="Planes ENG" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Frente / Setor</label>
+              <input id="reg-sector" type="text" value="Geral" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-slate-900 font-medium" />
+            </div>
+          </div>
+
+          <div class="p-3 bg-amber-50 border border-amber-200 rounded-[10px] text-amber-900 text-[11px] font-medium leading-relaxed">
+            🛡️ <strong>Aprovação pelo Administrador:</strong> Os dados serão registrados e sincronizados com a Agenda Telefônica da Obra. O acesso aos módulos restritos será ativado assim que o Admin Master aprovar o perfil.
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeRegisterModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-[10px] hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="handleRegisterSubmit()" class="px-5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] border border-slate-300 shadow-xs">Enviar Cadastro</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="hidden fixed top-5 right-5 z-50 bg-slate-950 text-white border border-slate-700 px-4 py-2.5 rounded-[10px] shadow-2xl flex items-center gap-2.5 text-xs font-semibold max-w-sm">
     <span class="w-2 h-2 rounded-full bg-[#d4ff00] shrink-0 animate-pulse"></span>
     <span id="toast-msg" class="leading-snug">Mensagem</span>
   </div>
@@ -442,7 +531,47 @@
     ];
 
     let selectedProject = projectsList[0];
+    
+    // BANCO DE USUÁRIOS & CONTROLE DE ACESSO (RBAC)
+    let registeredUsers = [
+      {
+        id: 'admin-master',
+        name: 'Alex Ribeiro',
+        email: 'armidiasintegradas@gmail.com',
+        pass: '@dmin201375',
+        role: 'Diretor / Administrador Geral',
+        level: 'Admin',
+        cpf: '000.000.000-00',
+        rg: 'SSP-00.000.000',
+        birthDate: '1985-05-15',
+        phone: '+55 (82) 99999-0000',
+        whatsapp: '5582999990000',
+        status: 'Aprovado',
+        avatar: 'AR'
+      },
+      {
+        id: 'eng-mariana',
+        name: 'Mariana Alves',
+        email: 'engenharia@planes.eng.br',
+        pass: 'planes123',
+        role: 'Engenheira de Planejamento & Residente',
+        level: 'Engenharia',
+        cpf: '412.890.344-12',
+        rg: 'AL-3.819.204',
+        birthDate: '1992-08-20',
+        phone: '+55 (82) 99611-2030',
+        whatsapp: '5582996112030',
+        status: 'Aprovado',
+        avatar: 'MA'
+      }
+    ];
+
     let pendingUsers = [
+      { id: 1, name: 'Rodrigo Tavares', email: 'rodrigo.tavares@empresa.com', cpf: '512.980.114-33', rg: 'AL-4.109.822', birthDate: '1988-11-04', phone: '+55 (82) 99822-1100', whatsapp: '5582998221100', requestedLevel: 'Campo', company: 'Planes ENG', sector: 'Arena Shows', date: 'Hoje, 15:30', status: 'Pendente' },
+      { id: 2, name: 'Luciana Martins', email: 'luciana@japaratingaresort.com.br', cpf: '309.412.774-88', rg: 'PE-6.012.339', birthDate: '1995-03-12', phone: '+55 (81) 98711-2244', whatsapp: '5581987112244', requestedLevel: 'Cliente', company: 'Japaratinga Resort', sector: 'Diretoria', date: 'Hoje, 11:15', status: 'Pendente' },
+    ];
+
+    let pendingUsers_old = [
       { id: 1, name: 'Rodrigo Tavares', email: 'rodrigo.tavares@empresa.com', requestedLevel: 'Campo', date: 'Hoje, 15:30', status: 'Pendente' },
       { id: 2, name: 'Luciana Martins', email: 'luciana@japaratingaresort.com.br', requestedLevel: 'Cliente', date: 'Hoje, 11:15', status: 'Pendente' },
     ];
@@ -622,6 +751,158 @@
       textInp.value = '';
       showToast(`⏰ Alarme programado para ${date} às ${time}!`);
       render();
+    }
+
+    
+    function handleEmailLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value.trim();
+
+      if (!email || !pass) {
+        showToast('Preencha o e-mail e a senha.');
+        return;
+      }
+
+      // 1. Check Admin Master Credentials
+      if (email.toLowerCase() === 'armidiasintegradas@gmail.com' && pass === '@dmin201375') {
+        const adminUser = registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com');
+        currentUser = adminUser || {
+          name: 'Alex Ribeiro',
+          email: 'armidiasintegradas@gmail.com',
+          role: 'Diretor / Administrador Geral',
+          level: 'Admin',
+          avatar: 'AR'
+        };
+        accessLevel = 'Admin';
+        currentScreen = 'projects';
+        showToast('✓ Bem-vindo, Admin Master! Acesso Total Liberado.');
+        render();
+        return;
+      }
+
+      // 2. Check Other Registered Users
+      const user = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
+      if (user) {
+        if (user.status === 'Pendente') {
+          showToast('⏳ Seu cadastro aguarda aprovação pelo Administrador.');
+          return;
+        }
+        currentUser = user;
+        accessLevel = user.level;
+        currentScreen = 'projects';
+        showToast('✓ Bem-vindo(a), ' + user.name + '! Nível: ' + user.level);
+        render();
+        return;
+      }
+
+      showToast('❌ E-mail ou senha inválidos. Cadastre-se ou contate o Admin.');
+    }
+
+    function handleRegisterSubmit() {
+      const name = document.getElementById('reg-name').value.trim();
+      const cpf = document.getElementById('reg-cpf').value.trim();
+      const rg = document.getElementById('reg-rg').value.trim();
+      const birthDate = document.getElementById('reg-birth').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-pass').value.trim();
+      const reqRole = document.getElementById('reg-role').value;
+      const sector = document.getElementById('reg-sector').value.trim() || 'Geral';
+      const company = document.getElementById('reg-company').value.trim() || 'Planes ENG';
+
+      if (!name || !cpf || !rg || !birthDate || !phone || !email || !pass) {
+        showToast('Preencha TODOS os campos obrigatórios (*).');
+        return;
+      }
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone;
+
+      const newUser = {
+        id: Date.now(),
+        name: name,
+        cpf: cpf,
+        rg: rg,
+        birthDate: birthDate,
+        phone: phone,
+        whatsapp: cleanWhatsapp,
+        email: email,
+        pass: pass,
+        role: reqRole,
+        requestedLevel: reqRole,
+        company: company,
+        sector: sector,
+        date: 'Agora mesmo',
+        status: 'Pendente',
+        avatar: name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()
+      };
+
+      pendingUsers.unshift(newUser);
+      registeredUsers.push(newUser);
+
+      // Conectar automaticamente à Agenda Telefônica & Quadro de Pessoal
+      teamMembersList.push({
+        id: newUser.id,
+        name: newUser.name,
+        role: newUser.role + ' (Aguardando Liberação)',
+        company: newUser.company,
+        sector: newUser.sector,
+        cpf: newUser.cpf,
+        rg: newUser.rg,
+        phone: newUser.phone,
+        whatsapp: newUser.whatsapp,
+        status: 'Pendente Admin',
+        avatar: newUser.avatar,
+        color: 'bg-amber-600 text-white'
+      });
+
+      closeRegisterModal();
+      showToast('✓ Cadastro enviado! O Administrador irá avaliar e liberar seu acesso.');
+      render();
+    }
+
+    function approvePendingUser(id, assignedLevel) {
+      const u = pendingUsers.find(x => x.id === id);
+      if (u) {
+        u.status = 'Aprovado';
+        u.level = assignedLevel;
+        
+        // Atualiza na base de usuários
+        const reg = registeredUsers.find(x => x.id === id || x.email === u.email);
+        if (reg) {
+          reg.status = 'Aprovado';
+          reg.level = assignedLevel;
+        }
+
+        // Atualiza na Agenda Telefônica
+        const tm = teamMembersList.find(x => x.id === id || x.name === u.name);
+        if (tm) {
+          tm.status = 'No Canteiro';
+          tm.role = assignedLevel;
+          tm.color = 'bg-emerald-600 text-white';
+        }
+
+        pendingUsers = pendingUsers.filter(x => x.id !== id);
+        showToast(`✓ Acesso de ${u.name} APROVADO com nível ${assignedLevel}!`);
+        render();
+      }
+    }
+
+    function rejectPendingUser(id) {
+      const u = pendingUsers.find(x => x.id === id);
+      pendingUsers = pendingUsers.filter(x => x.id !== id);
+      registeredUsers = registeredUsers.filter(x => x.id !== id);
+      teamMembersList = teamMembersList.filter(x => x.id !== id);
+      showToast(`Acesso de ${u ? u.name : 'usuário'} recusado.`);
+      render();
+    }
+
+    function openRegisterModal() {
+      document.getElementById('register-modal').classList.remove('hidden');
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('register-modal').classList.add('hidden');
     }
 
     function handleRoleLogin(role) {
@@ -1130,49 +1411,75 @@
 
               <div class="w-full bg-white rounded-[20px] p-6 sm:p-8 shadow-2xl border border-slate-200">
                 <div class="space-y-4">
+                  
+                  <!-- Social Logins (Google & Apple) -->
                   <div class="space-y-2.5">
                     <button type="button" onclick="handleSocialLogin('Google')" class="w-full py-3 px-4 rounded-[14px] border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold flex items-center justify-center gap-3 transition shadow-2xs cursor-pointer min-h-[44px]">
                       <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                      <span>Continuar com o Google</span>
+                      <span>Entrar com o Google</span>
                     </button>
                     <button type="button" onclick="handleSocialLogin('Apple')" class="w-full py-3 px-4 rounded-[14px] border border-slate-900 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-3 transition shadow-2xs cursor-pointer min-h-[44px]">
                       <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.04-.96.04-2.12.64-2.8 1.44-.59.69-1.12 1.83-.98 2.92 1.07.08 2.16-.54 2.79-1.32z"/></svg>
-                      <span>Continuar com a Apple</span>
+                      <span>Entrar com a Apple</span>
                     </button>
                   </div>
 
                   <div class="flex items-center gap-3 my-3">
                     <div class="flex-1 h-px bg-slate-200"></div>
-                    <span class="text-[11px] font-bold text-slate-500 uppercase">ou credenciais de teste</span>
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ou acesse com seu e-mail</span>
                     <div class="flex-1 h-px bg-slate-200"></div>
                   </div>
 
-                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <button type="button" onclick="handleRoleLogin('Engenharia')" class="p-2.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-[#d4ff00]/20 text-left transition cursor-pointer flex flex-col justify-between min-h-[52px]">
-                      <div class="flex items-center gap-1.5 mb-1 text-slate-800">${getSvg('ruler', 'w-3.5 h-3.5')}<strong class="text-xs font-bold text-slate-900 block">Engenharia</strong></div>
-                      <span class="text-[10px] text-slate-500 font-medium">Mariana Alves</span>
-                    </button>
-                    <button type="button" onclick="handleRoleLogin('Campo')" class="p-2.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-[#d4ff00]/20 text-left transition cursor-pointer flex flex-col justify-between min-h-[52px]">
-                      <div class="flex items-center gap-1.5 mb-1 text-slate-800">${getSvg('zap', 'w-3.5 h-3.5')}<strong class="text-xs font-bold text-slate-900 block">Campo</strong></div>
-                      <span class="text-[10px] text-slate-500 font-medium">Carlos Lima</span>
-                    </button>
-                    <button type="button" onclick="handleRoleLogin('Canteiro')" class="p-2.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-[#d4ff00]/20 text-left transition cursor-pointer flex flex-col justify-between min-h-[52px]">
-                      <div class="flex items-center gap-1.5 mb-1 text-slate-800">${getSvg('box', 'w-3.5 h-3.5')}<strong class="text-xs font-bold text-slate-900 block">Canteiro</strong></div>
-                      <span class="text-[10px] text-slate-500 font-medium">Marcos Silva</span>
-                    </button>
-                    <button type="button" onclick="handleRoleLogin('Diretoria')" class="p-2.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-[#d4ff00]/20 text-left transition cursor-pointer flex flex-col justify-between min-h-[52px]">
-                      <div class="flex items-center gap-1.5 mb-1 text-slate-800">${getSvg('briefcase', 'w-3.5 h-3.5')}<strong class="text-xs font-bold text-slate-900 block">Diretoria</strong></div>
-                      <span class="text-[10px] text-slate-500 font-medium">Ricardo Nunes</span>
-                    </button>
-                    <button type="button" onclick="handleRoleLogin('Cliente')" class="p-2.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-[#8eb3ff]/20 text-left transition cursor-pointer flex flex-col justify-between min-h-[52px]">
-                      <div class="flex items-center gap-1.5 mb-1 text-slate-800">${getSvg('star', 'w-3.5 h-3.5')}<strong class="text-xs font-bold text-slate-900 block">Cliente</strong></div>
-                      <span class="text-[10px] text-slate-500 font-medium">Dr. Alberto</span>
-                    </button>
-                    <button type="button" onclick="handleRoleLogin('Admin')" class="p-2.5 rounded-[10px] border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 text-left transition cursor-pointer flex flex-col justify-between min-h-[52px]">
-                      <div class="flex items-center gap-1.5 mb-1 text-[#d4ff00]">${getSvg('settings', 'w-3.5 h-3.5 text-[#d4ff00]')}<strong class="text-xs font-bold block">Admin</strong></div>
-                      <span class="text-[10px] text-[#d4ff00] font-medium">Gestão TI</span>
+                  <!-- Email & Password Form -->
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-xs font-bold text-slate-700 block mb-1">E-mail Corporativo</label>
+                      <input
+                        id="login-email"
+                        type="email"
+                        value="armidiasintegradas@gmail.com"
+                        placeholder="seu.email@empresa.com"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-hidden focus:border-slate-400"
+                      />
+                    </div>
+                    <div>
+                      <label class="text-xs font-bold text-slate-700 block mb-1">Senha de Acesso</label>
+                      <input
+                        id="login-pass"
+                        type="password"
+                        value="@dmin201375"
+                        placeholder="••••••••"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-hidden focus:border-slate-400"
+                        onkeydown="if (event.key === 'Enter') handleEmailLogin()"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onclick="handleEmailLogin()"
+                      class="w-full py-3 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[14px] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-300"
+                    >
+                      <span>Entrar na Plataforma Planes</span>
+                      ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-950')}
                     </button>
                   </div>
+
+                  <!-- Register Link -->
+                  <div class="pt-3 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-600 font-medium">
+                      Novo por aqui? 
+                      <button
+                        type="button"
+                        onclick="openRegisterModal()"
+                        class="font-black text-slate-950 hover:underline cursor-pointer ml-1"
+                      >
+                        Cadastre-se na Plataforma
+                      </button>
+                    </p>
+                    <span class="text-[10.5px] text-slate-400 font-medium block mt-1">
+                      Admin Master pré-liberado: <strong>armidiasintegradas@gmail.com</strong>
+                    </span>
+                  </div>
+
                 </div>
               </div>
             </main>
@@ -1433,7 +1740,7 @@
                         </div>
                         <span class="text-slate-900 font-bold text-xs uppercase tracking-wider">Avanço Físico</span>
                       </div>
-                      <span class="text-rose-900 font-black text-[11px] bg-white/60 px-2 py-0.5 rounded-full">Meta: 66.4%</span>
+                      <span class="text-rose-900 font-black text-[11px] bg-white/60 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">Meta: 66.4%</span>
                     </div>
                     <div>
                       <div id="anim-progress" class="font-card-number text-[32px] xl:text-[36px] text-slate-950 my-1">0.0%</div>
@@ -1577,15 +1884,15 @@
                             </div>
                           </div>
 
-                          <!-- Coluna: Jun -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2">
+                          <!-- Coluna: Jun (Verde Esmeralda do Padrão Feed TV) -->
+                          <div class="relative flex flex-col justify-between border-r border-slate-300 px-2 bg-emerald-50/40 rounded-t-lg">
                             <div>
-                              <strong class="text-xs xl:text-sm font-black text-slate-950 block leading-tight">Jun <span class="text-[9px] bg-slate-950 text-white px-1.5 py-0.2 rounded-sm font-sans">Hoje</span></strong>
-                              <span class="text-[9.5px] xl:text-[10px] text-slate-700 font-bold">(R$ 3,85M)</span>
+                              <strong class="text-xs xl:text-sm font-black text-emerald-950 block leading-tight">Jun <span class="text-[9px] bg-emerald-700 text-white px-1.5 py-0.2 rounded-sm font-sans">Hoje</span></strong>
+                              <span class="text-[9.5px] xl:text-[10px] text-emerald-800 font-bold">(R$ 3,85M)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-32 xl:h-36 relative">
-                              <span class="font-card-number text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none">62%</span>
-                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out"></div>
+                              <span class="font-card-number text-2xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none font-bold">62%</span>
+                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-emerald-600 border border-emerald-700 shadow-xs transition-all duration-1000 ease-out"></div>
                             </div>
                           </div>
 
@@ -2410,27 +2717,127 @@
                 </div>
               ` : ''}
 
-              <!-- GESTÃO DE USUÁRIOS (ADMIN) -->
+              <!-- GESTÃO DE USUÁRIOS & PERMISSÕES (ADMIN MASTER COM PRIVILÉGIO TOTAL) -->
               ${activeNav === 'Gestão de Usuários (Admin)' && accessLevel === 'Admin' ? `
-                <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs animate-card-fade">
-                  <div class="flex justify-between items-center mb-5">
-                    <div>
-                      <h3 class="text-base xl:text-lg font-bold text-slate-950">Gestão de Usuários & Acessos Pendentes</h3>
-                      <p class="text-xs text-slate-600">Liberação de novos cadastros na plataforma Planes</p>
+                <div class="space-y-5 animate-card-fade">
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5">
+                      <div class="w-11 h-11 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center shadow-2xs shrink-0">
+                        ${getSvg('settings', 'w-5 h-5 text-[#d4ff00]')}
+                      </div>
+                      <div>
+                        <h2 class="text-lg xl:text-xl font-black text-slate-950 tracking-tight">Gestão Central de Usuários, Acessos & Permissões</h2>
+                        <p class="text-xs text-slate-600 font-medium">Admin Master com privilégio irrestrito sobre todas as áreas da obra e atribuição de perfis</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-3 py-1 bg-[#d4ff00] text-slate-950 font-black text-xs rounded-full border border-slate-300">
+                        ${pendingUsers.length} Cadastros Pendentes
+                      </span>
                     </div>
                   </div>
-                  <div class="divide-y divide-slate-100">
-                    ${pendingUsers.map(u => `
-                      <div class="py-3.5 flex justify-between items-center text-xs">
-                        <div>
-                          <strong class="text-slate-950 font-bold block">${u.name} (${u.requestedLevel})</strong>
-                          <span class="text-slate-500">${u.email} · ${u.date}</span>
-                        </div>
-                        <div class="flex gap-2">
-                          <button onclick="showToast('Acesso de ${u.name} aprovado!');" class="px-4 py-1.5 bg-[#d4ff00] text-slate-950 font-bold rounded-[10px] border border-slate-300">Aprovar</button>
-                        </div>
+
+                  <!-- Fila de Usuários Pendentes de Autenticação -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                      <div>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-950">Fila de Novos Cadastros para Autenticação</h3>
+                        <p class="text-xs text-slate-500 font-medium">Avalie as informações completas e determine o nível de acesso permitido</p>
                       </div>
-                    `).join('')}
+                    </div>
+
+                    ${pendingUsers.length === 0 ? `
+                      <div class="p-6 text-center text-xs text-slate-500 font-medium bg-slate-50 rounded-[14px]">
+                        ✓ Nenhum cadastro pendente no momento. Todos os acessos foram autenticados.
+                      </div>
+                    ` : `
+                      <div class="space-y-4">
+                        ${pendingUsers.map(u => `
+                          <div class="p-4 bg-slate-50 rounded-[14px] border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div class="space-y-1.5 text-xs">
+                              <div class="flex items-center gap-2">
+                                <strong class="text-sm font-black text-slate-950">${u.name}</strong>
+                                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">Pretende: ${u.requestedLevel || 'Campo'}</span>
+                                <span class="text-[11px] text-slate-500">${u.date || 'Hoje'}</span>
+                              </div>
+                              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-700 text-[11px]">
+                                <div><span class="text-slate-500">CPF:</span> <strong>${u.cpf || 'N/A'}</strong></div>
+                                <div><span class="text-slate-500">RG:</span> <strong>${u.rg || 'N/A'}</strong></div>
+                                <div><span class="text-slate-500">Nascimento:</span> <strong>${u.birthDate || 'N/A'}</strong></div>
+                                <div><span class="text-slate-500">WhatsApp:</span> <strong>${u.phone || 'N/A'}</strong></div>
+                              </div>
+                              <div class="text-[11px] text-slate-600">
+                                <span class="text-slate-500">E-mail:</span> <strong>${u.email}</strong> · <span class="text-slate-500">Empresa:</span> <strong>${u.company || 'Planes ENG'}</strong>
+                              </div>
+                            </div>
+
+                            <!-- Seleção de Nível e Botão de Aprovação -->
+                            <div class="flex items-center gap-2 shrink-0">
+                              <select id="assign-level-${u.id}" class="px-3 py-2 bg-white border border-slate-200 rounded-[10px] text-xs font-bold text-slate-900">
+                                <option value="Engenharia" ${u.requestedLevel === 'Engenharia' ? 'selected' : ''}>Engenharia</option>
+                                <option value="Campo" ${u.requestedLevel === 'Campo' ? 'selected' : ''}>Campo</option>
+                                <option value="Canteiro" ${u.requestedLevel === 'Canteiro' ? 'selected' : ''}>Canteiro</option>
+                                <option value="Diretoria" ${u.requestedLevel === 'Diretoria' ? 'selected' : ''}>Diretoria</option>
+                                <option value="Cliente" ${u.requestedLevel === 'Cliente' ? 'selected' : ''}>Cliente</option>
+                                <option value="Admin">Admin</option>
+                              </select>
+
+                              <button
+                                type="button"
+                                onclick="approvePendingUser(${u.id}, document.getElementById('assign-level-${u.id}').value)"
+                                class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer flex items-center gap-1.5"
+                              >
+                                ${getSvg('checkCircle', 'w-3.5 h-3.5')}
+                                <span>Aprovar Acesso</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onclick="rejectPendingUser(${u.id})"
+                                class="p-2 border border-slate-200 text-rose-600 hover:bg-rose-50 rounded-[10px] transition cursor-pointer"
+                                title="Recusar cadastro"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    `}
+                  </div>
+
+                  <!-- Lista de Usuários Ativos no Sistema -->
+                  <div class="white-bento-card p-5 xl:p-6 border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                      <div>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-950">Usuários Ativos & Conectados à Agenda</h3>
+                        <p class="text-xs text-slate-500 font-medium">Controle de privilégios e permissões por perfil de atuação</p>
+                      </div>
+                    </div>
+
+                    <div class="divide-y divide-slate-100">
+                      ${registeredUsers.map(reg => `
+                        <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                          <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-[10px] bg-slate-950 text-[#d4ff00] font-black text-xs flex items-center justify-center">
+                              ${reg.avatar || 'US'}
+                            </div>
+                            <div>
+                              <strong class="text-slate-950 font-bold block">${reg.name}</strong>
+                              <span class="text-slate-500">${reg.email} · ${reg.phone || 'Sem fone'}</span>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                              reg.level === 'Admin' ? 'bg-slate-900 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            }">
+                              ${reg.level}
+                            </span>
+                            <span class="text-[10px] font-bold text-slate-400 font-mono">${reg.status}</span>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
                   </div>
                 </div>
               ` : ''}
