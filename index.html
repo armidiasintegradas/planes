@@ -1518,7 +1518,37 @@
 
     // ESTADO E CONTROLE DA APRESENTAÇÃO DE SLIDES 16:9
     let currentSlideIndex = 0;
-    const totalSlides = 5;
+
+    // LISTENER GLOBAL DE TECLADO PARA APRESENTAÇÃO TIPO POWERPOINT EM TELA CHEIA
+    function setupSlideKeyListeners() {
+      window.addEventListener('keydown', function(e) {
+        if (typeof activeNav !== 'undefined' && activeNav === 'Relatórios & Capa' && typeof reportFormatMode !== 'undefined' && reportFormatMode === 'slides') {
+          if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+            e.preventDefault();
+            nextSlide();
+          } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            e.preventDefault();
+            prevSlide();
+          } else if (e.key === 'Home') {
+            e.preventDefault();
+            goToSlide(0);
+          } else if (e.key === 'End') {
+            e.preventDefault();
+            goToSlide(totalSlides - 1);
+          } else if (e.key === 'f' || e.key === 'F') {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+              toggleFullscreenPresentation();
+            }
+          }
+        }
+      });
+    }
+    if (typeof window !== 'undefined') {
+      setupSlideKeyListeners();
+    }
+    
+    const totalSlides = 7;
 
     function nextSlide() {
       if (currentSlideIndex < totalSlides - 1) {
@@ -4997,193 +5027,982 @@
                     return `
                       <div class="space-y-6">
                         
-                        <!-- MODO A4 EXECUTIVO DETALHADO (DESIGN IDÊNTICO AO SITE COM BENTO GRID) -->
+                        <!-- ========================================== -->
+                        <!-- 1. MODO A4 EXECUTIVO DETALHADO (4 PÁGINAS) -->
+                        <!-- ========================================== -->
                         ${reportFormatMode === 'a4' ? `
-                          <div class="bg-white border border-slate-200 rounded-[24px] p-6 sm:p-10 xl:p-12 shadow-xl max-w-[1200px] mx-auto space-y-8 print:border-none print:shadow-none print:p-0 print:m-0">
+                          <div class="max-w-[1200px] mx-auto space-y-10 print:space-y-0 print:border-none print:shadow-none print:p-0 print:m-0">
                             
-                            <!-- Header do Relatório A4 -->
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-2 border-slate-950">
-                              <div class="flex items-center gap-3.5">
-                                  <div class="flex items-center gap-2.5">
-                                    <div class="w-12 h-12 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0 border border-slate-800">
-                                      <svg class="w-7 h-7 text-[#d4ff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                                        <polyline points="2 17 12 22 22 17"></polyline>
-                                        <polyline points="2 12 12 17 22 12"></polyline>
-                                      </svg>
+                            <!-- ========================================== -->
+                            <!-- PÁGINA 1: CAPA & VISÃO GERAL EXECUTIVA     -->
+                            <!-- ========================================== -->
+                            <div class="print-page bg-white border border-slate-200 rounded-[24px] p-8 sm:p-12 shadow-xl space-y-7 print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none">
+                              
+                              <!-- Header Corporativo Oficial Planes ENG -->
+                              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-2 border-slate-950">
+                                <div class="flex items-center gap-3.5">
+                                  <div class="w-12 h-12 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0 border border-slate-800">
+                                    <svg class="w-7 h-7 text-[#d4ff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                      <polyline points="2 17 12 22 22 17"></polyline>
+                                      <polyline points="2 12 12 17 22 12"></polyline>
+                                    </svg>
+                                  </div>
+                                  <div class="flex flex-col">
+                                    <div class="flex items-center gap-1.5 leading-none">
+                                      <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">planes</span>
+                                      <span class="text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-950 px-2 py-0.5 rounded-md border border-emerald-300 font-mono">ENG</span>
                                     </div>
-                                    <div class="flex flex-col">
-                                      <div class="flex items-center gap-1.5 leading-none">
-                                        <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">planes</span>
-                                        <span class="text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-950 px-2 py-0.5 rounded-md border border-emerald-300 font-mono">ENG</span>
+                                    <span class="text-[9.5px] font-bold text-slate-500 uppercase tracking-widest mt-1">Gestão & Planejamento Integrado</span>
+                                  </div>
+                                </div>
+
+                                <div class="text-left sm:text-right">
+                                  <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black px-3.5 py-1 rounded-full inline-block">
+                                    ● STATUS: ${currentProj.status.toUpperCase()}
+                                  </span>
+                                  <span class="text-[11px] text-slate-500 font-mono block mt-1">Contrato: <strong>PL-2026-X94B</strong> · Revisão LB: <strong>16.03 / R4</strong></span>
+                                </div>
+                              </div>
+
+                              <!-- Ficha Técnica do Empreendimento -->
+                              <div class="bg-slate-900 text-white p-6 rounded-[20px] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div class="space-y-1">
+                                  <span class="text-[11px] font-black text-[#d4ff00] uppercase tracking-widest block">Relatório Executivo Mensal de Engenharia</span>
+                                  <h1 class="text-2xl sm:text-3xl font-black tracking-tight">${currentProj.title}</h1>
+                                  <p class="text-xs text-slate-300">Local: <strong>${currentProj.location || 'Litoral Norte - AL'}</strong> · Cliente: <strong>Consórcio Japaratinga Empreendimentos</strong></p>
+                                </div>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6 text-xs">
+                                  <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Emissão</span>
+                                    <strong class="text-white text-sm">Junho / 2026</strong>
+                                  </div>
+                                  <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Término Previsto</span>
+                                    <strong class="text-white text-sm">${currentProj.deadline}</strong>
+                                  </div>
+                                  <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Diretor RT</span>
+                                    <strong class="text-[#d4ff00] text-sm">Alex Ribeiro</strong>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- 1. Grid Bento de KPIs de Visão Geral -->
+                              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
+                                  <span class="text-[11px] font-bold text-slate-500 uppercase block">Avanço Físico Real</span>
+                                  <div class="flex items-baseline gap-1.5 mt-0.5">
+                                    <strong class="text-2xl sm:text-3xl font-black text-slate-950">${currentProj.progress}%</strong>
+                                    <span class="text-[11px] font-bold text-emerald-700">▲ +1.8% vs Meta</span>
+                                  </div>
+                                  <div class="w-full bg-slate-200 h-2 rounded-full mt-2 overflow-hidden">
+                                    <div class="bg-emerald-600 h-full rounded-full" style="width: ${currentProj.progress}%"></div>
+                                  </div>
+                                </div>
+
+                                <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
+                                  <span class="text-[11px] font-bold text-slate-500 uppercase block">Avanço Financeiro</span>
+                                  <strong class="text-2xl sm:text-3xl font-black text-slate-950 block mt-0.5">${currentProj.spent}</strong>
+                                  <span class="text-[11px] text-slate-600 font-medium">Orçado: ${currentProj.budget} (38.5%)</span>
+                                </div>
+
+                                <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
+                                  <span class="text-[11px] font-bold text-slate-500 uppercase block">Aderência ao PAC</span>
+                                  <div class="flex items-baseline gap-1.5 mt-0.5">
+                                    <strong class="text-2xl sm:text-3xl font-black text-slate-950">91.4%</strong>
+                                    <span class="text-[11px] font-bold text-emerald-700">● Alto Ritmo</span>
+                                  </div>
+                                  <span class="text-[11px] text-slate-600 font-medium">107 de 117 tarefas cumpridas</span>
+                                </div>
+
+                                <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
+                                  <span class="text-[11px] font-bold text-slate-500 uppercase block">Efetivo de Canteiro</span>
+                                  <strong class="text-2xl sm:text-3xl font-black text-slate-950 block mt-0.5">142</strong>
+                                  <span class="text-[11px] text-slate-600 font-medium">130 Produção · 12 Engenharia</span>
+                                </div>
+                              </div>
+
+                              <!-- 4 Frentes de Obra Simultâneas -->
+                              <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-3">
+                                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                                  <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">Status das 4 Frentes de Obra Simultâneas</strong>
+                                  <span class="text-[11px] font-mono font-bold text-emerald-800">4 de 4 Frentes Operando em Ritmo Contínuo</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200 shadow-2xs">
+                                    <div class="flex justify-between items-center mb-1">
+                                      <strong class="text-slate-900 text-xs">Arena & Quadras</strong>
+                                      <span class="font-mono font-bold text-emerald-800">88.5%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div class="bg-emerald-600 h-full rounded-full" style="width: 88.5%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500 mt-1 block">Fase: Montagem Metálica</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200 shadow-2xs">
+                                    <div class="flex justify-between items-center mb-1">
+                                      <strong class="text-slate-900 text-xs">Bloco Apartamentos</strong>
+                                      <span class="font-mono font-bold text-emerald-800">74.2%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div class="bg-emerald-600 h-full rounded-full" style="width: 74.2%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500 mt-1 block">Fase: Alvenaria & Reboco N3</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200 shadow-2xs">
+                                    <div class="flex justify-between items-center mb-1">
+                                      <strong class="text-slate-900 text-xs">Infraestrutura Viária</strong>
+                                      <span class="font-mono font-bold text-emerald-800">62.0%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div class="bg-emerald-600 h-full rounded-full" style="width: 62%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500 mt-1 block">Fase: Drenagem & Pavimentação</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200 shadow-2xs">
+                                    <div class="flex justify-between items-center mb-1">
+                                      <strong class="text-slate-900 text-xs">Complexo Piscinas</strong>
+                                      <span class="font-mono font-bold text-emerald-800">95.0%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                      <div class="bg-emerald-600 h-full rounded-full" style="width: 95%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500 mt-1 block">Fase: Revestimento & Deck</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Resumo Executivo da Engenharia -->
+                              <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-2 text-xs leading-relaxed text-slate-700">
+                                <strong class="text-xs font-black text-slate-950 uppercase tracking-wide block">Parecer Executivo da Engenharia (Junho / 2026)</strong>
+                                <p>
+                                  O empreendimento <strong>${currentProj.title}</strong> mantém ritmo de execução rigorosamente alinhado à <strong>Linha de Balanço 16.03</strong>, registrando avanço físico acumulado de <strong>${currentProj.progress}%</strong> (superávit de +1.8% em relação à meta de planejamento). A sincronização entre as frentes de montagem estrutural e instalações hidrossanitárias garantiu a preservação integral dos buffers de 5 dias úteis sem gargalos de suprimentos.
+                                </p>
+                              </div>
+
+                              <!-- Rodapé da Página 1 -->
+                              <div class="pt-4 border-t border-slate-200 flex justify-between items-center text-[10.5px] text-slate-500 font-medium">
+                                <span>Planes ENG · Sistema Integrado de Gestão Rítmica de Obras</span>
+                                <span class="font-mono font-bold text-slate-700">Página 1 de 4</span>
+                              </div>
+                            </div>
+
+
+                            <!-- ==================================================== -->
+                            <!-- PÁGINA 2: CURVA S FÍSICO-FINANCEIRO & ADERÊNCIA PAC  -->
+                            <!-- ==================================================== -->
+                            <div class="print-page bg-white border border-slate-200 rounded-[24px] p-8 sm:p-12 shadow-xl space-y-7 print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none">
+                              
+                              <!-- Header Página 2 -->
+                              <div class="flex items-center justify-between pb-4 border-b-2 border-slate-950">
+                                <div class="flex items-center gap-3">
+                                  <span class="text-xs font-black uppercase tracking-widest bg-slate-950 text-white px-3 py-1 rounded-md">MÓDULO 02</span>
+                                  <strong class="text-base sm:text-lg font-black text-slate-950">Curva S Físico-Financeira & Aderência ao PAC</strong>
+                                </div>
+                                <span class="text-xs font-mono text-slate-500">${currentProj.title}</span>
+                              </div>
+
+                              <!-- Gráfico Comparativo da Curva S -->
+                              <div class="p-6 bg-slate-950 text-white rounded-[20px] shadow-md space-y-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                                  <div>
+                                    <h3 class="text-sm font-bold text-white">Evolução da Curva S Acumulada (Jan a Julho / 2026)</h3>
+                                    <span class="text-xs text-slate-400">Comparativo entre Planejado, Realizado e Gasto Financeiro</span>
+                                  </div>
+                                  <div class="flex items-center gap-4 text-xs">
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-500"></span> Previsto</span>
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#d4ff00]"></span> Realizado (${currentProj.progress}%)</span>
+                                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-400"></span> Financeiro (38.5%)</span>
+                                  </div>
+                                </div>
+
+                                <!-- Gráfico em Barras / Linhas Simplificadas -->
+                                <div class="grid grid-cols-7 gap-2 pt-4 items-end h-40 text-center font-mono text-xs">
+                                  <div class="space-y-1 flex flex-col items-center">
+                                    <div class="w-8 bg-emerald-600 rounded-t-md h-10"></div>
+                                    <span class="text-[10px] text-slate-400">Jan (12%)</span>
+                                  </div>
+                                  <div class="space-y-1 flex flex-col items-center">
+                                    <div class="w-8 bg-emerald-600 rounded-t-md h-16"></div>
+                                    <span class="text-[10px] text-slate-400">Fev (22%)</span>
+                                  </div>
+                                  <div class="space-y-1 flex flex-col items-center">
+                                    <div class="w-8 bg-emerald-600 rounded-t-md h-24"></div>
+                                    <span class="text-[10px] text-slate-400">Mar (35%)</span>
+                                  </div>
+                                  <div class="space-y-1 flex flex-col items-center">
+                                    <div class="w-8 bg-emerald-600 rounded-t-md h-30"></div>
+                                    <span class="text-[10px] text-slate-400">Abr (48%)</span>
+                                  </div>
+                                  <div class="space-y-1 flex flex-col items-center">
+                                    <div class="w-8 bg-emerald-600 rounded-t-md h-34"></div>
+                                    <span class="text-[10px] text-slate-400">Mai (56%)</span>
+                                  </div>
+                                  <div class="space-y-1 flex flex-col items-center">
+                                    <div class="w-8 bg-[#d4ff00] rounded-t-md h-38 shadow-lg ring-2 ring-white"></div>
+                                    <span class="text-[10px] font-bold text-[#d4ff00]">Jun (${currentProj.progress}%)</span>
+                                  </div>
+                                  <div class="space-y-1 flex flex-col items-center opacity-40">
+                                    <div class="w-8 bg-slate-700 rounded-t-md h-40 border border-dashed border-slate-500"></div>
+                                    <span class="text-[10px] text-slate-400">Jul (Meta 70%)</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Tabela Mensal Consolidada & Indicadores de Valor Agregado -->
+                              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2 bg-slate-50 p-4 rounded-[16px] border border-slate-200">
+                                  <strong class="text-xs font-black text-slate-950 uppercase tracking-wide block mb-2">Tabela Consolidada de Medições Mensais</strong>
+                                  <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-200/70 text-slate-700 font-bold">
+                                      <tr>
+                                        <th class="p-2">Mês</th>
+                                        <th class="p-2">Previsto</th>
+                                        <th class="p-2">Realizado</th>
+                                        <th class="p-2">Desvio</th>
+                                        <th class="p-2">Financeiro</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                                      <tr><td class="p-2 font-bold">Janeiro/26</td><td class="p-2">10.0%</td><td class="p-2 font-bold text-emerald-800">12.0%</td><td class="p-2 text-emerald-700">+2.0%</td><td class="p-2">R$ 2.4M</td></tr>
+                                      <tr><td class="p-2 font-bold">Fevereiro/26</td><td class="p-2">20.0%</td><td class="p-2 font-bold text-emerald-800">22.4%</td><td class="p-2 text-emerald-700">+2.4%</td><td class="p-2">R$ 4.8M</td></tr>
+                                      <tr><td class="p-2 font-bold">Março/26</td><td class="p-2">32.0%</td><td class="p-2 font-bold text-emerald-800">35.1%</td><td class="p-2 text-emerald-700">+3.1%</td><td class="p-2">R$ 7.9M</td></tr>
+                                      <tr><td class="p-2 font-bold">Abril/26</td><td class="p-2">45.0%</td><td class="p-2 font-bold text-emerald-800">48.0%</td><td class="p-2 text-emerald-700">+3.0%</td><td class="p-2">R$ 11.2M</td></tr>
+                                      <tr><td class="p-2 font-bold">Maio/26</td><td class="p-2">55.0%</td><td class="p-2 font-bold text-emerald-800">56.5%</td><td class="p-2 text-emerald-700">+1.5%</td><td class="p-2">R$ 13.1M</td></tr>
+                                      <tr class="bg-emerald-50/60 font-black"><td class="p-2">Junho/26 (Hoje)</td><td class="p-2">60.0%</td><td class="p-2 text-emerald-900">${currentProj.progress}%</td><td class="p-2 text-emerald-800">+1.8%</td><td class="p-2">${currentProj.spent}</td></tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                <div class="bg-slate-50 p-4 rounded-[16px] border border-slate-200 space-y-3">
+                                  <strong class="text-xs font-black text-slate-950 uppercase tracking-wide block">Índices de Valor Agregado</strong>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200">
+                                    <span class="text-[10px] text-slate-500 uppercase font-bold block">SPI (Desempenho de Prazo)</span>
+                                    <strong class="text-xl font-black text-emerald-700">1.03</strong>
+                                    <span class="text-[10px] text-emerald-800 block mt-0.5">✓ Cronograma Adiantado</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200">
+                                    <span class="text-[10px] text-slate-500 uppercase font-bold block">CPI (Desempenho de Custo)</span>
+                                    <strong class="text-xl font-black text-emerald-700">1.02</strong>
+                                    <span class="text-[10px] text-emerald-800 block mt-0.5">✓ Abaixo do Orçado</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Aderência ao PAC & Causas de Não Cumprimento (CNC) -->
+                              <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-3">
+                                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                                  <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">Aderência ao Plano Semanal de Produção (PAC: 91.4%)</strong>
+                                  <span class="text-xs font-mono font-bold text-slate-600">Total: 107 Tarefas Concluídas / 117 Programadas</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200">
+                                    <span class="text-slate-500 block">Chuva / Clima</span>
+                                    <strong class="text-slate-950 text-sm">4 CNCs (40%)</strong>
+                                    <span class="text-[10px] text-emerald-700 block mt-1">Ação: Cobertura Provisória</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200">
+                                    <span class="text-slate-500 block">Logística de Entrega</span>
+                                    <strong class="text-slate-950 text-sm">3 CNCs (30%)</strong>
+                                    <span class="text-[10px] text-emerald-700 block mt-1">Ação: Antecipação de Frete</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200">
+                                    <span class="text-slate-500 block">Mão de Obra</span>
+                                    <strong class="text-slate-950 text-sm">2 CNCs (20%)</strong>
+                                    <span class="text-[10px] text-emerald-700 block mt-1">Ação: Remanejamento Interno</span>
+                                  </div>
+                                  <div class="p-3 bg-white rounded-[12px] border border-slate-200">
+                                    <span class="text-slate-500 block">Projetos / Revisão</span>
+                                    <strong class="text-slate-950 text-sm">1 CNC (10%)</strong>
+                                    <span class="text-[10px] text-emerald-700 block mt-1">Ação: RFI Respondida em 24h</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Rodapé da Página 2 -->
+                              <div class="pt-4 border-t border-slate-200 flex justify-between items-center text-[10.5px] text-slate-500 font-medium">
+                                <span>Planes ENG · Relatório Executivo Mensal</span>
+                                <span class="font-mono font-bold text-slate-700">Página 2 de 4</span>
+                              </div>
+                            </div>
+
+
+                            <!-- ==================================================== -->
+                            <!-- PÁGINA 3: LINHA DE BALANÇO 16.03 & MÉDIO PRAZO (R4) -->
+                            <!-- ==================================================== -->
+                            <div class="print-page bg-white border border-slate-200 rounded-[24px] p-8 sm:p-12 shadow-xl space-y-7 print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none">
+                              
+                              <!-- Header Página 3 -->
+                              <div class="flex items-center justify-between pb-4 border-b-2 border-slate-950">
+                                <div class="flex items-center gap-3">
+                                  <span class="text-xs font-black uppercase tracking-widest bg-slate-950 text-white px-3 py-1 rounded-md">MÓDULO 03</span>
+                                  <strong class="text-base sm:text-lg font-black text-slate-950">Linha de Balanço 16.03 & Lookahead R4 (Médio Prazo)</strong>
+                                </div>
+                                <span class="text-xs font-mono text-slate-500">${currentProj.title}</span>
+                              </div>
+
+                              <!-- Diagrama Tempo-Caminho (Linha de Balanço) -->
+                              <div class="p-6 bg-[#0b1320] text-white rounded-[20px] shadow-md space-y-4">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                  <div>
+                                    <strong class="text-sm font-bold text-white uppercase tracking-wider">Diagrama Tempo-Caminho Rítmico (LB 16.03)</strong>
+                                    <span class="text-xs text-slate-400 block">Eixo Y: Pavimentos / Eixo X: Semanas e Zonas de Amortecimento Lean</span>
+                                  </div>
+                                  <span class="text-xs font-mono font-bold text-[#d4ff00] bg-[#d4ff00]/10 px-3 py-1 rounded-full border border-[#d4ff00]/30">
+                                    Sincronismo: 97.8% · Takt: 1 pav/sem
+                                  </span>
+                                </div>
+
+                                <!-- Eixos e Retas Vetoriais da Linha de Balanço -->
+                                <div class="p-4 bg-slate-950/80 rounded-[14px] border border-slate-800 space-y-3 font-mono text-xs">
+                                  <div class="flex justify-between items-center text-slate-400 pb-1 border-b border-slate-800 text-[11px]">
+                                    <span>NÍVEL / PAVIMENTO</span>
+                                    <span>SEM 1 (15/05)</span>
+                                    <span>SEM 2 (22/05)</span>
+                                    <span>SEM 3 (29/05)</span>
+                                    <span class="text-[#d4ff00] font-bold">SEM 4 (05/06 - HOJE)</span>
+                                    <span>SEM 5 (12/06)</span>
+                                    <span>SEM 6 (19/06)</span>
+                                    <span>SEM 7 (26/06)</span>
+                                  </div>
+
+                                  <div class="space-y-2">
+                                    <div class="flex items-center justify-between py-1 px-2 rounded bg-slate-900/60">
+                                      <span class="font-bold text-slate-300 w-28">N4 Cobertura</span>
+                                      <div class="flex-1 mx-4 bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                                        <div class="bg-cyan-400 h-full w-[100%]" title="Fundações 100%"></div>
+                                        <div class="bg-[#d4ff00] h-full w-[90%]" title="Metálica 90%"></div>
                                       </div>
-                                      <span class="text-[9.5px] font-bold text-slate-500 uppercase tracking-widest mt-1">Gestão & Planejamento Integrado</span>
+                                      <span class="text-[#d4ff00] font-bold text-[11px]">92% Concluído</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between py-1 px-2 rounded bg-slate-900/60">
+                                      <span class="font-bold text-slate-300 w-28">N3 Arquibancadas</span>
+                                      <div class="flex-1 mx-4 bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                                        <div class="bg-cyan-400 h-full w-[100%]"></div>
+                                        <div class="bg-[#d4ff00] h-full w-[100%]"></div>
+                                        <div class="bg-purple-500 h-full w-[70%]"></div>
+                                      </div>
+                                      <span class="text-purple-400 font-bold text-[11px]">78% Concluído</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between py-1 px-2 rounded bg-slate-900/60">
+                                      <span class="font-bold text-slate-300 w-28">N2 Palco & Lajes</span>
+                                      <div class="flex-1 mx-4 bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                                        <div class="bg-cyan-400 h-full w-[100%]"></div>
+                                        <div class="bg-[#d4ff00] h-full w-[100%]"></div>
+                                        <div class="bg-purple-500 h-full w-[85%]"></div>
+                                        <div class="bg-emerald-500 h-full w-[60%]"></div>
+                                      </div>
+                                      <span class="text-emerald-400 font-bold text-[11px]">85% Concluído</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between py-1 px-2 rounded bg-slate-900/60">
+                                      <span class="font-bold text-slate-300 w-28">T0 Fundações</span>
+                                      <div class="flex-1 mx-4 bg-slate-800 h-3 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full w-full"></div>
+                                      </div>
+                                      <span class="text-emerald-400 font-bold text-[11px]">100% Entregue</span>
                                     </div>
                                   </div>
-
-                                  <div class="h-10 w-px bg-slate-200 hidden sm:block mx-1"></div>
-
-                                  <div class="hidden sm:block">
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Relatório Executivo Mensal</span>
-                                    <h1 class="text-lg xl:text-xl font-black text-slate-950 leading-tight">${currentProj.title}</h1>
-                                  <span class="text-xs text-slate-600 font-medium">Local: <strong>${selectedProject.location || 'Litoral Norte - AL'}</strong> · Emissão: <strong>Junho / 2026</strong></span>
                                 </div>
                               </div>
-                              <div class="text-right sm:text-right">
-                                <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black px-3 py-1 rounded-full inline-block">
-                                  STATUS: ${currentProj.status.toUpperCase()}
-                                </span>
-                                <span class="text-[11px] text-slate-500 font-mono block mt-1">Revisão Rítmica LB 16.03 / R4</span>
+
+                              <!-- Matriz de Restrições do Médio Prazo (Lookahead R4) -->
+                              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-2.5">
+                                  <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                                    <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">Matriz de Restrições Lean (R4 - 4 Semanas)</strong>
+                                    <span class="text-xs font-bold text-emerald-700">96.2% Desimpedida</span>
+                                  </div>
+                                  <ul class="text-xs space-y-2 text-slate-700">
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Semana 1 (05/06 a 11/06):</strong> Montagem Metálica N4</span>
+                                      <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">✓ 100% Desimpedida</span>
+                                    </li>
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Semana 2 (12/06 a 18/06):</strong> Alvenarias N3 & Drenagem</span>
+                                      <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">✓ Liberada</span>
+                                    </li>
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Semana 3 (19/06 a 25/06):</strong> Instalações Hidráulicas</span>
+                                      <span class="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">1 Restrição Mitigada</span>
+                                    </li>
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Semana 4 (26/06 a 02/07):</strong> Esquadrias & Vidros</span>
+                                      <span class="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Em Preparação</span>
+                                    </li>
+                                  </ul>
+                                </div>
+
+                                <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-2.5">
+                                  <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                                    <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">Suprimentos Críticos & Almoxarifado</strong>
+                                    <span class="text-xs font-mono font-bold text-slate-600">Estoque de Segurança Ativo</span>
+                                  </div>
+                                  <ul class="text-xs space-y-2 text-slate-700">
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Aço Estrutural CA-50:</strong> 45 Ton</span>
+                                      <span class="font-bold text-emerald-700">Estoque 100% no Canteiro</span>
+                                    </li>
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Concreto Usinado FCK 30:</strong> 80 m³</span>
+                                      <span class="font-bold text-blue-700">Programado p/ Sexta-feira</span>
+                                    </li>
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Telhas Termoacústicas PIR:</strong> 1.200 m²</span>
+                                      <span class="font-bold text-emerald-700">Descarga Concluída</span>
+                                    </li>
+                                    <li class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+                                      <span>• <strong>Argamassa AC-III:</strong> 400 Sacos</span>
+                                      <span class="font-bold text-emerald-700">Almoxarifado Central</span>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+
+                              <!-- Rodapé da Página 3 -->
+                              <div class="pt-4 border-t border-slate-200 flex justify-between items-center text-[10.5px] text-slate-500 font-medium">
+                                <span>Planes ENG · Relatório Executivo Mensal</span>
+                                <span class="font-mono font-bold text-slate-700">Página 3 de 4</span>
                               </div>
                             </div>
 
-                            <!-- 1. GRID BENTO DE KPIS EXECUTIVOS -->
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase block">Avanço Físico Real</span>
-                                <strong class="text-2xl font-black text-slate-950 block mt-0.5">${currentProj.progress}%</strong>
-                                <span class="text-[11px] text-emerald-700 font-bold">▲ +1.8% vs Meta Mensal</span>
+
+                            <!-- ================================================================= -->
+                            <!-- PÁGINA 4: GALERIA DO CLIENTE, EVIDÊNCIAS & RESPONSABILIDADE RT   -->
+                            <!-- ================================================================= -->
+                            <div class="print-page bg-white border border-slate-200 rounded-[24px] p-8 sm:p-12 shadow-xl space-y-7 print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none">
+                              
+                              <!-- Header Página 4 -->
+                              <div class="flex items-center justify-between pb-4 border-b-2 border-slate-950">
+                                <div class="flex items-center gap-3">
+                                  <span class="text-xs font-black uppercase tracking-widest bg-slate-950 text-white px-3 py-1 rounded-md">MÓDULO 04</span>
+                                  <strong class="text-base sm:text-lg font-black text-slate-950">Galeria de Evidências de Canteiro & Responsabilidade Técnica</strong>
+                                </div>
+                                <span class="text-xs font-mono text-slate-500">${currentProj.title}</span>
                               </div>
 
-                              <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase block">Aderência ao PAC</span>
-                                <strong class="text-2xl font-black text-slate-950 block mt-0.5">91.4%</strong>
-                                <span class="text-[11px] text-emerald-700 font-bold">● Alto Desempenho</span>
-                              </div>
-
-                              <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase block">Orçamento Global</span>
-                                <strong class="text-xl font-black text-slate-950 block mt-0.5">${currentProj.budget}</strong>
-                                <span class="text-[11px] text-slate-600 font-medium">Gasto: ${currentProj.spent}</span>
-                              </div>
-
-                              <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
-                                <span class="text-[11px] font-bold text-slate-500 uppercase block">Efetivo de Canteiro</span>
-                                <strong class="text-2xl font-black text-slate-950 block mt-0.5">142</strong>
-                                <span class="text-[11px] text-slate-600 font-medium">Colaboradores ativos</span>
-                              </div>
-                            </div>
-
-                            <!-- 2. LINHA DE BALANÇO & CRONOGRAMA RÍTMICO -->
-                            <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-3">
-                              <div class="flex justify-between items-center pb-2 border-b border-slate-200">
-                                <strong class="text-sm font-black text-slate-950 uppercase tracking-tight">Desempenho da Linha de Balanço por Setores (16.03)</strong>
-                                <span class="text-xs font-mono font-bold text-emerald-800">Takt-Time: 1 pav / semana</span>
-                              </div>
-                              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                                <div class="p-3 bg-white rounded-[12px] border border-slate-200">
-                                  <span class="text-slate-500 font-bold block">Arena Shows & Quadras</span>
-                                  <strong class="text-slate-950 text-sm">88.5% Concluído</strong>
-                                  <div class="w-full bg-slate-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                                    <div class="bg-emerald-600 h-full rounded-full" style="width: 88.5%"></div>
+                              <!-- Grid 4 Fotos HD com GPS e Validação -->
+                              <div class="grid grid-cols-2 gap-4">
+                                <div class="p-3 bg-slate-50 rounded-[16px] border border-slate-200 space-y-2">
+                                  <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-200 shadow-2xs" style="background-image: url('https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=800&auto=format&fit=crop&q=80');"></div>
+                                  <div class="text-xs">
+                                    <strong class="text-slate-900 block font-bold">Frente 1: Montagem Estrutural da Arena</strong>
+                                    <span class="text-[10px] text-slate-500 block">GPS: -9.1482, -35.2511 · 04/06/2026 14:32</span>
+                                    <span class="text-[10px] text-emerald-800 font-bold">✓ Medição Validada e Aprovada</span>
                                   </div>
                                 </div>
-                                <div class="p-3 bg-white rounded-[12px] border border-slate-200">
-                                  <span class="text-slate-500 font-bold block">Bloco de Apartamentos</span>
-                                  <strong class="text-slate-950 text-sm">74.2% Concluído</strong>
-                                  <div class="w-full bg-slate-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                                    <div class="bg-emerald-600 h-full rounded-full" style="width: 74.2%"></div>
+
+                                <div class="p-3 bg-slate-50 rounded-[16px] border border-slate-200 space-y-2">
+                                  <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-200 shadow-2xs" style="background-image: url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format&fit=crop&q=80');"></div>
+                                  <div class="text-xs">
+                                    <strong class="text-slate-900 block font-bold">Frente 2: Concretagem Laje Torre 3</strong>
+                                    <span class="text-[10px] text-slate-500 block">GPS: -9.1485, -35.2518 · 03/06/2026 09:15</span>
+                                    <span class="text-[10px] text-emerald-800 font-bold">✓ Medição Validada e Aprovada</span>
                                   </div>
                                 </div>
-                                <div class="p-3 bg-white rounded-[12px] border border-slate-200">
-                                  <span class="text-slate-500 font-bold block">Infraestrutura Viária & Paisagismo</span>
-                                  <strong class="text-slate-950 text-sm">62.0% Concluído</strong>
-                                  <div class="w-full bg-slate-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                                    <div class="bg-emerald-600 h-full rounded-full" style="width: 62%"></div>
+
+                                <div class="p-3 bg-slate-50 rounded-[16px] border border-slate-200 space-y-2">
+                                  <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-200 shadow-2xs" style="background-image: url('https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80');"></div>
+                                  <div class="text-xs">
+                                    <strong class="text-slate-900 block font-bold">Frente 3: Drenagem e Infraestrutura Viária</strong>
+                                    <span class="text-[10px] text-slate-500 block">GPS: -9.1479, -35.2505 · 02/06/2026 16:45</span>
+                                    <span class="text-[10px] text-emerald-800 font-bold">✓ Medição Validada e Aprovada</span>
+                                  </div>
+                                </div>
+
+                                <div class="p-3 bg-slate-50 rounded-[16px] border border-slate-200 space-y-2">
+                                  <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-200 shadow-2xs" style="background-image: url('https://images.unsplash.com/photo-1584467746872-9599d0a4b61b?w=800&auto=format&fit=crop&q=80');"></div>
+                                  <div class="text-xs">
+                                    <strong class="text-slate-900 block font-bold">Frente 4: Impermeabilização Complexo Piscinas</strong>
+                                    <span class="text-[10px] text-slate-500 block">GPS: -9.1490, -35.2522 · 01/06/2026 11:20</span>
+                                    <span class="text-[10px] text-emerald-800 font-bold">✓ Medição Validada e Aprovada</span>
                                   </div>
                                 </div>
                               </div>
-                            </div>
 
-                            <!-- 3. RESTRIÇÕES & LOOKAHEAD MÉDIO PRAZO (R4) -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-2.5">
-                                <strong class="text-xs font-black text-slate-950 uppercase tracking-wider block">Matriz de Restrições R4 (4 Semanas)</strong>
-                                <ul class="text-xs space-y-2 text-slate-700">
-                                  <li class="flex items-center justify-between">
-                                    <span>• Semana 1 (Lajes & Estruturas):</span>
-                                    <span class="font-bold text-emerald-700">100% Desimpedida</span>
-                                  </li>
-                                  <li class="flex items-center justify-between">
-                                    <span>• Semana 2 (Alvenarias P2/P3):</span>
-                                    <span class="font-bold text-emerald-700">Liberada</span>
-                                  </li>
-                                  <li class="flex items-center justify-between">
-                                    <span>• Semana 3 (Instalações Hidrossanitárias):</span>
-                                    <span class="font-bold text-amber-700">1 Restrição (Conexões)</span>
-                                  </li>
-                                </ul>
+                              <!-- Quadro de Liderança da Obra & Contatos -->
+                              <div class="p-4 bg-slate-50 rounded-[16px] border border-slate-200">
+                                <strong class="text-xs font-black text-slate-950 uppercase tracking-wide block mb-2">Quadro de Liderança & Gestão do Canteiro</strong>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                  <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                                    <strong class="text-slate-900 block">Alex Ribeiro</strong>
+                                    <span class="text-[10px] text-slate-500 block">Diretor de Engenharia</span>
+                                    <span class="text-[10px] font-mono text-emerald-700 font-bold">+55 (81) 97333-2227</span>
+                                  </div>
+                                  <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                                    <strong class="text-slate-900 block">Eng. Mariana Alves</strong>
+                                    <span class="text-[10px] text-slate-500 block">Engenheira Residente</span>
+                                    <span class="text-[10px] font-mono text-emerald-700 font-bold">+55 (81) 99888-1122</span>
+                                  </div>
+                                  <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                                    <strong class="text-slate-900 block">Carlos Alberto</strong>
+                                    <span class="text-[10px] text-slate-500 block">Mestre Geral de Obras</span>
+                                    <span class="text-[10px] font-mono text-emerald-700 font-bold">+55 (81) 98777-3344</span>
+                                  </div>
+                                </div>
                               </div>
 
-                              <div class="p-5 bg-slate-50 rounded-[18px] border border-slate-200 space-y-2.5">
-                                <strong class="text-xs font-black text-slate-950 uppercase tracking-wider block">Suprimentos & Insumos Críticos</strong>
-                                <ul class="text-xs space-y-2 text-slate-700">
-                                  <li class="flex items-center justify-between">
-                                    <span>• Aço Estrutural CA-50 (Gerdau):</span>
-                                    <span class="font-bold text-emerald-700">45 Ton no Canteiro</span>
-                                  </li>
-                                  <li class="flex items-center justify-between">
-                                    <span>• Concreto Usinado FCK 30:</span>
-                                    <span class="font-bold text-blue-700">Programado p/ Sexta</span>
-                                  </li>
-                                  <li class="flex items-center justify-between">
-                                    <span>• Tijolos Cerâmicos 8 Furos:</span>
-                                    <span class="font-bold text-amber-700">15.000 un em Trânsito</span>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
+                              <!-- Termo de Encerramento e Assinatura Digital do RT -->
+                              <div class="pt-6 border-t-2 border-slate-950 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-700">
+                                <div class="space-y-1">
+                                  <strong class="text-sm font-black text-slate-950 block">Alex Ribeiro — Diretor de Engenharia & Operações</strong>
+                                  <span class="text-slate-600 block">CREA/AL 10948-D · Responsável Técnico pela Emissão</span>
+                                  <span class="text-[10px] font-mono text-slate-500 block">Autenticação Digital SHA-256: e7a9c84d12f...PL-2026-X94B</span>
+                                </div>
 
-                            <!-- 4. RESPONSÁVEIS TÉCNICOS & ASSINATURA -->
-                            <div class="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600">
-                              <div>
-                                <strong class="text-slate-950 block">Alex Ribeiro — Diretor de Engenharia & Operações</strong>
-                                <span>CREA/AL · Planes Gestão e Engenharia Integrada</span>
+                                <div class="flex items-center gap-3">
+                                  <div class="w-16 h-16 bg-slate-950 text-white rounded-lg flex flex-col items-center justify-center p-1 font-mono text-[8px] text-center border border-slate-800">
+                                    <span class="text-[10px]">📱</span>
+                                    <span>QR CODE</span>
+                                    <span class="text-[7px] text-[#d4ff00]">VERIFICADO</span>
+                                  </div>
+                                  <div class="text-left">
+                                    <span class="px-3 py-1 bg-emerald-100 text-emerald-950 border border-emerald-300 font-black text-[10px] rounded-full inline-block">
+                                      ✓ CHANCELA DIGITAL VÁLIDA
+                                    </span>
+                                    <span class="block text-[10px] text-slate-500 mt-1">Registrado no Cartório Digital Planes</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div class="text-right">
-                                <span class="font-mono font-bold text-slate-800">Autenticação Digital: PL-2026-X94B</span>
-                                <span class="block text-[10px] text-slate-400">Gerado automaticamente pelo Sistema Planes ENG</span>
+
+                              <!-- Rodapé da Página 4 -->
+                              <div class="pt-4 border-t border-slate-200 flex justify-between items-center text-[10.5px] text-slate-500 font-medium">
+                                <span>Planes ENG · Relatório Executivo Mensal — Documento Oficial Emitido</span>
+                                <span class="font-mono font-bold text-slate-700">Página 4 de 4</span>
                               </div>
                             </div>
 
                           </div>
                         ` : `
-                          <!-- MODO APRESENTAÇÃO EXECUTIVA 16:9 (SLIDES PANORÂMICOS) -->
-                          <div class="bg-slate-950 text-white border border-slate-800 rounded-[24px] p-8 sm:p-12 xl:p-16 shadow-2xl max-w-[1300px] mx-auto space-y-8 animate-card-fade">
-                            <div class="flex items-center justify-between pb-6 border-b border-slate-800">
-                              <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center font-black text-lg">
-                                  ${getSvg('layers', 'w-6 h-6 text-slate-950')}
+                          
+                          <!-- ============================================================== -->
+                          <!-- 2. MODO APRESENTAÇÃO EXECUTIVA 16:9 (SLIDES POWERPOINT EM TELA CHEIA) -->
+                          <!-- ============================================================== -->
+                          <div id="presentation-container" class="bg-slate-950 text-white border border-slate-800 rounded-[24px] p-6 sm:p-10 xl:p-14 shadow-2xl max-w-[1350px] mx-auto space-y-6 animate-card-fade">
+                            
+                            <!-- Barra de Topo do PowerPoint com Botão Fullscreen e Indicador -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                              <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-[12px] bg-[#d4ff00] text-slate-950 flex items-center justify-center font-black text-lg">
+                                  ${getSvg('layers', 'w-5 h-5 text-slate-950')}
                                 </div>
                                 <div>
-                                  <span class="text-xs font-black text-[#d4ff00] uppercase tracking-widest block">Apresentação Executiva de Diretoria</span>
-                                  <h2 class="text-2xl sm:text-3xl font-black tracking-tight">${currentProj.title}</h2>
+                                  <span class="text-[10px] font-black text-[#d4ff00] uppercase tracking-widest block">APRESENTAÇÃO EXECUTIVA CINEMA 16:9</span>
+                                  <h2 class="text-xl sm:text-2xl font-black tracking-tight">${currentProj.title}</h2>
                                 </div>
                               </div>
-                              <span class="px-4 py-1.5 rounded-full bg-[#d4ff00] text-slate-950 font-black text-xs">
-                                FASE ATIVA: ${currentProj.status.toUpperCase()}
-                              </span>
-                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              <div class="p-6 bg-slate-900 rounded-[20px] border border-slate-800 space-y-3">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Avanço Físico Medido</span>
-                                <strong class="text-4xl font-black text-[#d4ff00] block">${currentProj.progress}%</strong>
-                                <p class="text-xs text-slate-300 leading-relaxed">Em conformidade com a Linha de Balanço 16.03 e sem descontinuidade operacional.</p>
-                              </div>
-
-                              <div class="p-6 bg-slate-900 rounded-[20px] border border-slate-800 space-y-3">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Controle Orçamentário</span>
-                                <strong class="text-3xl font-black text-white block">${currentProj.budget}</strong>
-                                <p class="text-xs text-slate-300 leading-relaxed">Total medido acumulado em ${currentProj.spent}, com desvio zero na curva financeira.</p>
-                              </div>
-
-                              <div class="p-6 bg-slate-900 rounded-[20px] border border-slate-800 space-y-3">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Meta de Entrega</span>
-                                <strong class="text-3xl font-black text-white block">${currentProj.deadline}</strong>
-                                <p class="text-xs text-slate-300 leading-relaxed">Todas as 4 semanas do R4 desimpedidas para as equipes de campo e canteiro.</p>
+                              <div class="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onclick="toggleFullscreenPresentation()"
+                                  class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-[#d4ff00] border border-[#d4ff00]/40 font-black text-xs rounded-full transition shadow-xs flex items-center gap-2 cursor-pointer"
+                                  title="Apresentar em Tela Cheia (F11)"
+                                >
+                                  <svg class="w-4 h-4 text-[#d4ff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                                  <span>Tela Cheia (PowerPoint)</span>
+                                </button>
+                                <span class="bg-slate-900 text-slate-300 font-mono text-xs font-bold px-3 py-2 rounded-full border border-slate-800">
+                                  Slide ${currentSlideIndex + 1} de ${totalSlides}
+                                </span>
                               </div>
                             </div>
+
+                            <!-- Barra de Progresso do Slide -->
+                            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                              <div class="bg-[#d4ff00] h-full transition-all duration-300" style="width: ${((currentSlideIndex + 1) / totalSlides) * 100}%"></div>
+                            </div>
+
+                            <!-- CORPO DO SLIDE ATUAL (16:9) -->
+                            <div class="min-h-[440px] flex flex-col justify-between py-2">
+                              
+                              <!-- SLIDE 1: CAPA INSTITUCIONAL MASTER -->
+                              ${currentSlideIndex === 0 ? `
+                                <div class="space-y-8 animate-card-fade my-auto">
+                                  <div class="inline-flex items-center gap-2 bg-[#d4ff00]/10 border border-[#d4ff00]/30 px-4 py-1.5 rounded-full text-xs font-black text-[#d4ff00]">
+                                    <span>● REVISÃO RÍTMICA 16.03 / R4 ATIVA</span>
+                                  </div>
+
+                                  <div class="space-y-3">
+                                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none">
+                                      ${currentProj.title}
+                                    </h1>
+                                    <p class="text-base sm:text-lg text-slate-300 font-medium max-w-3xl">
+                                      Relatório Executivo Mensal de Engenharia, Aderência ao PAC e Gestão da Linha de Balanço
+                                    </p>
+                                  </div>
+
+                                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-slate-800 text-xs">
+                                    <div class="p-4 bg-slate-900 rounded-[16px] border border-slate-800">
+                                      <span class="text-slate-400 block uppercase font-bold text-[10px]">Avanço Geral</span>
+                                      <strong class="text-2xl font-black text-[#d4ff00] block mt-1">${currentProj.progress}%</strong>
+                                      <span class="text-emerald-400 text-[11px]">+1.8% vs Planejado</span>
+                                    </div>
+                                    <div class="p-4 bg-slate-900 rounded-[16px] border border-slate-800">
+                                      <span class="text-slate-400 block uppercase font-bold text-[10px]">Orçamento</span>
+                                      <strong class="text-xl font-black text-white block mt-1">${currentProj.budget}</strong>
+                                      <span class="text-slate-400 text-[11px]">Gasto: ${currentProj.spent}</span>
+                                    </div>
+                                    <div class="p-4 bg-slate-900 rounded-[16px] border border-slate-800">
+                                      <span class="text-slate-400 block uppercase font-bold text-[10px]">Aderência PAC</span>
+                                      <strong class="text-2xl font-black text-emerald-400 block mt-1">91.4%</strong>
+                                      <span class="text-slate-400 text-[11px]">107/117 Tarefas</span>
+                                    </div>
+                                    <div class="p-4 bg-slate-900 rounded-[16px] border border-slate-800">
+                                      <span class="text-slate-400 block uppercase font-bold text-[10px]">Responsável</span>
+                                      <strong class="text-sm font-bold text-white block mt-1">Alex Ribeiro</strong>
+                                      <span class="text-slate-400 text-[11px]">CREA/AL 10948-D</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                              <!-- SLIDE 2: VISÃO GERAL & COCKPIT DE ENGENHARIA -->
+                              ${currentSlideIndex === 1 ? `
+                                <div class="space-y-6 animate-card-fade">
+                                  <div class="flex justify-between items-center">
+                                    <h3 class="text-xl sm:text-2xl font-black text-white">Cockpit da Visão Geral & 4 Frentes de Obra</h3>
+                                    <span class="text-xs font-mono text-[#d4ff00] bg-slate-900 px-3 py-1 rounded-full border border-slate-800">142 Colaboradores Ativos</span>
+                                  </div>
+
+                                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="p-4 bg-slate-900 rounded-[18px] border border-slate-800 space-y-2">
+                                      <div class="flex justify-between items-center">
+                                        <strong class="text-white text-xs font-bold">Arena Shows & Quadras</strong>
+                                        <span class="text-xs font-black text-[#d4ff00] font-mono">88.5%</span>
+                                      </div>
+                                      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-[#d4ff00] h-full" style="width: 88.5%"></div>
+                                      </div>
+                                      <span class="text-[11px] text-slate-400 block">Cobertura Metálica em Montagem</span>
+                                    </div>
+
+                                    <div class="p-4 bg-slate-900 rounded-[18px] border border-slate-800 space-y-2">
+                                      <div class="flex justify-between items-center">
+                                        <strong class="text-white text-xs font-bold">Bloco Apartamentos</strong>
+                                        <span class="text-xs font-black text-emerald-400 font-mono">74.2%</span>
+                                      </div>
+                                      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full" style="width: 74.2%"></div>
+                                      </div>
+                                      <span class="text-[11px] text-slate-400 block">Alvenarias e Lajes N3</span>
+                                    </div>
+
+                                    <div class="p-4 bg-slate-900 rounded-[18px] border border-slate-800 space-y-2">
+                                      <div class="flex justify-between items-center">
+                                        <strong class="text-white text-xs font-bold">Infraestrutura Viária</strong>
+                                        <span class="text-xs font-black text-sky-400 font-mono">62.0%</span>
+                                      </div>
+                                      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-sky-400 h-full" style="width: 62%"></div>
+                                      </div>
+                                      <span class="text-[11px] text-slate-400 block">Drenagem e Pavimentação</span>
+                                    </div>
+
+                                    <div class="p-4 bg-slate-900 rounded-[18px] border border-slate-800 space-y-2">
+                                      <div class="flex justify-between items-center">
+                                        <strong class="text-white text-xs font-bold">Complexo Piscinas</strong>
+                                        <span class="text-xs font-black text-[#d4ff00] font-mono">95.0%</span>
+                                      </div>
+                                      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-[#d4ff00] h-full" style="width: 95%"></div>
+                                      </div>
+                                      <span class="text-[11px] text-slate-400 block">Impermeabilização e Decks</span>
+                                    </div>
+                                  </div>
+
+                                  <div class="p-5 bg-slate-900 rounded-[18px] border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                                    <strong class="text-[#d4ff00] block mb-1 uppercase font-bold text-[11px]">Resumo de Campo & Histórico de Medições</strong>
+                                    Todas as 4 frentes operando simultaneamente com ritmo contínuo. 18 medições aprovadas pela fiscalização no ciclo atual, registrando avanço de +1.8% em relação à meta contratual.
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                              <!-- SLIDE 3: LINHA DE BALANÇO 16.03 (TAK-TIME STUDIO) -->
+                              ${currentSlideIndex === 2 ? `
+                                <div class="space-y-6 animate-card-fade">
+                                  <div class="flex justify-between items-center">
+                                    <h3 class="text-xl sm:text-2xl font-black text-white">Linha de Balanço 16.03 (Diagrama Tempo-Caminho)</h3>
+                                    <span class="text-xs font-mono font-bold text-[#d4ff00]">Takt-Time: 1 pav / semana</span>
+                                  </div>
+
+                                  <div class="p-5 bg-[#0b1320] rounded-[20px] border border-slate-800 space-y-3 font-mono text-xs">
+                                    <div class="flex justify-between text-slate-400 border-b border-slate-800 pb-2 text-[11px]">
+                                      <span>SETOR / PAVIMENTO</span>
+                                      <span>S1 (15/05)</span>
+                                      <span>S2 (22/05)</span>
+                                      <span>S3 (29/05)</span>
+                                      <span class="text-[#d4ff00] font-bold">S4 (HOJE)</span>
+                                      <span>S5 (12/06)</span>
+                                      <span>S6 (19/06)</span>
+                                      <span>S7 (26/06)</span>
+                                    </div>
+
+                                    <div class="space-y-2.5">
+                                      <div class="flex items-center justify-between p-2 rounded bg-slate-900">
+                                        <span class="font-bold text-slate-200 w-32">N4 Cobertura</span>
+                                        <div class="flex-1 mx-4 bg-slate-800 h-3.5 rounded-full overflow-hidden flex">
+                                          <div class="bg-cyan-400 h-full w-[100%]"></div>
+                                          <div class="bg-[#d4ff00] h-full w-[92%]"></div>
+                                        </div>
+                                        <span class="text-[#d4ff00] font-bold">92% Real Ativa</span>
+                                      </div>
+
+                                      <div class="flex items-center justify-between p-2 rounded bg-slate-900">
+                                        <span class="font-bold text-slate-200 w-32">N3 Arquibancadas</span>
+                                        <div class="flex-1 mx-4 bg-slate-800 h-3.5 rounded-full overflow-hidden flex">
+                                          <div class="bg-cyan-400 h-full w-[100%]"></div>
+                                          <div class="bg-[#d4ff00] h-full w-[100%]"></div>
+                                          <div class="bg-purple-500 h-full w-[78%]"></div>
+                                        </div>
+                                        <span class="text-purple-400 font-bold">78% Real</span>
+                                      </div>
+
+                                      <div class="flex items-center justify-between p-2 rounded bg-slate-900">
+                                        <span class="font-bold text-slate-200 w-32">N2 Palco & Lajes</span>
+                                        <div class="flex-1 mx-4 bg-slate-800 h-3.5 rounded-full overflow-hidden flex">
+                                          <div class="bg-cyan-400 h-full w-[100%]"></div>
+                                          <div class="bg-[#d4ff00] h-full w-[100%]"></div>
+                                          <div class="bg-purple-500 h-full w-[85%]"></div>
+                                          <div class="bg-emerald-500 h-full w-[60%]"></div>
+                                        </div>
+                                        <span class="text-emerald-400 font-bold">85% Real</span>
+                                      </div>
+
+                                      <div class="flex items-center justify-between p-2 rounded bg-slate-900">
+                                        <span class="font-bold text-slate-200 w-32">T0 Fundações</span>
+                                        <div class="flex-1 mx-4 bg-slate-800 h-3.5 rounded-full overflow-hidden">
+                                          <div class="bg-emerald-500 h-full w-full"></div>
+                                        </div>
+                                        <span class="text-emerald-400 font-bold">100% Entregue</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div class="grid grid-cols-3 gap-3 text-center text-xs">
+                                    <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800">
+                                      <span class="text-slate-400 block text-[10px]">Índice de Sincronismo</span>
+                                      <strong class="text-lg font-black text-[#d4ff00]">97.8%</strong>
+                                    </div>
+                                    <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800">
+                                      <span class="text-slate-400 block text-[10px]">Buffer de Segurança</span>
+                                      <strong class="text-lg font-black text-white">5 Dias Úteis</strong>
+                                    </div>
+                                    <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800">
+                                      <span class="text-slate-400 block text-[10px]">Ritmo Médio</span>
+                                      <strong class="text-lg font-black text-emerald-400">2 Dias / Nível</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                              <!-- SLIDE 4: MÉDIO PRAZO (LOOKAHEAD R4) -->
+                              ${currentSlideIndex === 3 ? `
+                                <div class="space-y-6 animate-card-fade">
+                                  <div class="flex justify-between items-center">
+                                    <h3 class="text-xl sm:text-2xl font-black text-white">Médio Prazo (Lookahead R4 — 4 Semanas)</h3>
+                                    <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-800">96.2% Desimpedido</span>
+                                  </div>
+
+                                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                    <div class="p-5 bg-slate-900 rounded-[18px] border border-slate-800 space-y-3">
+                                      <strong class="text-[#d4ff00] uppercase font-bold text-xs block">Matriz de Desimpedimento das 4 Semanas</strong>
+                                      <div class="space-y-2">
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Semana 1 (05/06 a 11/06):</strong> Montagem Metálica</span>
+                                          <span class="font-bold text-emerald-400">100% Desimpedida</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Semana 2 (12/06 a 18/06):</strong> Alvenarias N3</span>
+                                          <span class="font-bold text-emerald-400">Liberada</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Semana 3 (19/06 a 25/06):</strong> Instalações</span>
+                                          <span class="font-bold text-amber-400">1 Restrição Mitigada</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Semana 4 (26/06 a 02/07):</strong> Esquadrias</span>
+                                          <span class="font-bold text-sky-400">Em Preparação</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div class="p-5 bg-slate-900 rounded-[18px] border border-slate-800 space-y-3">
+                                      <strong class="text-[#d4ff00] uppercase font-bold text-xs block">Suprimentos Críticos de Canteiro</strong>
+                                      <div class="space-y-2">
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Aço CA-50:</strong> 45 Toneladas</span>
+                                          <span class="text-emerald-400 font-bold">100% em Canteiro</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Concreto Usinado FCK 30:</strong> 80 m³</span>
+                                          <span class="text-sky-400 font-bold">Programado p/ Sexta</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Telhas PIR Termoacústicas:</strong> 1.200 m²</span>
+                                          <span class="text-emerald-400 font-bold">Descarga Efetuada</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-950 rounded-lg flex justify-between items-center border border-slate-800">
+                                          <span>• <strong>Argamassa AC-III:</strong> 400 Sacos</span>
+                                          <span class="text-emerald-400 font-bold">Almoxarifado OK</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                              <!-- SLIDE 5: CURVA S & ADERÊNCIA AO PAC -->
+                              ${currentSlideIndex === 4 ? `
+                                <div class="space-y-6 animate-card-fade">
+                                  <div class="flex justify-between items-center">
+                                    <h3 class="text-xl sm:text-2xl font-black text-white">Curva S Físico-Financeira & Aderência ao PAC</h3>
+                                    <span class="text-xs font-mono font-bold text-[#d4ff00]">SPI: 1.03 · CPI: 1.02</span>
+                                  </div>
+
+                                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                    <div class="p-5 bg-slate-900 rounded-[18px] border border-slate-800 space-y-3">
+                                      <strong class="text-white uppercase font-bold text-xs block">Evolução Mensal Consolidada</strong>
+                                      <div class="space-y-1.5 font-mono">
+                                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>Jan/26:</span><span class="text-slate-300">12.0% (Meta 10%)</span></div>
+                                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>Fev/26:</span><span class="text-slate-300">22.4% (Meta 20%)</span></div>
+                                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>Mar/26:</span><span class="text-slate-300">35.1% (Meta 32%)</span></div>
+                                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>Abr/26:</span><span class="text-slate-300">48.0% (Meta 45%)</span></div>
+                                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>Mai/26:</span><span class="text-slate-300">56.5% (Meta 55%)</span></div>
+                                        <div class="flex justify-between p-2 bg-slate-800 rounded text-[#d4ff00] font-bold"><span>Jun/26 (Hoje):</span><span>${currentProj.progress}% (Meta 60%)</span></div>
+                                      </div>
+                                    </div>
+
+                                    <div class="p-5 bg-slate-900 rounded-[18px] border border-slate-800 space-y-3">
+                                      <strong class="text-[#d4ff00] uppercase font-bold text-xs block">Causas de Não Cumprimento (CNC)</strong>
+                                      <div class="space-y-2">
+                                        <div class="p-2.5 bg-slate-950 rounded flex justify-between"><span>Chuva / Clima:</span><strong class="text-amber-400">40% (4 CNCs)</strong></div>
+                                        <div class="p-2.5 bg-slate-950 rounded flex justify-between"><span>Logística Fornecedores:</span><strong class="text-amber-400">30% (3 CNCs)</strong></div>
+                                        <div class="p-2.5 bg-slate-950 rounded flex justify-between"><span>Mão de Obra:</span><strong class="text-amber-400">20% (2 CNCs)</strong></div>
+                                        <div class="p-2.5 bg-slate-950 rounded flex justify-between"><span>Projetos:</span><strong class="text-amber-400">10% (1 CNC)</strong></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                              <!-- SLIDE 6: GALERIA DO CLIENTE & EVIDÊNCIAS DE CAMPO -->
+                              ${currentSlideIndex === 5 ? `
+                                <div class="space-y-6 animate-card-fade">
+                                  <div class="flex justify-between items-center">
+                                    <h3 class="text-xl sm:text-2xl font-black text-white">Galeria do Cliente & Evidências Fotográficas HD</h3>
+                                    <span class="text-xs font-mono font-bold text-[#d4ff00]">Validação GPS & Timestamp</span>
+                                  </div>
+
+                                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                    <div class="p-3 bg-slate-900 rounded-[16px] border border-slate-800 space-y-2">
+                                      <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-700" style="background-image: url('https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=800&auto=format&fit=crop&q=80');"></div>
+                                      <strong class="text-white block font-bold text-xs">Arena Shows</strong>
+                                      <span class="text-[10px] text-slate-400 block font-mono">GPS: -9.1482, -35.2511</span>
+                                    </div>
+
+                                    <div class="p-3 bg-slate-900 rounded-[16px] border border-slate-800 space-y-2">
+                                      <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-700" style="background-image: url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format&fit=crop&q=80');"></div>
+                                      <strong class="text-white block font-bold text-xs">Laje Torre 3</strong>
+                                      <span class="text-[10px] text-slate-400 block font-mono">GPS: -9.1485, -35.2518</span>
+                                    </div>
+
+                                    <div class="p-3 bg-slate-900 rounded-[16px] border border-slate-800 space-y-2">
+                                      <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-700" style="background-image: url('https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80');"></div>
+                                      <strong class="text-white block font-bold text-xs">Drenagem Viária</strong>
+                                      <span class="text-[10px] text-slate-400 block font-mono">GPS: -9.1479, -35.2505</span>
+                                    </div>
+
+                                    <div class="p-3 bg-slate-900 rounded-[16px] border border-slate-800 space-y-2">
+                                      <div class="h-36 rounded-[12px] bg-cover bg-center border border-slate-700" style="background-image: url('https://images.unsplash.com/photo-1584467746872-9599d0a4b61b?w=800&auto=format&fit=crop&q=80');"></div>
+                                      <strong class="text-white block font-bold text-xs">Complexo Piscinas</strong>
+                                      <span class="text-[10px] text-slate-400 block font-mono">GPS: -9.1490, -35.2522</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                              <!-- SLIDE 7: RESPONSABILIDADE TÉCNICA & ENCERRAMENTO -->
+                              ${currentSlideIndex === 6 ? `
+                                <div class="space-y-8 animate-card-fade my-auto">
+                                  <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+                                    <div>
+                                      <span class="text-[10px] font-black text-[#d4ff00] uppercase tracking-widest block">CHANCELA DE ENGENHARIA</span>
+                                      <h3 class="text-2xl sm:text-3xl font-black text-white">Responsabilidade Técnica & Conclusão</h3>
+                                    </div>
+                                    <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black px-4 py-1.5 rounded-full">
+                                      ✓ CHANCELA VÁLIDA
+                                    </span>
+                                  </div>
+
+                                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                                    <div class="p-6 bg-slate-900 rounded-[20px] border border-slate-800 space-y-3">
+                                      <strong class="text-lg font-black text-white block">Alex Ribeiro</strong>
+                                      <span class="text-slate-300 block font-medium">Diretor de Engenharia & Operações</span>
+                                      <span class="text-slate-400 block">CREA/AL 10948-D · Planes Gestão e Engenharia</span>
+                                      <div class="pt-3 border-t border-slate-800 font-mono text-[11px] text-[#d4ff00]">
+                                        WhatsApp: +55 (81) 97333-2227
+                                      </div>
+                                    </div>
+
+                                    <div class="p-6 bg-slate-900 rounded-[20px] border border-slate-800 space-y-3">
+                                      <strong class="text-white uppercase font-bold text-xs block">Certificação Digital & Autenticação</strong>
+                                      <p class="text-slate-300 leading-relaxed text-xs">
+                                        Relatório gerado em ambiente seguro com certificação criptográfica SHA-256 e rastreabilidade total de dados de campo.
+                                      </p>
+                                      <div class="p-3 bg-slate-950 rounded-lg font-mono text-[10px] text-slate-400">
+                                        HASH: e7a9c84d12f4510b991823ab...PL-2026-X94B
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ` : ''}
+
+                            </div>
+
+                            <!-- CONTROLES INFERIORES DO POWERPOINT (ANTERIOR / PRÓXIMO E TABS DE SLIDES) -->
+                            <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                              <div class="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onclick="prevSlide()"
+                                  ${currentSlideIndex === 0 ? 'disabled' : ''}
+                                  class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-white font-bold text-xs transition border border-slate-800 cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <span>◀ Slide Anterior</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onclick="nextSlide()"
+                                  ${currentSlideIndex === totalSlides - 1 ? 'disabled' : ''}
+                                  class="px-5 py-2 rounded-xl bg-[#d4ff00] hover:bg-[#c4ed00] disabled:opacity-30 text-slate-950 font-black text-xs transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <span>Próximo Slide ▶</span>
+                                </button>
+                              </div>
+
+                              <!-- Mini-tabs de navegação direta -->
+                              <div class="flex items-center gap-1.5 overflow-x-auto max-w-full py-1">
+                                ${Array.from({ length: totalSlides }).map((_, i) => `
+                                  <button
+                                    type="button"
+                                    onclick="goToSlide(${i})"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono transition cursor-pointer ${
+                                      currentSlideIndex === i
+                                        ? 'bg-[#d4ff00] text-slate-950 font-black'
+                                        : 'bg-slate-900 text-slate-400 hover:text-white'
+                                    }"
+                                    title="Ir para Slide ${i + 1}"
+                                  >
+                                    ${i + 1}
+                                  </button>
+                                `).join('')}
+                              </div>
+                            </div>
+
                           </div>
                         `}
 
