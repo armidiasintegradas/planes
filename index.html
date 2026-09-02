@@ -1283,15 +1283,7 @@
 
 // Ações de aprovação consolidadas na seção de autenticação
 
-    function rejectPendingUser(id) {
-      const idx = pendingUsers.findIndex(u => u.id === id);
-      if (idx !== -1) {
-        const u = pendingUsers.splice(idx, 1)[0];
-        saveUsersStorage();
-        showToast(`✕ Cadastro de ${u.name} recusado.`);
-        render();
-      }
-    }
+// Ação de recusa de usuário consolidada na seção de autenticação
 
     function handleEditSupplySubmit() {
       const sup = suppliesList.find(s => s.id === editingSupplyId);
@@ -2306,7 +2298,6 @@
         showToast(`✕ Cadastro de ${u.name} recusado.`);
         render();
       }
-    }
     }
 
     function openRegisterModal() {
