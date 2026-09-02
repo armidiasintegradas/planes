@@ -3645,7 +3645,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
         <div class="w-full min-h-screen flex flex-col justify-between">
           
           <!-- FULL HD PANORAMIC HEADER -->
-          <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 xl:px-10 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs sticky top-0 z-30">
+          <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 xl:px-10 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 shadow-xs sticky top-0 z-30">
             <div class="flex items-center justify-between lg:justify-start gap-4">
               <div class="flex items-center gap-3">
                 <button type="button" onclick="toggleMobileMenu()" class="lg:hidden p-2.5 rounded-[14px] bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200 cursor-pointer min-h-[40px] flex items-center justify-center">
@@ -3670,7 +3670,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
             <!-- Role Selector & Action Center -->
             <div class="flex items-center flex-wrap gap-2.5">
-              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200 overflow-x-auto max-w-full">
+              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200 overflow-x-auto max-w-full scrollbar-none py-0.5">
                 ${['Engenharia', 'Campo', 'Canteiro', 'Diretoria', 'Cliente', 'Admin'].map(lvl => `
                   <button
                     onclick="accessLevel = '${lvl}'; showToast('Nível: ${lvl}'); render();"
@@ -3845,42 +3845,42 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                       <!-- 1. Avanço Planejado -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Avanço Planejado</span>
-                        <strong class="text-2xl font-black text-slate-200 block">67.4%</strong>
+                        <strong class="text-lg sm:text-xl xl:text-2xl font-black text-slate-200 block">67.4%</strong>
                         <span class="text-[10px] text-slate-500 font-sans">Meta Linha de Balanço</span>
                       </div>
 
                       <!-- 2. Avanço Realizado -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-[#d4ff00]/40 space-y-1 bg-[#d4ff00]/5">
                         <span class="text-[#d4ff00] text-[10.5px] uppercase font-bold block font-sans">Avanço Realizado</span>
-                        <strong class="text-2xl font-black text-[#d4ff00] block">${selectedProject.progress || '61.8'}%</strong>
+                        <strong class="text-lg sm:text-xl xl:text-2xl font-black text-[#d4ff00] block">${selectedProject.progress || '61.8'}%</strong>
                         <span class="text-[10px] text-emerald-400 font-sans">Medição Auditada</span>
                       </div>
 
                       <!-- 3. Desvio Físico -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-amber-500/30 space-y-1 bg-amber-500/5">
                         <span class="text-amber-400 text-[10.5px] uppercase font-bold block font-sans">Desvio Físico</span>
-                        <strong class="text-2xl font-black text-amber-400 block">-5.6 p.p.</strong>
+                        <strong class="text-lg sm:text-xl xl:text-2xl font-black text-amber-400 block">-5.6 p.p.</strong>
                         <span class="text-[10px] text-amber-300 font-sans">Atenção no Takt</span>
                       </div>
 
                       <!-- 4. Custo Previsto -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Custo Previsto</span>
-                        <strong class="text-xl font-black text-slate-200 block">${selectedProject.budget || 'R$ 24.0M'}</strong>
+                        <strong class="text-base sm:text-lg xl:text-xl font-black text-slate-200 block">${selectedProject.budget || 'R$ 24.0M'}</strong>
                         <span class="text-[10px] text-slate-500 font-sans">Orçamento Base</span>
                       </div>
 
                       <!-- 5. Custo Realizado -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Custo Realizado</span>
-                        <strong class="text-xl font-black text-white block">${selectedProject.spent || 'R$ 14.8M'}</strong>
+                        <strong class="text-base sm:text-lg xl:text-xl font-black text-white block">${selectedProject.spent || 'R$ 14.8M'}</strong>
                         <span class="text-[10px] text-emerald-400 font-sans">Eficiência de Custo</span>
                       </div>
 
                       <!-- 6. Forecast Final Custo (EAC) -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Forecast Custo (EAC)</span>
-                        <strong class="text-xl font-black text-sky-400 block">R$ 24.4M</strong>
+                        <strong class="text-base sm:text-lg xl:text-xl font-black text-sky-400 block">R$ 24.4M</strong>
                         <span class="text-[10px] text-slate-400 font-sans">+1.6% vs Orçado</span>
                       </div>
 
@@ -4053,89 +4053,89 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                       </div>
 
                       ${chartViewType === 'colunas' ? `
-                        <!-- EXACT EDITORIAL INFOGRAPHIC DYNAMIC — PILARES ALTOS EXPANDIDOS PARA BAIXO -->
+                        <!-- EXACT EDITORIAL INFOGRAPHIC DYNAMIC — PILARES COM TIPOGRAFIA RESPONSIVA SEM SOBREPOSIÇÃO -->
                         <div class="relative z-10 w-full h-[360px] xl:h-[420px] grid grid-cols-7 border-b-2 border-slate-400 items-stretch">
                           
                           <!-- Coluna: Mai -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 pr-2">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Mai</strong>
-                              <span class="text-[11px] text-slate-500 font-medium">(54% prev)</span>
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 pr-1 sm:pr-2">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-slate-950 block leading-tight truncate">Mai</strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(54% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">51%</span>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">51%</span>
                               <div data-height="51%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Jun (Verde Esmeralda em Destaque) -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2 bg-emerald-50/60 rounded-t-2xl shadow-xs">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-emerald-950 block leading-tight">Jun <span class="text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded-md font-sans ml-1">Hoje</span></strong>
-                              <span class="text-[11px] text-emerald-800 font-bold">(R$ 3,85M)</span>
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-1 sm:px-2 bg-emerald-50/70 rounded-t-xl sm:rounded-t-2xl shadow-xs">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-emerald-950 block leading-tight truncate">Jun <span class="text-[8px] sm:text-[9px] bg-emerald-700 text-white px-1 py-0.5 rounded font-sans">Hoje</span></strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-emerald-800 font-bold block truncate">(R$ 3,85M)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-emerald-950 mb-1 z-10 leading-none font-black">62%</span>
-                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-emerald-600 border-2 border-emerald-700 shadow-md transition-all duration-1000 ease-out rounded-t-md"></div>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none font-black text-center">62%</span>
+                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-emerald-600 border border-emerald-700 shadow-md transition-all duration-1000 ease-out rounded-t-sm sm:rounded-t-md"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Jul -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Jul</strong>
-                              <span class="text-[11px] text-slate-500 font-medium">(75% prev)</span>
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-1 sm:px-2">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-slate-950 block leading-tight truncate">Jul</strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(75% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">71%</span>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">71%</span>
                               <div data-height="71%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Ago -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Ago</strong>
-                              <span class="text-[11px] text-slate-500 font-medium">(84% prev)</span>
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-1 sm:px-2">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-slate-950 block leading-tight truncate">Ago</strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(84% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">80%</span>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">80%</span>
                               <div data-height="80%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Set -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Set</strong>
-                              <span class="text-[11px] text-slate-500 font-medium">(92% prev)</span>
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-1 sm:px-2">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-slate-950 block leading-tight truncate">Set</strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(92% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">89%</span>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">89%</span>
                               <div data-height="89%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Out -->
-                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-2">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Out</strong>
-                              <span class="text-[11px] text-slate-500 font-medium">(97% prev)</span>
+                          <div class="relative flex flex-col justify-between border-r border-slate-300/80 px-1 sm:px-2">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-slate-950 block leading-tight truncate">Out</strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(97% prev)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">95%</span>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">95%</span>
                               <div data-height="95%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
 
                           <!-- Coluna: Nov -->
-                          <div class="relative flex flex-col justify-between pl-2">
-                            <div>
-                              <strong class="text-sm xl:text-base font-black text-slate-950 block leading-tight">Nov</strong>
-                              <span class="text-[11px] text-slate-500 font-medium">(Entrega)</span>
+                          <div class="relative flex flex-col justify-between pl-1 sm:pl-2">
+                            <div class="text-center sm:text-left">
+                              <strong class="text-xs sm:text-sm xl:text-base font-black text-slate-950 block leading-tight truncate">Nov</strong>
+                              <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(Entrega)</span>
                             </div>
-                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative">
-                              <span class="font-card-number text-3xl xl:text-4xl text-slate-950 mb-1 z-10 leading-none">100%</span>
+                            <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
+                              <span class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">100%</span>
                               <div data-height="100%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-sm"></div>
                             </div>
                           </div>
@@ -4210,7 +4210,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     </div>
 
                     <!-- EAC & Forecast Summary Strip -->
-                    <div class="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-100 mt-3 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 border-t border-slate-100 mt-3 text-xs">
                       <div class="bg-slate-50 p-2.5 rounded-[10px] border border-slate-200">
                         <span class="text-[10px] text-slate-500 font-bold uppercase block">Custo Estimado (EAC)</span>
                         <strong class="text-sm xl:text-base font-black text-slate-950">R$ 22,60M</strong>
