@@ -2875,20 +2875,20 @@
                   <!-- Right: Frentes de Obra (4 Cols) — NOVO GRÁFICO RADIAL SPEED-ORBIT + CARDS FLUIDOS -->
                   <div class="lg:col-span-4 white-bento-card p-6 xl:p-8 border border-slate-200 shadow-xs flex flex-col justify-between bg-white">
                     <div>
-                      <!-- Card Header -->
+                      <!-- Card Header (● 4 Frentes NA MESMA LINHA EM UMA LINHA SÓ) -->
                       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                         <div class="flex items-center gap-2.5">
-                          <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs shrink-0">
-                            ${getSvg('mapPin', 'w-4 h-4 text-[#d4ff00]')}
+                          <div class="w-8 h-8 rounded-[10px] bg-slate-100 border border-slate-200 text-slate-800 flex items-center justify-center font-bold shadow-2xs shrink-0">
+                            ${getSvg('mapPin', 'w-4 h-4 text-slate-800')}
                           </div>
-                          <div>
-                            <h3 class="text-base font-black text-slate-950 tracking-tight">Frentes de Obra</h3>
-                            <p class="text-[11px] text-slate-500 font-medium">Radar Rítmico de Produção em Canteiro</p>
+                          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <h3 class="text-base font-black text-slate-950 tracking-tight whitespace-nowrap">Frentes de Obra</h3>
+                            <span class="text-[10.5px] font-black px-2.5 py-0.5 rounded-full bg-slate-950 text-[#d4ff00] border border-slate-800 font-mono whitespace-nowrap inline-flex items-center gap-1 shrink-0">
+                              ● 4 Frentes
+                            </span>
                           </div>
                         </div>
-                        <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-900 text-[#d4ff00] border border-slate-800 font-mono">
-                          ● 4 Frentes
-                        </span>
+                        <span class="text-[11px] text-slate-500 font-medium hidden md:inline whitespace-nowrap">Radar Rítmico</span>
                       </div>
 
                       <!-- NOVO GRÁFICO ANIMADO FLUIDO (SEMI-CIRCULAR SPEED ORBIT RADIAL COM BACKGROUND BRANCO) -->
@@ -2977,15 +2977,15 @@
                       <!-- CARDS FLUIDOS & MODERNOS: ARENA SHOWS E BLOCOS DE APARTAMENTOS REVISITADOS -->
                       <div class="space-y-3 mt-3">
                         
-                        <!-- 1. ARENA DE SHOWS & QUADRAS (FLUIDO, MODERNO E ANIMADO) -->
+                        <!-- 1. ARENA DE SHOWS & QUADRAS (ÍCONE SVG PADRÃO DO SITE) -->
                         <div
                           onclick="setLbSec('ARENA'); setNavWithHistory('Linha de Balanço');"
-                          class="p-3.5 bg-gradient-to-r from-lime-50/70 via-white to-slate-50 hover:from-lime-100/90 hover:to-white border border-lime-200/80 hover:border-lime-400 rounded-[16px] transition-all duration-300 cursor-pointer group shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative overflow-hidden"
+                          class="p-3.5 bg-gradient-to-r from-lime-50/60 via-white to-slate-50 hover:from-lime-100/80 hover:to-white border border-lime-200 hover:border-lime-400 rounded-[16px] transition-all duration-300 cursor-pointer group shadow-2xs hover:shadow-xs relative overflow-hidden"
                         >
                           <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center gap-2.5">
-                              <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-xs shadow-2xs group-hover:scale-105 transition">
-                                🏟️
+                              <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-2xs group-hover:scale-105 transition shrink-0">
+                                ${getSvg('layers', 'w-4 h-4 text-[#d4ff00]')}
                               </div>
                               <div>
                                 <strong class="text-xs font-black text-slate-950 group-hover:text-emerald-900 transition block leading-tight">Arena Shows & Quadras</strong>
@@ -2994,7 +2994,7 @@
                             </div>
                             <div class="text-right">
                               <span class="text-sm font-black text-slate-950 font-mono block">92%</span>
-                              <span class="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-md">● +3% Acel</span>
+                              <span class="text-[9.5px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-1.5 py-0.2 rounded-md whitespace-nowrap">● +3% Acel</span>
                             </div>
                           </div>
 
@@ -3003,15 +3003,15 @@
                           </div>
                         </div>
 
-                        <!-- 2. BLOCO DE APARTAMENTOS (FLUIDO, MODERNO E ANIMADO) -->
+                        <!-- 2. BLOCO DE APARTAMENTOS (ÍCONE SVG PADRÃO DO SITE) -->
                         <div
                           onclick="setLbSec('BLOCO APTOS'); setNavWithHistory('Linha de Balanço');"
-                          class="p-3.5 bg-gradient-to-r from-blue-50/70 via-white to-slate-50 hover:from-blue-100/90 hover:to-white border border-blue-200/80 hover:border-blue-400 rounded-[16px] transition-all duration-300 cursor-pointer group shadow-2xs hover:shadow-md hover:-translate-y-0.5 relative overflow-hidden"
+                          class="p-3.5 bg-gradient-to-r from-blue-50/60 via-white to-slate-50 hover:from-blue-100/80 hover:to-white border border-blue-200 hover:border-blue-400 rounded-[16px] transition-all duration-300 cursor-pointer group shadow-2xs hover:shadow-xs relative overflow-hidden"
                         >
                           <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center gap-2.5">
-                              <div class="w-8 h-8 rounded-[10px] bg-blue-900 text-white flex items-center justify-center font-black text-xs shadow-2xs group-hover:scale-105 transition">
-                                🏢
+                              <div class="w-8 h-8 rounded-[10px] bg-[#0b2535] text-[#8eb3ff] flex items-center justify-center font-black shadow-2xs group-hover:scale-105 transition shrink-0">
+                                ${getSvg('home', 'w-4 h-4 text-[#8eb3ff]')}
                               </div>
                               <div>
                                 <strong class="text-xs font-black text-slate-950 group-hover:text-blue-900 transition block leading-tight">Bloco de Apartamentos</strong>
@@ -3020,7 +3020,7 @@
                             </div>
                             <div class="text-right">
                               <span class="text-sm font-black text-slate-950 font-mono block">74%</span>
-                              <span class="text-[9px] font-bold text-blue-800 bg-blue-100 px-1.5 py-0.2 rounded-md">● No Ritmo</span>
+                              <span class="text-[9.5px] font-bold text-blue-900 bg-blue-100/90 border border-blue-300 px-1.5 py-0.2 rounded-md whitespace-nowrap">● No Ritmo</span>
                             </div>
                           </div>
 
