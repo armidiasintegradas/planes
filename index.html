@@ -1470,34 +1470,81 @@
         let lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     function refreshPendingUsers(manual = false) {
+      syncAllAdminData(manual);
+    }
+
+    function syncAllAdminData(manual = false) {
       try {
+        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+        
+        // Sincroniza registeredUsers
+        const savedUsers = localStorage.getItem('planes_registered_users');
+        if (savedUsers) {
+          const parsed = JSON.parse(savedUsers);
+          if (Array.isArray(parsed)) {
+            registeredUsers = parsed.filter(u => {
+              const e = (u.email || '').toLowerCase();
+              const id = String(u.id || '').toLowerCase();
+              return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves';
+            });
+          }
+        }
+        if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
+          registeredUsers.unshift(defaultRegisteredUsers[0]);
+        }
+
+        // Sincroniza pendingUsers
         const savedPending = localStorage.getItem('planes_pending_users');
         if (savedPending) {
           const parsed = JSON.parse(savedPending);
-          pendingUsers = Array.isArray(parsed) ? parsed.filter(u => u.email !== 'rodrigo.tavares@empresa.com' && u.email !== 'luciana@japaratingaresort.com.br') : [];
-        } else {
-          pendingUsers = [];
-        }
-
-        const savedUsers = localStorage.getItem('planes_registered_users');
-        if (savedUsers) {
-          registeredUsers = JSON.parse(savedUsers);
-          if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
-            registeredUsers.unshift(defaultRegisteredUsers[0]);
+          if (Array.isArray(parsed)) {
+            pendingUsers = parsed.filter(u => {
+              const e = (u.email || '').toLowerCase();
+              const id = String(u.id || '').toLowerCase();
+              return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'rodrigo.tavares@empresa.com' && e !== 'luciana@japaratingaresort.com.br';
+            });
           }
         }
+
+        // Sincroniza teamMembersList
+        const savedTm = localStorage.getItem('planes_team_members');
+        if (savedTm) {
+          const parsed = JSON.parse(savedTm);
+          if (Array.isArray(parsed)) {
+            teamMembersList = parsed.filter(m => {
+              const e = (m.email || '').toLowerCase();
+              const id = String(m.id || '').toLowerCase();
+              return !blacklist.includes(e) && !blacklist.includes(id) && m.name !== 'Mariana Alves';
+            });
+          }
+        }
+
+        updateUserPresence();
+        lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (manual) {
+          showToast(`✓ Sincronização concluída: ${registeredUsers.length} usuários ativos, ${pendingUsers.length} pendentes e ${getOnlineSessions().length} online.`);
+        }
+
+        if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
+          render();
+        }
       } catch (e) {}
-
-      lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      if (manual) {
-        showToast(`✓ Fila de solicitações atualizada! (${pendingUsers.length} pendentes)`);
-      }
-
-      if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
-        render();
-      }
     }
+
+    // Listener para atualizações em tempo real vindas de outras abas ou janelas
+    window.addEventListener('storage', (event) => {
+      if (['planes_online_sessions', 'planes_registered_users', 'planes_pending_users', 'planes_team_members', 'planes_deleted_users_blacklist'].includes(event.key)) {
+        syncAllAdminData(false);
+      }
+    });
+
+    // Poller em tempo real a cada 8 segundos para atualizar conexões e usuários
+    let liveAdminSyncTimer = setInterval(() => {
+      if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
+        syncAllAdminData(false);
+      }
+    }, 8000);
 
     // Auto-sync em segundo plano a cada 60 segundos (1 minuto)
     let pendingSyncInterval = null;
@@ -7430,47 +7477,91 @@ ${activeNav === 'Equipe & Contatos' ? `
               ${activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários' ? `
                 <div class="space-y-6 animate-card-fade">
                   
-                  <!-- Top Banner Executivo -->
+                  <!-- Top Banner Executivo com Sincronização em Tempo Real -->
                   <div class="bg-slate-950 text-white p-6 xl:p-8 rounded-[24px] border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div class="flex items-start gap-4">
                       <div class="w-12 h-12 rounded-[16px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-xs shrink-0 mt-1">
                         ${getSvg('users', 'w-6 h-6 text-slate-950')}
                       </div>
-                      <div>
-                        <div class="flex items-center gap-2">
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-2 flex-wrap">
                           <span class="bg-[#d4ff00]/20 text-[#d4ff00] text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-[#d4ff00]/40 font-mono">
                             ADMIN MASTER · RBAC & LGPD
                           </span>
                           <span class="text-xs text-slate-400 font-mono">Auditoria Criptográfica</span>
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Live Sync (8s)
+                          </span>
                         </div>
-                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
                           Gestão de Usuários, Aprovações & Permissões RBAC
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                        <p class="text-xs sm:text-sm text-slate-300">
                           Controle granular de acesso para perfis Engenharia, Campo, Canteiro, Diretoria, Cliente e Administrador Geral.
                         </p>
+                        <div class="pt-2">
+                          <button
+                            type="button"
+                            onclick="syncAllAdminData(true)"
+                            class="px-4 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] active:bg-[#b5dc00] text-slate-950 font-black text-xs rounded-[12px] transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 border border-slate-300"
+                            title="Sincronizar conexões, cadastros e solicitações em tempo real"
+                          >
+                            ${getSvg('refresh', 'w-4 h-4 text-slate-950')}
+                            <span>Sincronizar Dados em Tempo Real</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3 text-xs font-mono shrink-0">
-                      <div class="p-3 bg-slate-900 rounded-[14px] border border-slate-800 space-y-0.5">
-                        <span class="text-slate-400 text-[10px] uppercase font-sans font-bold">Usuários Ativos</span>
-                        <strong class="text-white text-sm font-black block">${registeredUsers.length} Perfis</strong>
-                        <span class="text-emerald-400 text-[9.5px]">Aprovados</span>
+                    <!-- 3 Stat Cards Interativos e Clicáveis -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono shrink-0">
+                      
+                      <!-- Card 1: Usuários Ativos -->
+                      <div
+                        onclick="syncAllAdminData(true)"
+                        class="p-3.5 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 rounded-[16px] border border-slate-800 hover:border-slate-700 space-y-1 cursor-pointer transition group shadow-2xs"
+                        title="Clique para sincronizar usuários ativos"
+                      >
+                        <div class="flex items-center justify-between">
+                          <span class="text-slate-400 text-[10px] uppercase font-sans font-bold group-hover:text-white transition">Usuários Ativos</span>
+                          ${getSvg('refresh', 'w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:rotate-180 transition duration-300')}
+                        </div>
+                        <strong class="text-white text-base font-black block">${registeredUsers.length} Perfis</strong>
+                        <span class="text-emerald-400 text-[10px] font-medium block">● Aprovados</span>
                       </div>
-                      <div class="p-3 bg-slate-900 rounded-[14px] border border-[#d4ff00]/40 space-y-0.5 bg-[#d4ff00]/5">
-                        <span class="text-[#d4ff00] text-[10px] uppercase font-sans font-bold">Novos Cadastros</span>
-                        <strong class="text-[#d4ff00] text-sm font-black block">${pendingUsers.length} Pendentes</strong>
-                        <span class="text-slate-300 text-[9.5px]">Aguardando Aprovação</span>
+
+                      <!-- Card 2: Novos Cadastros / Pendentes -->
+                      <div
+                        onclick="syncAllAdminData(true)"
+                        class="p-3.5 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 rounded-[16px] border border-[#d4ff00]/40 space-y-1 bg-[#d4ff00]/5 cursor-pointer transition group shadow-2xs"
+                        title="Clique para sincronizar novas solicitações"
+                      >
+                        <div class="flex items-center justify-between">
+                          <span class="text-[#d4ff00] text-[10px] uppercase font-sans font-bold">Novos Cadastros</span>
+                          ${getSvg('refresh', 'w-3.5 h-3.5 text-[#d4ff00] group-hover:rotate-180 transition duration-300')}
+                        </div>
+                        <strong class="text-[#d4ff00] text-base font-black block">${pendingUsers.length} Pendentes</strong>
+                        <span class="text-slate-300 text-[10px] font-medium block">Aguardando</span>
                       </div>
-                      <div class="p-3 bg-slate-900 rounded-[14px] border border-emerald-500/40 space-y-0.5 bg-emerald-500/5">
-                        <span class="text-emerald-400 text-[10px] uppercase font-sans font-bold flex items-center gap-1.5">
-                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                          Online Agora
-                        </span>
-                        <strong class="text-white text-sm font-black block">${getOnlineSessions().length} Conectados</strong>
-                        <span class="text-emerald-400 text-[9.5px]">Tempo Real</span>
+
+                      <!-- Card 3: Online Agora em Tempo Real -->
+                      <div
+                        onclick="syncAllAdminData(true)"
+                        class="p-3.5 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 rounded-[16px] border border-emerald-500/40 space-y-1 bg-emerald-500/5 cursor-pointer transition group shadow-2xs"
+                        title="Clique para atualizar conexões em tempo real"
+                      >
+                        <div class="flex items-center justify-between">
+                          <span class="text-emerald-400 text-[10px] uppercase font-sans font-bold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Online Agora
+                          </span>
+                          ${getSvg('refresh', 'w-3.5 h-3.5 text-emerald-400 group-hover:rotate-180 transition duration-300')}
+                        </div>
+                        <strong class="text-white text-base font-black block">${getOnlineSessions().length} Conectados</strong>
+                        <span class="text-emerald-400 text-[10px] font-medium block">Tempo Real</span>
                       </div>
+
                     </div>
                   </div>
 
