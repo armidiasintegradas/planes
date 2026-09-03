@@ -1,5 +1,5 @@
 // Planes OS Service Worker — PWA App Shell & Offline Caching
-const CACHE_NAME = 'planes-os-v6';
+const CACHE_NAME = 'planes-os-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
