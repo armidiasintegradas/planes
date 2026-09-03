@@ -427,13 +427,13 @@
 
 
   <script>
-  window.__BUILD_TIMESTAMP__ = 1788461500;
+  window.__BUILD_TIMESTAMP__ = 1788463500;
   
   // Limpa imediatamente caches antigos da thread principal
   if ('caches' in window) {
     caches.keys().then(keys => {
       keys.forEach(k => {
-        if (k !== 'planes-os-v5') caches.delete(k);
+        if (k !== 'planes-os-v6') caches.delete(k);
       });
     });
   }
@@ -1034,7 +1034,7 @@
           <div class="p-3.5 bg-slate-950 text-white rounded-[14px] border border-slate-800 text-[11px] leading-relaxed flex items-start gap-2.5 shadow-sm">
             <span class="w-2 h-2 rounded-full bg-[#d4ff00] mt-1 shrink-0 animate-pulse"></span>
             <div>
-              <strong>Acesso Imediato & Auditoria Integrada:</strong> Seu cadastro será ativado instantaneamente no perfil selecionado. A notificação de auditoria é encaminhada para a Diretoria Geral (<strong class="text-[#d4ff00]">armidiasintegradas@gmail.com</strong>) e você já entra diretamente na plataforma!
+              <strong>Validação Corporativa de Segurança:</strong> Ao submeter sua solicitação, seus dados serão encaminhados para a fila de autorização do <strong>Administrador Master</strong>. Você receberá um <strong>e-mail de liberação de acesso</strong> com suas credenciais e permissões assim que for aprovado.
             </div>
           </div>
         </div>
@@ -1042,7 +1042,169 @@
         <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
           <button type="button" onclick="closeRegisterModal()" class="px-5 py-2.5 border border-slate-200 text-xs font-bold text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-[12px] transition cursor-pointer min-h-[42px]">Cancelar</button>
           <button type="button" onclick="handleRegisterSubmit()" class="px-6 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] border border-slate-300 shadow-xs hover:shadow-md transition cursor-pointer min-h-[42px]">
-            Concluir Cadastro e Entrar →
+            Enviar Solicitação para o Admin →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOOGLE AUTH MODAL (High Fidelity OAuth Simulation) -->
+    <div id="google-auth-modal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeGoogleAuthModal()">
+      <div class="bg-white border border-slate-200 rounded-[24px] max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs">
+              <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-slate-900">Fazer login com o Google</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Escolha uma conta para continuar para <span class="font-bold text-slate-800">Planes ENG</span></p>
+            </div>
+          </div>
+          <button type="button" onclick="closeGoogleAuthModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer text-xs font-bold">✕</button>
+        </div>
+
+        <div id="google-accounts-list" class="space-y-2"></div>
+
+        <div class="pt-3 border-t border-slate-100 space-y-3">
+          <span class="text-[10px] font-black uppercase text-slate-400 font-mono tracking-wider block">Ou entre com outra conta Google</span>
+          <div class="space-y-2">
+            <input id="google-custom-name" type="text" placeholder="Nome Completo" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none" />
+            <input id="google-custom-email" type="email" placeholder="nome@gmail.com ou Google Workspace" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none" />
+          </div>
+          <button type="button" onclick="handleGoogleCustomSubmit()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-[12px] transition cursor-pointer shadow-xs flex items-center justify-center gap-2">
+            <span>Continuar com esta conta</span>
+            <span>→</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-[12px] text-[10.5px] text-slate-500 leading-normal flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+          <span>Para sua segurança, novos acessos exigem aprovação do Administrador Master antes da liberação.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPLE AUTH MODAL (Apple ID Sign-In Simulation) -->
+    <div id="apple-auth-modal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeAppleAuthModal()">
+      <div class="bg-white border border-slate-200 rounded-[24px] max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-slate-950 text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.04-.96.04-2.12.64-2.8 1.44-.59.69-1.12 1.83-.98 2.92 1.07.08 2.16-.54 2.79-1.32z"/></svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-slate-900">Iniciar sessão com a Apple</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Use seu ID Apple para entrar em <span class="font-bold text-slate-800">Planes ENG</span></p>
+            </div>
+          </div>
+          <button type="button" onclick="closeAppleAuthModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer text-xs font-bold">✕</button>
+        </div>
+
+        <div id="apple-accounts-list" class="space-y-2"></div>
+
+        <div class="pt-3 border-t border-slate-100 space-y-3">
+          <span class="text-[10px] font-black uppercase text-slate-400 font-mono tracking-wider block">Ou informe seu ID Apple</span>
+          <div class="space-y-2">
+            <input id="apple-custom-name" type="text" placeholder="Nome Completo" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none" />
+            <input id="apple-custom-email" type="email" placeholder="seu-id@icloud.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none" />
+          </div>
+          <div class="space-y-2 pt-1">
+            <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+              <input type="radio" name="apple-email-pref" value="share" checked class="accent-slate-950" />
+              <span>Compartilhar meu e-mail com a Planes ENG</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+              <input type="radio" name="apple-email-pref" value="hide" class="accent-slate-950" />
+              <span>Ocultar meu e-mail (Apple Relay Privado)</span>
+            </label>
+          </div>
+          <button type="button" onclick="handleAppleCustomSubmit()" class="w-full py-2.5 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-[12px] transition cursor-pointer shadow-xs flex items-center justify-center gap-2">
+            <span>Continuar com Face ID / Senha</span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-[12px] text-[10.5px] text-slate-500 leading-normal flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+          <span>Acesso protegido pelo protocolo Apple ID. O Administrador receberá sua solicitação.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENDING APPROVAL STATUS MODAL -->
+    <div id="pending-status-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closePendingStatusModal()">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 text-center" onclick="event.stopPropagation()">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 text-2xl shadow-xs">
+          ⏳
+        </div>
+        <div>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 font-mono">
+            ● Aguardando Aprovação
+          </span>
+          <h3 class="text-base font-black text-slate-950 mt-2" id="pending-modal-title">Cadastro Enviado ao Administrador</h3>
+          <p class="text-xs text-slate-600 font-medium mt-1 leading-relaxed" id="pending-modal-desc">
+            Sua solicitação foi registrada com sucesso. Por políticas de segurança da Planes ENG, um Administrador Master precisa autorizar e definir o seu nível de acesso.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left text-xs space-y-2" id="pending-modal-details"></div>
+
+        <div class="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-left text-xs text-blue-950 flex items-start gap-2.5">
+          <span class="text-blue-600 text-base">📩</span>
+          <div class="leading-relaxed">
+            <strong>O que acontece agora?</strong>
+            <p class="text-[11px] text-blue-900/90 mt-0.5">Assim que o Administrador aprovar seu perfil, você receberá um <strong>e-mail corporativo de liberação</strong> e poderá fazer login imediatamente.</p>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-1">
+          <button type="button" onclick="closePendingStatusModal()" class="w-full py-3 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs">
+            Entendido, aguardarei a liberação
+          </button>
+          <button type="button" id="pending-modal-quick-approve-btn" onclick="quickApproveFromPendingModal()" class="w-full py-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 transition cursor-pointer">
+            ⚡ Simular Aprovação Imediata pelo Admin
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMAIL PREVIEW MODAL (Official Approval Email Template) -->
+    <div id="email-preview-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeEmailPreviewModal()">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-sm font-black">
+              ✓
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-slate-950">E-mail de Notificação Enviado</h3>
+              <p class="text-[10.5px] text-slate-500 font-medium">Confirmação corporativa despachada para o colaborador</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeEmailPreviewModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer text-xs font-bold">✕</button>
+        </div>
+
+        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50">
+          <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 text-[11px] space-y-1 font-mono text-slate-700">
+            <div><span class="text-slate-400 font-bold">De:</span> Planes ENG &lt;admin@planes.eng.br&gt;</div>
+            <div><span class="text-slate-400 font-bold">Para:</span> <strong class="text-slate-950" id="email-preview-recipient">usuario@empresa.com</strong></div>
+            <div><span class="text-slate-400 font-bold">Assunto:</span> <strong class="text-slate-900" id="email-preview-subject">✓ Acesso Aprovado — Plataforma Planes ENG</strong></div>
+          </div>
+
+          <div class="p-6 bg-white space-y-4 text-xs text-slate-800 leading-relaxed font-sans" id="email-preview-body"></div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+          <button type="button" onclick="openMailtoClient()" class="w-full sm:flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs flex items-center justify-center gap-2">
+            <span>Abrir no Cliente de E-mail</span>
+            <span>↗</span>
+          </button>
+          <button type="button" onclick="copyApprovalEmailText()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition cursor-pointer flex items-center justify-center gap-1.5">
+            <span>Copiar Texto</span>
+          </button>
+          <button type="button" onclick="closeEmailPreviewModal()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+            Concluir
           </button>
         </div>
       </div>
@@ -2357,7 +2519,466 @@
       return re.test(String(email).toLowerCase());
     }
 
-        function handleEmailLogin() {
+    let currentPendingModalUser = null;
+    let currentApprovedEmailUser = null;
+
+    // =========================================================
+    // GOOGLE OAUTH SIMULATION & MULTI-ACCOUNT MANAGEMENT
+    // =========================================================
+    const DEMO_GOOGLE_ACCOUNTS = [
+      { name: 'Alex Ribeiro', email: 'armidiasintegradas@gmail.com', role: 'Admin Master', avatar: 'AR', color: 'bg-rose-500' },
+      { name: 'Carlos Eduardo', email: 'carlos.engenharia@gmail.com', role: 'Engenheiro Residente', avatar: 'CE', color: 'bg-blue-500' },
+      { name: 'Marina Silveira', email: 'marina.campo@gmail.com', role: 'Apontadora de Campo', avatar: 'MS', color: 'bg-emerald-500' }
+    ];
+
+    function openGoogleAuthModal() {
+      renderGoogleAccounts();
+      const modal = document.getElementById('google-auth-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeGoogleAuthModal() {
+      const modal = document.getElementById('google-auth-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderGoogleAccounts() {
+      const container = document.getElementById('google-accounts-list');
+      if (!container) return;
+
+      const accounts = [...DEMO_GOOGLE_ACCOUNTS];
+      pendingUsers.filter(u => u.provider === 'Google').forEach(pu => {
+        if (!accounts.some(a => a.email.toLowerCase() === pu.email.toLowerCase())) {
+          accounts.push({ name: pu.name, email: pu.email, role: 'Solicitação em Análise', avatar: pu.avatar || 'US', color: 'bg-amber-500' });
+        }
+      });
+      registeredUsers.filter(u => u.provider === 'Google').forEach(ru => {
+        if (!accounts.some(a => a.email.toLowerCase() === ru.email.toLowerCase())) {
+          accounts.push({ name: ru.name, email: ru.email, role: ru.level || 'Aprovado', avatar: ru.avatar || 'US', color: 'bg-emerald-500' });
+        }
+      });
+
+      container.innerHTML = accounts.map(acc => {
+        const isRegistered = registeredUsers.some(u => u.email.toLowerCase() === acc.email.toLowerCase());
+        const isPending = pendingUsers.some(u => u.email.toLowerCase() === acc.email.toLowerCase());
+        const badge = isRegistered
+          ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">✓ Aprovado</span>'
+          : (isPending
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">⏳ Em Análise</span>'
+            : '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">+ Cadastrar</span>');
+
+        return `
+          <button
+            type="button"
+            onclick="handleGoogleSelect('${acc.email}', '${acc.name}', '${acc.avatar}')"
+            class="w-full p-3 rounded-2xl border border-slate-200 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-between transition cursor-pointer text-left group"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-full ${acc.color} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                ${acc.avatar}
+              </div>
+              <div class="min-w-0 truncate">
+                <strong class="text-xs font-bold text-slate-900 block truncate group-hover:text-slate-950">${acc.name}</strong>
+                <span class="text-[11px] text-slate-500 block truncate font-mono">${acc.email}</span>
+              </div>
+            </div>
+            <div class="shrink-0 pl-2">
+              ${badge}
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function handleGoogleSelect(email, name, avatar) {
+      email = (email || '').trim().toLowerCase();
+      name = name || email.split('@')[0];
+      avatar = avatar || name.slice(0, 2).toUpperCase();
+
+      // 1. Ver se é Admin Master
+      if (email === 'armidiasintegradas@gmail.com') {
+        const adminUser = registeredUsers.find(u => u.email.toLowerCase() === email) || {
+          id: 'admin-alex',
+          name: 'Alex Ribeiro',
+          email: 'armidiasintegradas@gmail.com',
+          role: 'Diretor / Administrador Geral',
+          level: 'Admin',
+          provider: 'Google',
+          avatar: 'AR'
+        };
+        currentUser = adminUser;
+        accessLevel = 'Admin';
+        currentScreen = 'projects';
+        closeGoogleAuthModal();
+        showToast('✓ Bem-vindo, Alex Ribeiro! Autenticado via Google com Acesso Total.');
+        saveSessionState();
+        updateUserPresence();
+        broadcastPresenceHeartbeat();
+        render();
+        return;
+      }
+
+      // 2. Ver se é usuário APROVADO em registeredUsers
+      const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
+      if (registered) {
+        currentUser = registered;
+        accessLevel = registered.level || registered.role || 'Campo';
+        currentScreen = 'projects';
+        closeGoogleAuthModal();
+        showToast(`✓ Bem-vindo(a), ${registered.name}! Login com Google verificado (Nível: ${accessLevel}).`);
+        saveSessionState();
+        updateUserPresence();
+        broadcastPresenceHeartbeat();
+        render();
+        return;
+      }
+
+      // 3. Ver se está PENDENTE em pendingUsers
+      const pending = pendingUsers.find(u => u.email.toLowerCase() === email);
+      if (pending) {
+        closeGoogleAuthModal();
+        showPendingStatusModal(pending);
+        return;
+      }
+
+      // 4. Novo cadastro via Google -> Criar solicitação pendente
+      const newGoogleUser = {
+        id: 'usr-g-' + Date.now(),
+        name: name,
+        email: email,
+        provider: 'Google',
+        role: 'Engenharia',
+        level: 'Engenharia',
+        requestedLevel: 'Engenharia',
+        company: 'Planes ENG',
+        sector: 'Engenharia',
+        phone: '(82) 99822-1100',
+        whatsapp: '5582998221100',
+        cpf: '000.000.000-00',
+        rg: 'SSP-00.000.000',
+        date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'Pendente',
+        avatar: avatar
+      };
+
+      pendingUsers.unshift(newGoogleUser);
+      saveUsersStorage();
+      broadcastCloudAction('USER_REQUEST_ACCESS', { user: newGoogleUser });
+      closeGoogleAuthModal();
+      showPendingStatusModal(newGoogleUser);
+      showToast(`✓ Solicitação via Google enviada para ${name}! Aguardando aprovação do Admin.`);
+      render();
+    }
+
+    function handleGoogleCustomSubmit() {
+      const nameInput = document.getElementById('google-custom-name');
+      const emailInput = document.getElementById('google-custom-email');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+      if (!email || !validateEmail(email)) {
+        showToast('Informe um e-mail Google válido (ex: nome@gmail.com).');
+        return;
+      }
+      handleGoogleSelect(email, name || email.split('@')[0]);
+    }
+
+    // =========================================================
+    // APPLE OAUTH SIMULATION & MULTI-ACCOUNT MANAGEMENT
+    // =========================================================
+    const DEMO_APPLE_ACCOUNTS = [
+      { name: 'Alex Ribeiro', email: 'alex.ribeiro@icloud.com', role: 'Diretoria / Admin', avatar: 'AR', color: 'bg-slate-900' },
+      { name: 'Lucas Mendes', email: 'lucas.canteiro@privaterelay.appleid.com', role: 'Mestre de Canteiro', avatar: 'LM', color: 'bg-amber-600' }
+    ];
+
+    function openAppleAuthModal() {
+      renderAppleAccounts();
+      const modal = document.getElementById('apple-auth-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAppleAuthModal() {
+      const modal = document.getElementById('apple-auth-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderAppleAccounts() {
+      const container = document.getElementById('apple-accounts-list');
+      if (!container) return;
+
+      const accounts = [...DEMO_APPLE_ACCOUNTS];
+      pendingUsers.filter(u => u.provider === 'Apple').forEach(pu => {
+        if (!accounts.some(a => a.email.toLowerCase() === pu.email.toLowerCase())) {
+          accounts.push({ name: pu.name, email: pu.email, role: 'Solicitação em Análise', avatar: pu.avatar || '', color: 'bg-amber-500' });
+        }
+      });
+      registeredUsers.filter(u => u.provider === 'Apple').forEach(ru => {
+        if (!accounts.some(a => a.email.toLowerCase() === ru.email.toLowerCase())) {
+          accounts.push({ name: ru.name, email: ru.email, role: ru.level || 'Aprovado', avatar: ru.avatar || '', color: 'bg-slate-900' });
+        }
+      });
+
+      container.innerHTML = accounts.map(acc => {
+        const isRegistered = registeredUsers.some(u => u.email.toLowerCase() === acc.email.toLowerCase());
+        const isPending = pendingUsers.some(u => u.email.toLowerCase() === acc.email.toLowerCase());
+        const badge = isRegistered
+          ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">✓ Aprovado</span>'
+          : (isPending
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">⏳ Em Análise</span>'
+            : '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">+ Cadastrar</span>');
+
+        return `
+          <button
+            type="button"
+            onclick="handleAppleSelect('${acc.email}', '${acc.name}')"
+            class="w-full p-3 rounded-2xl border border-slate-200 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-between transition cursor-pointer text-left group"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-full ${acc.color} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                ${acc.avatar}
+              </div>
+              <div class="min-w-0 truncate">
+                <strong class="text-xs font-bold text-slate-900 block truncate group-hover:text-slate-950">${acc.name}</strong>
+                <span class="text-[11px] text-slate-500 block truncate font-mono">${acc.email}</span>
+              </div>
+            </div>
+            <div class="shrink-0 pl-2">
+              ${badge}
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function handleAppleSelect(email, name) {
+      email = (email || '').trim().toLowerCase();
+      name = name || email.split('@')[0];
+
+      // 1. Ver se já está em registeredUsers
+      const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
+      if (registered) {
+        currentUser = registered;
+        accessLevel = registered.level || registered.role || 'Canteiro';
+        currentScreen = 'projects';
+        closeAppleAuthModal();
+        showToast(`✓ Bem-vindo(a), ${registered.name}! Autenticado com Apple ID.`);
+        saveSessionState();
+        updateUserPresence();
+        broadcastPresenceHeartbeat();
+        render();
+        return;
+      }
+
+      // 2. Ver se está em pendingUsers
+      const pending = pendingUsers.find(u => u.email.toLowerCase() === email);
+      if (pending) {
+        closeAppleAuthModal();
+        showPendingStatusModal(pending);
+        return;
+      }
+
+      // 3. Novo cadastro Apple
+      const newAppleUser = {
+        id: 'usr-a-' + Date.now(),
+        name: name,
+        email: email,
+        provider: 'Apple',
+        role: 'Canteiro',
+        level: 'Canteiro',
+        requestedLevel: 'Canteiro',
+        company: 'Planes ENG',
+        sector: 'Operação de Campo',
+        phone: '(82) 99822-1100',
+        whatsapp: '5582998221100',
+        cpf: '000.000.000-00',
+        rg: 'SSP-00.000.000',
+        date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'Pendente',
+        avatar: ''
+      };
+
+      pendingUsers.unshift(newAppleUser);
+      saveUsersStorage();
+      broadcastCloudAction('USER_REQUEST_ACCESS', { user: newAppleUser });
+      closeAppleAuthModal();
+      showPendingStatusModal(newAppleUser);
+      showToast(`✓ Solicitação via Apple ID enviada para ${name}! Aguardando aprovação do Admin.`);
+      render();
+    }
+
+    function handleAppleCustomSubmit() {
+      const nameInput = document.getElementById('apple-custom-name');
+      const emailInput = document.getElementById('apple-custom-email');
+      const name = nameInput ? nameInput.value.trim() : '';
+      let email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+      const prefHide = document.querySelector('input[name="apple-email-pref"]:checked')?.value === 'hide';
+      if (prefHide && (!email || !email.includes('@'))) {
+        email = (name ? name.toLowerCase().replace(/\s+/g, '.') : 'colaborador') + '@privaterelay.appleid.com';
+      }
+
+      if (!email || !validateEmail(email)) {
+        showToast('Informe um ID Apple válido.');
+        return;
+      }
+      handleAppleSelect(email, name || email.split('@')[0]);
+    }
+
+    // =========================================================
+    // MODAL DE STATUS PENDENTE & APROVAÇÃO RÁPIDA
+    // =========================================================
+    function showPendingStatusModal(userObj) {
+      if (!userObj) return;
+      currentPendingModalUser = userObj;
+
+      const titleEl = document.getElementById('pending-modal-title');
+      const descEl = document.getElementById('pending-modal-desc');
+      const detailsEl = document.getElementById('pending-modal-details');
+
+      const providerBadge = userObj.provider === 'Google'
+        ? '<span class="inline-flex items-center gap-1 font-bold text-slate-800"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg> Google Account</span>'
+        : (userObj.provider === 'Apple'
+          ? '<span class="inline-flex items-center gap-1 font-bold text-slate-800"> Apple ID</span>'
+          : '<span class="inline-flex items-center gap-1 font-bold text-slate-800">✉ E-mail Corporativo</span>');
+
+      if (titleEl) titleEl.innerText = `Solicitação de ${userObj.name} em Análise`;
+      if (detailsEl) {
+        detailsEl.innerHTML = `
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+            <span class="text-slate-500 font-medium">Colaborador:</span>
+            <strong class="text-slate-900">${userObj.name}</strong>
+          </div>
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+            <span class="text-slate-500 font-medium">E-mail:</span>
+            <strong class="text-slate-900 font-mono">${userObj.email}</strong>
+          </div>
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+            <span class="text-slate-500 font-medium">Método de Login:</span>
+            ${providerBadge}
+          </div>
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/80">
+            <span class="text-slate-500 font-medium">Perfil Solicitado:</span>
+            <strong class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">${userObj.requestedLevel || userObj.level || 'Campo'}</strong>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">Data do Registro:</span>
+            <span class="text-slate-600 font-mono text-[11px]">${userObj.date || 'Hoje'}</span>
+          </div>
+        `;
+      }
+
+      const modal = document.getElementById('pending-status-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closePendingStatusModal() {
+      const modal = document.getElementById('pending-status-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function quickApproveFromPendingModal() {
+      if (!currentPendingModalUser) return;
+      const targetUser = currentPendingModalUser;
+      closePendingStatusModal();
+      approvePendingUser(targetUser.id, targetUser.requestedLevel || 'Engenharia');
+    }
+
+    // =========================================================
+    // MODAL DE E-MAIL CORPORATIVO DE LIBERAÇÃO DE ACESSO
+    // =========================================================
+    function generateApprovalEmailHtml(user, finalLevel) {
+      const providerName = user.provider === 'Google' ? 'Conta Google' : (user.provider === 'Apple' ? 'Apple ID' : 'E-mail e Senha');
+      return `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
+          <div style="text-align: center; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+            <div style="display: inline-block; font-weight: 900; font-size: 22px; color: #020617; letter-spacing: -0.5px;">
+              Planes <span style="background-color: #d4ff00; color: #020617; padding: 2px 6px; border-radius: 4px; font-size: 14px;">ENG</span>
+            </div>
+            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-weight: 700;">
+              Plataforma de Gestão & Engenharia Integrada
+            </div>
+          </div>
+
+          <div style="padding: 20px 0 16px 0;">
+            <h2 style="font-size: 18px; font-weight: 900; color: #0f172a; margin: 0 0 12px 0;">
+              Olá, ${user.name}! 🎉
+            </h2>
+            <p style="font-size: 13px; line-height: 1.6; color: #334155; margin: 0 0 14px 0;">
+              Seu cadastro na plataforma <strong>Planes ENG</strong> foi <strong>aprovado com sucesso</strong> pelo Administrador Geral da empresa. O seu acesso já está 100% liberado e ativo!
+            </p>
+
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;">
+              <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 8px;">
+                Suas Credenciais & Parâmetros de Acesso
+              </div>
+              <div style="font-size: 12px; margin-bottom: 4px;">• <strong>Nome:</strong> ${user.name}</div>
+              <div style="font-size: 12px; margin-bottom: 4px;">• <strong>E-mail Cadastrado:</strong> <span style="font-family: monospace; color: #020617;">${user.email}</span></div>
+              <div style="font-size: 12px; margin-bottom: 4px;">• <strong>Método de Acesso:</strong> <span style="font-weight: 800; color: #020617;">${providerName}</span></div>
+              <div style="font-size: 12px; margin-bottom: 4px;">• <strong>Nível de Permissão (RBAC):</strong> <span style="background-color: #020617; color: #d4ff00; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 11px;">${finalLevel}</span></div>
+              <div style="font-size: 12px;">• <strong>Status da Conta:</strong> <span style="color: #16a34a; font-weight: 800;">✓ Aprovado e Ativo</span></div>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="https://armidiasintegradas.github.io/planes/" target="_blank" style="display: inline-block; background-color: #020617; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 800; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                Entrar na Plataforma Agora →
+              </a>
+            </div>
+
+            <p style="font-size: 11px; line-height: 1.5; color: #64748b; margin: 16px 0 0 0;">
+              Para realizar o login, acesse a URL acima e utilize o seu método de autenticação cadastrado (${providerName}). Caso tenha alguma dúvida sobre as obras atribuídas, contate a Diretoria ou Engenharia Residente.
+            </p>
+          </div>
+
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 10px; color: #94a3b8; text-align: center;">
+            Planes ENG • AR Mídias Integradas • 2026 Todos os direitos reservados
+          </div>
+        </div>
+      `;
+    }
+
+    function showEmailPreviewModal(userObj, finalLevel) {
+      if (!userObj) return;
+      currentApprovedEmailUser = { ...userObj, level: finalLevel };
+
+      const recEl = document.getElementById('email-preview-recipient');
+      const subEl = document.getElementById('email-preview-subject');
+      const bodyEl = document.getElementById('email-preview-body');
+
+      if (recEl) recEl.innerText = `${userObj.name} <${userObj.email}>`;
+      if (subEl) subEl.innerText = `✓ Acesso Aprovado — Plataforma Planes ENG (${finalLevel})`;
+      if (bodyEl) bodyEl.innerHTML = generateApprovalEmailHtml(userObj, finalLevel);
+
+      const modal = document.getElementById('email-preview-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeEmailPreviewModal() {
+      const modal = document.getElementById('email-preview-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function openMailtoClient() {
+      if (!currentApprovedEmailUser) return;
+      const u = currentApprovedEmailUser;
+      const subject = encodeURIComponent(`✓ Acesso Aprovado — Plataforma Planes ENG (${u.level})`);
+      const body = encodeURIComponent(`Olá ${u.name},\n\nSeu acesso à plataforma Planes ENG foi aprovado com perfil "${u.level}".\n\nAcesse agora: https://armidiasintegradas.github.io/planes/\n\nAtenciosamente,\nDiretoria Planes ENG`);
+      window.open(`mailto:${u.email}?subject=${subject}&body=${body}`, '_blank');
+      showToast('Abrindo cliente de e-mail do sistema...');
+    }
+
+    function copyApprovalEmailText() {
+      if (!currentApprovedEmailUser) return;
+      const u = currentApprovedEmailUser;
+      const text = `Assunto: ✓ Acesso Aprovado — Plataforma Planes ENG\nPara: ${u.name} <${u.email}>\n\nOlá ${u.name}! Seu cadastro na plataforma Planes ENG foi aprovado pelo Administrador com nível de acesso "${u.level}".\nVocê já pode realizar seu login em https://armidiasintegradas.github.io/planes/`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        showToast('✓ Texto do e-mail copiado para a área de transferência!');
+      } else {
+        showToast('Texto preparado para envio.');
+      }
+    }
+
+    function handleEmailLogin() {
       const emailInput = document.getElementById('login-email');
       const passInput = document.getElementById('login-pass');
       const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
@@ -2397,6 +3018,7 @@
           email: 'armidiasintegradas@gmail.com',
           role: 'Diretor / Administrador Geral',
           level: 'Admin',
+          provider: 'Email',
           avatar: 'AR'
         };
         accessLevel = 'Admin';
@@ -2431,11 +3053,7 @@
       // 3. Check Pending Users awaiting Admin approval
       const pendingUser = pendingUsers.find(u => u.email.toLowerCase() === email);
       if (pendingUser) {
-        if (pendingUser.pass === pass || !pendingUser.pass) {
-          showToast('Cadastro em análise pelo Admin Master. Aguarde a autorização ou solicite a liberação no painel.');
-        } else {
-          showToast('Senha incorreta para o cadastro pendente.');
-        }
+        showPendingStatusModal(pendingUser);
         return;
       }
 
@@ -2483,7 +3101,9 @@
       }
 
       if (pendingUsers.some(u => u.email.toLowerCase() === email)) {
-        showToast('Sua solicitação já está na fila de aprovação do Admin Master.');
+        const existingPending = pendingUsers.find(u => u.email.toLowerCase() === email);
+        closeRegisterModal();
+        showPendingStatusModal(existingPending);
         return;
       }
 
@@ -2501,6 +3121,7 @@
         whatsapp: cleanWhatsapp,
         email: email,
         pass: pass,
+        provider: 'Email',
         role: reqRole,
         level: reqRole,
         requestedLevel: reqRole,
@@ -2525,11 +3146,12 @@
       if (emailInput) emailInput.value = email;
       if (passInput) passInput.value = pass;
 
+      showPendingStatusModal(newPendingUser);
       showToast(`✓ Solicitação de ${name} enviada com sucesso! Aguardando aprovação do Admin Master.`);
       render();
     }
 
-        function approvePendingUser(id, assignedLevel) {
+    function approvePendingUser(id, assignedLevel) {
       const idx = pendingUsers.findIndex(u => String(u.id) === String(id) || (u.email && u.email.toLowerCase() === String(id).toLowerCase()));
       if (idx !== -1) {
         const u = pendingUsers.splice(idx, 1)[0];
@@ -2537,6 +3159,7 @@
         u.status = 'Aprovado';
         u.level = finalLevel;
         u.role = finalLevel;
+        u.approvedAt = new Date().toISOString();
 
         // Evita duplicatas em registeredUsers
         registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
@@ -2568,7 +3191,8 @@
         // Transmite aprovação para a nuvem
         broadcastCloudAction('USER_APPROVED', { user: u });
 
-        showToast(`✓ Acesso de ${u.name} APROVADO com perfil "${finalLevel}"!`);
+        showEmailPreviewModal(u, finalLevel);
+        showToast(`✓ Acesso de ${u.name} APROVADO com perfil "${finalLevel}"! E-mail de liberação enviado.`);
         render();
       }
     }
@@ -3300,6 +3924,10 @@
           if (typeof closeNewProjectModal === 'function') closeNewProjectModal();
           if (typeof closeSiengeConfigModal === 'function') closeSiengeConfigModal();
           if (typeof closeRegisterModal === 'function') closeRegisterModal();
+          if (typeof closeGoogleAuthModal === 'function') closeGoogleAuthModal();
+          if (typeof closeAppleAuthModal === 'function') closeAppleAuthModal();
+          if (typeof closePendingStatusModal === 'function') closePendingStatusModal();
+          if (typeof closeEmailPreviewModal === 'function') closeEmailPreviewModal();
           if (typeof closeEditProfileModal === 'function') closeEditProfileModal();
         }
       });
@@ -4024,6 +4652,11 @@
     function restoreSessionState() {
       try {
         const saved = localStorage.getItem('planes_active_session');
+        if (saved === 'logged_out') {
+          currentUser = null;
+          currentScreen = 'login';
+          return;
+        }
         if (saved) {
           const data = JSON.parse(saved);
           if (data && data.user) {
@@ -4036,26 +4669,7 @@
               const p = projectsList.find(x => x.id === selectedProjectId);
               if (p) selectedProject = p;
             }
-          }
-        }
-        
-        // Se currentUser for nulo (visita direta inicial ou sem sessão salva),
-        // inicializa diretamente no Dashboard executivo como Admin Master para carregamento imediato!
-        if (!currentUser) {
-          currentUser = {
-            id: 'admin-alex',
-            name: 'Alex Ribeiro',
-            email: 'armidiasintegradas@gmail.com',
-            role: 'Diretor / Administrador Geral',
-            level: 'Admin',
-            avatar: 'AR'
-          };
-          accessLevel = 'Admin';
-          currentScreen = 'dashboard';
-          activeNav = 'Visão Geral';
-          if (!selectedProject) {
-            selectedProject = projectsList[0];
-            selectedProjectId = selectedProject.id;
+            return;
           }
         }
       } catch (e) {}
@@ -4734,16 +5348,13 @@
     }
 
     function handleSocialLogin(provider) {
-      currentUser = {
-        name: 'Usuário ' + provider,
-        role: 'Acesso Verificado',
-        email: 'usuario.' + provider.toLowerCase() + '@planes.eng.br',
-        level: accessLevel,
-        avatar: provider.charAt(0)
-      };
-      currentScreen = 'projects';
-      showToast('✓ Autenticado via ' + provider + '! Escolha o projeto.');
-      render();
+      if (provider === 'Google') {
+        openGoogleAuthModal();
+      } else if (provider === 'Apple') {
+        openAppleAuthModal();
+      } else {
+        showToast('Método de autenticação: ' + provider);
+      }
     }
 
     function openProject(id) {
@@ -4788,7 +5399,7 @@
       currentUser = null;
       currentScreen = 'login';
       try {
-        localStorage.removeItem('planes_active_session');
+        localStorage.setItem('planes_active_session', 'logged_out');
       } catch (e) {}
       showToast('Sessão encerrada com segurança.');
       render();
@@ -8035,12 +8646,23 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     </div>
                     <button
                       type="button"
-                      onclick="quickAdminLogin()"
-                      class="w-full py-3 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[14px] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-300"
+                      onclick="handleEmailLogin()"
+                      class="w-full py-3 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[14px] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-300 min-h-[44px]"
                     >
-                      <span>⚡ Entrar na Plataforma Planes (Acesso Total)</span>
+                      <span>Entrar com E-mail e Senha</span>
                       ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-950')}
                     </button>
+
+                    <div class="pt-1 text-center">
+                      <button
+                        type="button"
+                        onclick="quickAdminLogin()"
+                        class="text-[11px] font-bold text-slate-500 hover:text-slate-950 transition cursor-pointer inline-flex items-center gap-1 hover:underline"
+                        title="Acesso de teste como Administrador Geral"
+                      >
+                        <span>⚡ Acesso Rápido Admin Master (Alex Ribeiro)</span>
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Register Link -->
@@ -11560,6 +12182,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                               </div>
                               <div class="text-xs text-slate-600 space-y-1 bg-white p-3 rounded-[12px] border border-slate-200">
                                 <div>• E-mail: <strong class="text-slate-900 font-mono">${u.email}</strong></div>
+                                <div>• Provedor: <span class="font-bold text-slate-800">${u.provider === 'Google' ? 'Google Account' : (u.provider === 'Apple' ? 'Apple ID' : 'E-mail / Senha')}</span></div>
                                 <div>• Empresa / Frente: <strong class="text-slate-900">${u.company || 'Planes ENG'} · ${u.sector || 'Geral'}</strong></div>
                                 <div>• WhatsApp: <strong class="text-slate-900 font-mono">${u.phone || '(82) 99822-1100'}</strong></div>
                                 <div>• CPF: <strong class="font-mono text-slate-900">${u.cpf || '000.000.000-00'}</strong> · RG: <strong class="font-mono text-slate-900">${u.rg || 'SSP-00.000.000'}</strong></div>
@@ -11576,15 +12199,17 @@ ${activeNav === 'Equipe & Contatos' ? `
                                   <option value="Canteiro" ${u.requestedLevel === 'Canteiro' ? 'selected' : ''}>Canteiro</option>
                                   <option value="Diretoria" ${u.requestedLevel === 'Diretoria' ? 'selected' : ''}>Diretoria Executiva</option>
                                   <option value="Cliente" ${u.requestedLevel === 'Cliente' ? 'selected' : ''}>Cliente / Investidor</option>
+                                  <option value="Admin" ${u.requestedLevel === 'Admin' ? 'selected' : ''}>Admin Master</option>
                                 </select>
                               </div>
                               <div class="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onclick="approvePendingUser('${u.id}', (document.getElementById('assign-level-${u.id}') ? document.getElementById('assign-level-${u.id}').value : '${u.requestedLevel || 'Campo'}'))"
-                                  class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[12px] transition cursor-pointer shadow-xs"
+                                  class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[12px] transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                                  title="Aprovar usuário e despachar e-mail corporativo de boas-vindas"
                                 >
-                                  ✓ Aprovar e Liberar Acesso
+                                  <span>✓ Aprovar & Enviar E-mail</span>
                                 </button>
                                 <button
                                   type="button"
