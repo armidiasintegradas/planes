@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788397965 -->
+<!-- Planes Build: 1788398149 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -952,9 +952,11 @@
     </div>
   </div>
 
-  <!-- MODAL: FICHA DO COLABORADOR -->
-  <div id="member-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto" onclick="closeMemberModal()">
-    <div class="bg-white rounded-[20px] p-6 max-w-md w-full shadow-2xl border border-slate-200" onclick="event.stopPropagation()">
+  <!-- MODAL (DESKTOP) / BOTTOM SHEET (MOBILE): FICHA DO COLABORADOR -->
+  <div id="member-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end lg:items-center justify-center p-0 lg:p-4 overflow-y-auto" onclick="closeMemberModal()">
+    <div class="bg-white rounded-t-[28px] lg:rounded-[20px] p-5 lg:p-6 max-w-md w-full shadow-2xl border border-slate-200 animate-card-fade max-h-[88vh] lg:max-h-auto overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pb-6" onclick="event.stopPropagation()">
+      <!-- Mobile Drag Handle -->
+      <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto -mt-1 mb-3 lg:hidden"></div>
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div class="flex items-center gap-3">
           <div id="m-modal-avatar" class="w-12 h-12 rounded-[14px] flex items-center justify-center font-black text-sm shadow-xs bg-slate-900 text-white">
@@ -4563,6 +4565,7 @@
       }
     }
 
+    function openMemberModal(id) { viewMember(id); }
     function viewMember(id) {
       const mem = teamMembersList.find(m => m.id === id);
       if (mem) {
