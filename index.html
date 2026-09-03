@@ -5066,133 +5066,71 @@
       render();
     }
 
-        function triggerOverviewAnimations() {
-      const startTime = performance.now();
-      const duration = 1200;
-
+    function lockAllFinalValues() {
       const curProjProgress = (selectedProject && selectedProject.progress) ? parseFloat(selectedProject.progress) : 61.8;
+      const cpPlanEl = document.getElementById('anim-cockpit-planejado');
+      const cpRealEl = document.getElementById('anim-cockpit-realizado');
+      const cpDesvEl = document.getElementById('anim-cockpit-desvio');
+      const cpPrevEl = document.getElementById('anim-cockpit-custo-prev');
+      const cpCRealEl = document.getElementById('anim-cockpit-custo-real');
+      const cpForeEl = document.getElementById('anim-cockpit-forecast-custo');
 
-      function update(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progressRatio = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - progressRatio, 3); // Cubic ease out
+      if (cpPlanEl) cpPlanEl.innerText = '67.4%';
+      if (cpRealEl) cpRealEl.innerText = curProjProgress + '%';
+      if (cpDesvEl) cpDesvEl.innerText = '-5.6 p.p.';
+      if (cpPrevEl) cpPrevEl.innerText = (selectedProject ? selectedProject.budget : 'R$ 24.0M');
+      if (cpCRealEl) cpCRealEl.innerText = (selectedProject ? selectedProject.spent : 'R$ 14.8M');
+      if (cpForeEl) cpForeEl.innerText = 'R$ 24.4M';
 
-        // 1. Cockpit Executivo Numbers
-        const cpPlanEl = document.getElementById('anim-cockpit-planejado');
-        const cpRealEl = document.getElementById('anim-cockpit-realizado');
-        const cpDesvEl = document.getElementById('anim-cockpit-desvio');
-        const cpPrevEl = document.getElementById('anim-cockpit-custo-prev');
-        const cpCRealEl = document.getElementById('anim-cockpit-custo-real');
-        const cpForeEl = document.getElementById('anim-cockpit-forecast-custo');
+      const cMai = document.getElementById('anim-col-mai');
+      const cJun = document.getElementById('anim-col-jun');
+      const cJul = document.getElementById('anim-col-jul');
+      const cAgo = document.getElementById('anim-col-ago');
+      const cSet = document.getElementById('anim-col-set');
+      const cOut = document.getElementById('anim-col-out');
+      const cNov = document.getElementById('anim-col-nov');
 
-        if (cpPlanEl) cpPlanEl.innerText = (67.4 * ease).toFixed(1) + '%';
-        if (cpRealEl) cpRealEl.innerText = (curProjProgress * ease).toFixed(1) + '%';
-        if (cpDesvEl) cpDesvEl.innerText = (-5.6 * ease).toFixed(1) + ' p.p.';
-        if (cpPrevEl) cpPrevEl.innerText = 'R$ ' + (24.0 * ease).toFixed(1) + 'M';
-        if (cpCRealEl) cpCRealEl.innerText = 'R$ ' + (14.8 * ease).toFixed(1) + 'M';
-        if (cpForeEl) cpForeEl.innerText = 'R$ ' + (24.4 * ease).toFixed(1) + 'M';
+      if (cMai) cMai.innerText = '51%';
+      if (cJun) cJun.innerText = Math.round(curProjProgress) + '%';
+      if (cJul) cJul.innerText = '71%';
+      if (cAgo) cAgo.innerText = '80%';
+      if (cSet) cSet.innerText = '89%';
+      if (cOut) cOut.innerText = '95%';
+      if (cNov) cNov.innerText = '100%';
 
-        // 2. 7-Column Chart Numbers
-        const cMai = document.getElementById('anim-col-mai');
-        const cJun = document.getElementById('anim-col-jun');
-        const cJul = document.getElementById('anim-col-jul');
-        const cAgo = document.getElementById('anim-col-ago');
-        const cSet = document.getElementById('anim-col-set');
-        const cOut = document.getElementById('anim-col-out');
-        const cNov = document.getElementById('anim-col-nov');
+      const frentesAvgEl = document.getElementById('anim-frentes-avg');
+      if (frentesAvgEl) frentesAvgEl.innerText = '76%';
 
-        if (cMai) cMai.innerText = Math.round(51 * ease) + '%';
-        if (cJun) cJun.innerText = Math.round(curProjProgress * ease) + '%';
-        if (cJul) cJul.innerText = Math.round(71 * ease) + '%';
-        if (cAgo) cAgo.innerText = Math.round(80 * ease) + '%';
-        if (cSet) cSet.innerText = Math.round(89 * ease) + '%';
-        if (cOut) cOut.innerText = Math.round(95 * ease) + '%';
-        if (cNov) cNov.innerText = Math.round(100 * ease) + '%';
+      const eacEl = document.getElementById('anim-eac-val');
+      const saldoEl = document.getElementById('anim-saldo-val');
+      const resEl = document.getElementById('anim-reserva-val');
 
-        // 3. Frentes de Obra & Bubbles
-        const arenaBubble = document.getElementById('anim-arena-bubble');
-        const aptsBubble = document.getElementById('anim-apts-bubble');
-        const infraBubble = document.getElementById('anim-infra-bubble');
-        const frentesAvgEl = document.getElementById('anim-frentes-avg');
-        const fArenaVal = document.getElementById('anim-frente-arena-val');
-        const fAptsVal = document.getElementById('anim-frente-apts-val');
-        const fInfraVal = document.getElementById('anim-frente-infra-val');
-        const fLazerVal = document.getElementById('anim-frente-lazer-val');
+      if (eacEl) eacEl.innerText = 'R$ 22.60M';
+      if (saldoEl) saldoEl.innerText = 'R$ 9.20M';
+      if (resEl) resEl.innerText = 'R$ 850 mil';
 
-        if (arenaBubble) arenaBubble.innerText = Math.round(92 * ease) + '%';
-        if (aptsBubble) aptsBubble.innerText = Math.round(74 * ease) + '%';
-        if (infraBubble) infraBubble.innerText = Math.round(62 * ease) + '%';
-        if (frentesAvgEl) frentesAvgEl.innerText = Math.round(76 * ease) + '%';
-        if (fArenaVal) fArenaVal.innerText = Math.round(92 * ease) + '%';
-        if (fAptsVal) fAptsVal.innerText = Math.round(74 * ease) + '%';
-        if (fInfraVal) fInfraVal.innerText = Math.round(62 * ease) + '%';
-        if (fLazerVal) fLazerVal.innerText = Math.round(88 * ease) + '%';
+      const bars = document.querySelectorAll('.anim-bar');
+      bars.forEach(b => {
+        const target = b.getAttribute('data-height');
+        if (target) b.style.height = target;
+      });
 
-        // 4. EAC Strip
-        const eacEl = document.getElementById('anim-eac-val');
-        const saldoEl = document.getElementById('anim-saldo-val');
-        const resEl = document.getElementById('anim-reserva-val');
+      const targetBars = document.querySelectorAll('.anim-target-bar');
+      targetBars.forEach(b => {
+        const target = b.getAttribute('data-width');
+        if (target) b.style.width = target;
+      });
 
-        if (eacEl) eacEl.innerText = 'R$ ' + (22.60 * ease).toFixed(2) + 'M';
-        if (saldoEl) saldoEl.innerText = 'R$ ' + (9.20 * ease).toFixed(2) + 'M';
-        if (resEl) resEl.innerText = 'R$ ' + Math.round(850 * ease) + ' mil';
+      const radialRings = document.querySelectorAll('.anim-radial-ring');
+      radialRings.forEach(r => {
+        const target = r.getAttribute('data-offset');
+        if (target !== null) r.style.strokeDashoffset = target;
+      });
+    }
 
-        if (progressRatio < 1) {
-          requestAnimationFrame(update);
-        } else {
-          // Final values locking
-          if (cpPlanEl) cpPlanEl.innerText = '67.4%';
-          if (cpRealEl) cpRealEl.innerText = curProjProgress + '%';
-          if (cpDesvEl) cpDesvEl.innerText = '-5.6 p.p.';
-          if (cpPrevEl) cpPrevEl.innerText = (selectedProject ? selectedProject.budget : 'R$ 24.0M');
-          if (cpCRealEl) cpCRealEl.innerText = (selectedProject ? selectedProject.spent : 'R$ 14.8M');
-          if (cpForeEl) cpForeEl.innerText = 'R$ 24.4M';
-
-          if (cMai) cMai.innerText = '51%';
-          if (cJun) cJun.innerText = curProjProgress + '%';
-          if (cJul) cJul.innerText = '71%';
-          if (cAgo) cAgo.innerText = '80%';
-          if (cSet) cSet.innerText = '89%';
-          if (cOut) cOut.innerText = '95%';
-          if (cNov) cNov.innerText = '100%';
-
-          if (arenaBubble) arenaBubble.innerText = '72%';
-          if (aptsBubble) aptsBubble.innerText = '58%';
-          if (infraBubble) infraBubble.innerText = '45%';
-          if (frentesAvgEl) frentesAvgEl.innerText = '68%';
-
-          if (eacEl) eacEl.innerText = 'R$ 22,60M';
-          if (saldoEl) saldoEl.innerText = 'R$ 9,20M';
-          if (resEl) resEl.innerText = 'R$ 850 mil';
-        }
-      }
-
-      requestAnimationFrame(update);
-
-      // Smooth Bar and SVG Ring Growth
-      setTimeout(() => {
-        const bars = document.querySelectorAll('.anim-bar');
-        bars.forEach(b => {
-          const target = b.getAttribute('data-height');
-          if (target) {
-            b.style.height = target;
-          }
-        });
-
-        const targetBars = document.querySelectorAll('.anim-target-bar');
-        targetBars.forEach(b => {
-          const target = b.getAttribute('data-width');
-          if (target) b.style.width = target;
-        });
-
-        const radialRings = document.querySelectorAll('.anim-radial-ring');
-        radialRings.forEach(r => {
-          const target = r.getAttribute('data-offset');
-          if (target !== null) {
-            r.style.strokeDashoffset = target;
-          }
-        });
-      }, 40);
+    function triggerOverviewAnimations() {
+      // Garante que os valores reais estejam imediatamente visíveis mesmo se a animação for pausada ou adiada
+      lockAllFinalValues();
     }
 
     
@@ -8575,42 +8513,42 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                       <!-- 1. Avanço Planejado -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Avanço Planejado</span>
-                        <strong id="anim-cockpit-planejado" class="text-lg sm:text-xl xl:text-2xl font-black text-slate-200 block font-card-number">0.0%</strong>
+                        <strong id="anim-cockpit-planejado" class="text-lg sm:text-xl xl:text-2xl font-black text-slate-200 block font-card-number">67.4%</strong>
                         <span class="text-[10px] text-slate-500 font-sans">Meta Linha de Balanço</span>
                       </div>
 
                       <!-- 2. Avanço Realizado -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-[#d4ff00]/40 space-y-1 bg-[#d4ff00]/5">
                         <span class="text-[#d4ff00] text-[10.5px] uppercase font-bold block font-sans">Avanço Realizado</span>
-                        <strong id="anim-cockpit-realizado" class="text-lg sm:text-xl xl:text-2xl font-black text-[#d4ff00] block font-card-number">0.0%</strong>
+                        <strong id="anim-cockpit-realizado" class="text-lg sm:text-xl xl:text-2xl font-black text-[#d4ff00] block font-card-number">${selectedProject.progress || "61.8"}%</strong>
                         <span class="text-[10px] text-emerald-400 font-sans">Medição Auditada</span>
                       </div>
 
                       <!-- 3. Desvio Físico -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-amber-500/30 space-y-1 bg-amber-500/5">
                         <span class="text-amber-400 text-[10.5px] uppercase font-bold block font-sans">Desvio Físico</span>
-                        <strong id="anim-cockpit-desvio" class="text-lg sm:text-xl xl:text-2xl font-black text-amber-400 block font-card-number">0.0 p.p.</strong>
+                        <strong id="anim-cockpit-desvio" class="text-lg sm:text-xl xl:text-2xl font-black text-amber-400 block font-card-number">-5.6 p.p.</strong>
                         <span class="text-[10px] text-amber-300 font-sans">Atenção no Takt</span>
                       </div>
 
                       <!-- 4. Custo Previsto -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Custo Previsto</span>
-                        <strong id="anim-cockpit-custo-prev" class="text-base sm:text-lg xl:text-xl font-black text-slate-200 block font-card-number">R$ 0.0M</strong>
+                        <strong id="anim-cockpit-custo-prev" class="text-base sm:text-lg xl:text-xl font-black text-slate-200 block font-card-number">R$ 24.0M</strong>
                         <span class="text-[10px] text-slate-500 font-sans">Orçamento Base</span>
                       </div>
 
                       <!-- 5. Custo Realizado -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Custo Realizado</span>
-                        <strong id="anim-cockpit-custo-real" class="text-base sm:text-lg xl:text-xl font-black text-white block font-card-number">R$ 0.0M</strong>
+                        <strong id="anim-cockpit-custo-real" class="text-base sm:text-lg xl:text-xl font-black text-white block font-card-number">R$ 14.8M</strong>
                         <span class="text-[10px] text-emerald-400 font-sans">Eficiência de Custo</span>
                       </div>
 
                       <!-- 6. Forecast Final Custo (EAC) -->
                       <div class="p-4 bg-slate-900/90 rounded-[16px] border border-slate-800/80 space-y-1">
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold block font-sans">Forecast Custo (EAC)</span>
-                        <strong id="anim-cockpit-forecast-custo" class="text-base sm:text-lg xl:text-xl font-black text-sky-400 block font-card-number">R$ 0.0M</strong>
+                        <strong id="anim-cockpit-forecast-custo" class="text-base sm:text-lg xl:text-xl font-black text-sky-400 block font-card-number">R$ 24.4M</strong>
                         <span class="text-[10px] text-slate-400 font-sans">+1.6% vs Orçado</span>
                       </div>
 
@@ -8793,8 +8731,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(54% prev)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-mai" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="51%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-mai" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">51%</span>
+                              <div data-height="51%" style="height: 51%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
 
@@ -8805,8 +8743,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-emerald-800 font-bold block truncate">(R$ 3,85M)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-jun" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="62%" style="height: 0%;" class="anim-bar w-full bg-emerald-600 border border-emerald-700 shadow-md transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-jun" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-emerald-950 mb-1 z-10 leading-none font-black text-center">62%</span>
+                              <div data-height="62%" style="height: 62%;" class="anim-bar w-full bg-emerald-600 border border-emerald-700 shadow-md transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
 
@@ -8817,8 +8755,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(75% prev)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-jul" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="71%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-jul" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">71%</span>
+                              <div data-height="71%" style="height: 71%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
 
@@ -8829,8 +8767,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(84% prev)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-ago" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="80%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-ago" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">80%</span>
+                              <div data-height="80%" style="height: 80%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
 
@@ -8841,8 +8779,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(92% prev)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-set" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="89%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-set" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">89%</span>
+                              <div data-height="89%" style="height: 89%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
 
@@ -8853,8 +8791,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(97% prev)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-out" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="95%" style="height: 0%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-out" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">95%</span>
+                              <div data-height="95%" style="height: 95%;" class="anim-bar w-full bg-[#d4ff00] border border-slate-300 transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
 
@@ -8865,8 +8803,8 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               <span class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-500 font-medium block truncate">(Entrega)</span>
                             </div>
                             <div class="w-full flex flex-col justify-end h-[280px] xl:h-[330px] relative items-center">
-                              <span id="anim-col-nov" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">0%</span>
-                              <div data-height="100%" style="height: 0%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
+                              <span id="anim-col-nov" class="font-card-number text-sm sm:text-lg md:text-2xl xl:text-3xl text-slate-950 mb-1 z-10 leading-none font-black text-center">100%</span>
+                              <div data-height="100%" style="height: 100%;" class="anim-bar w-full bg-[#9d8ec2] transition-all duration-1000 ease-out rounded-t-[8px]"></div>
                             </div>
                           </div>
                         </div>
@@ -8943,17 +8881,17 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 border-t border-slate-100 mt-3 text-xs">
                       <div class="bg-slate-50 p-2.5 rounded-[10px] border border-slate-200">
                         <span class="text-[10px] text-slate-500 font-bold uppercase block">Custo Estimado (EAC)</span>
-                        <strong id="anim-eac-val" class="text-sm xl:text-base font-black text-slate-950 font-card-number">R$ 0.00M</strong>
+                        <strong id="anim-eac-val" class="text-sm xl:text-base font-black text-slate-950 font-card-number">R$ 22.60M</strong>
                         <span class="text-[9.5px] text-emerald-800 font-bold block">R$ 1,4M abaixo do teto</span>
                       </div>
                       <div class="bg-slate-50 p-2.5 rounded-[10px] border border-slate-200">
                         <span class="text-[10px] text-slate-500 font-bold uppercase block">Saldo p/ Conclusão</span>
-                        <strong id="anim-saldo-val" class="text-sm xl:text-base font-black text-slate-950 font-card-number">R$ 0.00M</strong>
+                        <strong id="anim-saldo-val" class="text-sm xl:text-base font-black text-slate-950 font-card-number">R$ 9.20M</strong>
                         <span class="text-[9.5px] text-slate-500 font-medium block">Recursos garantidos</span>
                       </div>
                       <div class="bg-slate-50 p-2.5 rounded-[10px] border border-slate-200">
                         <span class="text-[10px] text-slate-500 font-bold uppercase block">Reserva de Contingência</span>
-                        <strong id="anim-reserva-val" class="text-sm xl:text-base font-black text-slate-950 font-card-number">R$ 0 mil</strong>
+                        <strong id="anim-reserva-val" class="text-sm xl:text-base font-black text-slate-950 font-card-number">R$ 850 mil</strong>
                         <span class="text-[9.5px] text-emerald-800 font-bold block">100% preservada</span>
                       </div>
                     </div>
@@ -9023,7 +8961,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               d="M 40 120 A 70 70 0 0 1 180 120"
                               fill="none" stroke="url(#aptsGradient)" stroke-width="10"
                               stroke-dasharray="220"
-                              stroke-dashoffset="220"
+                              stroke-dashoffset="${220 * (1 - 0.74)}"
                               data-offset="${220 * (1 - 0.74)}"
                               stroke-linecap="round"
                               class="anim-radial-ring transition-all duration-1200 ease-out"
@@ -9034,7 +8972,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                               d="M 58 120 A 52 52 0 0 1 162 120"
                               fill="none" stroke="url(#infraGradient)" stroke-width="8"
                               stroke-dasharray="163"
-                              stroke-dashoffset="163"
+                              stroke-dashoffset="${163 * (1 - 0.62)}"
                               data-offset="${163 * (1 - 0.62)}"
                               stroke-linecap="round"
                               class="anim-radial-ring transition-all duration-1200 ease-out"
@@ -9048,7 +8986,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
                           <!-- Center Core Info Hub -->
                           <div class="absolute inset-x-0 bottom-1 flex flex-col items-center text-center">
-                            <span id="anim-frentes-avg" class="text-3xl font-black text-slate-950 tracking-tight leading-none">0%</span>
+                            <span id="anim-frentes-avg" class="text-3xl font-black text-slate-950 tracking-tight leading-none">76%</span>
                             <span class="text-[9.5px] font-extrabold text-emerald-800 uppercase tracking-wider mt-1 bg-emerald-100/80 px-2 py-0.5 rounded-full">
                               ● Ritmo Global
                             </span>
