@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788398190 -->
+<!-- Planes Build: 1788398262 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -410,9 +410,9 @@
     </div>
 
     
-        <!-- MODAL DE CONFIGURAÇÃO DE CREDENCIAIS SIENGE ERP -->
-    <div id="sienge-config-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
-      <div class="bg-white border border-slate-200 rounded-[24px] max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <!-- MODAL (DESKTOP) / FULL-SCREEN (MOBILE): CONFIGURAÇÃO SIENGE ERP -->
+    <div id="sienge-config-modal" class="fixed inset-0 z-50 bg-white lg:bg-slate-950/70 lg:backdrop-blur-sm flex flex-col lg:items-center lg:justify-center p-0 lg:p-4 hidden animate-card-fade">
+      <div class="bg-white lg:border lg:border-slate-200 lg:rounded-[24px] max-w-xl w-full p-5 lg:p-6 shadow-none lg:shadow-2xl space-y-4 flex-1 lg:flex-none flex flex-col justify-between overflow-y-auto pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">
@@ -689,8 +689,9 @@
       </div>
     </div>
 
-        <div id="new-project-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
-      <div class="bg-white border border-slate-200 rounded-[24px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <!-- MODAL (DESKTOP) / FULL-SCREEN (MOBILE): NOVO PROJETO -->
+        <div id="new-project-modal" class="fixed inset-0 z-50 bg-white lg:bg-slate-950/70 lg:backdrop-blur-sm flex flex-col lg:items-center lg:justify-center p-0 lg:p-4 hidden animate-card-fade">
+      <div class="bg-white lg:border lg:border-slate-200 lg:rounded-[24px] max-w-lg w-full p-5 sm:p-7 shadow-none lg:shadow-2xl space-y-4 flex-1 lg:flex-none flex flex-col justify-between overflow-y-auto pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0">
@@ -1026,9 +1027,9 @@
     </div>
   </div>
 
-  <!-- Modal Novo Apontamento -->
-  <div id="log-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-[20px] p-6 max-w-md w-full shadow-2xl border border-slate-200">
+  <!-- MODAL (DESKTOP) / FULL-SCREEN (MOBILE): NOVO APONTAMENTO DE CAMPO -->
+  <div id="log-modal" class="hidden fixed inset-0 bg-white lg:bg-black/60 lg:backdrop-blur-xs z-50 flex flex-col lg:items-center lg:justify-center p-0 lg:p-4 overflow-y-auto">
+    <div class="bg-white lg:border lg:border-slate-200 lg:rounded-[22px] max-w-md w-full p-5 lg:p-6 shadow-none lg:shadow-2xl space-y-4 flex-1 lg:flex-none flex flex-col justify-between overflow-y-auto pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
         <div class="flex items-center gap-2.5">
           <span class="w-8 h-8 rounded-full bg-[#d4ff00] flex items-center justify-center text-slate-900 border border-slate-300">
@@ -1092,10 +1093,10 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- MODAL: EDITAR MEU PERFIL & CONFIGURAÇÕES DE CONTA                 -->
+  <!-- MODAL (DESKTOP) / BOTTOM SHEET (MOBILE): EDITAR MEU PERFIL        -->
   <!-- ================================================================= -->
-  <div id="edit-profile-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 hidden animate-fade-in overflow-y-auto">
-    <div class="bg-white rounded-[24px] max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden my-auto animate-scale-up">
+  <div id="edit-profile-modal" class="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-slate-950/70 backdrop-blur-xs p-0 lg:p-4 hidden animate-fade-in overflow-y-auto" onclick="closeEditProfileModal()">
+    <div class="bg-white rounded-t-[28px] lg:rounded-[24px] max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-scale-up max-h-[88vh] lg:max-h-auto overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-0" onclick="event.stopPropagation()">
       <!-- Modal Header -->
       <div class="bg-slate-950 text-white p-5 sm:p-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
