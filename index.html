@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788397897 -->
+<!-- Planes Build: 1788397965 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -6569,62 +6569,226 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       `;
     }
 
-function renderMobileEquipeView() {
+    let mobileTeamSectorFilter = 'Todos';
+    let mobileTeamSearchQuery = '';
+
+    function setMobileTeamSector(sector) {
+      mobileTeamSectorFilter = sector;
+      filterMobileTeamList();
+    }
+
+    function filterMobileTeamList(query) {
+      if (query !== undefined) {
+        mobileTeamSearchQuery = query.toLowerCase();
+      }
+      const container = document.getElementById('mobile-team-list-container');
+      if (!container) return;
+
+      const list = teamMembersList || [];
+      const filtered = list.filter(mem => {
+        const matchesQuery = mem.name.toLowerCase().includes(mobileTeamSearchQuery) || 
+                             mem.role.toLowerCase().includes(mobileTeamSearchQuery) ||
+                             (mem.sector && mem.sector.toLowerCase().includes(mobileTeamSearchQuery));
+        
+        let matchesSector = true;
+        if (mobileTeamSectorFilter === 'Engenharia') {
+          matchesSector = (mem.sector === 'Engenharia' || mem.role.toLowerCase().includes('eng') || mem.role.toLowerCase().includes('técnic'));
+        } else if (mobileTeamSectorFilter === 'Produção') {
+          matchesSector = (mem.sector === 'Produção' || mem.role.toLowerCase().includes('encarreg') || mem.role.toLowerCase().includes('mestre') || mem.role.toLowerCase().includes('produção'));
+        } else if (mobileTeamSectorFilter === 'Terceiros') {
+          matchesSector = (mem.sector === 'Terceiros' || mem.role.toLowerCase().includes('terceir') || mem.role.toLowerCase().includes('sub'));
+        }
+        return matchesQuery && matchesSector;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">Nenhum profissional encontrado.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(mem => {
+        const cleanPhone = (mem.phone || '').replace(/\D/g,'');
+        const initials = mem.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+        return `
+          <div
+            onclick="openMemberModal(${mem.id})"
+            class="bg-white rounded-[18px] p-3 border border-slate-200 shadow-2xs flex items-center justify-between min-h-[70px] max-h-[76px] ios-press-action cursor-pointer hover:border-slate-300 transition"
+          >
+            <!-- Left: Avatar & Info -->
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded-[12px] bg-[#0b2535] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                ${initials}
+              </div>
+              <div class="min-w-0 flex-1">
+                <strong class="text-xs font-black text-slate-950 block leading-tight truncate">${mem.name}</strong>
+                <span class="text-[11px] text-slate-500 truncate block">${mem.role} · <strong class="text-slate-700">${mem.sector || 'Obra'}</strong></span>
+              </div>
+            </div>
+
+            <!-- Right: Direct Quick Actions (WhatsApp & Call & Detail) -->
+            <div class="flex items-center gap-1.5 shrink-0 pl-2" onclick="event.stopPropagation()">
+              <a
+                href="https://wa.me/55${cleanPhone}?text=${encodeURIComponent('Olá ' + mem.name + ', aqui é a Engenharia da Planes OS.')}"
+                target="_blank"
+                class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center ios-press-action shadow-2xs"
+                title="WhatsApp"
+              >
+                ${getSvg('phone', 'w-3.5 h-3.5 text-emerald-700')}
+              </a>
+              <a
+                href="tel:${cleanPhone}"
+                class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center ios-press-action shadow-2xs"
+                title="Ligar"
+              >
+                ${getSvg('phone', 'w-3.5 h-3.5 text-slate-700')}
+              </a>
+              <button
+                type="button"
+                onclick="openMemberModal(${mem.id})"
+                class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-900"
+              >
+                ➔
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderMobileEquipeView() {
       const list = teamMembersList || [];
       return `
-        <div class="p-3.5 space-y-4 animate-card-fade">
+        <div class="p-3.5 space-y-3.5 animate-card-fade pb-10 font-sans">
+          
+          <!-- Top Header -->
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-700 font-mono">COMUNICAÇÃO DIRETA</span>
-              <h3 class="text-base font-black text-slate-950">Equipe & WhatsApp de Campo</h3>
+              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-700 font-mono">CONTATOS DA OBRA</span>
+              <h3 class="text-base font-black text-slate-950">Equipe & Encarregados</h3>
             </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                onclick="openAddMemberModal()"
+                class="px-3 py-1.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] shadow-2xs ios-press-action flex items-center gap-1 cursor-pointer border border-slate-300"
+              >
+                <span>+ Adicionar</span>
+              </button>
+              <button
+                type="button"
+                onclick="setMobileTab('inicio')"
+                class="p-1.5 bg-white border border-slate-200 rounded-[12px] text-xs font-bold text-slate-600 shadow-2xs"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="🔎 Buscar profissional por nome ou cargo..."
+              oninput="filterMobileTeamList(this.value)"
+              class="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-[14px] text-xs font-medium text-slate-900 placeholder:text-slate-400 shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-950/20"
+            />
+            <span class="absolute left-3 top-3 text-slate-400 text-xs">${getSvg('search', 'w-3.5 h-3.5')}</span>
+          </div>
+
+          <!-- Sector Filter Chips -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
             <button
               type="button"
-              onclick="setMobileTab('inicio')"
-              class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-2xs"
+              onclick="setMobileTeamSector('Todos'); render();"
+              class="px-3 py-1 rounded-full font-bold transition ios-press-action shrink-0 ${
+                mobileTeamSectorFilter === 'Todos' ? 'bg-slate-950 text-white' : 'bg-white text-slate-700 border border-slate-200'
+              }"
             >
-              ✕ Fechar
+              Todos (${list.length})
+            </button>
+            <button
+              type="button"
+              onclick="setMobileTeamSector('Engenharia'); render();"
+              class="px-3 py-1 rounded-full font-bold transition ios-press-action shrink-0 ${
+                mobileTeamSectorFilter === 'Engenharia' ? 'bg-slate-950 text-white' : 'bg-white text-slate-700 border border-slate-200'
+              }"
+            >
+              Engenharia
+            </button>
+            <button
+              type="button"
+              onclick="setMobileTeamSector('Produção'); render();"
+              class="px-3 py-1 rounded-full font-bold transition ios-press-action shrink-0 ${
+                mobileTeamSectorFilter === 'Produção' ? 'bg-slate-950 text-white' : 'bg-white text-slate-700 border border-slate-200'
+              }"
+            >
+              Produção & Mestres
+            </button>
+            <button
+              type="button"
+              onclick="setMobileTeamSector('Terceiros'); render();"
+              class="px-3 py-1 rounded-full font-bold transition ios-press-action shrink-0 ${
+                mobileTeamSectorFilter === 'Terceiros' ? 'bg-slate-950 text-white' : 'bg-white text-slate-700 border border-slate-200'
+              }"
+            >
+              Terceiros
             </button>
           </div>
 
-          <div class="space-y-2.5">
-            ${list.map(mem => `
-              <div class="bg-white rounded-[18px] border border-slate-200 p-3.5 shadow-2xs space-y-2.5">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-[10px] bg-[#0b2535] text-white flex items-center justify-center font-black text-xs">
-                      ${mem.name.split(' ').map(n=>n[0]).slice(0,2).join('')}
+          <!-- Compact Team List (68–76px per item) -->
+          <div id="mobile-team-list-container" class="space-y-2">
+            ${list.map(mem => {
+              const cleanPhone = (mem.phone || '').replace(/\D/g,'');
+              const initials = mem.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+              return `
+                <div
+                  onclick="openMemberModal(${mem.id})"
+                  class="bg-white rounded-[18px] p-3 border border-slate-200 shadow-2xs flex items-center justify-between min-h-[70px] max-h-[76px] ios-press-action cursor-pointer hover:border-slate-300 transition"
+                >
+                  <!-- Left: Avatar & Info -->
+                  <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <div class="w-10 h-10 rounded-[12px] bg-[#0b2535] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                      ${initials}
                     </div>
-                    <div>
-                      <strong class="text-xs font-bold text-slate-950 block leading-tight">${mem.name}</strong>
-                      <span class="text-[10.5px] text-slate-500">${mem.role} · <strong class="text-slate-800">${mem.sector}</strong></span>
+                    <div class="min-w-0 flex-1">
+                      <strong class="text-xs font-black text-slate-950 block leading-tight truncate">${mem.name}</strong>
+                      <span class="text-[11px] text-slate-500 truncate block">${mem.role} · <strong class="text-slate-700">${mem.sector || 'Obra'}</strong></span>
                     </div>
                   </div>
-                </div>
 
-                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onclick="openMemberModal(${mem.id})"
-                    class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-[10px] text-center"
-                  >
-                    Ver Ficha
-                  </button>
-                  <a
-                    href="https://wa.me/55${mem.phone.replace(/\D/g,'')}?text=${encodeURIComponent('Olá ' + mem.name + ', aqui é a Engenharia da Planes OS.')}"
-                    target="_blank"
-                    class="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-[10px] text-center flex items-center justify-center gap-1.5 shadow-2xs"
-                  >
-                    ${getSvg('phone', 'w-3.5 h-3.5 text-white')}
-                    <span>WhatsApp</span>
-                  </a>
+                  <!-- Right: Direct Quick Actions (WhatsApp & Call & Detail) -->
+                  <div class="flex items-center gap-1.5 shrink-0 pl-2" onclick="event.stopPropagation()">
+                    <a
+                      href="https://wa.me/55${cleanPhone}?text=${encodeURIComponent('Olá ' + mem.name + ', aqui é a Engenharia da Planes OS.')}"
+                      target="_blank"
+                      class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center ios-press-action shadow-2xs"
+                      title="WhatsApp"
+                    >
+                      ${getSvg('phone', 'w-3.5 h-3.5 text-emerald-700')}
+                    </a>
+                    <a
+                      href="tel:${cleanPhone}"
+                      class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center ios-press-action shadow-2xs"
+                      title="Ligar"
+                    >
+                      ${getSvg('phone', 'w-3.5 h-3.5 text-slate-700')}
+                    </a>
+                    <button
+                      type="button"
+                      onclick="openMemberModal(${mem.id})"
+                      class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-900"
+                    >
+                      ➔
+                    </button>
+                  </div>
                 </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       `;
     }
+
 
     function filterMobileProjectsScreen(query) {
       const q = (query || '').toLowerCase();
