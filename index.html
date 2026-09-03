@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788398411 -->
+<!-- Planes Build: 1788398456 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -5953,28 +5953,84 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
             </div>
           ` : `
-            <!-- Visão Médio Prazo R4 (Lookahead) -->
+            <!-- Visão Médio Prazo R4 Mobile (Matriz de Restrições com Chips de Filtro) -->
             <div class="space-y-3">
-              <div class="p-3.5 bg-slate-900 text-white rounded-[18px] text-xs flex justify-between items-center shadow-xs">
-                <span>Restrições Removidas: <strong class="text-[#d4ff00]">14/16 (87.5%)</strong></span>
-                <span class="text-slate-400 font-mono text-[10px]">Janela: 4 Semanas</span>
+              
+              <!-- Header KPI Lookahead -->
+              <div class="p-3.5 bg-slate-950 text-white rounded-[20px] text-xs flex justify-between items-center shadow-md border border-slate-800">
+                <div>
+                  <span class="text-[10px] text-slate-400 font-mono uppercase block">Prontidão do Canteiro</span>
+                  <strong class="text-sm font-black text-[#d4ff00] font-mono">14 de 16 Removidas (87.5%)</strong>
+                </div>
+                <span class="text-[10.5px] font-mono bg-slate-800 text-slate-300 px-2.5 py-1 rounded-[10px]">Janela: 4 Semanas</span>
               </div>
 
-              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2">
-                <div class="flex justify-between text-xs items-center">
-                  <strong class="text-slate-950 font-black">Entrega de Aço CA-50 (18 ton)</strong>
-                  <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-[6px] text-[10px] font-mono">✓ Liberado</span>
-                </div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">Gerdau · Pedido Sienge #48291 · Chegada confirmada para amanhã no Canteiro Central</p>
+              <!-- Filtros por Chip: Todas | Pendentes | Liberadas -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                <button
+                  type="button"
+                  onclick="setMobileLookaheadFilter('Todas')"
+                  class="px-3 py-1 rounded-full font-bold transition ios-press-action cursor-pointer ${
+                    window.mobileLookaheadFilter === 'Todas' ? 'bg-slate-950 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200'
+                  }"
+                >
+                  Todas (${(window.lookaheadRestrictionsData || []).length})
+                </button>
+                <button
+                  type="button"
+                  onclick="setMobileLookaheadFilter('Pendentes')"
+                  class="px-3 py-1 rounded-full font-bold transition ios-press-action cursor-pointer ${
+                    window.mobileLookaheadFilter === 'Pendentes' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-white text-rose-700 border border-rose-200'
+                  }"
+                >
+                  ⚠ Pendentes (${(window.lookaheadRestrictionsData || []).filter(r => r.status === 'Pendente').length})
+                </button>
+                <button
+                  type="button"
+                  onclick="setMobileLookaheadFilter('Liberadas')"
+                  class="px-3 py-1 rounded-full font-bold transition ios-press-action cursor-pointer ${
+                    window.mobileLookaheadFilter === 'Liberadas' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white text-emerald-700 border border-emerald-200'
+                  }"
+                >
+                  ✓ Liberadas (${(window.lookaheadRestrictionsData || []).filter(r => r.status === 'Liberado').length})
+                </button>
               </div>
 
-              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2">
-                <div class="flex justify-between text-xs items-center">
-                  <strong class="text-slate-950 font-black">Projeto Executivo Elétrico R3</strong>
-                  <span class="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-[6px] text-[10px] font-mono">⚠️ Em Análise</span>
-                </div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">RFI #104 respondida pelo projetista · Liberação da prumada prevista em 24h</p>
+              <!-- Lista de Restrições -->
+              <div class="space-y-2.5">
+                ${(window.lookaheadRestrictionsData || []).filter(r => {
+                  if (window.mobileLookaheadFilter === 'Pendentes') return r.status === 'Pendente';
+                  if (window.mobileLookaheadFilter === 'Liberadas') return r.status === 'Liberado';
+                  return true;
+                }).map(item => `
+                  <div class="bg-white p-4 rounded-[20px] border ${item.status === 'Pendente' ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200'} shadow-2xs space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0 flex-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase font-mono block truncate">${item.sector} · ${item.window}</span>
+                        <strong class="text-xs font-black text-slate-950 leading-snug block mt-0.5">${item.title}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onclick="toggleRestrictionStatus(${item.id})"
+                        class="px-2.5 py-1 rounded-[10px] text-[10px] font-black font-mono shrink-0 ios-press-action cursor-pointer transition ${
+                          item.status === 'Liberado' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300'
+                        }"
+                        title="Toque para alternar status"
+                      >
+                        ${item.status === 'Liberado' ? '✓ Liberado' : '⚠ Pendente'}
+                      </button>
+                    </div>
+
+                    <p class="text-[11px] text-slate-600 leading-relaxed">${item.desc}</p>
+
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[10.5px]">
+                      <span class="text-slate-500 font-medium">Impacto no Takt: <strong class="${item.impact === 'Crítico' ? 'text-rose-600' : 'text-slate-800'} font-bold">${item.impact}</strong></span>
+                      <span class="text-slate-400 text-[9.5px]">Toque no status p/ alterar ➔</span>
+                    </div>
+                  </div>
+                `).join('')}
               </div>
+
             </div>
           `}
 
@@ -6886,6 +6942,33 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       const modal = document.getElementById('mobile-balance-chart-modal');
       if (modal) {
         modal.classList.add('hidden');
+      }
+    }
+
+    if (!window.lookaheadRestrictionsData) {
+      window.lookaheadRestrictionsData = [
+        { id: 1, title: 'Entrega de Aço CA-50 (18 ton)', sector: 'Arena Shows · Bloco C', window: 'Semana S+1 (4 semanas)', impact: 'Alto', status: 'Liberado', desc: 'Gerdau · Pedido Sienge #48291 · Chegada confirmada para amanhã' },
+        { id: 2, title: 'RFI Detalhe Hidráulico Shaft 4', sector: 'Torre 1 · Pav. 04', window: 'Semana S+1 (Imediata)', impact: 'Crítico', status: 'Pendente', desc: 'Aguardando resposta do projetista para liberar furação de laje' },
+        { id: 3, title: 'Projeto Executivo Elétrico R3', sector: 'Área da Piscina', window: 'Semana S+2', impact: 'Médio', status: 'Pendente', desc: 'Revisão das prumadas de iluminação subaquática' },
+        { id: 4, title: 'Concretagem Laje Torre 3', sector: 'Torre 3 · Pav. 02', window: 'Semana S+1', impact: 'Alto', status: 'Liberado', desc: 'Armadura conferida e betoneira agendada' },
+        { id: 5, title: 'Esquadrias de Alumínio e Vidros', sector: 'Recepção e Portaria', window: 'Semana S+3', impact: 'Médio', status: 'Pendente', desc: 'Medição fina in-loco pendente' },
+        { id: 6, title: 'Massa Asfáltica CBUQ (40 ton)', sector: 'Infraestrutura Viária', window: 'Semana S+2', impact: 'Alto', status: 'Liberado', desc: 'Usina de asfalto contratada com liberação da sub-base' }
+      ];
+    }
+
+    if (!window.mobileLookaheadFilter) window.mobileLookaheadFilter = 'Todas';
+
+    function setMobileLookaheadFilter(filter) {
+      window.mobileLookaheadFilter = filter;
+      render();
+    }
+
+    function toggleRestrictionStatus(id) {
+      const item = window.lookaheadRestrictionsData.find(r => r.id === id);
+      if (item) {
+        item.status = item.status === 'Liberado' ? 'Pendente' : 'Liberado';
+        showToast(`Restrição "${item.title.slice(0, 25)}..." agora está ${item.status}!`);
+        render();
       }
     }
 
