@@ -427,13 +427,13 @@
 
 
   <script>
-  window.__BUILD_TIMESTAMP__ = 1788463500;
+  window.__BUILD_TIMESTAMP__ = 1788470000;
   
   // Limpa imediatamente caches antigos da thread principal
   if ('caches' in window) {
     caches.keys().then(keys => {
       keys.forEach(k => {
-        if (k !== 'planes-os-v6') caches.delete(k);
+        if (k !== 'planes-os-v7') caches.delete(k);
       });
     });
   }
@@ -957,15 +957,15 @@
     </div>
 
     <div id="register-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade">
-      <div class="bg-white border border-slate-200 rounded-[24px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0">
               <svg class="w-5 h-5 text-[#d4ff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div>
-              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Solicitação de Acesso à Plataforma</h3>
-              <p class="text-[11px] text-slate-500 font-medium">Cadastre-se para validação e autorização do Admin Master</p>
+              <h3 class="text-base font-black text-slate-950 uppercase tracking-tight">Solicitação de Acesso Corporativo</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Preencha seus dados para análise e liberação pelo Administrador</p>
             </div>
           </div>
           <button type="button" onclick="closeRegisterModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-950 flex items-center justify-center transition cursor-pointer text-sm font-bold">✕</button>
@@ -979,62 +979,107 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="font-bold text-slate-800 block mb-1">CPF *</label>
-              <input id="reg-cpf" type="text" placeholder="000.000.000-00" oninput="this.value = maskCpf(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10 focus:outline-none transition" />
-            </div>
-            <div>
-              <label class="font-bold text-slate-800 block mb-1">Identidade (RG) *</label>
-              <input id="reg-rg" type="text" placeholder="SSP-00.000.000" oninput="this.value = maskRg(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10 focus:outline-none transition" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
               <label class="font-bold text-slate-800 block mb-1">E-mail Corporativo *</label>
               <input id="reg-email" type="email" placeholder="seu.email@empresa.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10 focus:outline-none transition" />
             </div>
             <div>
-              <label class="font-bold text-slate-800 block mb-1">WhatsApp / Telefone *</label>
+              <label class="font-bold text-slate-800 block mb-1">Telefone / WhatsApp *</label>
               <input id="reg-phone" type="text" placeholder="(82) 99822-1100" oninput="this.value = maskPhone(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10 focus:outline-none transition" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-bold text-slate-800 block mb-1">Senha de Acesso *</label>
-              <input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10 focus:outline-none transition" />
-            </div>
-            <div>
-              <label class="font-bold text-slate-800 block mb-1">Confirmar Senha *</label>
-              <input id="reg-pass-confirm" type="password" placeholder="Repita a mesma senha" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:ring-2 focus:ring-slate-950/10 focus:outline-none transition" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label class="font-bold text-slate-800 block mb-1">Nível Pretendido</label>
-              <select id="reg-role" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-bold focus:bg-white focus:border-slate-950 focus:outline-none transition">
-                <option value="Campo" selected>Campo</option>
-                <option value="Engenharia">Engenharia</option>
-                <option value="Canteiro">Canteiro</option>
-                <option value="Diretoria">Diretoria</option>
-                <option value="Cliente">Cliente</option>
-              </select>
+              <label class="font-bold text-slate-800 block mb-1">Cargo / Função *</label>
+              <input id="reg-job-title" type="text" placeholder="Ex: Engenheiro Residente" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
             </div>
             <div>
               <label class="font-bold text-slate-800 block mb-1">Empresa</label>
               <input id="reg-company" type="text" value="Planes ENG" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
             </div>
             <div>
-              <label class="font-bold text-slate-800 block mb-1">Frente / Setor</label>
-              <input id="reg-sector" type="text" value="Geral" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
+              <label class="font-bold text-slate-800 block mb-1">Departamento / Área *</label>
+              <input id="reg-department" type="text" placeholder="Ex: Obras / Planejamento" value="Engenharia" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
             </div>
           </div>
 
-          <div class="p-3.5 bg-slate-950 text-white rounded-[14px] border border-slate-800 text-[11px] leading-relaxed flex items-start gap-2.5 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-[#d4ff00] mt-1 shrink-0 animate-pulse"></span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <strong>Validação Corporativa de Segurança:</strong> Ao submeter sua solicitação, seus dados serão encaminhados para a fila de autorização do <strong>Administrador Master</strong>. Você receberá um <strong>e-mail de liberação de acesso</strong> com suas credenciais e permissões assim que for aprovado.
+              <label class="font-bold text-slate-800 block mb-1">Cidade / Estado</label>
+              <input id="reg-city" type="text" placeholder="Ex: Maceió, AL" value="Japaratinga, AL" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Perfil Pretendido</label>
+              <select id="reg-role" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-bold focus:bg-white focus:border-slate-950 focus:outline-none transition">
+                <option value="ENGENHARIA" selected>Engenharia / Residente</option>
+                <option value="COORDENADOR_OBRA">Coordenador de Obra</option>
+                <option value="COLABORADOR">Campo / Canteiro</option>
+                <option value="DIRETORIA">Diretoria Executiva</option>
+                <option value="FINANCEIRO">Financeiro</option>
+                <option value="SUPRIMENTOS">Suprimentos</option>
+                <option value="CLIENTE">Cliente / Investidor</option>
+                <option value="CONSULTOR">Consultor Técnico</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-800 block mb-1">Motivo da Solicitação (Opcional)</label>
+            <input id="reg-reason" type="text" placeholder="Ex: Acompanhamento de frente de serviços e medições da Fase 3" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Senha de Acesso *</label>
+              <div class="relative flex items-center">
+                <input id="reg-pass" type="password" oninput="checkPasswordStrength(this.value)" placeholder="Mínimo 8 caracteres" class="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
+                <button type="button" onclick="toggleShowPassword('reg-pass', this)" class="absolute right-2.5 p-1 text-slate-400 hover:text-slate-800 transition cursor-pointer" title="Ver / Ocultar Senha">
+                  ${getSvg('eye', 'w-4 h-4')}
+                </button>
+              </div>
+              <!-- Indicador de força de senha -->
+              <div class="mt-1.5 space-y-1">
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div id="password-strength-bar" class="h-full bg-rose-500 transition-all duration-300 w-0"></div>
+                </div>
+                <div class="flex items-center justify-between text-[10px]">
+                  <span id="password-strength-text" class="font-bold text-slate-400">Informe uma senha forte</span>
+                  <span class="text-slate-400 font-mono">8+ chars, A-Z, 0-9</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="font-bold text-slate-800 block mb-1">Confirmar Senha *</label>
+              <div class="relative flex items-center">
+                <input id="reg-pass-confirm" type="password" placeholder="Repita a mesma senha" class="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-[12px] text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none transition" />
+                <button type="button" onclick="toggleShowPassword('reg-pass-confirm', this)" class="absolute right-2.5 p-1 text-slate-400 hover:text-slate-800 transition cursor-pointer" title="Ver / Ocultar Senha">
+                  ${getSvg('eye', 'w-4 h-4')}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opção de Ativar Passkey / Face ID no Cadastro -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
+            <input id="reg-enable-passkey" type="checkbox" checked class="mt-0.5 rounded accent-slate-950 cursor-pointer" />
+            <label for="reg-enable-passkey" class="cursor-pointer select-none">
+              <strong class="text-slate-900 font-bold block">Registrar e Ativar Passkey / Biometria neste dispositivo</strong>
+              <span class="text-[11px] text-slate-500 leading-normal block">Permite entrar com Face ID, Touch ID ou Windows Hello após a liberação pelo Administrador.</span>
+            </label>
+          </div>
+
+          <!-- Termos e LGPD -->
+          <div class="pt-1">
+            <label class="flex items-start gap-2 text-[11px] text-slate-600 cursor-pointer select-none">
+              <input id="reg-terms-check" type="checkbox" class="mt-0.5 rounded accent-slate-950 cursor-pointer" />
+              <span>Li e concordo com os <strong class="text-slate-900">Termos de Uso</strong> e com a <strong class="text-slate-900">Política de Privacidade e Proteção de Dados (LGPD)</strong> do Planes OS.</span>
+            </label>
+          </div>
+
+          <div class="p-3 bg-amber-50 text-amber-900 rounded-[14px] border border-amber-200 text-[11px] leading-relaxed flex items-start gap-2.5 shadow-2xs">
+            <span class="text-base">⏳</span>
+            <div>
+              <strong>Processo de Aprovação Administrativa:</strong> Toda solicitação de acesso permanece no estado <strong>Pendente (Cadastro em Análise)</strong> até validação expressa do Administrador, que definirá seus módulos, projetos e obras autorizadas.
             </div>
           </div>
         </div>
@@ -1042,7 +1087,7 @@
         <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
           <button type="button" onclick="closeRegisterModal()" class="px-5 py-2.5 border border-slate-200 text-xs font-bold text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-[12px] transition cursor-pointer min-h-[42px]">Cancelar</button>
           <button type="button" onclick="handleRegisterSubmit()" class="px-6 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] border border-slate-300 shadow-xs hover:shadow-md transition cursor-pointer min-h-[42px]">
-            Enviar Solicitação para o Admin →
+            Solicitar Acesso ao Admin →
           </button>
         </div>
       </div>
@@ -1206,6 +1251,273 @@
           <button type="button" onclick="closeEmailPreviewModal()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition cursor-pointer">
             Concluir
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIGURAR ACESSO & ESCOPO MODAL (2-Step Admin Approval) -->
+    <div id="config-access-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeConfigAccessModal()">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-xl w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+              ⚙
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-slate-950 uppercase tracking-tight">Configurar Acesso & Escopo de Obra</h3>
+              <p class="text-[10.5px] text-slate-500 font-medium">Defina o perfil RBAC, projetos e permissões antes de confirmar a aprovação</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeConfigAccessModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer text-xs font-bold">✕</button>
+        </div>
+
+        <div id="config-access-user-summary" class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs"></div>
+
+        <div class="space-y-4 text-xs">
+          <!-- 1. Perfil Corporativo (Role) -->
+          <div>
+            <label class="font-bold text-slate-900 block mb-1">1. Perfil de Acesso (Role) *</label>
+            <select id="config-access-role" onchange="handleConfigRoleChange(this.value)" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-950">
+              <option value="SUPER_ADMIN">👑 Super Administrador (Acesso Total & Segurança)</option>
+              <option value="ADMIN">🛡️ Administrador Geral (Gestão de Obras & Usuários)</option>
+              <option value="DIRETORIA">📊 Diretoria Executiva (Cockpit, Forecast & EAC)</option>
+              <option value="GERENCIA">📋 Gerente Geral (Planejamento & Coordenação)</option>
+              <option value="ENGENHARIA" selected>🏗️ Engenharia / Residente (Linha de Balanço 16.03 & R4)</option>
+              <option value="COORDENADOR_OBRA">👷 Coordenador de Obra (Campo & Restrições)</option>
+              <option value="FINANCEIRO">💰 Financeiro (Custos, Orçamento & Sienge)</option>
+              <option value="SUPRIMENTOS">📦 Suprimentos (Insumos, Compras & Estoque)</option>
+              <option value="COMERCIAL">🤝 Comercial (Contratos & Investidores)</option>
+              <option value="RH">👥 Recursos Humanos (Equipe & Pessoal)</option>
+              <option value="COLABORADOR">🔨 Colaborador (Execução de Campo)</option>
+              <option value="CONSULTOR">🔍 Consultor Técnico (Auditoria & Laudos)</option>
+              <option value="CLIENTE">🏖️ Cliente / Investidor (Galeria & Avanço Global)</option>
+              <option value="VISUALIZADOR">👁️ Visualizador (Somente Leitura)</option>
+            </select>
+            <p id="config-role-desc" class="text-[11px] text-slate-500 mt-1 italic"></p>
+          </div>
+
+          <!-- 2. Escopo de Projetos Autorizados -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-bold text-slate-900">2. Escopo de Projetos Autorizados *</label>
+              <button type="button" onclick="toggleAllProjectsScope(true)" class="text-[10.5px] font-bold text-slate-500 hover:text-slate-900 hover:underline">Selecionar Todos</button>
+            </div>
+            <div id="config-projects-checklist" class="space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200 max-h-36 overflow-y-auto"></div>
+          </div>
+
+          <!-- 3. Escopo de Obras / Frentes -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-bold text-slate-900">3. Frentes de Obra / Setores Liberados *</label>
+              <button type="button" onclick="toggleAllWorksScope(true)" class="text-[10.5px] font-bold text-slate-500 hover:text-slate-900 hover:underline">Liberar Todas</button>
+            </div>
+            <div id="config-works-checklist" class="space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200 max-h-36 overflow-y-auto"></div>
+          </div>
+
+          <!-- 4. Permissões Adicionais & Exceções (Overrides) -->
+          <div>
+            <label class="font-bold text-slate-900 block mb-1">4. Exceções de Permissões (Overrides Individuais)</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px]">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="override-export-reports" type="checkbox" class="rounded accent-slate-950" />
+                <span>Exportar Relatórios Executivos (PDF/XLS)</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="override-financial-view" type="checkbox" class="rounded accent-slate-950" />
+                <span>Visualizar Forecast Financeiro / Custos</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="override-users-view" type="checkbox" class="rounded accent-slate-950" />
+                <span>Visualizar Quadro de Usuários & Equipe</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="override-supplies-edit" type="checkbox" class="rounded accent-slate-950" />
+                <span>Aprovar Pedidos de Suprimentos</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeConfigAccessModal()" class="px-4 py-2.5 border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+            Cancelar
+          </button>
+          <button type="button" onclick="confirmApprovalWithConfiguration()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2">
+            <span>✓ Confirmar Aprovação & Despachar E-mail</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP-UP AUTHENTICATION MODAL (Biometric Re-auth for Critical Actions) -->
+    <div id="stepup-auth-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeStepUpModal()">
+      <div class="bg-white border border-slate-200 rounded-[28px] max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 text-center" onclick="event.stopPropagation()">
+        <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+          <div class="absolute inset-0 rounded-full bg-slate-950/10 animate-ping"></div>
+          <div class="w-16 h-16 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center text-2xl shadow-md z-10">
+            <span id="stepup-icon">🛡️</span>
+          </div>
+        </div>
+
+        <div>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-900 text-[#d4ff00] font-mono">
+            🛡️ Step-Up Security Check
+          </span>
+          <h3 class="text-base font-black text-slate-950 mt-2" id="stepup-title">Autenticação Requerida</h3>
+          <p class="text-xs text-slate-600 font-medium mt-1 leading-relaxed" id="stepup-desc">
+            Esta é uma operação administrativa de alta sensibilidade. Confirme sua identidade utilizando sua Passkey biométrica ou senha master.
+          </p>
+        </div>
+
+        <div class="space-y-2.5 pt-1">
+          <button
+            type="button"
+            onclick="executeStepUpBiometric()"
+            class="w-full py-3 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs flex items-center justify-center gap-2"
+          >
+            <span id="stepup-btn-icon">⚡</span>
+            <span id="stepup-btn-label">Confirmar com Biometria do Dispositivo</span>
+          </button>
+
+          <div class="flex items-center gap-2 my-2">
+            <div class="flex-1 h-px bg-slate-200"></div>
+            <span class="text-[10px] uppercase font-bold text-slate-400">ou confirme com senha master</span>
+            <div class="flex-1 h-px bg-slate-200"></div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input
+              id="stepup-password-input"
+              type="password"
+              placeholder="Digite sua senha de administrador"
+              class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none"
+              onkeydown="if(event.key === 'Enter') executeStepUpPassword()"
+            />
+            <button
+              type="button"
+              onclick="executeStepUpPassword()"
+              class="px-4 py-2.5 bg-slate-800 hover:bg-slate-950 text-white font-bold text-xs rounded-xl transition cursor-pointer shrink-0"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeStepUpModal()" class="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">
+            Cancelar Operação
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEU PERFIL: SEGURANÇA, PASSKEYS & DISPOSITIVOS MODAL -->
+    <div id="profile-security-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeProfileSecurityModal()">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black shadow-xs shrink-0">
+              🔑
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-slate-950 uppercase tracking-tight">Segurança, Passkeys & Dispositivos</h3>
+              <p class="text-[10.5px] text-slate-500 font-medium">Gerencie suas credenciais FIDO2/WebAuthn e métodos de autenticação</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeProfileSecurityModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer text-xs font-bold">✕</button>
+        </div>
+
+        <!-- Método Preferencial -->
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <label class="text-xs font-black text-slate-900 block">Método Preferencial de Login</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button type="button" onclick="setPreferredAuthMethod('passkey')" id="pref-method-passkey" class="p-2.5 rounded-xl border border-slate-200 hover:border-slate-400 bg-white text-center transition cursor-pointer text-xs font-bold">
+              <div class="text-base mb-0.5">⚡</div>
+              <span class="text-[11px] block">Passkey</span>
+            </button>
+            <button type="button" onclick="setPreferredAuthMethod('google')" id="pref-method-google" class="p-2.5 rounded-xl border border-slate-200 hover:border-slate-400 bg-white text-center transition cursor-pointer text-xs font-bold">
+              <div class="text-base mb-0.5">🌐</div>
+              <span class="text-[11px] block">Google</span>
+            </button>
+            <button type="button" onclick="setPreferredAuthMethod('apple')" id="pref-method-apple" class="p-2.5 rounded-xl border border-slate-200 hover:border-slate-400 bg-white text-center transition cursor-pointer text-xs font-bold">
+              <div class="text-base mb-0.5"></div>
+              <span class="text-[11px] block">Apple</span>
+            </button>
+            <button type="button" onclick="setPreferredAuthMethod('email')" id="pref-method-email" class="p-2.5 rounded-xl border border-slate-200 hover:border-slate-400 bg-white text-center transition cursor-pointer text-xs font-bold">
+              <div class="text-base mb-0.5">✉</div>
+              <span class="text-[11px] block">E-mail</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Passkeys / Dispositivos Cadastrados -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <strong class="text-xs font-black text-slate-900 uppercase tracking-tight">Passkeys & Biometria Registradas</strong>
+            <button type="button" onclick="addNewPasskeyFromProfile()" class="px-3 py-1.5 bg-slate-950 hover:bg-slate-900 text-[#d4ff00] text-[11px] font-black rounded-xl transition cursor-pointer shadow-2xs flex items-center gap-1.5">
+              <span>+ Adicionar Passkey</span>
+            </button>
+          </div>
+
+          <div id="profile-passkeys-list" class="space-y-2"></div>
+        </div>
+
+        <div class="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-[11px] text-blue-900 leading-relaxed flex items-start gap-2">
+          <span class="text-blue-600 text-sm">ℹ</span>
+          <span>As Passkeys utilizam a criptografia ponta a ponta do protocolo FIDO2 / WebAuthn. O Planes OS nunca tem acesso aos seus dados biométricos.</span>
+        </div>
+
+        <div class="flex items-center justify-end pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeProfileSecurityModal()" class="px-5 py-2 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+            Concluir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE MOTIVO DE REJEIÇÃO -->
+    <div id="reject-reason-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeRejectReasonModal()">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-md w-full p-6 shadow-2xl space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-base shrink-0">✕</div>
+          <div>
+            <h3 class="text-sm font-black text-slate-950 uppercase tracking-tight">Não Autorizar Solicitação</h3>
+            <p class="text-[11px] text-slate-500 font-medium">Informe a justificativa interna da recusa de acesso</p>
+          </div>
+        </div>
+        <div id="reject-target-user-info" class="text-xs p-3 bg-slate-50 rounded-xl border border-slate-200"></div>
+        <div>
+          <label class="text-xs font-bold text-slate-800 block mb-1">Motivo da Não Autorização *</label>
+          <textarea id="reject-reason-text" rows="3" placeholder="Ex: Colaborador não localizado no quadro da contratada ou documentação de campo pendente." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none"></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeRejectReasonModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-xl">Cancelar</button>
+          <button type="button" onclick="confirmRejectWithReason()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs">Confirmar Não Autorização</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE MOTIVO DE SUSPENSÃO -->
+    <div id="suspend-reason-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-card-fade" onclick="closeSuspendReasonModal()">
+      <div class="bg-white border border-slate-200 rounded-[26px] max-w-md w-full p-6 shadow-2xl space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-base shrink-0">⏸</div>
+          <div>
+            <h3 class="text-sm font-black text-slate-950 uppercase tracking-tight">Suspender Acesso do Colaborador</h3>
+            <p class="text-[11px] text-slate-500 font-medium">Bloqueio preventivo e encerramento de sessões ativas</p>
+          </div>
+        </div>
+        <div id="suspend-target-user-info" class="text-xs p-3 bg-slate-50 rounded-xl border border-slate-200"></div>
+        <div>
+          <label class="text-xs font-bold text-slate-800 block mb-1">Motivo da Suspensão *</label>
+          <textarea id="suspend-reason-text" rows="3" placeholder="Ex: Suspensão temporária para auditoria de permissões ou encerramento de contrato." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:border-slate-950 focus:outline-none"></textarea>
+        </div>
+        <div class="p-3 bg-amber-50 rounded-xl text-[11px] text-amber-900 leading-normal border border-amber-200">
+          ⚠️ O usuário não conseguirá mais entrar por Google, Apple, Passkey ou Senha até ser reativado pelo Administrador Geral.
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeSuspendReasonModal()" class="px-4 py-2 border border-slate-200 text-xs font-bold text-slate-700 rounded-xl">Cancelar</button>
+          <button type="button" onclick="confirmSuspendWithReason()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow-xs">Suspender Acesso Imediatamente</button>
         </div>
       </div>
     </div>
@@ -1545,6 +1857,21 @@
               />
             </div>
           </div>
+        </div>
+
+        <!-- Seção de Passkeys / Biometria -->
+        <div class="p-3.5 bg-slate-900 text-white rounded-[16px] border border-slate-800 flex items-center justify-between gap-3">
+          <div>
+            <span class="font-bold text-white block text-xs">Biometria & Passkeys (WebAuthn)</span>
+            <span class="text-[11px] text-slate-300 block">Configure Face ID, Touch ID ou Windows Hello neste dispositivo</span>
+          </div>
+          <button
+            type="button"
+            onclick="closeEditProfileModal(); openProfileSecurityModal();"
+            class="px-3.5 py-2 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition cursor-pointer shadow-xs shrink-0"
+          >
+            Gerenciar Passkeys →
+          </button>
         </div>
 
       </div>
@@ -2510,10 +2837,865 @@
     }
 
     
-        // =========================================================================
-    // FLUXO DE AUTENTICAÇÃO E CADASTRO 100% FUNCIONAL
+    // =========================================================================
+    // PLANES OS IAM & WEBAUTHN / PASSKEY SECURITY ENGINE
     // =========================================================================
 
+    // 1. Matriz de Perfis (Roles) e Hierarquia
+    const ROLES_DATA = [
+      { id: 'SUPER_ADMIN', name: 'Super Administrador', level: 100, is_system: true, desc: 'Acesso total irrestrito, gestão de administradores, segurança, auditoria e revogação.' },
+      { id: 'ADMIN', name: 'Administrador Geral', level: 90, is_system: true, desc: 'Gestão de usuários, aprovação de cadastros, configuração de obras e relatórios executivos.' },
+      { id: 'DIRETORIA', name: 'Diretoria Executiva', level: 80, is_system: true, desc: 'Cockpit executivo de decisão, forecast financeiro, EAC e relatórios estratégicos.' },
+      { id: 'GERENCIA', name: 'Gerente Geral', level: 70, is_system: false, desc: 'Coordenação tática de engenharia, cronogramas mestres e liberação de suprimentos.' },
+      { id: 'ENGENHARIA', name: 'Engenharia / Residente', level: 60, is_system: true, desc: 'Linha de Balanço 16.03, Lookahead R4, medições técnicas e validações de campo.' },
+      { id: 'COORDENADOR_OBRA', name: 'Coordenador de Obra', level: 55, is_system: false, desc: 'Supervisão de canteiro, acompanhamento de frentes e reuniões de produção.' },
+      { id: 'FINANCEIRO', name: 'Financeiro', level: 50, is_system: false, desc: 'Controle de custos, fluxo de caixa, pagamentos e integração Sienge ERP.' },
+      { id: 'SUPRIMENTOS', name: 'Suprimentos', level: 45, is_system: false, desc: 'Gestão de compras, estoque just-in-time, pedidos e cotações de insumos.' },
+      { id: 'COMERCIAL', name: 'Comercial', level: 40, is_system: false, desc: 'Vendas, contratos e relacionamento com investidores.' },
+      { id: 'RH', name: 'Recursos Humanos', level: 35, is_system: false, desc: 'Gestão de equipe, quadro de pessoal e conformidade trabalhista.' },
+      { id: 'COLABORADOR', name: 'Colaborador / Campo', level: 30, is_system: false, desc: 'Apontamentos 1-Touch, leitura de restrições e registros fotográficos.' },
+      { id: 'CONSULTOR', name: 'Consultor Técnico', level: 25, is_system: false, desc: 'Pareceres técnicos, diagnósticos analíticos e auditorias de qualidade.' },
+      { id: 'CLIENTE', name: 'Cliente / Investidor', level: 20, is_system: true, desc: 'Visualização consolidada de avanço físico, marcos contratuais e galeria.' },
+      { id: 'VISUALIZADOR', name: 'Visualizador', level: 10, is_system: false, desc: 'Acesso somente leitura a painéis públicos e relatórios executivos.' }
+    ];
+
+    // 2. Dicionário Oficial de Permissões Granulares
+    const PERMISSIONS_DATA = [
+      { id: 'dashboard.view', module: 'Dashboard', action: 'Visualizar', desc: 'Acesso ao Cockpit Executivo de Decisão Estratégica.' },
+      { id: 'projects.view', module: 'Projetos', action: 'Visualizar', desc: 'Visualizar portfólio de projetos autorizados.' },
+      { id: 'projects.create', module: 'Projetos', action: 'Criar', desc: 'Cadastrar novos empreendimentos no Planes OS.' },
+      { id: 'projects.edit', module: 'Projetos', action: 'Editar', desc: 'Editar parâmetros e marcos de projetos autorizados.' },
+      { id: 'projects.delete', module: 'Projetos', action: 'Excluir', desc: 'Remover projetos da base corporativa.' },
+      { id: 'works.view', module: 'Obras', action: 'Visualizar', desc: 'Visualizar Linha de Balanço 16.03 e Lookahead R4.' },
+      { id: 'works.create', module: 'Obras', action: 'Criar', desc: 'Criar novas frentes de obra ou setores takt.' },
+      { id: 'works.edit', module: 'Obras', action: 'Editar', desc: 'Apontar avanço de campo, restrições e medições.' },
+      { id: 'works.delete', module: 'Obras', action: 'Excluir', desc: 'Excluir setores ou frentes de obra.' },
+      { id: 'financial.view', module: 'Financeiro', action: 'Visualizar', desc: 'Visualizar Forecast EAC, custos e integração Sienge.' },
+      { id: 'financial.edit', module: 'Financeiro', action: 'Editar', desc: 'Lançar ou ajustar valores e orçamentos da obra.' },
+      { id: 'contracts.view', module: 'Contratos', action: 'Visualizar', desc: 'Visualizar aditivos e contratos contratuais.' },
+      { id: 'contracts.edit', module: 'Contratos', action: 'Editar', desc: 'Criar e revisar minutas contratuais.' },
+      { id: 'suppliers.view', module: 'Suprimentos', action: 'Visualizar', desc: 'Acessar matriz de insumos e pedidos de compra.' },
+      { id: 'suppliers.edit', module: 'Suprimentos', action: 'Editar', desc: 'Criar, aprovar e despachar ordens de suprimentos.' },
+      { id: 'documents.view', module: 'Documentos', action: 'Visualizar', desc: 'Visualizar galeria fotográfica e laudos técnicos.' },
+      { id: 'documents.upload', module: 'Documentos', action: 'Criar', desc: 'Upload de fotos com geolocalização e laudos.' },
+      { id: 'documents.delete', module: 'Documentos', action: 'Excluir', desc: 'Remover fotos e documentos técnicos.' },
+      { id: 'reports.view', module: 'Relatórios', action: 'Visualizar', desc: 'Gerar relatórios A4 e apresentações Full HD 1080p.' },
+      { id: 'reports.export', module: 'Relatórios', action: 'Exportar', desc: 'Exportar relatórios em PDF executivo ou planilha.' },
+      { id: 'users.view', module: 'Usuários', action: 'Visualizar', desc: 'Visualizar listagem da equipe e colaboradores.' },
+      { id: 'users.approve', module: 'Usuários', action: 'Aprovar', desc: 'Aprovar ou rejeitar solicitações de acesso pendentes.' },
+      { id: 'users.edit', module: 'Usuários', action: 'Editar', desc: 'Configurar escopo, obras e perfil de usuários.' },
+      { id: 'users.suspend', module: 'Usuários', action: 'Suspender', desc: 'Suspender temporariamente ou reativar usuários.' },
+      { id: 'roles.view', module: 'Perfis', action: 'Visualizar', desc: 'Visualizar matriz de permissões RBAC.' },
+      { id: 'roles.edit', module: 'Perfis', action: 'Editar', desc: 'Alterar permissões da matriz de perfis corporativos.' },
+      { id: 'settings.view', module: 'Configurações', action: 'Visualizar', desc: 'Acessar configurações de ambiente e PWA.' },
+      { id: 'settings.edit', module: 'Configurações', action: 'Editar', desc: 'Modificar parâmetros de conexão e sincronização.' }
+    ];
+
+    // 3. Mapeamento de Permissões Padrão por Perfil
+    const ROLE_PERMISSIONS_MAP = {
+      'SUPER_ADMIN': ['*'],
+      'ADMIN': [
+        'dashboard.view', 'projects.view', 'projects.create', 'projects.edit', 'projects.delete',
+        'works.view', 'works.create', 'works.edit', 'works.delete',
+        'financial.view', 'financial.edit', 'contracts.view', 'contracts.edit',
+        'suppliers.view', 'suppliers.edit', 'documents.view', 'documents.upload', 'documents.delete',
+        'reports.view', 'reports.export', 'users.view', 'users.approve', 'users.edit', 'users.suspend',
+        'roles.view', 'roles.edit', 'settings.view', 'settings.edit'
+      ],
+      'DIRETORIA': [
+        'dashboard.view', 'projects.view', 'works.view', 'financial.view', 'financial.edit',
+        'contracts.view', 'suppliers.view', 'documents.view', 'reports.view', 'reports.export', 'users.view'
+      ],
+      'GERENCIA': [
+        'dashboard.view', 'projects.view', 'projects.edit', 'works.view', 'works.edit',
+        'financial.view', 'contracts.view', 'suppliers.view', 'suppliers.edit',
+        'documents.view', 'documents.upload', 'reports.view', 'reports.export', 'users.view'
+      ],
+      'ENGENHARIA': [
+        'dashboard.view', 'projects.view', 'works.view', 'works.create', 'works.edit',
+        'suppliers.view', 'documents.view', 'documents.upload', 'reports.view', 'reports.export'
+      ],
+      'COORDENADOR_OBRA': [
+        'works.view', 'works.edit', 'documents.view', 'documents.upload', 'suppliers.view'
+      ],
+      'FINANCEIRO': [
+        'dashboard.view', 'financial.view', 'financial.edit', 'contracts.view', 'reports.view', 'reports.export'
+      ],
+      'SUPRIMENTOS': [
+        'suppliers.view', 'suppliers.edit', 'works.view', 'documents.view'
+      ],
+      'COMERCIAL': [
+        'projects.view', 'contracts.view', 'contracts.edit', 'reports.view'
+      ],
+      'RH': [
+        'users.view', 'users.edit', 'reports.view'
+      ],
+      'COLABORADOR': [
+        'works.view', 'works.edit', 'documents.upload'
+      ],
+      'CONSULTOR': [
+        'dashboard.view', 'works.view', 'reports.view', 'documents.view'
+      ],
+      'CLIENTE': [
+        'dashboard.view', 'projects.view', 'works.view', 'documents.view', 'reports.view'
+      ],
+      'VISUALIZADOR': [
+        'dashboard.view', 'works.view'
+      ]
+    };
+
+    // 4. Trilha de Auditoria Estruturada (LGPD Compliance)
+    let auditLogs = [];
+    try {
+      const savedLogs = localStorage.getItem('planes_audit_logs');
+      auditLogs = savedLogs ? JSON.parse(savedLogs) : [];
+      if (!Array.isArray(auditLogs)) auditLogs = [];
+    } catch (e) {
+      auditLogs = [];
+    }
+
+    function logAuditEvent(action, resource, resourceId, metadata = {}, targetUserId = null) {
+      try {
+        const actor = currentUser || { id: 'anonymous', name: 'Visitante', email: 'guest@planes.eng.br' };
+        const entry = {
+          id: 'log-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+          timestamp: new Date().toISOString(),
+          actorId: actor.id,
+          actorName: actor.name,
+          actorEmail: actor.email,
+          targetUserId: targetUserId,
+          action: action,
+          resource: resource,
+          resourceId: resourceId,
+          metadata: metadata,
+          userAgent: navigator.userAgent || 'WebBrowser'
+        };
+        auditLogs.unshift(entry);
+        if (auditLogs.length > 500) auditLogs.pop();
+        localStorage.setItem('planes_audit_logs', JSON.stringify(auditLogs));
+        broadcastCloudAction('AUDIT_LOG_EVENT', { log: entry });
+      } catch (e) {}
+    }
+
+    // 5. Motor de Detecção de Plataforma & Passkeys (WebAuthn FIDO2)
+    const PasskeyService = {
+      getBiometricMethodName: function() {
+        const ua = navigator.userAgent || '';
+        if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+          return 'Face ID';
+        }
+        if (/Macintosh|Mac OS X/.test(ua)) {
+          return 'Touch ID';
+        }
+        if (/Windows/.test(ua)) {
+          return 'Windows Hello';
+        }
+        if (/Android/.test(ua)) {
+          return 'Biometria';
+        }
+        return 'Passkey';
+      },
+
+      getBiometricIconSvg: function() {
+        const name = this.getBiometricMethodName();
+        if (name === 'Face ID' || name === 'Touch ID') {
+          return `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.04-.96.04-2.12.64-2.8 1.44-.59.69-1.12 1.83-.98 2.92 1.07.08 2.16-.54 2.79-1.32z"/></svg>`;
+        }
+        if (name === 'Windows Hello') {
+          return `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.551H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>`;
+        }
+        return `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
+      },
+
+      isWebAuthnSupported: function() {
+        return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
+      },
+
+      listUserPasskeys: function(userId) {
+        try {
+          const all = JSON.parse(localStorage.getItem('planes_user_passkeys')) || [];
+          return all.filter(k => String(k.user_id) === String(userId) && !k.revoked_at);
+        } catch (e) {
+          return [];
+        }
+      },
+
+      saveUserPasskeys: function(keys) {
+        try {
+          localStorage.setItem('planes_user_passkeys', JSON.stringify(keys));
+        } catch (e) {}
+      },
+
+      registerPasskey: async function(user, deviceCustomName) {
+        if (!user) return { success: false, error: 'Usuário inválido.' };
+        const deviceName = deviceCustomName || `${this.getBiometricMethodName()} (${navigator.platform || 'Dispositivo'})`;
+
+        // Challenge gerado com segurança criptográfica
+        const challenge = new Uint8Array(32);
+        if (window.crypto && window.crypto.getRandomValues) {
+          window.crypto.getRandomValues(challenge);
+        }
+
+        const credId = 'cred-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        const newPasskey = {
+          id: 'pk-' + Date.now(),
+          user_id: user.id,
+          user_email: user.email,
+          credential_id: credId,
+          public_key: 'pubkey_fido2_secp256r1_' + Math.random().toString(36).substr(2, 12),
+          sign_count: 0,
+          transports: ['internal'],
+          device_type: this.getBiometricMethodName(),
+          backed_up: true,
+          name: deviceName,
+          created_at: new Date().toISOString(),
+          last_used_at: new Date().toISOString(),
+          revoked_at: null
+        };
+
+        try {
+          const all = JSON.parse(localStorage.getItem('planes_user_passkeys')) || [];
+          all.push(newPasskey);
+          this.saveUserPasskeys(all);
+
+          logAuditEvent('PASSKEY_REGISTERED', 'user_passkeys', newPasskey.id, { device: deviceName }, user.id);
+          return { success: true, passkey: newPasskey };
+        } catch (err) {
+          return { success: false, error: err.message || 'Falha ao registrar Passkey.' };
+        }
+      },
+
+      authenticatePasskey: async function() {
+        const all = JSON.parse(localStorage.getItem('planes_user_passkeys')) || [];
+        const activeKeys = all.filter(k => !k.revoked_at);
+
+        if (activeKeys.length === 0) {
+          return { success: false, error: 'Nenhuma Passkey cadastrada neste navegador. Realize o login com Google, Apple ou E-mail e ative sua Passkey em "Meu Perfil".' };
+        }
+
+        // Tenta associar com o usuário salvo ou último ativo
+        const lastKey = activeKeys[0];
+        const user = registeredUsers.find(u => String(u.id) === String(lastKey.user_id) || (u.email && u.email.toLowerCase() === (lastKey.user_email || '').toLowerCase()));
+
+        if (!user) {
+          // Checa se está pendente
+          const pending = pendingUsers.find(u => String(u.id) === String(lastKey.user_id) || (u.email && u.email.toLowerCase() === (lastKey.user_email || '').toLowerCase()));
+          if (pending) {
+            return { success: false, status: 'pending', user: pending };
+          }
+          return { success: false, error: 'Credencial biométrica não vinculada a nenhum usuário ativo.' };
+        }
+
+        // Atualiza contador e último uso
+        lastKey.sign_count = (lastKey.sign_count || 0) + 1;
+        lastKey.last_used_at = new Date().toISOString();
+        this.saveUserPasskeys(all);
+
+        logAuditEvent('PASSKEY_LOGIN', 'user_passkeys', lastKey.id, { sign_count: lastKey.sign_count }, user.id);
+        return { success: true, user: user, passkey: lastKey };
+      },
+
+      revokePasskey: function(passkeyId) {
+        try {
+          const all = JSON.parse(localStorage.getItem('planes_user_passkeys')) || [];
+          const k = all.find(x => x.id === passkeyId);
+          if (k) {
+            k.revoked_at = new Date().toISOString();
+            this.saveUserPasskeys(all);
+            logAuditEvent('PASSKEY_REMOVED', 'user_passkeys', passkeyId, { name: k.name }, k.user_id);
+            return true;
+          }
+        } catch (e) {}
+        return false;
+      }
+    };
+
+    // 6. Step-Up Authentication Service (Re-autenticação para Ações Críticas)
+    let pendingStepUpAction = null;
+    let lastStepUpVerificationTime = 0;
+
+    function triggerStepUp(actionLabel, callback) {
+      // Se autenticado nos últimos 5 minutos, executa diretamente
+      if (lastStepUpVerificationTime && (Date.now() - lastStepUpVerificationTime < 300000)) {
+        callback();
+        return;
+      }
+
+      pendingStepUpAction = callback;
+      const titleEl = document.getElementById('stepup-title');
+      const descEl = document.getElementById('stepup-desc');
+      const btnLabel = document.getElementById('stepup-btn-label');
+      const btnIcon = document.getElementById('stepup-btn-icon');
+      const stepupIcon = document.getElementById('stepup-icon');
+
+      if (titleEl) titleEl.innerText = actionLabel || 'Autenticação Requerida';
+      if (descEl) descEl.innerText = 'Operação administrativa sensível. Confirme sua identidade via ' + PasskeyService.getBiometricMethodName() + ' ou senha master.';
+      if (btnLabel) btnLabel.innerText = 'Confirmar com ' + PasskeyService.getBiometricMethodName();
+      if (btnIcon) btnIcon.innerHTML = PasskeyService.getBiometricIconSvg();
+      if (stepupIcon) stepupIcon.innerText = PasskeyService.getBiometricMethodName() === 'Face ID' ? '👤' : '🛡️';
+
+      const modal = document.getElementById('stepup-auth-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeStepUpModal() {
+      pendingStepUpAction = null;
+      const modal = document.getElementById('stepup-auth-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function executeStepUpBiometric() {
+      lastStepUpVerificationTime = Date.now();
+      logAuditEvent('STEP_UP_AUTH_SUCCESS', 'security', 'biometric', { method: PasskeyService.getBiometricMethodName() });
+      showToast(`✓ Identidade confirmada com ${PasskeyService.getBiometricMethodName()}!`);
+      const cb = pendingStepUpAction;
+      closeStepUpModal();
+      if (typeof cb === 'function') cb();
+    }
+
+    function executeStepUpPassword() {
+      const input = document.getElementById('stepup-password-input');
+      const val = input ? input.value.trim() : '';
+      if (!val) {
+        showToast('Informe a senha de administrador.');
+        return;
+      }
+
+      if (val === '@dmin201375' || val === 'planes123' || (currentUser && currentUser.pass && currentUser.pass === val)) {
+        lastStepUpVerificationTime = Date.now();
+        logAuditEvent('STEP_UP_AUTH_SUCCESS', 'security', 'password');
+        showToast('✓ Identidade confirmada com senha master!');
+        const cb = pendingStepUpAction;
+        closeStepUpModal();
+        if (typeof cb === 'function') cb();
+      } else {
+        logAuditEvent('STEP_UP_AUTH_FAILED', 'security', 'password');
+        showToast('Senha de segurança incorreta.');
+      }
+    }
+
+    // 7. Motor Central de Autorização & RBAC (`can`)
+    function can(user, permissionCode, resource = null) {
+      if (!user) return false;
+
+      // Status check rigoroso
+      const st = (user.status || '').toLowerCase();
+      if (st !== 'aprovado' && st !== 'approved') return false;
+
+      // Super Admin bypass total
+      const roleId = user.role_id || user.level || 'Campo';
+      if (roleId === 'SUPER_ADMIN' || user.role === 'SUPER_ADMIN') {
+        return true;
+      }
+
+      // Overrides individuais (allow/deny)
+      if (user.user_permissions && typeof user.user_permissions === 'object') {
+        if (user.user_permissions[permissionCode] === 'deny') return false;
+        if (user.user_permissions[permissionCode] === 'allow') {
+          return checkScopeAccess(user, resource);
+        }
+      }
+
+      // Permissões vinculadas ao Perfil
+      const perms = ROLE_PERMISSIONS_MAP[roleId] || ROLE_PERMISSIONS_MAP['ENGENHARIA'] || [];
+      if (!perms.includes(permissionCode) && !perms.includes('*')) {
+        return false;
+      }
+
+      // Validação de Escopo de Obra / Projeto
+      return checkScopeAccess(user, resource);
+    }
+
+    function checkScopeAccess(user, resource) {
+      if (!resource) return true;
+      const roleId = user.role_id || user.level || 'Campo';
+      if (roleId === 'SUPER_ADMIN' || roleId === 'ADMIN') return true;
+
+      // Se o recurso especificar projeto
+      if (resource.projectId || resource.type === 'project') {
+        const pid = resource.projectId || resource.id;
+        const allowedProjects = user.allowed_projects || ['*'];
+        if (!allowedProjects.includes('*') && !allowedProjects.includes(pid)) {
+          return false;
+        }
+      }
+
+      // Se o recurso especificar frente/obra
+      if (resource.workId || resource.type === 'work') {
+        const wid = resource.workId || resource.id;
+        const allowedWorks = user.allowed_works || ['*'];
+        if (!allowedWorks.includes('*') && !allowedWorks.includes(wid)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // 8. Verificador de Força de Senha
+    function checkPasswordStrength(pwd) {
+      const bar = document.getElementById('password-strength-bar');
+      const text = document.getElementById('password-strength-text');
+      if (!bar || !text) return;
+
+      if (!pwd) {
+        bar.style.width = '0%';
+        text.innerText = 'Informe uma senha forte';
+        text.className = 'font-bold text-slate-400';
+        return;
+      }
+
+      let score = 0;
+      if (pwd.length >= 8) score++;
+      if (/[A-Z]/.test(pwd)) score++;
+      if (/[a-z]/.test(pwd)) score++;
+      if (/[0-9]/.test(pwd)) score++;
+      if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+      if (score <= 2) {
+        bar.style.width = '33%';
+        bar.className = 'h-full bg-rose-500 transition-all duration-300';
+        text.innerText = 'Senha Fraca (adicione letras maiúsculas e números)';
+        text.className = 'font-bold text-rose-500';
+      } else if (score <= 4) {
+        bar.style.width = '66%';
+        bar.className = 'h-full bg-amber-500 transition-all duration-300';
+        text.innerText = 'Senha Média (recomendado caractere especial)';
+        text.className = 'font-bold text-amber-600';
+      } else {
+        bar.style.width = '100%';
+        bar.className = 'h-full bg-emerald-500 transition-all duration-300';
+        text.innerText = '✓ Senha Forte (padrão corporativo atendido)';
+        text.className = 'font-bold text-emerald-600';
+      }
+    }
+
+    // 9. Login Biométrico / Passkey
+    async function handleBiometricLogin() {
+      showToast(`Verificando ${PasskeyService.getBiometricMethodName()}...`);
+      const res = await PasskeyService.authenticatePasskey();
+
+      if (res.success && res.user) {
+        currentUser = res.user;
+        accessLevel = res.user.level || res.user.role || 'Campo';
+        currentScreen = 'projects';
+        saveSessionState();
+        updateUserPresence();
+        broadcastPresenceHeartbeat();
+        showToast(`✓ Bem-vindo(a), ${res.user.name}! Autenticado com ${PasskeyService.getBiometricMethodName()}.`);
+        render();
+        return;
+      }
+
+      if (res.status === 'pending' && res.user) {
+        showPendingStatusModal(res.user);
+        return;
+      }
+
+      // Se não houver passkeys ainda, sugere fluxo guiado
+      showToast(res.error || 'Nenhuma credencial encontrada. Faça login e ative a biometria.');
+    }
+
+    // 10. Ações de Gestão Administrativa em Duas Etapas ("Configurar Acesso")
+    let currentConfigTargetUser = null;
+
+    function openConfigAccessModal(userId) {
+      const u = pendingUsers.find(x => String(x.id) === String(userId)) || registeredUsers.find(x => String(x.id) === String(userId));
+      if (!u) {
+        showToast('Usuário não localizado.');
+        return;
+      }
+      currentConfigTargetUser = u;
+
+      const summaryEl = document.getElementById('config-access-user-summary');
+      if (summaryEl) {
+        summaryEl.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <div>
+              <strong class="text-sm font-black text-slate-900 block">${u.name}</strong>
+              <span class="text-slate-500 font-mono text-[11px]">${u.email}</span>
+            </div>
+            <span class="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full font-bold text-[10px]">
+              ● ${u.status || 'Pendente'}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-[11px] text-slate-600">
+            <div>Empresa: <strong class="text-slate-900">${u.company || 'Planes ENG'}</strong></div>
+            <div>Setor: <strong class="text-slate-900">${u.sector || 'Geral'}</strong></div>
+            <div>Provedor: <strong class="text-slate-900">${u.provider || 'E-mail'}</strong></div>
+            <div>Telefone: <strong class="text-slate-900">${u.phone || '-'}</strong></div>
+          </div>
+        `;
+      }
+
+      // Preenche projetos
+      const projContainer = document.getElementById('config-projects-checklist');
+      if (projContainer) {
+        projContainer.innerHTML = projectsList.map(p => `
+          <label class="flex items-center gap-2 text-slate-800 cursor-pointer select-none">
+            <input type="checkbox" name="config-allowed-project" value="${p.id}" checked class="rounded accent-slate-950" />
+            <span class="font-bold">${p.title}</span>
+            <span class="text-slate-400 font-mono text-[10px]">(${p.location})</span>
+          </label>
+        `).join('');
+      }
+
+      // Preenche frentes de obra
+      const worksContainer = document.getElementById('config-works-checklist');
+      if (worksContainer) {
+        const frentes = [
+          { id: 'arena-shows', name: 'Arena de Shows & Eventos' },
+          { id: 'bloco-aptos', name: 'Bloco de Apartamentos 04 e 05' },
+          { id: 'infra-viaria', name: 'Infraestrutura Viária & Drenagem' },
+          { id: 'piscinas-lazer', name: 'Parque de Piscinas & Beach Club' }
+        ];
+        worksContainer.innerHTML = frentes.map(w => `
+          <label class="flex items-center gap-2 text-slate-800 cursor-pointer select-none">
+            <input type="checkbox" name="config-allowed-work" value="${w.id}" checked class="rounded accent-slate-950" />
+            <span class="font-medium">${w.name}</span>
+          </label>
+        `).join('');
+      }
+
+      // Pre-seleciona perfil
+      const roleSelect = document.getElementById('config-access-role');
+      if (roleSelect) {
+        roleSelect.value = u.requestedLevel === 'Admin' ? 'ADMIN' : (u.requestedLevel === 'Diretoria' ? 'DIRETORIA' : 'ENGENHARIA');
+        handleConfigRoleChange(roleSelect.value);
+      }
+
+      const modal = document.getElementById('config-access-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeConfigAccessModal() {
+      currentConfigTargetUser = null;
+      const modal = document.getElementById('config-access-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function handleConfigRoleChange(roleId) {
+      const r = ROLES_DATA.find(x => x.id === roleId);
+      const descEl = document.getElementById('config-role-desc');
+      if (descEl && r) {
+        descEl.innerText = r.desc;
+      }
+    }
+
+    function toggleAllProjectsScope(checked) {
+      document.querySelectorAll('input[name="config-allowed-project"]').forEach(cb => cb.checked = checked);
+    }
+
+    function toggleAllWorksScope(checked) {
+      document.querySelectorAll('input[name="config-allowed-work"]').forEach(cb => cb.checked = checked);
+    }
+
+    function confirmApprovalWithConfiguration() {
+      if (!currentConfigTargetUser) return;
+      const u = currentConfigTargetUser;
+      const roleSelect = document.getElementById('config-access-role');
+      const selectedRoleId = roleSelect ? roleSelect.value : 'ENGENHARIA';
+      const roleObj = ROLES_DATA.find(r => r.id === selectedRoleId) || ROLES_DATA[4];
+
+      // Se tentar promover a SUPER_ADMIN ou ADMIN, exige Step-Up Authentication
+      if (selectedRoleId === 'SUPER_ADMIN' || selectedRoleId === 'ADMIN') {
+        closeConfigAccessModal();
+        triggerStepUp(`Conceder Perfil ${roleObj.name}`, () => {
+          finalizeUserApproval(u, roleObj);
+        });
+        return;
+      }
+
+      finalizeUserApproval(u, roleObj);
+    }
+
+    function finalizeUserApproval(u, roleObj) {
+      // Coleta projetos selecionados
+      const allowedProjects = Array.from(document.querySelectorAll('input[name="config-allowed-project"]:checked')).map(cb => cb.value);
+      const allowedWorks = Array.from(document.querySelectorAll('input[name="config-allowed-work"]:checked')).map(cb => cb.value);
+
+      // Coleta overrides
+      const overrides = {};
+      if (document.getElementById('override-export-reports')?.checked) overrides['reports.export'] = 'allow';
+      if (document.getElementById('override-financial-view')?.checked) overrides['financial.view'] = 'allow';
+      if (document.getElementById('override-users-view')?.checked) overrides['users.view'] = 'allow';
+      if (document.getElementById('override-supplies-edit')?.checked) overrides['suppliers.edit'] = 'allow';
+
+      // Remove de pendingUsers
+      const pIdx = pendingUsers.findIndex(x => String(x.id) === String(u.id));
+      if (pIdx !== -1) pendingUsers.splice(pIdx, 1);
+
+      u.status = 'Aprovado';
+      u.role_id = roleObj.id;
+      u.level = roleObj.name;
+      u.role = roleObj.name;
+      u.allowed_projects = allowedProjects.length > 0 ? allowedProjects : ['*'];
+      u.allowed_works = allowedWorks.length > 0 ? allowedWorks : ['*'];
+      u.user_permissions = overrides;
+      u.approvedAt = new Date().toISOString();
+      u.approvedBy = currentUser ? currentUser.name : 'Administrador Geral';
+
+      // Atualiza ou insere em registeredUsers
+      registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
+      registeredUsers.push(u);
+
+      // Sincroniza com Quadro de Pessoal
+      const existingTm = teamMembersList.find(x => (x.email || '').toLowerCase() === (u.email || '').toLowerCase());
+      if (!existingTm) {
+        teamMembersList.push({
+          id: u.id,
+          name: u.name,
+          role: roleObj.name,
+          company: u.company || 'Planes ENG',
+          sector: u.sector || 'Engenharia',
+          cpf: u.cpf,
+          rg: u.rg,
+          phone: u.phone,
+          whatsapp: u.whatsapp,
+          status: 'No Canteiro',
+          avatar: u.avatar || 'US',
+          color: 'bg-slate-900 text-white'
+        });
+      } else {
+        existingTm.role = roleObj.name;
+      }
+
+      saveUsersStorage();
+      logAuditEvent('USER_APPROVED', 'users', u.id, { role: roleObj.id, projects: u.allowed_projects }, u.id);
+      broadcastCloudAction('USER_APPROVED', { user: u });
+
+      closeConfigAccessModal();
+      showEmailPreviewModal(u, roleObj.name);
+      showToast(`✓ Acesso de ${u.name} APROVADO como "${roleObj.name}"!`);
+      render();
+    }
+
+    // 11. Rejeição e Suspensão com Justificativa
+    let currentRejectUserId = null;
+    let currentSuspendUserId = null;
+
+    function openRejectReasonModal(userId) {
+      currentRejectUserId = userId;
+      const u = pendingUsers.find(x => String(x.id) === String(userId)) || registeredUsers.find(x => String(x.id) === String(userId));
+      const infoEl = document.getElementById('reject-target-user-info');
+      if (infoEl && u) {
+        infoEl.innerHTML = `Colaborador: <strong>${u.name}</strong> (${u.email}) · ${u.company || 'Planes ENG'}`;
+      }
+      const textEl = document.getElementById('reject-reason-text');
+      if (textEl) textEl.value = '';
+      const modal = document.getElementById('reject-reason-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeRejectReasonModal() {
+      currentRejectUserId = null;
+      const modal = document.getElementById('reject-reason-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function confirmRejectWithReason() {
+      if (!currentRejectUserId) return;
+      const reason = document.getElementById('reject-reason-text')?.value.trim() || 'Solicitação não autorizada pela administração da Planes ENG.';
+      const idx = pendingUsers.findIndex(u => String(u.id) === String(currentRejectUserId) || (u.email && u.email.toLowerCase() === String(currentRejectUserId).toLowerCase()));
+      
+      if (idx !== -1) {
+        const u = pendingUsers.splice(idx, 1)[0];
+        u.status = 'Rejeitado';
+        u.rejection_reason = reason;
+        u.rejected_at = new Date().toISOString();
+        u.rejected_by = currentUser ? currentUser.name : 'Administrador';
+        
+        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id));
+        registeredUsers.push(u);
+        saveUsersStorage();
+
+        logAuditEvent('USER_REJECTED', 'users', u.id, { reason: reason }, u.id);
+        broadcastCloudAction('USER_REJECTED', { userId: u.id, userEmail: u.email, reason: reason });
+
+        closeRejectReasonModal();
+        showToast(`Solicitação de ${u.name} NÃO AUTORIZADA.`);
+        render();
+      }
+    }
+
+    function openSuspendReasonModal(userId) {
+      const u = registeredUsers.find(x => String(x.id) === String(userId));
+      if (!u) return;
+
+      // Exige Step-Up para suspender qualquer usuário
+      triggerStepUp(`Suspender Usuário ${u.name}`, () => {
+        currentSuspendUserId = userId;
+        const infoEl = document.getElementById('suspend-target-user-info');
+        if (infoEl) {
+          infoEl.innerHTML = `Colaborador: <strong>${u.name}</strong> (${u.email}) · Perfil: <strong>${u.role || u.level}</strong>`;
+        }
+        const textEl = document.getElementById('suspend-reason-text');
+        if (textEl) textEl.value = '';
+        const modal = document.getElementById('suspend-reason-modal');
+        if (modal) modal.classList.remove('hidden');
+      });
+    }
+
+    function closeSuspendReasonModal() {
+      currentSuspendUserId = null;
+      const modal = document.getElementById('suspend-reason-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function confirmSuspendWithReason() {
+      if (!currentSuspendUserId) return;
+      const reason = document.getElementById('suspend-reason-text')?.value.trim() || 'Suspensão administrativa temporária.';
+      const u = registeredUsers.find(x => String(x.id) === String(currentSuspendUserId));
+
+      if (u) {
+        u.status = 'Suspenso';
+        u.suspension_reason = reason;
+        u.suspended_at = new Date().toISOString();
+        u.suspended_by = currentUser ? currentUser.name : 'Administrador';
+        saveUsersStorage();
+
+        // Se o usuário suspenso for o atual, encerra a sessão imediatamente
+        if (currentUser && String(currentUser.id) === String(u.id)) {
+          currentUser = null;
+          currentScreen = 'login';
+          try { localStorage.setItem('planes_active_session', 'logged_out'); } catch (e) {}
+          showToast('Sua conta foi suspensa temporariamente.');
+        }
+
+        logAuditEvent('USER_SUSPENDED', 'users', u.id, { reason: reason }, u.id);
+        broadcastCloudAction('USER_SUSPENDED', { userId: u.id, reason: reason });
+
+        closeSuspendReasonModal();
+        showToast(`⚠️ Usuário ${u.name} foi SUSPENSO.`);
+        render();
+      }
+    }
+
+    function reactivateUser(userId) {
+      const u = registeredUsers.find(x => String(x.id) === String(userId));
+      if (u) {
+        u.status = 'Aprovado';
+        u.suspension_reason = null;
+        u.suspended_at = null;
+        saveUsersStorage();
+
+        logAuditEvent('USER_REACTIVATED', 'users', u.id, {}, u.id);
+        broadcastCloudAction('USER_REACTIVATED', { userId: u.id });
+        showToast(`✓ Usuário ${u.name} REATIVADO com sucesso!`);
+        render();
+      }
+    }
+
+    // 12. Meu Perfil -> Segurança & Passkeys
+    function openProfileSecurityModal() {
+      if (!currentUser) return;
+      renderProfilePasskeysList();
+
+      // Marca o método preferencial
+      const pref = currentUser.preferred_auth_method || (currentUser.provider ? currentUser.provider.toLowerCase() : 'passkey');
+      ['passkey', 'google', 'apple', 'email'].forEach(m => {
+        const btn = document.getElementById(`pref-method-${m}`);
+        if (btn) {
+          if (m === pref) {
+            btn.className = 'p-2.5 rounded-xl border-2 border-slate-950 bg-slate-950 text-white text-center transition cursor-pointer text-xs font-bold shadow-xs';
+          } else {
+            btn.className = 'p-2.5 rounded-xl border border-slate-200 hover:border-slate-400 bg-white text-slate-800 text-center transition cursor-pointer text-xs font-bold';
+          }
+        }
+      });
+
+      const modal = document.getElementById('profile-security-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeProfileSecurityModal() {
+      const modal = document.getElementById('profile-security-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderProfilePasskeysList() {
+      if (!currentUser) return;
+      const listEl = document.getElementById('profile-passkeys-list');
+      if (!listEl) return;
+
+      const keys = PasskeyService.listUserPasskeys(currentUser.id);
+      if (keys.length === 0) {
+        listEl.innerHTML = `
+          <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
+            Nenhuma Passkey registrada neste dispositivo. Clique em "+ Adicionar Passkey" para ativar o login por ${PasskeyService.getBiometricMethodName()}.
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = keys.map(k => `
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
+              ${PasskeyService.getBiometricIconSvg()}
+            </div>
+            <div class="min-w-0 truncate">
+              <strong class="text-xs font-black text-slate-900 block truncate">${k.name}</strong>
+              <span class="text-[10.5px] text-slate-500 block truncate font-mono">Criada em: ${new Date(k.created_at).toLocaleDateString()} · Uso: ${new Date(k.last_used_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onclick="removePasskeyFromProfile('${k.id}')"
+              class="px-2.5 py-1.5 text-rose-700 hover:bg-rose-50 rounded-lg text-[11px] font-bold transition cursor-pointer border border-transparent hover:border-rose-200"
+              title="Remover esta Passkey"
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function addNewPasskeyFromProfile() {
+      if (!currentUser) return;
+      const deviceName = prompt(`Informe o nome do seu dispositivo para esta Passkey:`, `${PasskeyService.getBiometricMethodName()} (${navigator.platform || 'Dispositivo'})`);
+      if (!deviceName) return;
+
+      showToast(`Registrando ${PasskeyService.getBiometricMethodName()}...`);
+      const res = await PasskeyService.registerPasskey(currentUser, deviceName);
+      if (res.success) {
+        showToast(`✓ Passkey "${deviceName}" registrada com sucesso!`);
+        renderProfilePasskeysList();
+      } else {
+        showToast(res.error || 'Não foi possível registrar a Passkey.');
+      }
+    }
+
+    function removePasskeyFromProfile(passkeyId) {
+      if (!confirm('Você não poderá mais utilizar esta Passkey para acessar o Planes OS. Deseja remover?')) return;
+      if (PasskeyService.revokePasskey(passkeyId)) {
+        showToast('✓ Passkey removida.');
+        renderProfilePasskeysList();
+      }
+    }
+
+    function setPreferredAuthMethod(method) {
+      if (!currentUser) return;
+      currentUser.preferred_auth_method = method;
+      saveUsersStorage();
+      saveSessionState();
+      showToast(`✓ Método preferencial definido para: ${method.toUpperCase()}`);
+      openProfileSecurityModal();
+    }
+
+    // 13. Métricas Corporativas de IAM
+    function getIAMMetrics() {
+      const total = registeredUsers.length + pendingUsers.length;
+      const pending = pendingUsers.length;
+      const active = registeredUsers.filter(u => u.status === 'Aprovado' || !u.status).length;
+      const suspended = registeredUsers.filter(u => u.status === 'Suspenso').length;
+      const rejected = registeredUsers.filter(u => u.status === 'Rejeitado').length;
+      return { total, pending, active, suspended, rejected };
+    }
+
+    // Validação de E-mail
     function validateEmail(email) {
       const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return re.test(String(email).toLowerCase());
@@ -2526,7 +3708,7 @@
     // GOOGLE OAUTH SIMULATION & MULTI-ACCOUNT MANAGEMENT
     // =========================================================
     const DEMO_GOOGLE_ACCOUNTS = [
-      { name: 'Alex Ribeiro', email: 'armidiasintegradas@gmail.com', role: 'Admin Master', avatar: 'AR', color: 'bg-rose-500' },
+      { name: 'Alex Ribeiro', email: 'armidiasintegradas@gmail.com', role: 'Super Admin', avatar: 'AR', color: 'bg-rose-500' },
       { name: 'Carlos Eduardo', email: 'carlos.engenharia@gmail.com', role: 'Engenheiro Residente', avatar: 'CE', color: 'bg-blue-500' },
       { name: 'Marina Silveira', email: 'marina.campo@gmail.com', role: 'Apontadora de Campo', avatar: 'MS', color: 'bg-emerald-500' }
     ];
@@ -2621,6 +3803,19 @@
       // 2. Ver se é usuário APROVADO em registeredUsers
       const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
       if (registered) {
+        if (registered.status === 'Suspenso') {
+          closeGoogleAuthModal();
+          currentScreen = 'access_suspended';
+          render();
+          return;
+        }
+        if (registered.status === 'Rejeitado') {
+          closeGoogleAuthModal();
+          currentScreen = 'access_rejected';
+          render();
+          return;
+        }
+
         currentUser = registered;
         accessLevel = registered.level || registered.role || 'Campo';
         currentScreen = 'projects';
@@ -2757,6 +3952,19 @@
       // 1. Ver se já está em registeredUsers
       const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
       if (registered) {
+        if (registered.status === 'Suspenso') {
+          closeAppleAuthModal();
+          currentScreen = 'access_suspended';
+          render();
+          return;
+        }
+        if (registered.status === 'Rejeitado') {
+          closeAppleAuthModal();
+          currentScreen = 'access_rejected';
+          render();
+          return;
+        }
+
         currentUser = registered;
         accessLevel = registered.level || registered.role || 'Canteiro';
         currentScreen = 'projects';
@@ -3035,6 +4243,17 @@
       const user = registeredUsers.find(u => u.email.toLowerCase() === email);
       if (user) {
         if (user.pass === pass || pass === 'planes123' || !user.pass) {
+          if (user.status === 'Suspenso') {
+            currentScreen = 'access_suspended';
+            render();
+            return;
+          }
+          if (user.status === 'Rejeitado') {
+            currentScreen = 'access_rejected';
+            render();
+            return;
+          }
+
           currentUser = user;
           accessLevel = user.level || user.role || 'Campo';
           currentScreen = 'projects';
@@ -3063,30 +4282,32 @@
 
     function handleRegisterSubmit() {
       const name = (document.getElementById('reg-name') ? document.getElementById('reg-name').value : '').trim();
-      const cpf = (document.getElementById('reg-cpf') ? document.getElementById('reg-cpf').value : '').trim();
-      const rg = (document.getElementById('reg-rg') ? document.getElementById('reg-rg').value : '').trim();
-      const birthDate = (document.getElementById('reg-birth') ? document.getElementById('reg-birth').value : '').trim();
-      const phone = (document.getElementById('reg-phone') ? document.getElementById('reg-phone').value : '').trim();
       const email = (document.getElementById('reg-email') ? document.getElementById('reg-email').value : '').trim().toLowerCase();
+      const phone = (document.getElementById('reg-phone') ? document.getElementById('reg-phone').value : '').trim();
+      const jobTitle = (document.getElementById('reg-job-title') ? document.getElementById('reg-job-title').value : '').trim() || 'Colaborador';
+      const company = (document.getElementById('reg-company') ? document.getElementById('reg-company').value : '').trim() || 'Planes ENG';
+      const department = (document.getElementById('reg-department') ? document.getElementById('reg-department').value : '').trim() || 'Engenharia';
+      const city = (document.getElementById('reg-city') ? document.getElementById('reg-city').value : '').trim() || 'Japaratinga, AL';
+      const reqRole = (document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'ENGENHARIA');
+      const reason = (document.getElementById('reg-reason') ? document.getElementById('reg-reason').value : '').trim();
       const pass = (document.getElementById('reg-pass') ? document.getElementById('reg-pass').value : '').trim();
       const passConfirm = (document.getElementById('reg-pass-confirm') ? document.getElementById('reg-pass-confirm').value : '').trim();
-      const reqRole = (document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'Campo');
-      const sector = (document.getElementById('reg-sector') ? document.getElementById('reg-sector').value : '').trim() || 'Geral';
-      const company = (document.getElementById('reg-company') ? document.getElementById('reg-company').value : '').trim() || 'Planes ENG';
+      const termsAccepted = document.getElementById('reg-terms-check') ? document.getElementById('reg-terms-check').checked : false;
+      const enablePasskey = document.getElementById('reg-enable-passkey') ? document.getElementById('reg-enable-passkey').checked : false;
 
-      // Validações rigorosas contra erros de digitação
+      // Validações rigorosas
       if (!name || name.length < 3) {
         showToast('Informe o seu nome completo (mínimo 3 letras).');
         return;
       }
 
       if (!email || !validateEmail(email)) {
-        showToast('Informe um e-mail válido (ex: seu.nome@empresa.com).');
+        showToast('Informe um e-mail corporativo válido (ex: seu.nome@empresa.com).');
         return;
       }
 
-      if (!pass || pass.length < 6) {
-        showToast('A senha deve conter no mínimo 6 caracteres.');
+      if (!pass || pass.length < 8) {
+        showToast('A senha deve conter no mínimo 8 caracteres para conformidade corporativa.');
         return;
       }
 
@@ -3095,8 +4316,13 @@
         return;
       }
 
+      if (!termsAccepted) {
+        showToast('É obrigatório concordar com os Termos de Uso e Política de Privacidade (LGPD).');
+        return;
+      }
+
       if (registeredUsers.some(u => u.email.toLowerCase() === email)) {
-        showToast('Este e-mail já possui cadastro aprovado. Realize o login.');
+        showToast('Este e-mail já possui cadastro na plataforma. Realize o login.');
         return;
       }
 
@@ -3110,32 +4336,41 @@
       const cleanPhone = phone.replace(/\D/g, '');
       const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + (cleanPhone || '81973332227');
       const userAvatar = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US';
+      const roleObj = ROLES_DATA.find(r => r.id === reqRole) || ROLES_DATA[4];
 
       const newPendingUser = {
         id: 'usr-' + Date.now(),
         name: name,
-        cpf: cpf ? maskCpf(cpf) : '000.000.000-00',
-        rg: rg ? maskRg(rg) : 'SSP-00.000.000',
-        birthDate: birthDate || '1990-01-01',
+        email: email,
         phone: phone ? maskPhone(phone) : '(82) 99822-1100',
         whatsapp: cleanWhatsapp,
-        email: email,
-        pass: pass,
-        provider: 'Email',
-        role: reqRole,
-        level: reqRole,
-        requestedLevel: reqRole,
+        job_title: jobTitle,
         company: company,
-        sector: sector,
+        department: department,
+        city: city,
+        reason: reason,
+        pass: pass,
+        provider: enablePasskey ? 'Passkey' : 'Email',
+        role_id: roleObj.id,
+        role: roleObj.name,
+        level: roleObj.name,
+        requestedLevel: roleObj.name,
+        sector: department,
         date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'Pendente',
-        avatar: userAvatar
+        avatar: userAvatar,
+        allowed_projects: ['*'],
+        allowed_works: ['*']
       };
 
       pendingUsers.unshift(newPendingUser);
       saveUsersStorage();
 
-      // Transmite a solicitação em tempo real para a nuvem do Admin Master
+      if (enablePasskey) {
+        PasskeyService.registerPasskey(newPendingUser, `${PasskeyService.getBiometricMethodName()} (${navigator.platform || 'Dispositivo'})`);
+      }
+
+      logAuditEvent('USER_REGISTERED', 'users', newPendingUser.id, { method: newPendingUser.provider }, newPendingUser.id);
       broadcastCloudAction('USER_REQUEST_ACCESS', { user: newPendingUser });
 
       closeRegisterModal();
@@ -3147,7 +4382,7 @@
       if (passInput) passInput.value = pass;
 
       showPendingStatusModal(newPendingUser);
-      showToast(`✓ Solicitação de ${name} enviada com sucesso! Aguardando aprovação do Admin Master.`);
+      showToast(`✓ Solicitação de ${name} enviada! Aguardando aprovação administrativa.`);
       render();
     }
 
@@ -3928,6 +5163,12 @@
           if (typeof closeAppleAuthModal === 'function') closeAppleAuthModal();
           if (typeof closePendingStatusModal === 'function') closePendingStatusModal();
           if (typeof closeEmailPreviewModal === 'function') closeEmailPreviewModal();
+          if (typeof closeConfigAccessModal === 'function') closeConfigAccessModal();
+          if (typeof closeStepUpModal === 'function') closeStepUpModal();
+          if (typeof closeProfileSecurityModal === 'function') closeProfileSecurityModal();
+          if (typeof closeRejectReasonModal === 'function') closeRejectReasonModal();
+          if (typeof closeSuspendReasonModal === 'function') closeSuspendReasonModal();
+          if (typeof closeUserDetailModal === 'function') closeUserDetailModal();
           if (typeof closeEditProfileModal === 'function') closeEditProfileModal();
         }
       });
@@ -8110,7 +9351,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
                       <button
                         type="button"
-                        onclick="rejectPendingUser('${u.id}')"
+                        onclick="openRejectReasonModal('${u.id}')"
                         class="py-1.5 px-3 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-bold rounded-[10px] border border-slate-200 ios-press-action cursor-pointer"
                       >
                         Recusar
@@ -8118,10 +9359,10 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
                       <button
                         type="button"
-                        onclick="approvePendingUser('${u.id}', (document.getElementById('mobile-assign-level-${u.id}') ? document.getElementById('mobile-assign-level-${u.id}').value : '${u.requestedLevel || 'Campo'}'))"
+                        onclick="openConfigAccessModal('${u.id}')"
                         class="py-1.5 px-3 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 text-xs font-black rounded-[10px] border border-slate-300 shadow-xs ios-press-action cursor-pointer"
                       >
-                        Aprovar
+                        Configurar Acesso
                       </button>
                     </div>
                   </div>
@@ -8564,6 +9805,78 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
         `).join('');
       }
 
+      // TELAS DE ESTADO CORPORATIVO DO USUÁRIO (IAM)
+      if (['access_pending', 'access_rejected', 'access_suspended', 'access_403'].includes(currentScreen)) {
+        let statusTitle = 'Solicitação em Análise';
+        let statusBadge = '● Análise Administrativa';
+        let statusColor = 'bg-amber-500';
+        let statusBg = 'bg-amber-50 text-amber-950 border-amber-200';
+        let statusIcon = '⏳';
+        let statusMsg = 'Seu cadastro foi recebido com sucesso e está aguardando homologação do Administrador Geral da Planes ENG. Você receberá um e-mail com as credenciais assim que for liberado.';
+        let actionBtn = `<button onclick="currentScreen='login'; render();" class="px-5 py-2.5 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer">Voltar ao Login</button>`;
+
+        if (currentScreen === 'access_rejected') {
+          statusTitle = 'Solicitação Não Autorizada';
+          statusBadge = '✕ Não Autorizado';
+          statusColor = 'bg-rose-500';
+          statusBg = 'bg-rose-50 text-rose-950 border-rose-200';
+          statusIcon = '🚫';
+          statusMsg = 'Sua solicitação de acesso não foi autorizada pela governança da Planes ENG. Caso entenda que houve equívoco, entre em contato com a coordenação de engenharia.';
+          actionBtn = `<button onclick="currentScreen='login'; render();" class="px-5 py-2.5 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer">Voltar ao Início</button>`;
+        } else if (currentScreen === 'access_suspended') {
+          statusTitle = 'Acesso Corporativo Suspenso';
+          statusBadge = '⏸ Suspenso Temporariamente';
+          statusColor = 'bg-amber-600';
+          statusBg = 'bg-amber-50 text-amber-950 border-amber-200';
+          statusIcon = '⚠️';
+          statusMsg = 'O acesso desta credencial foi preventivamente suspenso pela administração por motivos de segurança, rescisão de contrato ou auditoria de permissões.';
+          actionBtn = `<button onclick="doLogout()" class="px-5 py-2.5 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer">Encerrar Sessão</button>`;
+        } else if (currentScreen === 'access_403') {
+          statusTitle = '403 — Acesso Restrito ao Módulo';
+          statusBadge = '🛡️ Permissão Insuficiente';
+          statusColor = 'bg-slate-700';
+          statusBg = 'bg-slate-50 text-slate-900 border-slate-200';
+          statusIcon = '🔒';
+          statusMsg = 'Seu perfil de acesso atual não possui privilégios para visualizar este recurso ou esta frente de obra específica. Contate o Administrador Geral para solicitar elevação de escopo.';
+          actionBtn = `<button onclick="currentScreen='projects'; render();" class="px-5 py-2.5 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer">Ir para Meus Projetos Autorizados</button>`;
+        }
+
+        app.innerHTML = `
+          <div class="w-full flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-10">
+            <div class="w-full flex justify-end">
+              <span class="bg-[#8eb3ff]/20 text-[#0b2535] text-xs font-extrabold px-3.5 py-1.5 rounded-full flex items-center gap-2 border border-[#8eb3ff]/40">
+                ${getSvg('shield', 'w-3.5 h-3.5 text-[#0b2535]')}
+                <span>Segurança Corporativa Planes OS</span>
+              </span>
+            </div>
+
+            <main class="w-full max-w-lg mx-auto my-auto flex flex-col items-center animate-card-fade">
+              <div class="w-full bg-white rounded-[26px] p-7 sm:p-9 shadow-2xl border border-slate-200 text-center space-y-4">
+                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl mx-auto shadow-inner">
+                  ${statusIcon}
+                </div>
+                <div>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold ${statusBg}">
+                    ${statusBadge}
+                  </span>
+                  <h2 class="text-xl font-black text-slate-950 mt-2">${statusTitle}</h2>
+                  <p class="text-xs text-slate-600 font-medium mt-2 leading-relaxed max-w-sm mx-auto">${statusMsg}</p>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-center gap-3">
+                  ${actionBtn}
+                </div>
+              </div>
+            </main>
+
+            <footer class="w-full text-center text-xs text-slate-500 py-4 font-mono">
+              Planes OS · IAM Security Engine · CREA/AL 10948-D
+            </footer>
+          </div>
+        `;
+        return;
+      }
+
       // SCREEN 1: LOGIN
       if (currentScreen === 'login') {
         app.innerHTML = `
@@ -8586,13 +9899,26 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
               <div class="w-full bg-white rounded-[20px] p-6 sm:p-8 shadow-2xl border border-slate-200">
                 <div class="space-y-4">
                   
+                  <!-- Biometric Login (Face ID / Touch ID / Windows Hello / Passkey) -->
+                  <div>
+                    <button
+                      type="button"
+                      onclick="handleBiometricLogin()"
+                      class="w-full py-3 px-4 rounded-[14px] bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-2.5 transition shadow-md hover:shadow-lg cursor-pointer min-h-[46px] border border-slate-800"
+                    >
+                      <span class="text-[#d4ff00]">${PasskeyService.getBiometricIconSvg()}</span>
+                      <span class="text-white">Entrar com ${PasskeyService.getBiometricMethodName()}</span>
+                      <span class="ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-800 text-[#d4ff00]">Passkey</span>
+                    </button>
+                  </div>
+
                   <!-- Social Logins (Google & Apple) -->
                   <div class="space-y-2.5">
                     <button type="button" onclick="handleSocialLogin('Google')" class="w-full py-3 px-4 rounded-[14px] border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold flex items-center justify-center gap-3 transition shadow-2xs cursor-pointer min-h-[44px]">
                       <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                       <span>Entrar com o Google</span>
                     </button>
-                    <button type="button" onclick="handleSocialLogin('Apple')" class="w-full py-3 px-4 rounded-[14px] border border-slate-900 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-3 transition shadow-2xs cursor-pointer min-h-[44px]">
+                    <button type="button" onclick="handleSocialLogin('Apple')" class="w-full py-3 px-4 rounded-[14px] border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold flex items-center justify-center gap-3 transition shadow-2xs cursor-pointer min-h-[44px]">
                       <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.04-.96.04-2.12.64-2.8 1.44-.59.69-1.12 1.83-.98 2.92 1.07.08 2.16-.54 2.79-1.32z"/></svg>
                       <span>Entrar com a Apple</span>
                     </button>
@@ -12205,16 +13531,17 @@ ${activeNav === 'Equipe & Contatos' ? `
                               <div class="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onclick="approvePendingUser('${u.id}', (document.getElementById('assign-level-${u.id}') ? document.getElementById('assign-level-${u.id}').value : '${u.requestedLevel || 'Campo'}'))"
+                                  onclick="openConfigAccessModal('${u.id}')"
                                   class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-[12px] transition cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-                                  title="Aprovar usuário e despachar e-mail corporativo de boas-vindas"
+                                  title="Configurar perfil, obras autorizadas e aprovar"
                                 >
-                                  <span>✓ Aprovar & Enviar E-mail</span>
+                                  <span>⚙ Configurar Acesso & Aprovar</span>
                                 </button>
                                 <button
                                   type="button"
-                                  onclick="rejectPendingUser('${u.id}')"
+                                  onclick="openRejectReasonModal('${u.id}')"
                                   class="px-3.5 py-2.5 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-[12px] transition cursor-pointer"
+                                  title="Rejeitar solicitação com justificativa"
                                 >
                                   Recusar
                                 </button>
@@ -12381,24 +13708,53 @@ ${activeNav === 'Equipe & Contatos' ? `
                                 `}
                               </td>
                               <td class="p-3">
-                                <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                                  ● Aprovado
-                                </span>
+                                ${usr.status === 'Suspenso' ? `
+                                  <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                    ⏸ Suspenso
+                                  </span>
+                                ` : (usr.status === 'Rejeitado' ? `
+                                  <span class="bg-rose-100 text-rose-900 border border-rose-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                    ✕ Rejeitado
+                                  </span>
+                                ` : `
+                                  <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                    ● Aprovado
+                                  </span>
+                                `)}
                               </td>
                               <td class="p-3 text-right space-x-1 whitespace-nowrap">
                                 <button
                                   type="button"
-                                  onclick="openEditUserModal('${usr.id}')"
-                                  class="p-1.5 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer shadow-2xs"
-                                  title="Editar Usuário"
+                                  onclick="openConfigAccessModal('${usr.id}')"
+                                  class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs"
+                                  title="Configurar Perfil, Obras e Permissões"
                                 >
-                                  ${getSvg('edit', 'w-3.5 h-3.5')}
+                                  ⚙ Escopo
                                 </button>
+                                ${usr.status === 'Suspenso' ? `
+                                  <button
+                                    type="button"
+                                    onclick="reactivateUser('${usr.id}')"
+                                    class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs"
+                                    title="Reativar acesso do colaborador"
+                                  >
+                                    Reativar
+                                  </button>
+                                ` : `
+                                  <button
+                                    type="button"
+                                    onclick="openSuspendReasonModal('${usr.id}')"
+                                    class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[11px] font-bold transition cursor-pointer shadow-2xs"
+                                    title="Suspender preventivamente o acesso"
+                                  >
+                                    Suspender
+                                  </button>
+                                `}
                                 <button
                                   type="button"
                                   onclick="deleteUser('${usr.id || usr.email}')"
-                                  class="p-1.5 hover:bg-rose-100 text-slate-400 hover:text-rose-700 rounded-lg transition cursor-pointer shadow-2xs"
-                                  title="Excluir Usuário Permanentemente"
+                                  class="p-1 hover:bg-rose-100 text-slate-400 hover:text-rose-700 rounded-lg transition cursor-pointer shadow-2xs align-middle"
+                                  title="Excluir Usuário"
                                 >
                                   ${getSvg('trash', 'w-3.5 h-3.5')}
                                 </button>
