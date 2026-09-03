@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788398330 -->
+<!-- Planes Build: 1788398411 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -5854,14 +5854,24 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
           <!-- Conteúdo Condicional Conforme a SubTab -->
           ${planejarSubTab === 'linha' ? `
-            <!-- Visão Linha de Balanço -->
+            <!-- Visão Linha de Balanço Mobile (Frentes / Pavimento) -->
             <div class="space-y-3">
-              <div class="flex items-center justify-between text-xs font-bold text-slate-600">
+              
+              <!-- Botão para Visualizar Gráfico Vetorial Completo -->
+              <button
+                type="button"
+                onclick="openMobileBalanceChartModal()"
+                class="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 text-[#d4ff00] font-black text-xs rounded-[16px] shadow-xs flex items-center justify-center gap-2 border border-[#d4ff00]/40 ios-press-action cursor-pointer"
+              >
+                <span>📊 Ver Diagrama Tempo-Caminho Completo / Zoom ↗</span>
+              </button>
+
+              <div class="flex items-center justify-between text-xs font-bold text-slate-600 pt-1">
                 <span class="font-mono text-[11px] uppercase tracking-wider">Frentes & Ritmo Takt</span>
                 <span class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[8px] font-mono font-black">Ritmo: 2 pav/sem</span>
               </div>
 
-              <!-- Frente 1 -->
+              <!-- Frente 1: Torre 1 / Pav 04 -->
               <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
                 <div class="flex items-start justify-between">
                   <div>
@@ -5869,7 +5879,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     <h4 class="text-xs font-black text-slate-950 leading-snug">Alvenaria Estrutural</h4>
                   </div>
                   <span class="px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-[10px] font-black font-mono">
-                    ● No Ritmo
+                    ● No Ritmo (Takt 2 pav/sem)
                   </span>
                 </div>
                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
@@ -5881,7 +5891,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                 </div>
               </div>
 
-              <!-- Frente 2 -->
+              <!-- Frente 2: Arena Shows / Bloco C -->
               <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
                 <div class="flex items-start justify-between">
                   <div>
@@ -5901,7 +5911,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                 </div>
               </div>
 
-              <!-- Frente 3 -->
+              <!-- Frente 3: Área de Lazer -->
               <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
                 <div class="flex items-start justify-between">
                   <div>
@@ -5909,7 +5919,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     <h4 class="text-xs font-black text-slate-950 leading-snug">Impermeabilização e Revestimento</h4>
                   </div>
                   <span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-[10px] font-black font-mono">
-                    ● Atenção Chuva
+                    ● 3 dias abaixo da linha
                   </span>
                 </div>
                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
@@ -5920,6 +5930,27 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                   <span class="font-bold text-slate-900">62% Concluído</span>
                 </div>
               </div>
+
+              <!-- Frente 4: Infraestrutura Viária -->
+              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase font-mono">INFRAESTRUTURA VIÁRIA</span>
+                    <h4 class="text-xs font-black text-slate-950 leading-snug">Pavimentação Intertravada & Meio-fio</h4>
+                  </div>
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-[10px] font-black font-mono">
+                    ● No Ritmo
+                  </span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
+                  <div class="bg-emerald-600 h-full rounded-full" style="width: 74%"></div>
+                </div>
+                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1 font-mono">
+                  <span>Encarregado: <strong class="text-slate-900 font-sans">Marcos Lima</strong></span>
+                  <span class="font-bold text-slate-900">74% Concluído</span>
+                </div>
+              </div>
+
             </div>
           ` : `
             <!-- Visão Médio Prazo R4 (Lookahead) -->
@@ -6842,6 +6873,20 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
           </div>
         </div>
       `).join('');
+    }
+
+    function openMobileBalanceChartModal() {
+      const modal = document.getElementById('mobile-balance-chart-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeMobileBalanceChartModal() {
+      const modal = document.getElementById('mobile-balance-chart-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
     }
 
     function render() {
