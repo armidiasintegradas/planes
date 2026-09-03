@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788398262 -->
+<!-- Planes Build: 1788398330 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -5814,121 +5814,135 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
 
     function renderMobilePlanejarView(selectedProject) {
+      if (!window.planejarSubTab) window.planejarSubTab = 'linha';
+
       return `
-        <div class="p-3.5 space-y-4 animate-card-fade">
+        <div class="p-3.5 space-y-4 animate-card-fade pb-10 font-sans">
           
-          <!-- Sub-tabs: Linha de Balanço / Lookahead R4 -->
-          <div class="flex items-center bg-slate-200/80 p-1 rounded-xl">
+          <!-- Header -->
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-wider text-slate-500 font-mono">PLANEJAMENTO LEAN</span>
+              <h2 class="text-base font-black text-slate-950">Planejar</h2>
+            </div>
+            <span class="text-[10.5px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-[10px] font-mono">
+              ${selectedProject ? selectedProject.title : 'Mirante do Parque'}
+            </span>
+          </div>
+
+          <!-- Segmented Control [ Linha de Balanço ] [ Médio Prazo R4 ] -->
+          <div class="flex items-center bg-slate-200/90 p-1 rounded-[14px] shadow-2xs">
             <button
               type="button"
               onclick="planejarSubTab = 'linha'; render();"
-              class="flex-1 py-2 rounded-lg text-xs font-bold transition ios-press-action text-center ${
-                planejarSubTab === 'linha' ? 'bg-white text-slate-950 shadow-xs font-black' : 'text-slate-600'
+              class="flex-1 py-2 rounded-[10px] text-xs transition ios-press-action text-center cursor-pointer ${
+                planejarSubTab === 'linha' ? 'bg-white text-slate-950 shadow-xs font-black' : 'text-slate-600 font-bold hover:text-slate-900'
               }"
             >
-              Linha de Balanço (16.03)
+              Linha de Balanço
             </button>
             <button
               type="button"
               onclick="planejarSubTab = 'lookahead'; render();"
-              class="flex-1 py-2 rounded-lg text-xs font-bold transition ios-press-action text-center ${
-                planejarSubTab === 'lookahead' ? 'bg-white text-slate-950 shadow-xs font-black' : 'text-slate-600'
+              class="flex-1 py-2 rounded-[10px] text-xs transition ios-press-action text-center cursor-pointer ${
+                planejarSubTab === 'lookahead' ? 'bg-white text-slate-950 shadow-xs font-black' : 'text-slate-600 font-bold hover:text-slate-900'
               }"
             >
-              Lookahead R4 (Médio Prazo)
+              Médio Prazo R4
             </button>
           </div>
 
+          <!-- Conteúdo Condicional Conforme a SubTab -->
           ${planejarSubTab === 'linha' ? `
-            <!-- Cards Compactos da Linha de Balanço -->
+            <!-- Visão Linha de Balanço -->
             <div class="space-y-3">
               <div class="flex items-center justify-between text-xs font-bold text-slate-600">
-                <span>Atividades Rítmicas Ativas</span>
-                <span class="text-emerald-700">Takt: 2 pav/sem</span>
+                <span class="font-mono text-[11px] uppercase tracking-wider">Frentes & Ritmo Takt</span>
+                <span class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[8px] font-mono font-black">Ritmo: 2 pav/sem</span>
               </div>
 
-              <!-- Card 1 -->
-              <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2.5">
+              <!-- Frente 1 -->
+              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
                 <div class="flex items-start justify-between">
                   <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase font-mono">TORRE 1 · PAVIMENTO 04</span>
-                    <h4 class="text-sm font-black text-slate-950 leading-snug">Alvenaria Estrutural</h4>
+                    <h4 class="text-xs font-black text-slate-950 leading-snug">Alvenaria Estrutural</h4>
                   </div>
-                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-[10px] font-black">
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-[10px] font-black font-mono">
                     ● No Ritmo
                   </span>
                 </div>
-                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
                   <div class="bg-emerald-600 h-full rounded-full" style="width: 88%"></div>
                 </div>
-                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1">
-                  <span>Resp: <strong>Carlos Lima</strong></span>
-                  <span class="font-mono font-bold text-slate-900">88% Concluído</span>
+                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1 font-mono">
+                  <span>Encarregado: <strong class="text-slate-900 font-sans">Carlos Lima</strong></span>
+                  <span class="font-bold text-slate-900">88% Concluído</span>
                 </div>
               </div>
 
-              <!-- Card 2 -->
-              <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2.5">
+              <!-- Frente 2 -->
+              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
                 <div class="flex items-start justify-between">
                   <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase font-mono">ARENA SHOWS · BLOCO C</span>
-                    <h4 class="text-sm font-black text-slate-950 leading-snug">Concretagem de Pilares e Vigas</h4>
+                    <h4 class="text-xs font-black text-slate-950 leading-snug">Concretagem de Pilares e Vigas</h4>
                   </div>
-                  <span class="px-2 py-0.5 bg-lime-100 text-lime-900 border border-lime-300 rounded-full text-[10px] font-black">
+                  <span class="px-2 py-0.5 bg-lime-100 text-lime-900 border border-lime-300 rounded-full text-[10px] font-black font-mono">
                     ● +3% Acelerado
                   </span>
                 </div>
-                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
                   <div class="bg-gradient-to-r from-lime-500 to-[#d4ff00] h-full rounded-full" style="width: 92%"></div>
                 </div>
-                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1">
-                  <span>Resp: <strong>Valdemir Costa</strong></span>
-                  <span class="font-mono font-bold text-slate-900">92% Concluído</span>
+                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1 font-mono">
+                  <span>Encarregado: <strong class="text-slate-900 font-sans">Valdemir Costa</strong></span>
+                  <span class="font-bold text-slate-900">92% Concluído</span>
                 </div>
               </div>
 
-              <!-- Card 3 -->
-              <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2.5">
+              <!-- Frente 3 -->
+              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2.5">
                 <div class="flex items-start justify-between">
                   <div>
                     <span class="text-[10px] font-bold text-slate-400 uppercase font-mono">ÁREA DE LAZER · PISCINAS</span>
-                    <h4 class="text-sm font-black text-slate-950 leading-snug">Impermeabilização e Revestimento</h4>
+                    <h4 class="text-xs font-black text-slate-950 leading-snug">Impermeabilização e Revestimento</h4>
                   </div>
-                  <span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-[10px] font-black">
+                  <span class="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-[10px] font-black font-mono">
                     ● Atenção Chuva
                   </span>
                 </div>
-                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
                   <div class="bg-amber-500 h-full rounded-full" style="width: 62%"></div>
                 </div>
-                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1">
-                  <span>Resp: <strong>José Santos</strong></span>
-                  <span class="font-mono font-bold text-slate-900">62% Concluído</span>
+                <div class="flex justify-between items-center text-[11px] text-slate-600 pt-1 font-mono">
+                  <span>Encarregado: <strong class="text-slate-900 font-sans">José Santos</strong></span>
+                  <span class="font-bold text-slate-900">62% Concluído</span>
                 </div>
               </div>
             </div>
           ` : `
-            <!-- Cards do Lookahead R4 (Médio Prazo) -->
+            <!-- Visão Médio Prazo R4 (Lookahead) -->
             <div class="space-y-3">
-              <div class="p-3.5 bg-slate-900 text-white rounded-[16px] text-xs flex justify-between items-center">
-                <span>Restrições Removidas: <strong>14/16 (87.5%)</strong></span>
-                <span class="text-[#d4ff00] font-bold">Janela: 4 Semanas</span>
+              <div class="p-3.5 bg-slate-900 text-white rounded-[18px] text-xs flex justify-between items-center shadow-xs">
+                <span>Restrições Removidas: <strong class="text-[#d4ff00]">14/16 (87.5%)</strong></span>
+                <span class="text-slate-400 font-mono text-[10px]">Janela: 4 Semanas</span>
               </div>
 
-              <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2">
-                <div class="flex justify-between text-xs">
-                  <strong class="text-slate-950">Entrega de Aço CA-50 (18 ton)</strong>
-                  <span class="text-emerald-700 font-bold">✓ Liberado</span>
+              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2">
+                <div class="flex justify-between text-xs items-center">
+                  <strong class="text-slate-950 font-black">Entrega de Aço CA-50 (18 ton)</strong>
+                  <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-[6px] text-[10px] font-mono">✓ Liberado</span>
                 </div>
-                <p class="text-[11px] text-slate-500">Gerdau · Pedido Sienge #48291 · Chegada confirmada para amanhã</p>
+                <p class="text-[11px] text-slate-500 leading-relaxed">Gerdau · Pedido Sienge #48291 · Chegada confirmada para amanhã no Canteiro Central</p>
               </div>
 
-              <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2">
-                <div class="flex justify-between text-xs">
-                  <strong class="text-slate-950">Projeto Executivo Elétrico R3</strong>
-                  <span class="text-amber-700 font-bold">⚠️ Em Análise</span>
+              <div class="bg-white p-4 rounded-[20px] border border-slate-200 shadow-2xs space-y-2">
+                <div class="flex justify-between text-xs items-center">
+                  <strong class="text-slate-950 font-black">Projeto Executivo Elétrico R3</strong>
+                  <span class="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-[6px] text-[10px] font-mono">⚠️ Em Análise</span>
                 </div>
-                <p class="text-[11px] text-slate-500">RFI #104 respondida pelo projetista · Liberação prevista em 24h</p>
+                <p class="text-[11px] text-slate-500 leading-relaxed">RFI #104 respondida pelo projetista · Liberação da prumada prevista em 24h</p>
               </div>
             </div>
           `}
@@ -5936,6 +5950,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
         </div>
       `;
     }
+
 
     function renderMobileValidarView() {
       const validList = Array.isArray(window.pendingValidationsList) && window.pendingValidationsList.length > 0
