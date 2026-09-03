@@ -1,4 +1,4 @@
-<!-- Planes Build: 1788397754 -->
+<!-- Planes Build: 1788397897 -->
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -5540,195 +5540,267 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
     function renderMobileInicioView(selectedProject) {
       const validCount = getPendingValidationsCount();
+      const userName = currentUser ? (currentUser.name.split(' ')[0] || 'Engenheiro') : 'Engenheiro';
+      const pTitle = selectedProject ? selectedProject.title : 'Mirante do Parque';
+      const pLocation = selectedProject ? selectedProject.location : 'Recife, PE';
+      const pProgress = selectedProject ? selectedProject.progress : 61.8;
+      const pSpent = selectedProject ? selectedProject.spent : 'R$ 14,80M';
+      const pBudget = selectedProject ? selectedProject.budget : 'R$ 24,00M';
+      const pStatus = selectedProject ? selectedProject.status : 'Em andamento';
+
+      // Determinar saudação pelo horário
+      const hr = new Date().getHours();
+      let greeting = 'Boa noite';
+      if (hr >= 5 && hr < 12) greeting = 'Bom dia';
+      else if (hr >= 12 && hr < 18) greeting = 'Boa tarde';
+
       return `
-        <div class="space-y-4 animate-card-fade p-3.5">
+        <div class="space-y-4 animate-card-fade p-3.5 pb-8 font-sans">
           
-          <!-- Context Header Obra -->
+          <!-- 1. HEADER: SAUDAÇÃO & SUA OBRA HOJE -->
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[10px] font-black uppercase text-[#0b2535] bg-blue-100/80 px-2 py-0.5 rounded font-mono">
-                OBRA ATIVA
-              </span>
-              <h2 class="text-base font-black text-slate-950 leading-tight mt-1 truncate max-w-[280px]">
-                ${selectedProject.title}
+              <span class="text-[11px] font-bold text-slate-500 block">${greeting}, ${userName} 👋</span>
+              <h2 class="text-base font-black text-slate-950 leading-tight">
+                Sua Obra Hoje
               </h2>
-              <span class="text-[11px] text-slate-500 font-medium">${selectedProject.location}</span>
+              <span class="text-[10.5px] text-slate-500 font-medium">${pTitle} · ${pLocation}</span>
             </div>
             <button
               type="button"
               onclick="toggleMobileProjectSwitcher()"
-              class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-2xs ios-press-action"
+              class="px-3 py-1.5 bg-white border border-slate-200 rounded-[12px] text-xs font-black text-slate-900 shadow-2xs ios-press-action flex items-center gap-1 cursor-pointer"
             >
-              Trocar ▾
+              <span>Trocar</span>
+              <span class="text-[10px] text-slate-500">▾</span>
             </button>
           </div>
 
-          <!-- Hero KPI Card: Avanço Físico 61.8% -->
-          <div class="bg-slate-950 text-white rounded-[22px] p-5 shadow-xl border border-slate-800 space-y-3 relative overflow-hidden">
+          <!-- 2. CARROSSEL HORIZONTAL DE KPIS COM SCROLL-SNAP -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+              <span>Indicadores Executivos</span>
+              <span>Arraste para o lado ➔</span>
+            </div>
+            
+            <div class="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory no-scrollbar -mx-3.5 px-3.5">
+              
+              <!-- KPI Card 1: Avanço Físico Real -->
+              <div class="snap-start shrink-0 w-[270px] bg-slate-950 text-white rounded-[22px] p-4.5 border border-slate-800 shadow-xl space-y-2.5 relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 font-mono">Avanço Físico</span>
+                  <span class="bg-[#d4ff00]/20 text-[#d4ff00] border border-[#d4ff00]/40 text-[9.5px] font-black px-2 py-0.5 rounded-full font-mono">
+                    ● ${pStatus}
+                  </span>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <strong class="text-3xl font-black text-[#d4ff00] tracking-tight font-mono">${pProgress}%</strong>
+                  <span class="text-[10.5px] text-slate-400 font-medium">Meta: 60.0% (+1.8%)</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div class="bg-gradient-to-r from-lime-400 to-[#d4ff00] h-full rounded-full" style="width: ${pProgress}%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 pt-0.5 font-mono">
+                  <span>Gasto: <strong class="text-white">${pSpent}</strong></span>
+                  <span>Teto: <strong class="text-white">${pBudget}</strong></span>
+                </div>
+              </div>
+
+              <!-- KPI Card 2: PAC Semanal -->
+              <div class="snap-start shrink-0 w-[210px] bg-white text-slate-950 rounded-[22px] p-4.5 border border-slate-200 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10.5px] font-bold text-slate-500 uppercase font-mono">PAC Semanal</span>
+                    <span class="text-emerald-700 font-black text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded font-mono">Meta 85%</span>
+                  </div>
+                  <strong class="text-3xl font-black text-slate-950 block mt-1 font-mono">91.4%</strong>
+                  <span class="text-[11px] text-emerald-700 font-bold block mt-0.5">✓ 107 de 117 concluídas</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-emerald-500 h-full rounded-full" style="width: 91.4%"></div>
+                </div>
+              </div>
+
+              <!-- KPI Card 3: Orçamento & Eficiência -->
+              <div class="snap-start shrink-0 w-[210px] bg-white text-slate-950 rounded-[22px] p-4.5 border border-slate-200 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10.5px] font-bold text-slate-500 uppercase font-mono">Eficiência (CPI)</span>
+                    <span class="text-blue-700 font-black text-[10px] bg-blue-50 px-1.5 py-0.5 rounded font-mono">CPI 1.09</span>
+                  </div>
+                  <strong class="text-2xl font-black text-slate-950 block mt-1 font-mono">+R$ 1.40M</strong>
+                  <span class="text-[11px] text-emerald-700 font-bold block mt-0.5">Economia projetada</span>
+                </div>
+                <span class="text-[10px] text-slate-500 font-mono">Orçado: ${pBudget}</span>
+              </div>
+
+              <!-- KPI Card 4: Efetivo & Segurança -->
+              <div class="snap-start shrink-0 w-[210px] bg-white text-slate-950 rounded-[22px] p-4.5 border border-slate-200 shadow-2xs space-y-2 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10.5px] font-bold text-slate-500 uppercase font-mono">Efetivo & CIPA</span>
+                    <span class="text-slate-700 font-black text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-mono">3 Frentes</span>
+                  </div>
+                  <strong class="text-2xl font-black text-slate-950 block mt-1 font-mono">64 operários</strong>
+                  <span class="text-[11px] text-emerald-700 font-bold block mt-0.5">🛡️ 312 dias sem acidentes</span>
+                </div>
+                <span class="text-[10px] text-slate-500 font-mono">38 Arena · 26 Bloco</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 3. ATENÇÃO AGORA (CARDS DERIVADOS DE DADOS REAIS) -->
+          <div class="space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Avanço Físico Real</span>
-              <span class="bg-[#d4ff00]/20 text-[#d4ff00] border border-[#d4ff00]/40 text-[10px] font-black px-2.5 py-0.5 rounded-full font-mono">
-                ● ${selectedProject.status}
+              <span class="text-[10.5px] font-black uppercase text-slate-500 tracking-wider font-mono flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                <span>Atenção Agora</span>
               </span>
+              <span class="text-[10px] text-slate-400 font-mono">3 Alertas Críticos</span>
             </div>
 
-            <div class="flex items-baseline justify-between">
-              <strong class="text-4xl font-black text-[#d4ff00] tracking-tight font-mono">${selectedProject.progress}%</strong>
-              <span class="text-xs text-slate-400 font-medium">Meta: 60.0% (+1.8% Adiantado)</span>
-            </div>
+            <div class="space-y-2">
+              <!-- Alerta 1: Validações Pendentes -->
+              <div
+                onclick="setMobileTab('validar')"
+                class="p-3.5 bg-rose-50 border border-rose-200 rounded-[18px] flex items-center justify-between cursor-pointer ios-press-action shadow-2xs hover:border-rose-300 transition"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-[10px] bg-rose-600 text-white flex items-center justify-center font-black text-xs shrink-0">
+                    ⚠
+                  </div>
+                  <div>
+                    <strong class="text-xs font-black text-rose-950 block leading-tight">${validCount} validações de medição pendentes</strong>
+                    <span class="text-[10.5px] text-rose-700">2 há mais de 48h no Pavimento 04 (Alvenaria)</span>
+                  </div>
+                </div>
+                <span class="text-xs font-black text-rose-900 bg-rose-200/80 px-2 py-1 rounded-[8px] font-mono">Revisar ➔</span>
+              </div>
 
-            <!-- Progress Bar -->
-            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
-              <div class="bg-gradient-to-r from-lime-400 to-[#d4ff00] h-full rounded-full" style="width: ${selectedProject.progress}%"></div>
-            </div>
-
-            <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1 border-t border-slate-800/80 font-mono">
-              <span>Gasto: <strong class="text-white">${selectedProject.spent}</strong></span>
-              <span>Total: <strong class="text-white">${selectedProject.budget}</strong></span>
+              <!-- Alerta 2: Desvio Linha de Balanço -->
+              <div
+                onclick="setMobileTab('planejar')"
+                class="p-3.5 bg-amber-50 border border-amber-200 rounded-[18px] flex items-center justify-between cursor-pointer ios-press-action shadow-2xs hover:border-amber-300 transition"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-[10px] bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shrink-0">
+                    ●
+                  </div>
+                  <div>
+                    <strong class="text-xs font-black text-amber-950 block leading-tight">Arena Shows: ritmo sob atenção</strong>
+                    <span class="text-[10.5px] text-amber-800">3 dias abaixo da linha de takt para estrutura metálica</span>
+                  </div>
+                </div>
+                <span class="text-xs font-black text-amber-900 bg-amber-200/80 px-2 py-1 rounded-[8px] font-mono">Ver ➔</span>
+              </div>
             </div>
           </div>
 
-          <!-- Compact 2x2 Metric Grid -->
-          <div class="grid grid-cols-2 gap-2.5">
-            <div class="bg-white p-3.5 rounded-[18px] border border-slate-200 shadow-2xs space-y-1">
-              <div class="flex items-center justify-between text-slate-500 text-[10.5px] font-bold">
-                <span>PAC Semanal</span>
-                <span class="text-emerald-700 font-mono">✓ 91.4%</span>
-              </div>
-              <strong class="text-xl font-black text-slate-950 block leading-tight font-mono">91.4%</strong>
-              <span class="text-[10px] text-slate-500 font-medium block">107 de 117 concluídas</span>
+          <!-- 4. PRÓXIMAS AÇÕES (TIMELINE COMPACTA) -->
+          <div class="bg-white rounded-[22px] p-4 border border-slate-200 shadow-2xs space-y-3">
+            <div class="flex items-center justify-between">
+              <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">Próximas Ações do Canteiro</strong>
+              <span class="text-[10px] text-slate-500 font-mono">Lookahead R4</span>
             </div>
 
-            <div class="bg-white p-3.5 rounded-[18px] border border-slate-200 shadow-2xs space-y-1">
-              <div class="flex items-center justify-between text-slate-500 text-[10.5px] font-bold">
-                <span>Custo Real</span>
-                <span class="text-emerald-700 font-mono">CPI 1.02</span>
+            <div class="space-y-2.5">
+              <!-- Item 1 -->
+              <div class="flex items-start gap-2.5 pb-2 border-b border-slate-100">
+                <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">✓</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <strong class="text-xs font-bold text-slate-900 truncate">Concretagem Laje 04 · Bloco Aptos</strong>
+                    <span class="text-[10px] font-mono text-emerald-700 font-bold">Hoje</span>
+                  </div>
+                  <span class="text-[10.5px] text-slate-500">Encarregado: João Silva · Betoneira autorizada</span>
+                </div>
               </div>
-              <strong class="text-xl font-black text-slate-950 block leading-tight font-mono">${selectedProject.spent}</strong>
-              <span class="text-[10px] text-slate-500 font-medium block">Orçado: ${selectedProject.budget}</span>
-            </div>
 
-            <div class="bg-white p-3.5 rounded-[18px] border border-slate-200 shadow-2xs space-y-1">
-              <div class="flex items-center justify-between text-slate-500 text-[10.5px] font-bold">
-                <span>Efetivo Campo</span>
-                <span class="text-blue-700 font-mono">3 frentes</span>
+              <!-- Item 2 -->
+              <div class="flex items-start gap-2.5 pb-2 border-b border-slate-100">
+                <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">○</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <strong class="text-xs font-bold text-slate-900 truncate">Instalação Hidráulica Prumada 02</strong>
+                    <span class="text-[10px] font-mono text-slate-500 font-bold">Amanhã</span>
+                  </div>
+                  <span class="text-[10.5px] text-slate-500">Encarregado: Carlos Santos · Tubulações Tigre</span>
+                </div>
               </div>
-              <strong class="text-xl font-black text-slate-950 block leading-tight font-mono">64 operários</strong>
-              <span class="text-[10px] text-slate-500 font-medium block">38 Arena · 26 Bloco</span>
-            </div>
 
-            <div onclick="setMobileTab('validar')" class="bg-white p-3.5 rounded-[18px] border border-slate-200 shadow-2xs space-y-1 cursor-pointer hover:border-slate-400 transition">
-              <div class="flex items-center justify-between text-slate-500 text-[10.5px] font-bold">
-                <span>Validações</span>
-                <span class="text-rose-600 font-mono font-black">${validCount} pendentes</span>
+              <!-- Item 3 -->
+              <div class="flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-800 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">○</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <strong class="text-xs font-bold text-slate-900 truncate">Alvenaria Estrutural Pav. 05</strong>
+                    <span class="text-[10px] font-mono text-slate-500 font-bold">Quinta</span>
+                  </div>
+                  <span class="text-[10.5px] text-slate-500">Encarregado: Marcos Lima · Blocos entregues</span>
+                </div>
               </div>
-              <strong class="text-xl font-black text-rose-600 block leading-tight font-mono">${validCount}</strong>
-              <span class="text-[10px] text-slate-500 font-medium block">Toque para validar →</span>
             </div>
           </div>
 
-          <!-- Barra de Ações Rápidas (4 Botões em Linha) -->
-          <div class="bg-white rounded-[20px] p-3.5 border border-slate-200 shadow-2xs space-y-2">
-            <span class="text-[10.5px] font-black uppercase text-slate-400 tracking-wider block font-mono">Ações Rápidas de Engenharia</span>
+          <!-- 5. AÇÕES RÁPIDAS (CANTEIRO | VALIDAR | EQUIPE | RELATÓRIO) -->
+          <div class="bg-white rounded-[22px] p-4 border border-slate-200 shadow-2xs space-y-2.5">
+            <span class="text-[10.5px] font-black uppercase text-slate-400 tracking-wider block font-mono">Ações Rápidas de Operação</span>
             <div class="grid grid-cols-4 gap-2">
+              
+              <!-- 1. Canteiro -->
               <button
                 type="button"
                 onclick="setMobileTab('campo')"
-                class="flex flex-col items-center justify-center p-2 rounded-[14px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action"
+                class="flex flex-col items-center justify-center p-2.5 rounded-[16px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action cursor-pointer"
               >
-                <div class="w-8 h-8 rounded-[10px] bg-[#d4ff00] text-slate-950 flex items-center justify-center font-black shadow-2xs">
+                <div class="w-9 h-9 rounded-[12px] bg-[#d4ff00] text-slate-950 flex items-center justify-center font-black shadow-2xs">
                   ${getSvg('zap', 'w-4 h-4 text-slate-950')}
                 </div>
-                <span class="text-[10px] font-bold text-slate-900 mt-1">Apontar</span>
+                <span class="text-[10px] font-bold text-slate-900 mt-1">Canteiro</span>
               </button>
 
+              <!-- 2. Validar -->
               <button
                 type="button"
-                onclick="setMobileTab('campo')"
-                class="flex flex-col items-center justify-center p-2 rounded-[14px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action"
+                onclick="setMobileTab('validar')"
+                class="flex flex-col items-center justify-center p-2.5 rounded-[16px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action cursor-pointer relative"
               >
-                <div class="w-8 h-8 rounded-[10px] bg-slate-900 text-white flex items-center justify-center font-black shadow-2xs">
-                  ${getSvg('camera', 'w-4 h-4 text-white')}
+                <div class="w-9 h-9 rounded-[12px] bg-slate-950 text-white flex items-center justify-center font-black shadow-2xs relative">
+                  ${getSvg('checkCircle', 'w-4 h-4 text-white')}
+                  ${validCount > 0 ? `
+                    <span class="absolute -top-1 -right-1 bg-rose-600 text-white font-black text-[8.5px] w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                      ${validCount}
+                    </span>
+                  ` : ''}
                 </div>
-                <span class="text-[10px] font-bold text-slate-900 mt-1">Foto</span>
+                <span class="text-[10px] font-bold text-slate-900 mt-1">Validar</span>
               </button>
 
+              <!-- 3. Equipe -->
               <button
                 type="button"
                 onclick="setMobileTab('mais'); setNavWithHistory('Equipe & Contatos');"
-                class="flex flex-col items-center justify-center p-2 rounded-[14px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action"
+                class="flex flex-col items-center justify-center p-2.5 rounded-[16px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action cursor-pointer"
               >
-                <div class="w-8 h-8 rounded-[10px] bg-emerald-100 text-emerald-900 flex items-center justify-center font-black shadow-2xs border border-emerald-300">
+                <div class="w-9 h-9 rounded-[12px] bg-emerald-100 text-emerald-900 flex items-center justify-center font-black shadow-2xs border border-emerald-300">
                   ${getSvg('phone', 'w-4 h-4 text-emerald-800')}
                 </div>
-                <span class="text-[10px] font-bold text-slate-900 mt-1">WhatsApp</span>
+                <span class="text-[10px] font-bold text-slate-900 mt-1">Equipe</span>
               </button>
 
+              <!-- 4. Relatório -->
               <button
                 type="button"
                 onclick="setMobileTab('mais'); setNavWithHistory('Relatórios & Capa');"
-                class="flex flex-col items-center justify-center p-2 rounded-[14px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action"
+                class="flex flex-col items-center justify-center p-2.5 rounded-[16px] bg-slate-50 hover:bg-slate-100 border border-slate-200 ios-press-action cursor-pointer"
               >
-                <div class="w-8 h-8 rounded-[10px] bg-blue-100 text-blue-950 flex items-center justify-center font-black shadow-2xs border border-blue-300">
+                <div class="w-9 h-9 rounded-[12px] bg-blue-100 text-blue-950 flex items-center justify-center font-black shadow-2xs border border-blue-300">
                   ${getSvg('fileText', 'w-4 h-4 text-blue-900')}
                 </div>
                 <span class="text-[10px] font-bold text-slate-900 mt-1">Relatório</span>
               </button>
-            </div>
-          </div>
 
-          <!-- Faixa de Alerta de Pendências -->
-          ${validCount > 0 ? `
-            <div
-              onclick="setMobileTab('validar')"
-              class="p-3.5 bg-rose-50 border border-rose-200 rounded-[18px] flex items-center justify-between cursor-pointer ios-press-action shadow-2xs"
-            >
-              <div class="flex items-center gap-2.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
-                <div>
-                  <strong class="text-xs font-bold text-rose-950 block leading-tight">${validCount} medições aguardando validação</strong>
-                  <span class="text-[10.5px] text-rose-700">Evidências de concretagem e alvenaria</span>
-                </div>
-              </div>
-              <span class="text-xs font-bold text-rose-900 bg-rose-200/60 px-2 py-1 rounded-md">Validar ➔</span>
-            </div>
-          ` : ''}
-
-          <!-- Resumo de Frentes Ativas (Linha de Balanço) -->
-          <div class="bg-white rounded-[20px] p-4 border border-slate-200 shadow-2xs space-y-3">
-            <div class="flex items-center justify-between">
-              <strong class="text-xs font-black text-slate-950 uppercase tracking-wide">Ritmo das Frentes (Takt)</strong>
-              <button onclick="setMobileTab('planejar')" class="text-xs text-blue-900 font-bold hover:underline">Ver Linha Completa →</button>
-            </div>
-
-            <!-- Frente 1: Arena -->
-            <div class="p-3 bg-slate-50 rounded-[14px] border border-slate-200/80 space-y-1.5">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-900">Arena Shows & Quadras</span>
-                <strong class="text-slate-950 font-mono">92% (+3% Acel)</strong>
-              </div>
-              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div class="bg-gradient-to-r from-lime-500 to-[#d4ff00] h-full rounded-full" style="width: 92%"></div>
-              </div>
-              <div class="flex justify-between text-[10px] text-slate-500 font-medium">
-                <span>38 operários</span>
-                <span class="text-emerald-700 font-bold">● No Ritmo (2 pav/sem)</span>
-              </div>
-            </div>
-
-            <!-- Frente 2: Bloco Aptos -->
-            <div class="p-3 bg-slate-50 rounded-[14px] border border-slate-200/80 space-y-1.5">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-900">Bloco de Apartamentos</span>
-                <strong class="text-slate-950 font-mono">74%</strong>
-              </div>
-              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-[#38bdf8] h-full rounded-full" style="width: 74%"></div>
-              </div>
-              <div class="flex justify-between text-[10px] text-slate-500 font-medium">
-                <span>26 operários</span>
-                <span class="text-blue-700 font-bold">● No Ritmo (1 pav/sem)</span>
-              </div>
             </div>
           </div>
 
@@ -5736,155 +5808,6 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       `;
     }
 
-    function renderMobileCampoView(selectedProject) {
-      const frentes = ['Bloco Aptos', 'Arena Shows', 'Infraestrutura'];
-      const atividades = ['Alvenaria Estrutural', 'Concretagem Laje', 'Revestimento Interno', 'Instalações Hidráulicas'];
-
-      return `
-        <div class="p-4 space-y-4 animate-card-fade">
-          
-          <!-- Header Canteiro 1-Touch -->
-          <div class="bg-slate-950 text-white p-4 rounded-[20px] shadow-lg flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-[12px] bg-[#d4ff00] text-slate-950 flex items-center justify-center font-black">
-                ${getSvg('zap', 'w-5 h-5 text-slate-950')}
-              </div>
-              <div>
-                <span class="text-[10px] font-black uppercase tracking-wider text-[#d4ff00] font-mono block">CANTEIRO 1-TOUCH</span>
-                <h3 class="text-sm font-black text-white">Apontamento Rápido em Campo</h3>
-              </div>
-            </div>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 px-2 py-0.5 rounded font-mono">
-              ● Online
-            </span>
-          </div>
-
-          <!-- Step 1: Frente de Obra -->
-          <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2">
-            <label class="text-xs font-black text-slate-950 block uppercase tracking-wide">1. Selecione a Frente de Obra</label>
-            <div class="grid grid-cols-3 gap-2">
-              ${frentes.map(f => `
-                <button
-                  type="button"
-                  onclick="setCampoFrente('${f}')"
-                  class="py-2.5 px-2 rounded-[12px] text-xs font-bold transition ios-press-action text-center ${
-                    campoFrente === f ? 'bg-slate-950 text-white shadow-xs font-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }"
-                >
-                  ${f}
-                </button>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- Step 2: Atividade -->
-          <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2">
-            <label class="text-xs font-black text-slate-950 block uppercase tracking-wide">2. Atividade Executada</label>
-            <div class="grid grid-cols-2 gap-2">
-              ${atividades.map(a => `
-                <button
-                  type="button"
-                  onclick="setCampoAtividade('${a}')"
-                  class="py-2.5 px-3 rounded-[12px] text-xs font-bold transition ios-press-action text-left truncate ${
-                    campoAtividade === a ? 'bg-[#0b2535] text-white shadow-xs font-black border-l-4 border-[#d4ff00]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }"
-                >
-                  ${a}
-                </button>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- Step 3: Quantidade & Incrementos -->
-          <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2.5">
-            <label class="text-xs font-black text-slate-950 block uppercase tracking-wide">3. Quantidade Concluída</label>
-            
-            <div class="flex items-center gap-2">
-              <input
-                id="mobile-campo-qtd"
-                type="number"
-                value="${campoQtd}"
-                oninput="campoQtd = parseInt(this.value) || 0"
-                class="flex-1 py-3 px-4 bg-slate-50 border border-slate-300 rounded-[14px] text-xl font-black text-slate-950 text-center font-mono focus:outline-hidden focus:border-slate-950"
-              />
-              <span class="text-xs font-bold text-slate-500 font-mono px-2">un / m³</span>
-            </div>
-
-            <!-- Increments -->
-            <div class="grid grid-cols-4 gap-2">
-              <button type="button" onclick="adjustCampoQtd(5)" class="py-2 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs ios-press-action font-mono">+5</button>
-              <button type="button" onclick="adjustCampoQtd(10)" class="py-2 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs ios-press-action font-mono">+10</button>
-              <button type="button" onclick="adjustCampoQtd(25)" class="py-2 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs ios-press-action font-mono">+25</button>
-              <button type="button" onclick="adjustCampoQtd(50)" class="py-2 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs ios-press-action font-mono">+50</button>
-            </div>
-          </div>
-
-          <!-- Step 4: Foto da Evidência -->
-          <div class="bg-white p-4 rounded-[18px] border border-slate-200 shadow-2xs space-y-2">
-            <label class="text-xs font-black text-slate-950 block uppercase tracking-wide">4. Foto de Evidência no Canteiro</label>
-            
-            ${campoPhoto ? `
-              <div class="relative rounded-[14px] overflow-hidden border border-slate-300 shadow-xs max-h-48">
-                <img src="${campoPhoto}" alt="Foto Campo" class="w-full h-44 object-cover" />
-                <button
-                  type="button"
-                  onclick="removeCampoPhoto()"
-                  class="absolute top-2 right-2 p-2 bg-rose-600 text-white rounded-full shadow-md text-xs font-bold"
-                >
-                  ✕
-                </button>
-                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-white text-[10px] font-mono flex items-center justify-between">
-                  <span>✓ Foto Anexada</span>
-                  <span>Toque no ✕ para trocar</span>
-                </div>
-              </div>
-            ` : `
-              <label class="w-full py-4 border-2 border-dashed border-slate-300 hover:border-slate-950 bg-slate-50 rounded-[14px] flex flex-col items-center justify-center cursor-pointer transition ios-press-action">
-                <div class="w-12 h-12 rounded-full bg-[#d4ff00] text-slate-950 flex items-center justify-center mb-1.5 shadow-xs">
-                  ${getSvg('camera', 'w-6 h-6 text-slate-950')}
-                </div>
-                <strong class="text-xs font-black text-slate-900">Fotografar com a Câmera</strong>
-                <span class="text-[10px] text-slate-500 font-medium mt-0.5">Toque para abrir a câmera do celular</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onchange="handleCampoPhotoUpload(event)"
-                  class="hidden"
-                />
-              </label>
-            `}
-          </div>
-
-          <!-- Step 5: Sensores Automáticos (GPS, Data/Hora, RT) -->
-          <div class="p-3 bg-slate-50 rounded-[14px] border border-slate-200 text-[10.5px] font-mono space-y-1 text-slate-700">
-            <div class="flex items-center justify-between">
-              <span>📍 GPS Canteiro:</span>
-              <strong class="text-emerald-700">-9.0912, -35.2481 ✓</strong>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>⏰ Data & Hora:</span>
-              <strong class="text-slate-900">${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓</strong>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>👷 Apontador:</span>
-              <strong class="text-slate-900">${currentUser ? currentUser.name : 'Alex Ribeiro'} ✓</strong>
-            </div>
-          </div>
-
-          <!-- Big CTA Button -->
-          <button
-            type="button"
-            onclick="submitMobileCampoApontamento()"
-            class="w-full py-4 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-sm uppercase tracking-wider rounded-[16px] transition shadow-lg border border-slate-300 flex items-center justify-center gap-2 ios-press-action"
-          >
-            ${getSvg('check', 'w-5 h-5 text-slate-950')}
-            <span>ENVIAR APONTAMENTO (1-TOUCH)</span>
-          </button>
-
-        </div>
-      `;
-    }
 
     function renderMobilePlanejarView(selectedProject) {
       return `
