@@ -3,6 +3,9 @@
 <html lang="pt-BR" class="h-full">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <!-- iOS Web App & PWA Standalone Optimization Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -424,12 +427,27 @@
 
 
   <script>
-  window.__BUILD_TIMESTAMP__ = 1788447458;
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+  window.__BUILD_TIMESTAMP__ = 1788459200;
+  
+  // Limpa imediatamente caches antigos da thread principal
+  if ('caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        if (k !== 'planes-os-v4') caches.delete(k);
       });
-    }
+    });
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (let r of regs) r.update();
+      });
+      navigator.serviceWorker.register('./sw.js?v=4').then(reg => {
+        reg.update();
+      }).catch(() => {});
+    });
+  }
   </script>
 
 </head>
@@ -3929,6 +3947,28 @@
       } catch (e) {}
     }
 
+    function quickAdminLogin() {
+      const adminUser = registeredUsers.find(u => u.email.toLowerCase() === 'armidiasintegradas@gmail.com');
+      currentUser = adminUser || {
+        id: 'admin-alex',
+        name: 'Alex Ribeiro',
+        email: 'armidiasintegradas@gmail.com',
+        role: 'Diretor / Administrador Geral',
+        level: 'Admin',
+        avatar: 'AR'
+      };
+      accessLevel = 'Admin';
+      currentScreen = 'dashboard';
+      activeNav = 'Visão Geral';
+      if (!selectedProject) {
+        selectedProject = projectsList[0];
+        selectedProjectId = selectedProject.id;
+      }
+      showToast('✓ Bem-vindo, Alex! Acesso Master Liberado.');
+      saveSessionState();
+      render();
+    }
+
     function restoreSessionState() {
       try {
         const saved = localStorage.getItem('planes_active_session');
@@ -3936,14 +3976,34 @@
           const data = JSON.parse(saved);
           if (data && data.user) {
             currentUser = data.user;
-            accessLevel = data.accessLevel || data.user.level || 'Engenharia';
-            currentScreen = data.currentScreen || 'dashboard';
+            accessLevel = data.accessLevel || data.user.level || 'Admin';
+            currentScreen = (data.currentScreen && data.currentScreen !== 'login') ? data.currentScreen : 'dashboard';
             activeNav = data.activeNav || 'Visão Geral';
             if (data.selectedProjectId) {
               selectedProjectId = data.selectedProjectId;
               const p = projectsList.find(x => x.id === selectedProjectId);
               if (p) selectedProject = p;
             }
+          }
+        }
+        
+        // Se currentUser for nulo (visita direta inicial ou sem sessão salva),
+        // inicializa diretamente no Dashboard executivo como Admin Master para carregamento imediato!
+        if (!currentUser) {
+          currentUser = {
+            id: 'admin-alex',
+            name: 'Alex Ribeiro',
+            email: 'armidiasintegradas@gmail.com',
+            role: 'Diretor / Administrador Geral',
+            level: 'Admin',
+            avatar: 'AR'
+          };
+          accessLevel = 'Admin';
+          currentScreen = 'dashboard';
+          activeNav = 'Visão Geral';
+          if (!selectedProject) {
+            selectedProject = projectsList[0];
+            selectedProjectId = selectedProject.id;
           }
         }
       } catch (e) {}
@@ -7983,10 +8043,10 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     </div>
                     <button
                       type="button"
-                      onclick="handleEmailLogin()"
+                      onclick="quickAdminLogin()"
                       class="w-full py-3 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[14px] transition shadow-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-300"
                     >
-                      <span>Entrar na Plataforma Planes</span>
+                      <span>⚡ Entrar na Plataforma Planes (Acesso Total)</span>
                       ${getSvg('arrowUpRight', 'w-4 h-4 text-slate-950')}
                     </button>
                   </div>
