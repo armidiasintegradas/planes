@@ -97,6 +97,19 @@ test('production Pages adapter enforces the homologated Google-first IAM contrac
   assert.doesNotMatch(source, /\.signUp\s*\(/);
 });
 
+test('live publisher patches the existing gh-pages artifact idempotently', async () => {
+  const source = await readFile(new URL('../.github/workflows/publish-live-auth.yml', import.meta.url), 'utf8');
+  assert.match(source, /contents\s*:\s*write/);
+  assert.match(source, /ref:\s*feat\/planes-iam-real/);
+  assert.match(source, /ref:\s*gh-pages/);
+  assert.match(source, /public\/auth-gate-live\.js/);
+  assert.match(source, /PLANES_AUTH_GATE_START/);
+  assert.match(source, /PLANES_AUTH_GATE_END/);
+  assert.match(source, /index\.html/);
+  assert.match(source, /auth-gate-live\.js/);
+  assert.match(source, /git push/);
+});
+
 test('account security page supports passkey enrollment and management', async () => {
   const source = await readFile(new URL('../app/account/security/page.tsx', import.meta.url), 'utf8');
   assert.match(source, /registerPasskey/);
