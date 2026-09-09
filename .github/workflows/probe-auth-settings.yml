@@ -1,0 +1,27 @@
+name: Probe Planes Auth settings
+
+on:
+  push:
+    branches:
+      - feat/planes-iam-real
+    paths:
+      - .github/workflows/probe-auth-settings.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read public Supabase Auth settings
+        env:
+          SUPABASE_URL: https://xfgcbxppsbwmxwsuajou.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            "${SUPABASE_URL}/auth/v1/settings" \
+            | python3 -m json.tool
