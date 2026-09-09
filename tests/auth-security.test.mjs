@@ -75,6 +75,12 @@ test('auth gate is Google-first with admin email fallback and no public email si
   assert.doesNotMatch(source, /Solicitar cadastro/);
 });
 
+test('auth gate always bypasses cache when reading live provider settings', async () => {
+  const source = await readFile(new URL('../components/AuthGate.tsx', import.meta.url), 'utf8');
+  assert.match(source, /cache\s*:\s*['"]no-store['"]/);
+  assert.match(source, /Date\.now\(\)/);
+});
+
 test('account security page supports passkey enrollment and management', async () => {
   const source = await readFile(new URL('../app/account/security/page.tsx', import.meta.url), 'utf8');
   assert.match(source, /registerPasskey/);
