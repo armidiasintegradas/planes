@@ -1,8 +1,18 @@
 'use client';
 
-import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase, type PlanesProfile } from '../lib/supabase/client';
+import {
+  supabase,
+  supabasePublishableKey,
+  supabaseUrl,
+  type PlanesProfile,
+} from '../lib/supabase/client';
+import {
+  PLANES_AUTH_REDIRECT,
+  getAuthCapabilities,
+  validateSignupPassword,
+} from '../lib/auth/security.mjs';
 
 const cardStyle: React.CSSProperties = {
   width: 'min(92vw, 460px)',
@@ -42,6 +52,13 @@ const secondaryButton: React.CSSProperties = {
   border: '1px solid #dbe2ea',
 };
 
+const defaultCapabilities = {
+  email: true,
+  google: false,
+  apple: false,
+  passkeys: false,
+};
+
 function Frame({ children }: { children: ReactNode }) {
   return (
     <main style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24, background: 'radial-gradient(circle at 10% 20%, #f7f9fb 0%, #e5eaf0 90%)' }}>
@@ -68,11 +85,10 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-
-  const redirectTo = useMemo(() => {
-    if (typeof window === 'undefined') return undefined;
-    return `${window.location.origin}${window.location.pathname}`;
-  }, []);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
+  const [capabilities, setCapabilities] = useState(defaultCapabilities);
+  const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
+  const [passkeyOfferDismissed, setPasskeyOfferDismissed] = useState(false);
 
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -87,6 +103,27 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
     setProfile(data as PlanesProfile);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void fetch(`${supabaseUrl}/auth/v1/settings`, {
+      headers: { apikey: supabasePublishableKey },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Auth settings ${response.status}`);
+        return response.json();
+      })
+      .then((settings) => {
+        if (active) setCapabilities(getAuthCapabilities(settings));
+      })
+      .catch(() => {
+        if (active) setCapabilities(defaultCapabilities);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -114,6 +151,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
         }, 0);
       } else {
         setProfile(null);
+        setHasPasskey(null);
+        setPasskeyOfferDismissed(false);
         setLoading(false);
       }
     });
@@ -141,25 +180,55 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     };
   }, [session?.user?.id, loadProfile]);
 
+  useEffect(() => {
+    if (!session?.user || profile?.status !== 'approved' || !capabilities.passkeys) {
+      setHasPasskey(null);
+      return;
+    }
+
+    let active = true;
+    void supabase.auth.passkey.list().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        setHasPasskey(null);
+        return;
+      }
+      setHasPasskey(Array.isArray(data) && data.length > 0);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id, profile?.status, capabilities.passkeys]);
+
   async function handleEmailAuth(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setMessage('');
+    setConfirmationEmail('');
     try {
+      const normalizedEmail = email.trim();
       if (mode === 'signup') {
+        const passwordPolicy = validateSignupPassword(password);
+        if (!passwordPolicy.ok) {
+          setMessage(passwordPolicy.errors.join(' '));
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
-          options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+          options: { emailRedirectTo: PLANES_AUTH_REDIRECT },
         });
         if (error) throw error;
         if (!data.session) {
+          setConfirmationEmail(normalizedEmail);
           setMessage('Cadastro recebido. Confira seu e-mail para confirmar a conta. Depois da confirmação, seu acesso seguirá o fluxo de autorização do Planes OS.');
         } else {
           setMessage('Cadastro recebido. Seu acesso está sendo preparado.');
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
       }
     } catch (error) {
@@ -169,17 +238,53 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     }
   }
 
+  async function resendConfirmation() {
+    if (!confirmationEmail) return;
+    setBusy(true);
+    setMessage('');
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: confirmationEmail,
+      options: { emailRedirectTo: PLANES_AUTH_REDIRECT },
+    });
+    setMessage(error ? `Não foi possível reenviar agora: ${error.message}` : 'Novo e-mail de confirmação solicitado. Verifique também Spam e Promoções.');
+    setBusy(false);
+  }
+
   async function handleOAuth(provider: 'google' | 'apple') {
+    if (!capabilities[provider]) return;
     setBusy(true);
     setMessage('');
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: redirectTo ? { redirectTo } : undefined,
+      options: { redirectTo: PLANES_AUTH_REDIRECT },
     });
     if (error) {
-      setMessage(`${provider === 'google' ? 'Google' : 'Apple'} ainda não está disponível: ${error.message}`);
+      setMessage(`${provider === 'google' ? 'Google' : 'Apple'} não pôde iniciar: ${error.message}`);
       setBusy(false);
     }
+  }
+
+  async function handlePasskeySignIn() {
+    if (!capabilities.passkeys) return;
+    setBusy(true);
+    setMessage('');
+    const { error } = await supabase.auth.signInWithPasskey();
+    if (error) setMessage(`Passkey não pôde autenticar: ${error.message}`);
+    setBusy(false);
+  }
+
+  async function registerPasskey() {
+    setBusy(true);
+    setMessage('');
+    const { error } = await supabase.auth.registerPasskey();
+    if (error) {
+      setMessage(`Não foi possível cadastrar a Passkey: ${error.message}`);
+    } else {
+      setHasPasskey(true);
+      setPasskeyOfferDismissed(true);
+    }
+    setBusy(false);
   }
 
   async function signOut() {
@@ -193,6 +298,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (!session) {
+    const hasSocialProvider = capabilities.google || capabilities.apple;
     return (
       <Frame>
         <section style={cardStyle}>
@@ -202,24 +308,40 @@ export default function AuthGate({ children }: { children: ReactNode }) {
             {mode === 'signin' ? 'Use sua conta autorizada para acessar a operação.' : 'Seu cadastro ficará aguardando análise e definição de perfil pelo administrador.'}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
-            <button disabled={busy} onClick={() => void handleOAuth('google')} style={secondaryButton}>Google</button>
-            <button disabled={busy} onClick={() => void handleOAuth('apple')} style={secondaryButton}>Apple</button>
-          </div>
+          {mode === 'signin' && capabilities.passkeys && (
+            <button disabled={busy} onClick={() => void handlePasskeySignIn()} style={{ ...primaryButton, marginBottom: 12 }}>
+              Entrar com Face ID / Passkey
+            </button>
+          )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#94a3b8', fontSize: 12, marginBottom: 18 }}>
-            <span style={{ height: 1, background: '#e2e8f0', flex: 1 }} /><span>ou</span><span style={{ height: 1, background: '#e2e8f0', flex: 1 }} />
-          </div>
+          {hasSocialProvider && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: capabilities.google && capabilities.apple ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 18 }}>
+                {capabilities.google && <button disabled={busy} onClick={() => void handleOAuth('google')} style={secondaryButton}>Google</button>}
+                {capabilities.apple && <button disabled={busy} onClick={() => void handleOAuth('apple')} style={secondaryButton}>Apple</button>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#94a3b8', fontSize: 12, marginBottom: 18 }}>
+                <span style={{ height: 1, background: '#e2e8f0', flex: 1 }} /><span>ou</span><span style={{ height: 1, background: '#e2e8f0', flex: 1 }} />
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleEmailAuth} style={{ display: 'grid', gap: 12 }}>
             <input required type="email" autoComplete="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-            <input required minLength={8} type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
+            <input required minLength={mode === 'signup' ? 12 : 8} type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
+            {mode === 'signup' && <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.45 }}>Use 12+ caracteres com maiúscula, minúscula, número e símbolo.</div>}
             <button disabled={busy} type="submit" style={primaryButton}>{busy ? 'Processando…' : mode === 'signin' ? 'Entrar' : 'Criar cadastro'}</button>
           </form>
 
           {message && <p role="status" style={{ margin: '16px 0 0', padding: 12, borderRadius: 12, background: '#f8fafc', color: '#475569', fontSize: 13, lineHeight: 1.45 }}>{message}</p>}
 
-          <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage(''); }} style={{ width: '100%', background: 'transparent', border: 0, marginTop: 18, color: '#475569', cursor: 'pointer', fontWeight: 600 }}>
+          {confirmationEmail && (
+            <button disabled={busy} onClick={() => void resendConfirmation()} style={{ ...secondaryButton, marginTop: 12 }}>
+              Reenviar confirmação
+            </button>
+          )}
+
+          <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage(''); setConfirmationEmail(''); }} style={{ width: '100%', background: 'transparent', border: 0, marginTop: 18, color: '#475569', cursor: 'pointer', fontWeight: 600 }}>
             {mode === 'signin' ? 'Primeiro acesso? Solicitar cadastro' : 'Já tenho cadastro'}
           </button>
         </section>
@@ -256,6 +378,23 @@ export default function AuthGate({ children }: { children: ReactNode }) {
           <h1 style={{ margin: '0 0 10px', fontSize: 28 }}>{profile.status === 'suspended' ? 'Acesso suspenso' : 'Acesso não autorizado'}</h1>
           <p style={{ color: '#64748b', lineHeight: 1.6 }}>Este perfil não possui acesso operacional ao Planes OS. Procure o administrador responsável caso precise revisar a situação.</p>
           <button disabled={busy} onClick={() => void signOut()} style={secondaryButton}>Sair</button>
+        </section>
+      </Frame>
+    );
+  }
+
+  if (capabilities.passkeys && hasPasskey === false && !passkeyOfferDismissed) {
+    return (
+      <Frame>
+        <section style={cardStyle}>
+          <Brand />
+          <h1 style={{ margin: '0 0 10px', fontSize: 28, letterSpacing: '-.04em' }}>Ative o acesso sem senha</h1>
+          <p style={{ color: '#64748b', lineHeight: 1.6 }}>Cadastre uma Passkey para entrar depois com Face ID, Touch ID, Windows Hello ou o gerenciador de senhas do seu dispositivo.</p>
+          {message && <p role="status" style={{ padding: 12, borderRadius: 12, background: '#f8fafc', color: '#475569', fontSize: 13 }}>{message}</p>}
+          <div style={{ display: 'grid', gap: 10, marginTop: 20 }}>
+            <button disabled={busy} onClick={() => void registerPasskey()} style={primaryButton}>{busy ? 'Processando…' : 'Cadastrar Face ID / Passkey'}</button>
+            <button disabled={busy} onClick={() => setPasskeyOfferDismissed(true)} style={secondaryButton}>Agora não</button>
+          </div>
         </section>
       </Frame>
     );
