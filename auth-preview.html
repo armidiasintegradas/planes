@@ -62,7 +62,8 @@
 
     async function loadSettings(){
       try{
-        const response=await fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_KEY}});
+        const settingsUrl=`${SUPABASE_URL}/auth/v1/settings?ts=${Date.now()}`;
+        const response=await fetch(settingsUrl,{cache:'no-store',headers:{apikey:SUPABASE_KEY}});
         if(!response.ok)throw new Error(`HTTP ${response.status}`);
         const settings=await response.json();
         capabilities={email:settings.external?.email===true,google:settings.external?.google===true,passkeys:settings.passkeys_enabled===true};
