@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://xfgcbxppsbwmxwsuajou.supabase.co';
-const supabasePublishableKey = 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
+export const supabaseUrl = 'https://xfgcbxppsbwmxwsuajou.supabase.co';
+export const supabasePublishableKey = 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
@@ -9,6 +9,7 @@ export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
+    experimental: { passkey: true },
   },
 });
 
