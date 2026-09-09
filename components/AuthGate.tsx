@@ -11,7 +11,6 @@ import {
 import {
   PLANES_AUTH_REDIRECT,
   getAuthCapabilities,
-  validateSignupPassword,
 } from '../lib/auth/security.mjs';
 
 const cardStyle: React.CSSProperties = {
@@ -80,13 +79,12 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<PlanesProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [confirmationEmail, setConfirmationEmail] = useState('');
   const [capabilities, setCapabilities] = useState(defaultCapabilities);
+  const [adminFallbackOpen, setAdminFallbackOpen] = useState(false);
   const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
   const [passkeyOfferDismissed, setPasskeyOfferDismissed] = useState(false);
 
@@ -201,66 +199,36 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     };
   }, [session?.user?.id, profile?.status, capabilities.passkeys]);
 
-  async function handleEmailAuth(event: FormEvent) {
+  async function handleAdminEmailAuth(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setMessage('');
-    setConfirmationEmail('');
     try {
-      const normalizedEmail = email.trim();
-      if (mode === 'signup') {
-        const passwordPolicy = validateSignupPassword(password);
-        if (!passwordPolicy.ok) {
-          setMessage(passwordPolicy.errors.join(' '));
-          return;
-        }
-
-        const { data, error } = await supabase.auth.signUp({
-          email: normalizedEmail,
-          password,
-          options: { emailRedirectTo: PLANES_AUTH_REDIRECT },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          setConfirmationEmail(normalizedEmail);
-          setMessage('Cadastro recebido. Confira seu e-mail para confirmar a conta. Depois da confirmação, seu acesso seguirá o fluxo de autorização do Planes OS.');
-        } else {
-          setMessage('Cadastro recebido. Seu acesso está sendo preparado.');
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw error;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível autenticar.');
+      setMessage(error instanceof Error ? error.message : 'Não foi possível autenticar o acesso administrativo.');
     } finally {
       setBusy(false);
     }
   }
 
-  async function resendConfirmation() {
-    if (!confirmationEmail) return;
-    setBusy(true);
-    setMessage('');
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: confirmationEmail,
-      options: { emailRedirectTo: PLANES_AUTH_REDIRECT },
-    });
-    setMessage(error ? `Não foi possível reenviar agora: ${error.message}` : 'Novo e-mail de confirmação solicitado. Verifique também Spam e Promoções.');
-    setBusy(false);
-  }
-
-  async function handleOAuth(provider: 'google' | 'apple') {
-    if (!capabilities[provider]) return;
+  async function handleGoogleOAuth() {
+    if (!capabilities.google) {
+      setMessage('O login Google ainda não está habilitado no Supabase. O acesso administrativo de contingência continua disponível abaixo.');
+      return;
+    }
     setBusy(true);
     setMessage('');
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'google',
       options: { redirectTo: PLANES_AUTH_REDIRECT },
     });
     if (error) {
-      setMessage(`${provider === 'google' ? 'Google' : 'Apple'} não pôde iniciar: ${error.message}`);
+      setMessage(`Google não pôde iniciar: ${error.message}`);
       setBusy(false);
     }
   }
@@ -298,52 +266,57 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (!session) {
-    const hasSocialProvider = capabilities.google || capabilities.apple;
     return (
       <Frame>
         <section style={cardStyle}>
           <Brand />
-          <h1 style={{ margin: '0 0 8px', fontSize: 28, letterSpacing: '-.04em' }}>{mode === 'signin' ? 'Entrar no Planes OS' : 'Solicitar acesso'}</h1>
-          <p style={{ color: '#64748b', margin: '0 0 24px', lineHeight: 1.5 }}>
-            {mode === 'signin' ? 'Use sua conta autorizada para acessar a operação.' : 'Seu cadastro ficará aguardando análise e definição de perfil pelo administrador.'}
+          <h1 style={{ margin: '0 0 8px', fontSize: 28, letterSpacing: '-.04em' }}>Entrar no Planes OS</h1>
+          <p style={{ color: '#64748b', margin: '0 0 24px', lineHeight: 1.55 }}>
+            O acesso de usuários é feito pelo Google. No primeiro acesso, sua conta entra como pendente e só é liberada depois que um administrador define perfil, projetos e obras.
           </p>
 
-          {mode === 'signin' && capabilities.passkeys && (
-            <button disabled={busy} onClick={() => void handlePasskeySignIn()} style={{ ...primaryButton, marginBottom: 12 }}>
+          {capabilities.passkeys && (
+            <button disabled={busy} onClick={() => void handlePasskeySignIn()} style={{ ...secondaryButton, marginBottom: 12 }}>
               Entrar com Face ID / Passkey
             </button>
           )}
 
-          {hasSocialProvider && (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: capabilities.google && capabilities.apple ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 18 }}>
-                {capabilities.google && <button disabled={busy} onClick={() => void handleOAuth('google')} style={secondaryButton}>Google</button>}
-                {capabilities.apple && <button disabled={busy} onClick={() => void handleOAuth('apple')} style={secondaryButton}>Apple</button>}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#94a3b8', fontSize: 12, marginBottom: 18 }}>
-                <span style={{ height: 1, background: '#e2e8f0', flex: 1 }} /><span>ou</span><span style={{ height: 1, background: '#e2e8f0', flex: 1 }} />
-              </div>
-            </>
-          )}
+          <button
+            disabled={busy || !capabilities.google}
+            onClick={() => void handleGoogleOAuth()}
+            style={{ ...primaryButton, opacity: capabilities.google ? 1 : .55, cursor: capabilities.google ? 'pointer' : 'not-allowed' }}
+          >
+            {capabilities.google ? 'Continuar com Google' : 'Google em configuração'}
+          </button>
 
-          <form onSubmit={handleEmailAuth} style={{ display: 'grid', gap: 12 }}>
-            <input required type="email" autoComplete="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-            <input required minLength={mode === 'signup' ? 12 : 8} type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
-            {mode === 'signup' && <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.45 }}>Use 12+ caracteres com maiúscula, minúscula, número e símbolo.</div>}
-            <button disabled={busy} type="submit" style={primaryButton}>{busy ? 'Processando…' : mode === 'signin' ? 'Entrar' : 'Criar cadastro'}</button>
-          </form>
+          {!capabilities.google && (
+            <p style={{ margin: '12px 0 0', color: '#64748b', fontSize: 12, lineHeight: 1.5 }}>
+              O provider Google ainda precisa das credenciais OAuth no Supabase. Nenhum cadastro público por e-mail é aceito.
+            </p>
+          )}
 
           {message && <p role="status" style={{ margin: '16px 0 0', padding: 12, borderRadius: 12, background: '#f8fafc', color: '#475569', fontSize: 13, lineHeight: 1.45 }}>{message}</p>}
 
-          {confirmationEmail && (
-            <button disabled={busy} onClick={() => void resendConfirmation()} style={{ ...secondaryButton, marginTop: 12 }}>
-              Reenviar confirmação
-            </button>
-          )}
-
-          <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage(''); setConfirmationEmail(''); }} style={{ width: '100%', background: 'transparent', border: 0, marginTop: 18, color: '#475569', cursor: 'pointer', fontWeight: 600 }}>
-            {mode === 'signin' ? 'Primeiro acesso? Solicitar cadastro' : 'Já tenho cadastro'}
+          <button
+            type="button"
+            onClick={() => { setAdminFallbackOpen((value) => !value); setMessage(''); }}
+            style={{ width: '100%', background: 'transparent', border: 0, marginTop: 20, color: '#475569', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Acesso administrativo de contingência
           </button>
+
+          {adminFallbackOpen && (
+            <div style={{ marginTop: 14, paddingTop: 18, borderTop: '1px solid #e2e8f0' }}>
+              <p style={{ color: '#64748b', fontSize: 12, lineHeight: 1.5, margin: '0 0 12px' }}>
+                Reservado à conta administrativa já existente. Este formulário não cria novos usuários.
+              </p>
+              <form onSubmit={handleAdminEmailAuth} style={{ display: 'grid', gap: 12 }}>
+                <input required type="email" autoComplete="email" placeholder="E-mail administrativo" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+                <input required minLength={8} type="password" autoComplete="current-password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
+                <button disabled={busy} type="submit" style={secondaryButton}>{busy ? 'Processando…' : 'Entrar como administrador'}</button>
+              </form>
+            </div>
+          )}
         </section>
       </Frame>
     );
@@ -359,8 +332,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
         <section style={cardStyle}>
           <Brand />
           <div style={{ display: 'inline-flex', padding: '7px 11px', borderRadius: 999, background: '#fff7d6', color: '#8a6400', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>AGUARDANDO AUTORIZAÇÃO</div>
-          <h1 style={{ margin: '0 0 10px', fontSize: 28, letterSpacing: '-.04em' }}>Cadastro recebido.</h1>
-          <p style={{ color: '#64748b', lineHeight: 1.6 }}>Seu acesso ao Planes OS está aguardando autorização do administrador. Assim que seu perfil e nível de acesso forem aprovados, os recursos correspondentes à sua função serão liberados automaticamente.</p>
+          <h1 style={{ margin: '0 0 10px', fontSize: 28, letterSpacing: '-.04em' }}>Solicitação recebida.</h1>
+          <p style={{ color: '#64748b', lineHeight: 1.6 }}>Sua identidade foi validada. O acesso ao Planes OS está aguardando autorização do administrador. Assim que seu perfil, projetos e obras forem definidos, os recursos correspondentes serão liberados automaticamente.</p>
           <div style={{ display: 'grid', gap: 10, marginTop: 22 }}>
             <button disabled={busy} onClick={() => void loadProfile(session.user.id)} style={primaryButton}>Atualizar status</button>
             <button disabled={busy} onClick={() => void signOut()} style={secondaryButton}>Sair</button>
