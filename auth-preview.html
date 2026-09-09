@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>Planes OS · Homologação IAM</title>
   <style>
-    *{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 10% 20%,#f7f9fb 0%,#e5eaf0 90%);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827}.card{width:min(94vw,520px);background:#fff;border:1px solid #e2e8f0;border-radius:28px;padding:32px;box-shadow:0 24px 70px rgba(15,23,42,.14)}.brand{font-size:12px;font-weight:900;letter-spacing:.16em}.muted{color:#64748b;line-height:1.55}.grid{display:grid;gap:12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.input,.btn{width:100%;height:48px;border-radius:14px;font:inherit}.input{border:1px solid #dbe2ea;padding:0 14px}.btn{border:0;background:#111827;color:#fff;font-weight:800;cursor:pointer}.btn.secondary{background:#fff;color:#111827;border:1px solid #dbe2ea}.status{margin-top:16px;padding:13px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:13px;white-space:pre-wrap}.good{background:#f0fdf4;border-color:#bbf7d0;color:#166534}.warn{background:#fffbeb;border-color:#fde68a;color:#854d0e}.bad{background:#fff1f2;border-color:#fecdd3;color:#9f1239}.hide{display:none}code{font-size:12px;word-break:break-all}h1{font-size:28px;letter-spacing:-.04em;margin:10px 0 8px}@media(max-width:520px){.row{grid-template-columns:1fr}.card{padding:24px;border-radius:22px}}
+    *{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 10% 20%,#f7f9fb 0%,#e5eaf0 90%);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827}.card{width:min(94vw,520px);background:#fff;border:1px solid #e2e8f0;border-radius:28px;padding:32px;box-shadow:0 24px 70px rgba(15,23,42,.14)}.brand{font-size:12px;font-weight:900;letter-spacing:.16em}.muted{color:#64748b;line-height:1.55}.grid{display:grid;gap:12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.input,.btn{width:100%;height:48px;border-radius:14px;font:inherit}.input{border:1px solid #dbe2ea;padding:0 14px}.btn{border:0;background:#111827;color:#fff;font-weight:800;cursor:pointer}.btn.secondary{background:#fff;color:#111827;border:1px solid #dbe2ea}.btn:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:16px;padding:13px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:13px;white-space:pre-wrap}.good{background:#f0fdf4;border-color:#bbf7d0;color:#166534}.warn{background:#fffbeb;border-color:#fde68a;color:#854d0e}.bad{background:#fff1f2;border-color:#fecdd3;color:#9f1239}.hide{display:none}h1{font-size:28px;letter-spacing:-.04em;margin:10px 0 8px}@media(max-width:520px){.row{grid-template-columns:1fr}.card{padding:24px;border-radius:22px}}
   </style>
 </head>
 <body>
@@ -16,19 +16,21 @@
 
     <section id="authBox">
       <h1>Validar acesso real</h1>
-      <p class="muted">Use a conta que será administradora do Planes OS. O cadastro é processado diretamente pelo novo Supabase de produção.</p>
-      <div class="row" style="margin-bottom:12px">
-        <button class="btn secondary" id="googleBtn">Continuar com Google</button>
-        <button class="btn secondary" id="appleBtn">Continuar com Apple</button>
+      <p class="muted">Esta página lê a configuração pública do Supabase em tempo real e só exibe métodos realmente habilitados.</p>
+      <div id="passkeyWrap" class="hide" style="margin-bottom:12px"><button class="btn" id="passkeyBtn">Entrar com Face ID / Passkey</button></div>
+      <div id="socialWrap" class="row hide" style="margin-bottom:12px">
+        <button class="btn secondary hide" id="googleBtn">Continuar com Google</button>
+        <button class="btn secondary hide" id="appleBtn">Continuar com Apple</button>
       </div>
       <form id="form" class="grid">
         <input class="input" id="email" type="email" autocomplete="email" placeholder="E-mail" required />
-        <input class="input" id="password" type="password" minlength="8" autocomplete="current-password" placeholder="Senha (mínimo 8 caracteres)" required />
+        <input class="input" id="password" type="password" minlength="8" autocomplete="current-password" placeholder="Senha" required />
         <div class="row">
-          <button class="btn" type="submit" data-action="signin">Entrar</button>
+          <button class="btn" type="submit">Entrar</button>
           <button class="btn secondary" type="button" id="signupBtn">Criar cadastro</button>
         </div>
       </form>
+      <div id="providerStatus" class="status">Consultando providers…</div>
     </section>
 
     <section id="sessionBox" class="hide">
@@ -42,93 +44,79 @@
     </section>
 
     <div id="message" class="status hide"></div>
+    <button id="resendBtn" class="btn secondary hide" style="margin-top:12px">Reenviar confirmação</button>
   </main>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.105.0';
 
-    const supabase = createClient(
-      'https://xfgcbxppsbwmxwsuajou.supabase.co',
-      'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS',
-      { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
-    );
+    const SUPABASE_URL='https://xfgcbxppsbwmxwsuajou.supabase.co';
+    const SUPABASE_KEY='sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
+    const REDIRECT_TO='https://armidiasintegradas.github.io/planes/auth-preview.html';
+    const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce',experimental:{passkey:true}}});
 
-    const $ = (id) => document.getElementById(id);
-    const authBox = $('authBox');
-    const sessionBox = $('sessionBox');
-    const message = $('message');
-    const redirectTo = window.location.href.split('#')[0].split('?')[0];
-    let currentUserId = null;
-    let profileChannel = null;
+    const $=(id)=>document.getElementById(id);
+    const authBox=$('authBox'),sessionBox=$('sessionBox'),message=$('message');
+    let currentUserId=null,profileChannel=null,confirmationEmail='',capabilities={email:true,google:false,apple:false,passkeys:false};
 
-    function showMessage(text, kind='') {
-      message.className = `status ${kind}`.trim();
-      message.textContent = text;
-    }
-    function clearMessage(){ message.className='status hide'; message.textContent=''; }
+    function showMessage(text,kind=''){message.className=`status ${kind}`.trim();message.textContent=text}
+    function clearMessage(){message.className='status hide';message.textContent='';$('resendBtn').classList.add('hide')}
+    function strongPassword(value){return value.length>=12&&/[a-z]/.test(value)&&/[A-Z]/.test(value)&&/[0-9]/.test(value)&&/[^A-Za-z0-9]/.test(value)}
 
-    async function loadProfile(userId) {
-      const { data, error } = await supabase.from('profiles').select('id,email,full_name,status,role,approved_at,created_at').eq('id', userId).single();
-      const box = $('profileStatus');
-      if (error) {
-        box.className='status bad';
-        box.textContent=`Falha ao carregar perfil: ${error.message}`;
-        return;
+    async function loadSettings(){
+      try{
+        const response=await fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_KEY}});
+        if(!response.ok)throw new Error(`HTTP ${response.status}`);
+        const settings=await response.json();
+        capabilities={email:settings.external?.email===true,google:settings.external?.google===true,apple:settings.external?.apple===true,passkeys:settings.passkeys_enabled===true};
+        $('googleBtn').classList.toggle('hide',!capabilities.google);
+        $('appleBtn').classList.toggle('hide',!capabilities.apple);
+        $('socialWrap').classList.toggle('hide',!(capabilities.google||capabilities.apple));
+        $('passkeyWrap').classList.toggle('hide',!capabilities.passkeys);
+        $('providerStatus').className=`status ${capabilities.passkeys||capabilities.google||capabilities.apple?'good':'warn'}`;
+        $('providerStatus').textContent=`E-mail: ${capabilities.email?'ativo':'desligado'}\nGoogle: ${capabilities.google?'ativo':'desligado'}\nApple: ${capabilities.apple?'ativo':'desligado'}\nPasskeys: ${capabilities.passkeys?'ativas':'desligadas'}`;
+      }catch(error){
+        $('providerStatus').className='status bad';$('providerStatus').textContent=`Não foi possível consultar providers: ${error.message}`;
       }
-      const role = data.role || 'não definido';
-      box.className = `status ${data.status === 'approved' ? 'good' : data.status === 'pending' ? 'warn' : 'bad'}`;
-      box.textContent = `Status: ${data.status}\nPerfil: ${role}\nE-mail: ${data.email}`;
     }
 
-    async function renderSession(session) {
+    async function loadProfile(userId){
+      const {data,error}=await supabase.from('profiles').select('id,email,full_name,status,role,approved_at,created_at').eq('id',userId).single();
+      const box=$('profileStatus');
+      if(error){box.className='status bad';box.textContent=`Falha ao carregar perfil: ${error.message}`;return}
+      box.className=`status ${data.status==='approved'?'good':data.status==='pending'?'warn':'bad'}`;
+      box.textContent=`Status: ${data.status}\nPerfil: ${data.role||'não definido'}\nE-mail: ${data.email}`;
+    }
+
+    async function renderSession(session){
       clearMessage();
-      if (!session?.user) {
-        currentUserId=null;
-        authBox.classList.remove('hide');
-        sessionBox.classList.add('hide');
-        if (profileChannel) { await supabase.removeChannel(profileChannel); profileChannel=null; }
-        return;
-      }
-      currentUserId=session.user.id;
-      authBox.classList.add('hide');
-      sessionBox.classList.remove('hide');
-      $('who').textContent = `Usuário: ${session.user.email || session.user.id}`;
-      await loadProfile(session.user.id);
-      if (profileChannel) await supabase.removeChannel(profileChannel);
-      profileChannel = supabase.channel(`auth-preview-profile-${session.user.id}`)
-        .on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles',filter:`id=eq.${session.user.id}`},()=>loadProfile(session.user.id))
-        .subscribe();
+      if(!session?.user){currentUserId=null;authBox.classList.remove('hide');sessionBox.classList.add('hide');if(profileChannel){await supabase.removeChannel(profileChannel);profileChannel=null}return}
+      currentUserId=session.user.id;authBox.classList.add('hide');sessionBox.classList.remove('hide');$('who').textContent=`Usuário: ${session.user.email||session.user.id}`;await loadProfile(session.user.id);
+      if(profileChannel)await supabase.removeChannel(profileChannel);
+      profileChannel=supabase.channel(`auth-preview-profile-${session.user.id}`).on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles',filter:`id=eq.${session.user.id}`},()=>loadProfile(session.user.id)).subscribe();
     }
 
-    $('form').addEventListener('submit', async (event) => {
-      event.preventDefault(); clearMessage();
-      const email=$('email').value.trim(), password=$('password').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) showMessage(`Login não concluído: ${error.message}`,'bad');
+    $('form').addEventListener('submit',async(event)=>{event.preventDefault();clearMessage();const email=$('email').value.trim(),password=$('password').value;const{error}=await supabase.auth.signInWithPassword({email,password});if(error)showMessage(`Login não concluído: ${error.message}`,'bad')});
+
+    $('signupBtn').addEventListener('click',async()=>{
+      clearMessage();const email=$('email').value.trim(),password=$('password').value;
+      if(!email||!strongPassword(password)){showMessage('Para novos cadastros use 12+ caracteres com maiúscula, minúscula, número e símbolo.','warn');return}
+      const{data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:REDIRECT_TO}});
+      if(error){showMessage(`Cadastro não concluído: ${error.message}`,'bad');return}
+      if(!data.session){confirmationEmail=email;showMessage('Cadastro criado. Confira o e-mail de confirmação.','warn');$('resendBtn').classList.remove('hide')}else showMessage('Cadastro criado e sessão iniciada.','good');
     });
 
-    $('signupBtn').addEventListener('click', async () => {
-      clearMessage();
-      const email=$('email').value.trim(), password=$('password').value;
-      if (!email || password.length < 8) { showMessage('Informe um e-mail válido e uma senha com pelo menos 8 caracteres.','warn'); return; }
-      const { data, error } = await supabase.auth.signUp({ email, password, options:{ emailRedirectTo: redirectTo } });
-      if (error) { showMessage(`Cadastro não concluído: ${error.message}`,'bad'); return; }
-      if (!data.session) showMessage('Cadastro criado. Confira o e-mail de confirmação. Depois volte a esta página e entre com a mesma conta.','warn');
-      else showMessage('Cadastro criado e sessão iniciada.','good');
-    });
+    $('resendBtn').addEventListener('click',async()=>{if(!confirmationEmail)return;const{error}=await supabase.auth.resend({type:'signup',email:confirmationEmail,options:{emailRedirectTo:REDIRECT_TO}});showMessage(error?`Reenvio não concluído: ${error.message}`:'Novo e-mail de confirmação solicitado.',error?'bad':'good')});
 
-    async function oauth(provider) {
-      clearMessage();
-      const { error } = await supabase.auth.signInWithOAuth({ provider, options:{ redirectTo } });
-      if (error) showMessage(`${provider === 'google' ? 'Google' : 'Apple'} indisponível: ${error.message}`,'bad');
-    }
+    async function oauth(provider){if(!capabilities[provider])return;clearMessage();const{error}=await supabase.auth.signInWithOAuth({provider,options:{redirectTo:REDIRECT_TO}});if(error)showMessage(`${provider} não pôde iniciar: ${error.message}`,'bad')}
     $('googleBtn').addEventListener('click',()=>oauth('google'));
     $('appleBtn').addEventListener('click',()=>oauth('apple'));
-    $('refreshBtn').addEventListener('click',()=>currentUserId && loadProfile(currentUserId));
+    $('passkeyBtn').addEventListener('click',async()=>{if(!capabilities.passkeys)return;clearMessage();const{error}=await supabase.auth.signInWithPasskey();if(error)showMessage(`Passkey não pôde autenticar: ${error.message}`,'bad')});
+    $('refreshBtn').addEventListener('click',()=>currentUserId&&loadProfile(currentUserId));
     $('logoutBtn').addEventListener('click',()=>supabase.auth.signOut());
 
-    const { data:{ session } } = await supabase.auth.getSession();
-    await renderSession(session);
+    await loadSettings();
+    const{data:{session}}=await supabase.auth.getSession();await renderSession(session);
     supabase.auth.onAuthStateChange((_event,nextSession)=>setTimeout(()=>renderSession(nextSession),0));
   </script>
 </body>
