@@ -81,6 +81,22 @@ test('auth gate always bypasses cache when reading live provider settings', asyn
   assert.match(source, /Date\.now\(\)/);
 });
 
+test('production Pages adapter enforces the homologated Google-first IAM contract', async () => {
+  const source = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
+  assert.match(source, /auth\/v1\/settings\?ts=/);
+  assert.match(source, /cache\s*:\s*['"]no-store['"]/);
+  assert.match(source, /signInWithOAuth/);
+  assert.match(source, /provider\s*:\s*['"]google['"]/);
+  assert.match(source, /profiles/);
+  assert.match(source, /pending/);
+  assert.match(source, /approved/);
+  assert.match(source, /rejected/);
+  assert.match(source, /suspended/);
+  assert.match(source, /postgres_changes/);
+  assert.match(source, /https:\/\/armidiasintegradas\.github\.io\/planes\//);
+  assert.doesNotMatch(source, /\.signUp\s*\(/);
+});
+
 test('account security page supports passkey enrollment and management', async () => {
   const source = await readFile(new URL('../app/account/security/page.tsx', import.meta.url), 'utf8');
   assert.match(source, /registerPasskey/);
