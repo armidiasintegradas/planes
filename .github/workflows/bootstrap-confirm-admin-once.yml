@@ -1,0 +1,27 @@
+name: Bootstrap confirm Planes admin once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/bootstrap-confirm-admin-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm bootstrap admin email once
+        run: |
+          set -euo pipefail
+          response=$(curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{}' \
+            'https://xfgcbxppsbwmxwsuajou.supabase.co/functions/v1/bootstrap-confirm-admin-once')
+          echo "$response"
+          echo "$response" | grep -Eq '"status":"(confirmed|already_confirmed)"'
