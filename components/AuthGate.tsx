@@ -92,7 +92,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    void supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       const currentSession = data.session;
       setSession(currentSession);
@@ -100,13 +100,22 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       if (active) setLoading(false);
     });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return;
       setSession(nextSession);
       setMessage('');
-      if (nextSession?.user) await loadProfile(nextSession.user.id);
-      else setProfile(null);
-      if (active) setLoading(false);
+      setLoading(Boolean(nextSession?.user));
+      if (nextSession?.user) {
+        window.setTimeout(() => {
+          if (!active) return;
+          void loadProfile(nextSession.user.id).finally(() => {
+            if (active) setLoading(false);
+          });
+        }, 0);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -124,7 +133,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
         schema: 'public',
         table: 'profiles',
         filter: `id=eq.${session.user.id}`,
-      }, () => loadProfile(session.user.id))
+      }, () => void loadProfile(session.user.id))
       .subscribe();
 
     return () => {
