@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   PLANES_AUTH_REDIRECT,
@@ -47,4 +48,17 @@ test('accepts a strong signup password', () => {
   const result = validateSignupPassword('Planes#2026Seguro');
   assert.equal(result.ok, true);
   assert.deepEqual(result.errors, []);
+});
+
+test('uses a Supabase client version that supports passkeys', async () => {
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const version = pkg.dependencies['@supabase/supabase-js'];
+  const [major, minor] = version.replace(/^[^0-9]*/, '').split('.').map(Number);
+  assert.equal(major, 2);
+  assert.ok(minor >= 105, `expected @supabase/supabase-js >= 2.105.0, received ${version}`);
+});
+
+test('opts into experimental passkey support in the Supabase client', async () => {
+  const clientSource = await readFile(new URL('../lib/supabase/client.ts', import.meta.url), 'utf8');
+  assert.match(clientSource, /experimental\s*:\s*\{\s*passkey\s*:\s*true\s*\}/s);
 });
