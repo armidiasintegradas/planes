@@ -63,13 +63,16 @@ test('opts into experimental passkey support in the Supabase client', async () =
   assert.match(clientSource, /experimental\s*:\s*\{\s*passkey\s*:\s*true\s*\}/s);
 });
 
-test('auth gate uses live provider settings, strong signup policy, resend and passkey sign-in', async () => {
+test('auth gate is Google-first with admin email fallback and no public email signup', async () => {
   const source = await readFile(new URL('../components/AuthGate.tsx', import.meta.url), 'utf8');
   assert.match(source, /getAuthCapabilities/);
-  assert.match(source, /validateSignupPassword/);
   assert.match(source, /auth\/v1\/settings/);
-  assert.match(source, /auth\.resend/);
+  assert.match(source, /Continuar com Google/);
+  assert.match(source, /Acesso administrativo de contingência/);
   assert.match(source, /signInWithPasskey/);
+  assert.doesNotMatch(source, /auth\.signUp\s*\(/);
+  assert.doesNotMatch(source, /handleOAuth\('apple'\)/);
+  assert.doesNotMatch(source, /Solicitar cadastro/);
 });
 
 test('account security page supports passkey enrollment and management', async () => {
