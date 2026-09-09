@@ -62,3 +62,19 @@ test('opts into experimental passkey support in the Supabase client', async () =
   const clientSource = await readFile(new URL('../lib/supabase/client.ts', import.meta.url), 'utf8');
   assert.match(clientSource, /experimental\s*:\s*\{\s*passkey\s*:\s*true\s*\}/s);
 });
+
+test('auth gate uses live provider settings, strong signup policy, resend and passkey sign-in', async () => {
+  const source = await readFile(new URL('../components/AuthGate.tsx', import.meta.url), 'utf8');
+  assert.match(source, /getAuthCapabilities/);
+  assert.match(source, /validateSignupPassword/);
+  assert.match(source, /auth\/v1\/settings/);
+  assert.match(source, /auth\.resend/);
+  assert.match(source, /signInWithPasskey/);
+});
+
+test('account security page supports passkey enrollment and management', async () => {
+  const source = await readFile(new URL('../app/account/security/page.tsx', import.meta.url), 'utf8');
+  assert.match(source, /registerPasskey/);
+  assert.match(source, /passkey\.list/);
+  assert.match(source, /passkey\.delete/);
+});
