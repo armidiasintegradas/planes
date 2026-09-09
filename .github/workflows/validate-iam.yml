@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -36,6 +36,6 @@ jobs:
 
       - name: Verify isolated auth preview
         run: |
-          curl --fail --silent --show-error --retry 6 --retry-delay 5 \
+          curl --fail --silent --show-error --retry 6 --retry-delay 5 --retry-all-errors \
             https://armidiasintegradas.github.io/planes/auth-preview.html \
             | grep -q "PLANES OS · HOMOLOGAÇÃO IAM"
