@@ -1,0 +1,121 @@
+name: Publish Planes live auth
+
+on:
+  push:
+    branches:
+      - feat/planes-iam-real
+    paths:
+      - public/auth-gate-live.js
+      - .github/workflows/publish-live-auth.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: planes-live-auth-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout authenticated source
+        uses: actions/checkout@v4
+        with:
+          ref: feat/planes-iam-real
+          path: source
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Validate source before publication
+        working-directory: source
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npm test
+          npm run build
+
+      - name: Checkout current GitHub Pages artifact
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Copy production auth module
+        run: |
+          set -euo pipefail
+          cp source/public/auth-gate-live.js site/auth-gate-live.js
+
+      - name: Inject auth bootstrap without replacing current site
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path('site/index.html')
+          html = path.read_text(encoding='utf-8')
+          start = '<!-- PLANES_AUTH_GATE_START -->'
+          end = '<!-- PLANES_AUTH_GATE_END -->'
+
+          existing = re.compile(re.escape(start) + r'.*?' + re.escape(end), re.S)
+          html = existing.sub('', html)
+
+          version = os.environ.get('SOURCE_SHA', 'live-auth')[:12]
+          block = f'''{start}
+          <style id="planes-auth-bootstrap">
+            html.planes-auth-loading body{{visibility:hidden!important}}
+            html.planes-auth-blocked body{{visibility:visible!important}}
+            html.planes-auth-blocked body>*:not(#planes-auth-root){{visibility:hidden!important;pointer-events:none!important}}
+            html.planes-auth-blocked #planes-auth-root{{visibility:visible!important;pointer-events:auto!important}}
+          </style>
+          <script>document.documentElement.classList.add('planes-auth-loading');</script>
+          <script type="module" src="./auth-gate-live.js?v={version}"></script>
+          {end}'''
+
+          if '</head>' not in html:
+              raise SystemExit('index.html has no </head> marker; refusing to publish')
+
+          html = html.replace('</head>', block + '\n</head>', 1)
+
+          if html.count(start) != 1 or html.count(end) != 1:
+              raise SystemExit('auth bootstrap marker count is not exactly one')
+          if './auth-gate-live.js?v=' not in html:
+              raise SystemExit('auth module reference missing after patch')
+
+          path.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Verify production artifact integrity
+        run: |
+          set -euo pipefail
+          test -s site/index.html
+          test -s site/auth-gate-live.js
+          test "$(grep -o 'PLANES_AUTH_GATE_START' site/index.html | wc -l | tr -d ' ')" = "1"
+          test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
+          grep -q 'auth-gate-live.js?v=' site/index.html
+          grep -q 'signInWithOAuth' site/auth-gate-live.js
+          grep -q "provider: 'google'" site/auth-gate-live.js
+
+      - name: Publish to gh-pages
+        working-directory: site
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html auth-gate-live.js
+          if git diff --cached --quiet; then
+            echo "No Pages changes to publish."
+            exit 0
+          fi
+          git commit -m "feat: protect live Planes with Supabase auth"
+          git push origin HEAD:gh-pages
