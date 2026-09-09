@@ -7,10 +7,12 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
+    "test": "node --test tests/auth-security.test.mjs",
     "lint": "oxlint",
     "format": "oxfmt"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.105.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-server-dom-webpack": "19.2.6",
