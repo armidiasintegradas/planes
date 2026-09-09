@@ -105,7 +105,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    void fetch(`${supabaseUrl}/auth/v1/settings`, {
+    void fetch(`${supabaseUrl}/auth/v1/settings?ts=${Date.now()}`, {
+      cache: 'no-store',
       headers: { apikey: supabasePublishableKey },
     })
       .then(async (response) => {
