@@ -3,7 +3,7 @@ name: Publish Planes live auth
 on:
   push:
     branches:
-      - feat/planes-iam-real
+      - main
     paths:
       - public/auth-gate-live.js
       - .github/workflows/publish-live-auth.yml
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout authenticated source
         uses: actions/checkout@v4
         with:
-          ref: feat/planes-iam-real
+          ref: main
           path: source
 
       - name: Setup Node
@@ -105,6 +105,10 @@ jobs:
           grep -q 'auth-gate-live.js?v=' site/index.html
           grep -q 'signInWithOAuth' site/auth-gate-live.js
           grep -q "provider: 'google'" site/auth-gate-live.js
+          grep -q 'signInWithPassword' site/auth-gate-live.js
+          grep -q 'signInWithPasskey' site/auth-gate-live.js
+          grep -q 'registerPasskey' site/auth-gate-live.js
+          grep -q 'passkeys_enabled' site/auth-gate-live.js
 
       - name: Publish to gh-pages
         working-directory: site
@@ -117,5 +121,5 @@ jobs:
             echo "No Pages changes to publish."
             exit 0
           fi
-          git commit -m "feat: protect live Planes with Supabase auth"
+          git commit -m "feat: expose three-login Planes auth"
           git push origin HEAD:gh-pages
