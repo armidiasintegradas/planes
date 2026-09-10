@@ -5,6 +5,7 @@ const SUPABASE_KEY = 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
 const REDIRECT_TO = 'https://armidiasintegradas.github.io/planes/';
 const ROOT_ID = 'planes-auth-root';
 const STYLE_ID = 'planes-auth-live-style';
+const PASSKEY_DISMISS_KEY = 'planes-passkey-offer-dismissed';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -12,11 +13,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
+    experimental: { passkey: true },
   },
 });
 
 let profileChannel = null;
-let capabilities = { email: true, google: false };
+let capabilities = { email: true, google: false, passkeys: false };
 
 function escapeHtml(value = '') {
   return String(value)
@@ -43,8 +45,11 @@ function ensureStyles() {
     #${ROOT_ID} .planes-auth-input{border:1px solid #dbe2ea;padding:0 14px;background:#fff;color:#111827}
     #${ROOT_ID} .planes-auth-btn{border:0;background:#111827;color:#fff;font-weight:800;cursor:pointer}
     #${ROOT_ID} .planes-auth-btn.secondary{background:#fff;color:#111827;border:1px solid #dbe2ea}
+    #${ROOT_ID} .planes-auth-btn.passkey{background:#d4ff00;color:#111827;border:1px solid #c4ed00}
     #${ROOT_ID} .planes-auth-btn.link{background:transparent;color:#475569;height:auto;padding:10px}
     #${ROOT_ID} .planes-auth-btn:disabled{opacity:.55;cursor:not-allowed}
+    #${ROOT_ID} .planes-auth-divider{display:flex;align-items:center;gap:10px;color:#94a3b8;font-size:11px;margin:13px 0}
+    #${ROOT_ID} .planes-auth-divider:before,#${ROOT_ID} .planes-auth-divider:after{content:"";height:1px;background:#e2e8f0;flex:1}
     #${ROOT_ID} .planes-auth-status{margin-top:16px;padding:13px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:13px;white-space:pre-wrap;line-height:1.5}
     #${ROOT_ID} .planes-auth-good{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
     #${ROOT_ID} .planes-auth-warn{background:#fffbeb;border-color:#fde68a;color:#854d0e}
@@ -103,22 +108,41 @@ async function loadCapabilities() {
     capabilities = {
       email: settings.external?.email === true,
       google: settings.external?.google === true,
+      passkeys: settings.passkeys_enabled === true,
     };
   } catch {
-    capabilities = { email: true, google: false };
+    capabilities = { email: true, google: false, passkeys: false };
   }
   return capabilities;
+}
+
+async function handlePasskeySignIn(node) {
+  const button = node.querySelector('[data-passkey]');
+  if (!capabilities.passkeys || !button) return;
+  button.disabled = true;
+  button.textContent = 'Verificando dispositivo…';
+  const { error } = await supabase.auth.signInWithPasskey();
+  if (error) {
+    button.disabled = false;
+    button.textContent = 'Entrar com Face ID / Passkey';
+    renderMessage(node, `Passkey não pôde autenticar: ${error.message}`, 'planes-auth-bad');
+  }
 }
 
 function renderLogin() {
   const googleLabel = capabilities.google ? 'Continuar com Google' : 'Google temporariamente indisponível';
   const providerText = capabilities.google
-    ? 'Google está habilitado. No primeiro acesso, sua conta ficará pendente até aprovação do administrador.'
+    ? 'Primeiro acesso: use o Google. Depois da aprovação, você pode ativar Face ID / Passkey para entrar mais rápido.'
     : 'Não foi possível confirmar o provider Google agora. O acesso administrativo de contingência continua disponível.';
+
+  const passkeyButton = capabilities.passkeys
+    ? '<button class="planes-auth-btn passkey" data-passkey>Entrar com Face ID / Passkey</button><div class="planes-auth-divider">ou</div>'
+    : '';
 
   const node = renderShell(`
     <h1>Entrar no Planes OS</h1>
-    <p class="planes-auth-muted">O acesso de usuários é feito pelo Google. Contas novas só entram no sistema depois da aprovação de um administrador.</p>
+    <p class="planes-auth-muted">A forma mais rápida para usuários novos é o Google. Usuários que já cadastraram uma Passkey podem entrar sem digitar e-mail ou senha.</p>
+    ${passkeyButton}
     <button class="planes-auth-btn" data-google ${capabilities.google ? '' : 'disabled'}>${googleLabel}</button>
     <p class="planes-auth-muted" style="font-size:12px;margin:10px 0 0">${providerText}</p>
     <button class="planes-auth-btn link" data-admin-toggle style="margin-top:12px">Acesso administrativo de contingência</button>
@@ -132,6 +156,8 @@ function renderLogin() {
     </div>
     <div class="planes-auth-status planes-auth-hide" data-auth-message></div>
   `);
+
+  node.querySelector('[data-passkey]')?.addEventListener('click', () => void handlePasskeySignIn(node));
 
   node.querySelector('[data-google]')?.addEventListener('click', async () => {
     if (!capabilities.google) return;
@@ -173,7 +199,7 @@ function renderPending(user, profile) {
   const node = renderShell(`
     <div style="display:inline-flex;padding:7px 11px;border-radius:999px;background:#fff7d6;color:#8a6400;font-size:12px;font-weight:700;margin-bottom:18px">AGUARDANDO AUTORIZAÇÃO</div>
     <h1>Solicitação recebida.</h1>
-    <p class="planes-auth-muted">Sua identidade Google foi validada. O acesso ao Planes OS está aguardando autorização do administrador.</p>
+    <p class="planes-auth-muted">Sua identidade foi validada. O acesso ao Planes OS está aguardando autorização do administrador.</p>
     <div class="planes-auth-status planes-auth-warn">Status: pending\nE-mail: ${escapeHtml(profile?.email || user.email || '')}</div>
     <div class="planes-auth-grid" style="margin-top:14px">
       <button class="planes-auth-btn" data-refresh>Atualizar status</button>
@@ -204,6 +230,40 @@ function renderProfileError(user, message) {
     <button class="planes-auth-btn secondary" data-logout style="margin-top:14px">Sair</button>
   `);
   node.querySelector('[data-logout]')?.addEventListener('click', () => void supabase.auth.signOut());
+}
+
+function renderPasskeyOffer(user, profile) {
+  const node = renderShell(`
+    <div style="display:inline-flex;padding:7px 11px;border-radius:999px;background:#ecfccb;color:#365314;font-size:12px;font-weight:800;margin-bottom:18px">ACESSO APROVADO</div>
+    <h1>Ative o acesso mais rápido.</h1>
+    <p class="planes-auth-muted">Cadastre uma Passkey para os próximos acessos. Dependendo do dispositivo, você poderá usar Face ID, Touch ID, Windows Hello ou o gerenciador de senhas.</p>
+    <div class="planes-auth-status planes-auth-good">Perfil: ${escapeHtml(profile.role || 'aprovado')}\nE-mail: ${escapeHtml(profile.email || user.email || '')}</div>
+    <div class="planes-auth-grid" style="margin-top:16px">
+      <button class="planes-auth-btn passkey" data-register-passkey>Cadastrar Face ID / Passkey</button>
+      <button class="planes-auth-btn secondary" data-passkey-later>Agora não</button>
+    </div>
+    <div class="planes-auth-status planes-auth-hide" data-auth-message></div>
+  `);
+
+  node.querySelector('[data-register-passkey]')?.addEventListener('click', async () => {
+    const button = node.querySelector('[data-register-passkey]');
+    button.disabled = true;
+    button.textContent = 'Abrindo segurança do dispositivo…';
+    const { error } = await supabase.auth.registerPasskey();
+    if (error) {
+      button.disabled = false;
+      button.textContent = 'Cadastrar Face ID / Passkey';
+      renderMessage(node, `Não foi possível cadastrar a Passkey: ${error.message}`, 'planes-auth-bad');
+      return;
+    }
+    localStorage.removeItem(PASSKEY_DISMISS_KEY);
+    allowApp();
+  });
+
+  node.querySelector('[data-passkey-later]')?.addEventListener('click', () => {
+    localStorage.setItem(PASSKEY_DISMISS_KEY, '1');
+    allowApp();
+  });
 }
 
 async function subscribeProfile(userId) {
@@ -244,6 +304,14 @@ async function evaluateSession(session) {
   await subscribeProfile(user.id);
 
   if (profile.status === 'approved') {
+    if (capabilities.passkeys) {
+      const { data: passkeys, error: passkeyError } = await supabase.auth.passkey.list();
+      const dismissed = localStorage.getItem(PASSKEY_DISMISS_KEY) === '1';
+      if (!passkeyError && Array.isArray(passkeys) && passkeys.length === 0 && !dismissed) {
+        renderPasskeyOffer(user, profile);
+        return;
+      }
+    }
     allowApp();
     return;
   }
@@ -275,7 +343,7 @@ async function boot() {
 void boot().catch((error) => {
   const node = renderShell(`
     <h1>Não foi possível iniciar o acesso seguro</h1>
-    <p class="planes-auth-muted">Tente recarregar a página. Se o problema persistir, use o ambiente de homologação ou contate o administrador.</p>
+    <p class="planes-auth-muted">Tente recarregar a página. Se o problema persistir, use o acesso administrativo de contingência ou contate o administrador.</p>
     <div class="planes-auth-status planes-auth-bad">${escapeHtml(error?.message || 'Erro inesperado.')}</div>
   `);
   blockApp();
