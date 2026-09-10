@@ -1,26 +1,21 @@
 /*
- * Planes OS — mobile-only production layout corrections.
- * Keep this file narrowly scoped so the approved desktop experience is untouched.
+ * Planes OS — narrowly scoped production layout correction.
+ * Status pills inside tables must remain one atomic visual unit on desktop and mobile.
+ * No structural, spacing or general desktop styles are changed here.
  */
-@media (max-width: 767px) {
-  /*
-   * Generic responsive table rules allow inline badge decorations to fragment
-   * across line boxes. Status pills must remain a single visual unit.
-   */
-  table td [class~="rounded-full"][class*="emerald"],
-  table td [class~="rounded-full"][class*="green"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    flex-wrap: nowrap !important;
-    white-space: nowrap !important;
-    overflow-wrap: normal !important;
-    word-break: keep-all !important;
-    width: max-content !important;
-    max-width: none !important;
-  }
+table td [class~="rounded-full"][class*="emerald"],
+table td [class~="rounded-full"][class*="green"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: keep-all !important;
+  width: max-content !important;
+  max-width: none !important;
+}
 
-  table td [class~="rounded-full"][class*="emerald"] > *,
-  table td [class~="rounded-full"][class*="green"] > * {
-    flex-shrink: 0 !important;
-  }
+table td [class~="rounded-full"][class*="emerald"] > *,
+table td [class~="rounded-full"][class*="green"] > * {
+  flex-shrink: 0 !important;
 }
