@@ -63,13 +63,14 @@ test('opts into experimental passkey support in the Supabase client', async () =
   assert.match(clientSource, /experimental\s*:\s*\{\s*passkey\s*:\s*true\s*\}/s);
 });
 
-test('auth gate is Google-first with admin email fallback and no public email signup', async () => {
+test('auth gate is Google-first with passkey and admin email fallback', async () => {
   const source = await readFile(new URL('../components/AuthGate.tsx', import.meta.url), 'utf8');
   assert.match(source, /getAuthCapabilities/);
   assert.match(source, /auth\/v1\/settings/);
   assert.match(source, /Continuar com Google/);
   assert.match(source, /Acesso administrativo de contingência/);
   assert.match(source, /signInWithPasskey/);
+  assert.match(source, /registerPasskey/);
   assert.doesNotMatch(source, /auth\.signUp\s*\(/);
   assert.doesNotMatch(source, /handleOAuth\('apple'\)/);
   assert.doesNotMatch(source, /Solicitar cadastro/);
@@ -81,12 +82,18 @@ test('auth gate always bypasses cache when reading live provider settings', asyn
   assert.match(source, /Date\.now\(\)/);
 });
 
-test('production Pages adapter enforces the homologated Google-first IAM contract', async () => {
+test('production Pages adapter supports the three-login contract', async () => {
   const source = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
   assert.match(source, /auth\/v1\/settings\?ts=/);
   assert.match(source, /cache\s*:\s*['"]no-store['"]/);
+  assert.match(source, /experimental\s*:\s*\{\s*passkey\s*:\s*true\s*\}/s);
+  assert.match(source, /passkeys_enabled/);
+  assert.match(source, /signInWithPasskey/);
+  assert.match(source, /registerPasskey/);
+  assert.match(source, /passkey\.list/);
   assert.match(source, /signInWithOAuth/);
   assert.match(source, /provider\s*:\s*['"]google['"]/);
+  assert.match(source, /signInWithPassword/);
   assert.match(source, /profiles/);
   assert.match(source, /pending/);
   assert.match(source, /approved/);
@@ -95,12 +102,15 @@ test('production Pages adapter enforces the homologated Google-first IAM contrac
   assert.match(source, /postgres_changes/);
   assert.match(source, /https:\/\/armidiasintegradas\.github\.io\/planes\//);
   assert.doesNotMatch(source, /\.signUp\s*\(/);
+  assert.doesNotMatch(source, /provider\s*:\s*['"]apple['"]/);
 });
 
-test('live publisher patches the existing gh-pages artifact idempotently', async () => {
+test('live publisher tracks main and patches gh-pages idempotently', async () => {
   const source = await readFile(new URL('../.github/workflows/publish-live-auth.yml', import.meta.url), 'utf8');
   assert.match(source, /contents\s*:\s*write/);
-  assert.match(source, /ref:\s*feat\/planes-iam-real/);
+  assert.match(source, /branches:\s*\n\s*- main/);
+  assert.match(source, /ref:\s*main/);
+  assert.doesNotMatch(source, /feat\/planes-iam-real/);
   assert.match(source, /ref:\s*gh-pages/);
   assert.match(source, /public\/auth-gate-live\.js/);
   assert.match(source, /PLANES_AUTH_GATE_START/);
