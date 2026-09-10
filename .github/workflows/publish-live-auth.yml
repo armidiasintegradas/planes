@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - public/auth-gate-live.js
+      - public/email-lifecycle-kick-live.js
       - .github/workflows/publish-live-auth.yml
   workflow_dispatch:
 
@@ -48,10 +49,11 @@ jobs:
           ref: gh-pages
           path: site
 
-      - name: Copy production auth module
+      - name: Copy production auth modules
         run: |
           set -euo pipefail
           cp source/public/auth-gate-live.js site/auth-gate-live.js
+          cp source/public/email-lifecycle-kick-live.js site/email-lifecycle-kick-live.js
 
       - name: Inject auth bootstrap without replacing current site
         env:
@@ -80,6 +82,7 @@ jobs:
           </style>
           <script>document.documentElement.classList.add('planes-auth-loading');</script>
           <script type="module" src="./auth-gate-live.js?v={version}"></script>
+          <script type="module" src="./email-lifecycle-kick-live.js?v={version}"></script>
           {end}'''
 
           if '</head>' not in html:
@@ -91,6 +94,8 @@ jobs:
               raise SystemExit('auth bootstrap marker count is not exactly one')
           if './auth-gate-live.js?v=' not in html:
               raise SystemExit('auth module reference missing after patch')
+          if './email-lifecycle-kick-live.js?v=' not in html:
+              raise SystemExit('email lifecycle module reference missing after patch')
 
           path.write_text(html, encoding='utf-8')
           PY
@@ -100,9 +105,12 @@ jobs:
           set -euo pipefail
           test -s site/index.html
           test -s site/auth-gate-live.js
+          test -s site/email-lifecycle-kick-live.js
           test "$(grep -o 'PLANES_AUTH_GATE_START' site/index.html | wc -l | tr -d ' ')" = "1"
           test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
           grep -q 'auth-gate-live.js?v=' site/index.html
+          grep -q 'email-lifecycle-kick-live.js?v=' site/index.html
+          grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
           grep -q 'signInWithOAuth' site/auth-gate-live.js
           grep -q "provider: 'google'" site/auth-gate-live.js
           grep -q 'signInWithPassword' site/auth-gate-live.js
@@ -116,10 +124,10 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html auth-gate-live.js
+          git add index.html auth-gate-live.js email-lifecycle-kick-live.js
           if git diff --cached --quiet; then
             echo "No Pages changes to publish."
             exit 0
           fi
-          git commit -m "feat: expose three-login Planes auth"
+          git commit -m "feat: automate Planes access email lifecycle"
           git push origin HEAD:gh-pages

@@ -17,13 +17,7 @@ test('only exposes providers that Supabase reports as enabled', () => {
     external: { email: true, google: false, apple: false },
     passkeys_enabled: false,
   });
-
-  assert.deepEqual(capabilities, {
-    email: true,
-    google: false,
-    apple: false,
-    passkeys: false,
-  });
+  assert.deepEqual(capabilities, { email: true, google: false, apple: false, passkeys: false });
 });
 
 test('enables passkeys only when Supabase reports them enabled', () => {
@@ -31,7 +25,6 @@ test('enables passkeys only when Supabase reports them enabled', () => {
     external: { email: true, google: true, apple: true },
     passkeys_enabled: true,
   });
-
   assert.equal(capabilities.passkeys, true);
   assert.equal(capabilities.google, true);
   assert.equal(capabilities.apple, true);
@@ -125,4 +118,43 @@ test('account security page supports passkey enrollment and management', async (
   assert.match(source, /registerPasskey/);
   assert.match(source, /passkey\.list/);
   assert.match(source, /passkey\.delete/);
+});
+
+test('transactional email worker is Planes-branded, retryable and secret-safe', async () => {
+  const source = await readFile(new URL('../supabase/functions/planes-email-worker/index.ts', import.meta.url), 'utf8');
+  assert.match(source, /Deno\.env\.get\(['"]RESEND_API_KEY['"]\)/);
+  assert.match(source, /Deno\.env\.get\(['"]PLANES_EMAIL_FROM['"]\)/);
+  assert.match(source, /api\.resend\.com\/emails/);
+  assert.match(source, /private_email_claim_batch/);
+  assert.match(source, /private_email_claim_for_user/);
+  assert.match(source, /private_email_mark_sent/);
+  assert.match(source, /private_email_mark_failed/);
+  assert.match(source, /https:\/\/armidiasintegradas\.github\.io\/planes\/brand\/planes-logo\.png/);
+  assert.match(source, /access_request_received/);
+  assert.match(source, /admin_access_request/);
+  assert.match(source, /access_approved/);
+  assert.match(source, /access_rejected/);
+  assert.match(source, /access_suspended/);
+  assert.match(source, /email_not_configured/);
+  assert.doesNotMatch(source, /re_[A-Za-z0-9_-]{12,}/);
+});
+
+test('email lifecycle kick is invisible, authenticated and separate from auth UI', async () => {
+  const reactKick = await readFile(new URL('../components/EmailLifecycleKick.tsx', import.meta.url), 'utf8');
+  const liveKick = await readFile(new URL('../public/email-lifecycle-kick-live.js', import.meta.url), 'utf8');
+  const layout = await readFile(new URL('../app/layout.tsx', import.meta.url), 'utf8');
+  const publisher = await readFile(new URL('../.github/workflows/publish-live-auth.yml', import.meta.url), 'utf8');
+  assert.match(reactKick, /functions\.invoke\(['"]planes-email-worker['"]/);
+  assert.match(liveKick, /functions\.invoke\(['"]planes-email-worker['"]/);
+  assert.match(reactKick, /return null/);
+  assert.match(layout, /EmailLifecycleKick/);
+  assert.match(publisher, /email-lifecycle-kick-live\.js/);
+});
+
+test('admin review backend kicks email delivery after IAM decision without coupling success', async () => {
+  const source = await readFile(new URL('../supabase/functions/admin-review-access/index.ts', import.meta.url), 'utf8');
+  assert.match(source, /admin_review_access_request/);
+  assert.match(source, /functions\/v1\/planes-email-worker/);
+  assert.match(source, /email kick/i);
+  assert.match(source, /return Response\.json\(\{ ok: true/);
 });
