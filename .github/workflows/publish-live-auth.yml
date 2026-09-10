@@ -7,6 +7,7 @@ on:
     paths:
       - public/auth-gate-live.js
       - public/email-lifecycle-kick-live.js
+      - public/legacy-auth-sanitizer-live.js
       - .github/workflows/publish-live-auth.yml
   workflow_dispatch:
 
@@ -54,6 +55,7 @@ jobs:
           set -euo pipefail
           cp source/public/auth-gate-live.js site/auth-gate-live.js
           cp source/public/email-lifecycle-kick-live.js site/email-lifecycle-kick-live.js
+          cp source/public/legacy-auth-sanitizer-live.js site/legacy-auth-sanitizer-live.js
 
       - name: Inject auth bootstrap without replacing current site
         env:
@@ -81,6 +83,7 @@ jobs:
             html.planes-auth-blocked #planes-auth-root{{visibility:visible!important;pointer-events:auto!important}}
           </style>
           <script>document.documentElement.classList.add('planes-auth-loading');</script>
+          <script type="module" src="./legacy-auth-sanitizer-live.js?v={version}"></script>
           <script type="module" src="./auth-gate-live.js?v={version}"></script>
           <script type="module" src="./email-lifecycle-kick-live.js?v={version}"></script>
           {end}'''
@@ -92,6 +95,8 @@ jobs:
 
           if html.count(start) != 1 or html.count(end) != 1:
               raise SystemExit('auth bootstrap marker count is not exactly one')
+          if './legacy-auth-sanitizer-live.js?v=' not in html:
+              raise SystemExit('legacy auth sanitizer reference missing after patch')
           if './auth-gate-live.js?v=' not in html:
               raise SystemExit('auth module reference missing after patch')
           if './email-lifecycle-kick-live.js?v=' not in html:
@@ -106,10 +111,13 @@ jobs:
           test -s site/index.html
           test -s site/auth-gate-live.js
           test -s site/email-lifecycle-kick-live.js
+          test -s site/legacy-auth-sanitizer-live.js
           test "$(grep -o 'PLANES_AUTH_GATE_START' site/index.html | wc -l | tr -d ' ')" = "1"
           test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
+          grep -q 'legacy-auth-sanitizer-live.js?v=' site/index.html
           grep -q 'auth-gate-live.js?v=' site/index.html
           grep -q 'email-lifecycle-kick-live.js?v=' site/index.html
+          grep -q 'data-planes-legacy-auth-disabled' site/legacy-auth-sanitizer-live.js
           grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
           grep -q 'signInWithOAuth' site/auth-gate-live.js
           grep -q "provider: 'google'" site/auth-gate-live.js
@@ -124,10 +132,10 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html auth-gate-live.js email-lifecycle-kick-live.js
+          git add index.html auth-gate-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js
           if git diff --cached --quiet; then
             echo "No Pages changes to publish."
             exit 0
           fi
-          git commit -m "feat: automate Planes access email lifecycle"
+          git commit -m "fix: keep Planes authentication single-source"
           git push origin HEAD:gh-pages
