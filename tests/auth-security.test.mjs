@@ -126,3 +126,21 @@ test('account security page supports passkey enrollment and management', async (
   assert.match(source, /passkey\.list/);
   assert.match(source, /passkey\.delete/);
 });
+
+test('transactional email worker is Planes-branded, retryable and secret-safe', async () => {
+  const source = await readFile(new URL('../supabase/functions/planes-email-worker/index.ts', import.meta.url), 'utf8');
+  assert.match(source, /Deno\.env\.get\(['"]RESEND_API_KEY['"]\)/);
+  assert.match(source, /Deno\.env\.get\(['"]PLANES_EMAIL_FROM['"]\)/);
+  assert.match(source, /api\.resend\.com\/emails/);
+  assert.match(source, /private_email_claim_batch/);
+  assert.match(source, /private_email_mark_sent/);
+  assert.match(source, /private_email_mark_failed/);
+  assert.match(source, /https:\/\/armidiasintegradas\.github\.io\/planes\/brand\/planes-logo\.png/);
+  assert.match(source, /access_request_received/);
+  assert.match(source, /admin_access_request/);
+  assert.match(source, /access_approved/);
+  assert.match(source, /access_rejected/);
+  assert.match(source, /access_suspended/);
+  assert.match(source, /email_not_configured/);
+  assert.doesNotMatch(source, /re_[A-Za-z0-9_-]{12,}/);
+});
