@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AuthGate from '../components/AuthGate';
+import EmailLifecycleKick from '../components/EmailLifecycleKick';
 
 export const metadata: Metadata = {
   title: 'Planes Gestão | Japaratinga Resort – Expansão 3',
@@ -11,6 +12,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR">
       <body>
+        <EmailLifecycleKick />
         <AuthGate>{children}</AuthGate>
       </body>
     </html>
