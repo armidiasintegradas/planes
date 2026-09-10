@@ -144,3 +144,20 @@ test('transactional email worker is Planes-branded, retryable and secret-safe', 
   assert.match(source, /email_not_configured/);
   assert.doesNotMatch(source, /re_[A-Za-z0-9_-]{12,}/);
 });
+
+test('pending users can only kick email intents associated with their own lifecycle', async () => {
+  const workerSource = await readFile(new URL('../supabase/functions/planes-email-worker/index.ts', import.meta.url), 'utf8');
+  const reactGate = await readFile(new URL('../components/AuthGate.tsx', import.meta.url), 'utf8');
+  const liveGate = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
+  assert.match(workerSource, /private_email_claim_for_user/);
+  assert.match(reactGate, /functions\.invoke\(['"]planes-email-worker['"]/);
+  assert.match(liveGate, /functions\.invoke\(['"]planes-email-worker['"]/);
+});
+
+test('admin review backend kicks email delivery after IAM decision without coupling success', async () => {
+  const source = await readFile(new URL('../supabase/functions/admin-review-access/index.ts', import.meta.url), 'utf8');
+  assert.match(source, /admin_review_access_request/);
+  assert.match(source, /functions\/v1\/planes-email-worker/);
+  assert.match(source, /email kick/i);
+  assert.match(source, /return Response\.json\(\{ ok: true/);
+});
