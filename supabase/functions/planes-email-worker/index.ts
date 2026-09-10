@@ -195,29 +195,42 @@ Deno.serve(async (req: Request) => {
     .select("id,status,role")
     .eq("id", userData.user.id)
     .single();
-  if (!actor || actor.status !== "approved" || !["super_admin", "admin"].includes(actor.role)) {
-    return Response.json({ error: "Administrator authorization required" }, { status: 403, headers });
+  if (!actor) {
+    return Response.json({ error: "Profile required" }, { status: 403, headers });
   }
 
-  let limit = 10;
+  const isAdmin = actor.status === "approved" && ["super_admin", "admin"].includes(actor.role || "");
+  const canSelfKick = ["pending", "approved"].includes(actor.status);
+  if (!isAdmin && !canSelfKick) {
+    return Response.json({ error: "Email lifecycle kick not permitted" }, { status: 403, headers });
+  }
+
+  let limit = isAdmin ? 10 : 5;
   try {
     const body = await req.json();
-    if (Number.isInteger(body?.limit)) limit = Math.max(1, Math.min(25, body.limit));
+    if (Number.isInteger(body?.limit)) limit = Math.max(1, Math.min(isAdmin ? 25 : 10, body.limit));
   } catch {
     // Empty body is valid.
   }
 
   const workerId = `planes-email-worker:${crypto.randomUUID()}`;
-  const { data: claimed, error: claimError } = await adminClient.rpc("private_email_claim_batch", {
-    p_worker: workerId,
-    p_limit: limit,
-  });
-  if (claimError) {
-    console.error("private_email_claim_batch", claimError.code);
+  const claim = isAdmin
+    ? await adminClient.rpc("private_email_claim_batch", {
+        p_worker: workerId,
+        p_limit: limit,
+      })
+    : await adminClient.rpc("private_email_claim_for_user", {
+        p_user_id: userData.user.id,
+        p_worker: workerId,
+        p_limit: limit,
+      });
+
+  if (claim.error) {
+    console.error(isAdmin ? "private_email_claim_batch" : "private_email_claim_for_user", claim.error.code);
     return Response.json({ error: "Unable to claim email batch" }, { status: 500, headers });
   }
 
-  const items = (claimed || []) as QueueItem[];
+  const items = (claim.data || []) as QueueItem[];
   let sent = 0;
   let failed = 0;
 
@@ -271,5 +284,5 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return Response.json({ ok: true, claimed: items.length, sent, failed }, { status: 200, headers });
+  return Response.json({ ok: true, claimed: items.length, sent, failed, mode: isAdmin ? "admin" : "self" }, { status: 200, headers });
 });
