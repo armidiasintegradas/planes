@@ -1,4 +1,4 @@
-name: Publish Planes mobile layout hotfix
+name: Publish Planes status badge layout hotfix
 
 on:
   push:
@@ -42,15 +42,20 @@ jobs:
           npm test
           npm run build
 
-      - name: Validate mobile-only CSS contract
+      - name: Validate table status badge CSS contract
         working-directory: source
         run: |
           set -euo pipefail
           test -s public/live-mobile-layout.css
-          grep -q '@media (max-width: 767px)' public/live-mobile-layout.css
+          grep -q 'table td \[class~="rounded-full"\]\[class\*="emerald"\]' public/live-mobile-layout.css
+          grep -q 'display: inline-flex !important' public/live-mobile-layout.css
           grep -q 'white-space: nowrap !important' public/live-mobile-layout.css
           grep -q 'flex-wrap: nowrap !important' public/live-mobile-layout.css
           grep -q 'overflow-wrap: normal !important' public/live-mobile-layout.css
+          if grep -q '@media (max-width: 767px)' public/live-mobile-layout.css; then
+            echo 'Status badge correction is still mobile-only; desktop reproduction remains unfixed.' >&2
+            exit 1
+          fi
 
       - name: Checkout current GitHub Pages artifact
         uses: actions/checkout@v4
@@ -58,7 +63,7 @@ jobs:
           ref: gh-pages
           path: site
 
-      - name: Copy mobile layout stylesheet
+      - name: Copy status badge layout stylesheet
         run: |
           set -euo pipefail
           cp source/public/live-mobile-layout.css site/live-mobile-layout.css
@@ -78,7 +83,7 @@ jobs:
           end = '<!-- PLANES_MOBILE_LAYOUT_END -->'
 
           html = re.sub(re.escape(start) + r'.*?' + re.escape(end), '', html, flags=re.S)
-          version = os.environ.get('SOURCE_SHA', 'mobile-layout')[:12]
+          version = os.environ.get('SOURCE_SHA', 'status-layout')[:12]
           block = f'''{start}\n<link rel="stylesheet" href="./live-mobile-layout.css?v={version}" />\n{end}'''
 
           if '</head>' not in html:
@@ -87,9 +92,9 @@ jobs:
           html = html.replace('</head>', block + '\n</head>', 1)
 
           if html.count(start) != 1 or html.count(end) != 1:
-              raise SystemExit('mobile layout marker count is not exactly one')
+              raise SystemExit('layout marker count is not exactly one')
           if './live-mobile-layout.css?v=' not in html:
-              raise SystemExit('mobile layout stylesheet reference missing after patch')
+              raise SystemExit('layout stylesheet reference missing after patch')
           if html.count('PLANES_AUTH_GATE_START') != 1 or html.count('PLANES_AUTH_GATE_END') != 1:
               raise SystemExit('existing auth bootstrap changed or missing; refusing to publish')
 
@@ -120,5 +125,5 @@ jobs:
             echo "No Pages changes to publish."
             exit 0
           fi
-          git commit -m "fix: keep mobile status badges aligned"
+          git commit -m "fix: keep table status badges aligned"
           git push origin HEAD:gh-pages
