@@ -1,0 +1,23 @@
+name: Probe Planes auth capabilities once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/auth-capabilities-probe-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read public Supabase Auth settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -H 'apikey: sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS' \
+            'https://xfgcbxppsbwmxwsuajou.supabase.co/auth/v1/settings?ts='"$(date +%s)" \
+            | jq -c '{email:.external.email,google:.external.google,apple:.external.apple,passkeys_enabled:.passkeys_enabled,disable_signup:.disable_signup,mailer_autoconfirm:.mailer_autoconfirm}'
