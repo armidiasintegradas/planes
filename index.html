@@ -8431,6 +8431,30 @@
       };
     }
 
+    async function confirmPendingVoiceMutationFromUI(confirmed) {
+      const summary = realtimeVoicePendingMutation?.summary || 'ação pendente';
+      const result = await executePendingRealtimeVoiceMutation(confirmed);
+
+      if (realtimeVoiceDc?.readyState === 'open') {
+        const message = confirmed
+          ? 'Confirmei pela interface a ação: ' + summary + '. Resultado do Planes: ' + JSON.stringify(result)
+          : 'Cancelei pela interface a ação: ' + summary + '.';
+        sendRealtimeVoiceEvent({
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'input_text', text: message }]
+          }
+        });
+        sendRealtimeVoiceEvent({ type: 'response.create' });
+      }
+
+      if (!confirmed) showToast('Ação por voz cancelada.');
+      render();
+      return result;
+    }
+
     async function executePendingRealtimeVoiceMutation(confirmed) {
       const pending = realtimeVoicePendingMutation;
       if (!pending) {
@@ -12037,17 +12061,42 @@
     function renderAssistantPersonaControl(compact = false) {
       const persona = getAssistantPersona();
       if (!persona) return '';
+      const pending = realtimeVoicePendingMutation;
       return `
-        <section class="${compact ? 'rounded-[18px] p-3' : 'rounded-[20px] p-4'} bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <img src="${getAssistantPersonaAvatar(persona)}" alt="${getAssistantPersonaLabel(persona)}" class="${compact ? 'w-11 h-11' : 'w-14 h-14'} rounded-2xl object-cover object-top border border-slate-200 bg-slate-100 shrink-0" />
-            <div class="min-w-0">
-              <p class="text-[9px] font-black uppercase tracking-wider text-violet-600">Seu assistente</p>
-              <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
-              <p class="text-[10px] text-slate-500">Planes Intelligence · ${getRealtimeVoiceStatusLabel()} · memória desta obra</p>
+        <section class="${compact ? 'rounded-[18px] p-3' : 'rounded-[20px] p-4'} bg-white border border-slate-200 shadow-2xs">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="relative shrink-0">
+                <img src="${getAssistantPersonaAvatar(persona)}" alt="${getAssistantPersonaLabel(persona)}" class="${compact ? 'w-11 h-11' : 'w-14 h-14'} rounded-2xl object-cover object-top border border-slate-200 bg-slate-100" />
+                ${isRealtimeVoiceActive() ? `
+                  <span class="absolute -right-1 -bottom-1 w-4 h-4 rounded-full border-2 border-white ${realtimeVoiceState === 'speaking' ? 'bg-violet-500 animate-pulse' : realtimeVoiceState === 'listening' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}"></span>
+                ` : ''}
+              </div>
+              <div class="min-w-0">
+                <p class="text-[9px] font-black uppercase tracking-wider text-violet-600">Seu assistente</p>
+                <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
+                <p class="text-[10px] text-slate-500">Planes Intelligence · ${getRealtimeVoiceStatusLabel()} · memória desta obra</p>
+              </div>
             </div>
+            <button type="button" onclick="currentUser.assistant_persona=null; render();" class="px-3 py-2 rounded-xl border border-slate-200 text-[10px] font-black text-slate-700 hover:bg-slate-50">Trocar</button>
           </div>
-          <button type="button" onclick="currentUser.assistant_persona=null; render();" class="px-3 py-2 rounded-xl border border-slate-200 text-[10px] font-black text-slate-700 hover:bg-slate-50">Trocar</button>
+
+          ${pending ? `
+            <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <div class="flex items-start gap-2">
+                <span class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-[10px] font-black shrink-0">!</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[9px] font-black uppercase tracking-wider text-amber-700">Aguardando sua confirmação</p>
+                  <p class="text-[11px] font-bold text-slate-900 mt-0.5 leading-snug">${pending.summary}</p>
+                  <p class="text-[9px] text-slate-500 mt-1">Você pode responder por voz ou confirmar aqui.</p>
+                  <div class="mt-2 flex items-center gap-2">
+                    <button type="button" onclick="confirmPendingVoiceMutationFromUI(true)" class="px-3 py-1.5 rounded-lg bg-slate-950 text-white text-[9.5px] font-black">Confirmar</button>
+                    <button type="button" onclick="confirmPendingVoiceMutationFromUI(false)" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-[9.5px] font-black">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
         </section>
       `;
     }
