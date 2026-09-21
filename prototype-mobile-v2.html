@@ -20,6 +20,8 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 .field{display:grid;gap:7px}.field label{font-size:12px;font-weight:800}.field input,.field select{height:48px;border:1px solid var(--line);border-radius:14px;padding:0 13px;background:#fff}
 .step{display:grid;grid-template-columns:34px 1fr;gap:10px}.stepnum{width:34px;height:34px;border-radius:12px;background:var(--navy);color:var(--lime);display:grid;place-items:center;font-weight:900}
 .list{display:grid;gap:10px}.pill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;background:#fff0ee;color:#b42318}.masterdetail{display:grid;gap:12px}
+.internalhead{display:flex;align-items:center;gap:10px}.backbtn{min-width:48px;height:48px;border:1px solid var(--line);background:#fff;border-radius:14px;font-weight:900}.sectiontitle{display:grid;gap:2px}
+.menu-group{display:grid;gap:8px}.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.menu-tile{min-height:88px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px;font-weight:800}.menu-tile small{display:block;color:var(--muted);font-weight:600;margin-top:5px;line-height:1.25}.context-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#eef2f6;color:#475467;font-size:11px;font-weight:800;margin-top:8px}
 .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);padding:8px 8px max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.navitem{border:0;background:transparent;min-height:58px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#667085;font-size:11px;font-weight:800}.navitem.active{background:#f1f5f9;color:var(--navy)}.navitem b{font-size:19px}
 .fab{position:fixed;right:14px;bottom:84px;z-index:55;background:var(--navy);color:#fff;border:0;border-radius:999px;min-height:52px;padding:0 16px;font-weight:900;box-shadow:0 12px 30px rgba(7,21,43,.2)}
 .drawer{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:none;align-items:flex-end}.drawer.open{display:flex}.sheet{background:#fff;width:100%;border-radius:26px 26px 0 0;max-height:78dvh;padding:12px 14px max(18px,env(safe-area-inset-bottom));overflow:auto}.handle{width:44px;height:5px;border-radius:99px;background:#d0d5dd;margin:0 auto 14px}
@@ -39,12 +41,12 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
   <div class="priority"><div class="left"><span class="dot amber"></span><div><strong>Aço CA-50 em atraso</strong><p class="sub">Arena · 1 dia</p></div></div><button class="ghost" onclick="openSheet('intelligenceSheet')">Resolver</button></div>
 </section>
 <section id="plan" class="screen">
-  <div><div class="eyebrow">Planejamento</div><h1>Próximas semanas</h1><p class="sub">Primeiro o que pode travar a produção.</p></div>
+  <div class="internalhead"><button class="backbtn" onclick="showScreen('home')">←</button><div class="sectiontitle"><div class="eyebrow">Planejamento</div><h1>Próximas semanas</h1><p class="sub">Primeiro o que pode travar a produção.</p></div></div>
   <div class="card"><div class="row"><strong>3 restrições podem impactar S+1</strong><span class="pill">Crítico</span></div><p class="sub">Brita priorizou pelo impacto no caminho crítico.</p></div>
   <div class="card"><div class="row"><strong>RFI hidráulico · Shaft 4</strong><span class="pill">S+1</span></div><p class="sub">Aguardando projetista · Torre 1</p><div class="actions" style="margin-top:12px"><button class="primary">Cobrar responsável</button><button class="ghost">Detalhes</button></div></div>
 </section>
 <section id="field" class="screen">
-  <div><div class="eyebrow">Canteiro</div><h1>Registrar atividade</h1><p class="sub">Fluxo rápido para uso com uma mão.</p></div>
+  <div class="internalhead"><button class="backbtn" onclick="showScreen('home')">←</button><div class="sectiontitle"><div class="eyebrow">Canteiro</div><h1>Registrar atividade</h1><p class="sub">Fluxo rápido para uso com uma mão.</p></div></div>
   <div class="card" style="display:grid;gap:14px">
     <div class="step"><div class="stepnum">1</div><div class="field"><label>Onde?</label><select><option>Torre 2</option><option>Arena</option><option>Piscina</option></select></div></div>
     <div class="step"><div class="stepnum">2</div><div class="field"><label>O que foi feito?</label><input value="Reboco"></div></div>
@@ -54,7 +56,7 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
   </div>
 </section>
 <section id="validations" class="screen">
-  <div><div class="eyebrow">Validações</div><h1>2 aguardando você</h1><p class="sub">Revise a evidência e avance para a próxima.</p></div>
+  <div class="internalhead"><button class="backbtn" onclick="showScreen('home')">←</button><div class="sectiontitle"><div class="eyebrow">Validações</div><h1>2 aguardando você</h1><p class="sub">Revise a evidência e avance para a próxima.</p></div></div>
   <div class="masterdetail">
     <div class="list">
       <button class="card" style="text-align:left;width:100%" onclick="selectValidation(0)"><div class="row"><strong>Concretagem · Torre 2</strong><span class="pill">Ontem</span></div><p class="sub">João Ferreira · 15 m³ · GPS confirmado</p></button>
@@ -65,13 +67,56 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 </section>
 </main>
 <button class="fab" onclick="openSheet('intelligenceSheet')">🎙 Brita</button>
-<nav class="bottomnav"><button class="navitem active" data-target="home" onclick="showScreen('home')"><b>⌂</b>Início</button><button class="navitem" data-target="plan" onclick="showScreen('plan')"><b>▦</b>Planejar</button><button class="navitem" data-target="field" onclick="showScreen('field')"><b>⚡</b>Canteiro</button><button class="navitem" data-target="validations" onclick="showScreen('validations')"><b>✓</b>Validar</button></nav>
-<div class="drawer" id="intelligenceSheet" onclick="closeSheet('intelligenceSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow">Planes Intelligence</div><h2>Brita</h2></div><button class="iconbtn" onclick="closeSheet('intelligenceSheet')">✕</button></div><div class="chat" style="margin-top:14px"><div class="msg ai">Oi, Alex. Tô vendo a mesma tela que você. Pode falar comigo normalmente.</div><div class="msg user">O que tá pegando nessa obra hoje?</div><div class="msg ai">Tem duas coisas que merecem atenção: uma validação parada desde ontem e o aço da Arena em atraso. Quer começar por qual?</div></div><div class="actions" style="margin-top:12px"><button class="ghost">Validação</button><button class="ghost">Aço da Arena</button><button class="ghost">Me resume tudo</button></div><div class="composer"><input placeholder="Fala ou escreve do seu jeito..."><button>🎙</button></div></div></div>
+<nav class="bottomnav"><button class="navitem active" data-target="home" onclick="showScreen('home')"><b>⌂</b>Início</button><button class="navitem" data-target="plan" onclick="showScreen('plan')"><b>▦</b>Planejar</button><button class="navitem" data-target="field" onclick="showScreen('field')"><b>⚡</b>Canteiro</button><button class="navitem" data-target="more" onclick="openSheet('moreSheet')"><b>☰</b>Mais</button></nav>
+
+<div class="drawer" id="moreSheet" onclick="closeSheet('moreSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div>
+  <div class="row"><div><div class="eyebrow">Módulos da obra</div><h2>Mais</h2></div><button class="iconbtn" onclick="closeSheet('moreSheet')">✕</button></div>
+  <div class="menu-group" style="margin-top:14px"><div class="eyebrow">Obra</div><div class="menu-grid">
+    <button class="menu-tile" onclick="closeSheet('moreSheet');showScreen('validations')">✓ Validações<small>Revisar evidências e aprovações</small></button>
+    <button class="menu-tile">▣ Suprimentos<small>Materiais, atrasos e pedidos</small></button>
+    <button class="menu-tile">👥 Equipe<small>Contatos e responsáveis</small></button>
+    <button class="menu-tile">✓ Tarefas<small>Pendências e responsáveis</small></button>
+  </div></div>
+  <div class="menu-group" style="margin-top:14px"><div class="eyebrow">Análise</div><div class="menu-grid">
+    <button class="menu-tile">↗ Curva S & PAC<small>Avanço e aderência</small></button>
+    <button class="menu-tile">▤ Relatórios<small>Resumo executivo e mensal</small></button>
+  </div></div>
+  <div class="menu-group" style="margin-top:14px"><div class="eyebrow">Sistema</div><div class="menu-grid">
+    <button class="menu-tile">⛓ Sienge<small>Integrações e pedidos</small></button>
+    <button class="menu-tile">⚙ Gestão<small>Acessos e configurações</small></button>
+  </div></div>
+  <button class="primary" style="width:100%;margin-top:16px" onclick="closeSheet('moreSheet');openSheet('intelligenceSheet')">🎙 Falar com Brita</button>
+</div></div><div class="drawer" id="intelligenceSheet" onclick="closeSheet('intelligenceSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow">Planes Intelligence</div><h2>Brita</h2><span class="context-chip" id="intelligenceContext">● Vendo: Sua obra hoje</span></div><button class="iconbtn" onclick="closeSheet('intelligenceSheet')">✕</button></div><div class="chat" style="margin-top:14px"><div class="msg ai">Oi, Alex. Tô vendo a mesma tela que você. Pode falar comigo normalmente.</div><div class="msg user">O que tá pegando nessa obra hoje?</div><div class="msg ai">Tem duas coisas que merecem atenção: uma validação parada desde ontem e o aço da Arena em atraso. Quer começar por qual?</div></div><div class="actions" style="margin-top:12px"><button class="ghost">Validação</button><button class="ghost">Aço da Arena</button><button class="ghost">Me resume tudo</button><button class="ghost" onclick="simulateEndDay()">Encerrar por hoje</button></div><div class="composer"><input placeholder="Fala ou escreve do seu jeito..."><button>🎙</button></div></div></div>
 <div class="drawer" id="projectSheet" onclick="closeSheet('projectSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><h2>Trocar obra</h2><button class="iconbtn" onclick="closeSheet('projectSheet')">✕</button></div><div class="list" style="margin-top:14px"><button class="card" style="text-align:left"><strong>Reserva da Lagoa</strong><p class="sub">Recife · 61,8%</p></button><button class="card" style="text-align:left"><strong>Mirante do Parque</strong><p class="sub">Recife · 44,2%</p></button></div></div></div>
 <script>
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.target===id));window.scrollTo({top:0,behavior:'smooth'})}
-function openSheet(id){document.getElementById(id).classList.add('open')} function closeSheet(id){document.getElementById(id).classList.remove('open')}
+let currentScreen='home';
+const screenNames={home:'Sua obra hoje',plan:'Planejamento',field:'Canteiro',validations:'Validações'};
+function showScreen(id){
+  currentScreen=id;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.target===id));
+  const ctx=document.getElementById('intelligenceContext');
+  if(ctx) ctx.textContent='● Vendo: '+(screenNames[id]||'Planes');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function openSheet(id){
+  if(id==='intelligenceSheet'){
+    const ctx=document.getElementById('intelligenceContext');
+    if(ctx) ctx.textContent='● Vendo: '+(screenNames[currentScreen]||'Planes');
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeSheet(id){document.getElementById(id).classList.remove('open')}
 function selectValidation(i){document.getElementById('validationDetail').querySelector('h2').textContent=i?'Reboco · Torre 1':'Concretagem · Torre 2'}
-function confirmValidation(){confirm('Vou aprovar esta validação e atualizar o avanço físico. Confirmar?')&&alert('Protótipo: validação aprovada.')}
+function confirmValidation(){confirm('Vou aprovar esta validação e atualizar o avanço físico. É isso?')&&alert('Pronto. Validação aprovada e avanço atualizado.')}
+function simulateEndDay(){
+  const chat=document.querySelector('#intelligenceSheet .chat');
+  const msg=document.createElement('div');
+  msg.className='msg ai';
+  msg.textContent='Fechado por hoje. Deixei a validação pendente e o aço da Arena marcados para retomarmos amanhã cedo. Bom descanso, Alex. Se cuida.';
+  chat.appendChild(msg);
+  chat.scrollTop=chat.scrollHeight;
+}
 </script>
 </div></body></html>
