@@ -159,3 +159,66 @@ table td [class~="rounded-full"][class*="green"] > * {
     letter-spacing: .04em !important;
   }
 }
+
+
+/* PLANES INTELLIGENCE ACTION COCKPIT */
+.planes-intelligence-mobile .intelligence-cockpit-grid > div {
+  min-width: 0;
+}
+
+.planes-intelligence-mobile .intelligence-chat-stream {
+  scroll-margin-bottom: 7rem;
+}
+
+.planes-intelligence-mobile .intelligence-message-text {
+  overflow-wrap: anywhere;
+}
+
+.planes-intelligence-mobile .intelligence-compose {
+  position: sticky;
+  bottom: calc(4.8rem + env(safe-area-inset-bottom, 0px));
+  z-index: 26;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .planes-intelligence-mobile .intelligence-cockpit-grid {
+    grid-template-columns: 1fr 1fr 1.45fr !important;
+  }
+
+  .planes-intelligence-mobile .intelligence-cockpit-grid > div:last-child {
+    grid-column: auto !important;
+  }
+
+  .planes-intelligence-mobile .intelligence-chat-stream {
+    max-width: 780px;
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .planes-intelligence-mobile .intelligence-compose {
+    max-width: 780px;
+    width: 100%;
+    margin-inline: auto;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 639px) {
+  .planes-intelligence-mobile .intelligence-cockpit-grid {
+    gap: .55rem !important;
+  }
+
+  .planes-intelligence-mobile .intelligence-cockpit-grid > div {
+    padding: .7rem !important;
+  }
+
+  .planes-intelligence-mobile .intelligence-cockpit-grid > div:last-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  .planes-intelligence-mobile .intelligence-compose {
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
