@@ -8452,6 +8452,11 @@
     function canUseVoiceMutations(kind) {
       return getVoiceMutationAuthorization(kind).allowed;
     }
+    function getVoiceMutationCapabilities() {
+      return ['create_task', 'approve_validation', 'update_pac', 'update_supply_status']
+        .filter(kind => getVoiceMutationAuthorization(kind).allowed);
+    }
+
 
     function prepareRealtimeVoiceMutation(kind, payload, summary) {
       const authorization = getVoiceMutationAuthorization(kind);
@@ -8978,7 +8983,10 @@
             sdp,
             persona: getAssistantPersona(),
             firstName: getPlanesUserFirstName(),
-            projectTitle: selectedProject?.title || projectsList?.[0]?.title || 'obra ativa'
+            projectTitle: selectedProject?.title || projectsList?.[0]?.title || 'obra ativa',
+            effectiveRole: getEffectiveIntelligenceRole(),
+            audience: getIntelligenceAudience(),
+            voiceCapabilities: getVoiceMutationCapabilities()
           })
         });
 
