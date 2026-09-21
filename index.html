@@ -11442,9 +11442,15 @@
                 <div class="max-w-[88%] rounded-[20px] p-3.5 text-xs leading-relaxed shadow-2xs ${m.sender === 'user' ? 'bg-slate-950 text-white rounded-br-xs' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-xs'}">
                   ${(m.sender === 'assistant' || m.sender === 'ai') ? `
                     <div class="flex items-center justify-between gap-2 mb-2">
-                      <div class="flex items-center gap-1.5 text-[10px] font-bold text-purple-700 font-mono">
-                        <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
-                        <span>${isListening ? 'Ouvindo comando…' : 'Copiloto Planes AI'}</span>
+                      <div class="flex items-center gap-2 text-[10px] font-bold text-purple-700 font-mono">
+                        <img src="${getAssistantPersonaAvatar()}" alt="${getAssistantPersonaLabel()}" class="w-6 h-6 rounded-lg object-cover object-top border border-slate-200 bg-slate-100" />
+                        <div>
+                          <span class="block">${getAssistantPersonaLabel()}</span>
+                          <span class="flex items-center gap-1 text-[9px] text-slate-500">
+                            <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
+                            ${isListening ? 'Ouvindo comando…' : 'Planes Intelligence'}
+                          </span>
+                        </div>
                       </div>
                       <span class="text-[9px] text-slate-400 font-mono">${m.time || ''}</span>
                     </div>
@@ -13825,8 +13831,8 @@
                   <!-- Top Banner do Copiloto -->
                   <div class="bg-slate-950 text-white rounded-[24px] border border-slate-800 p-6 xl:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div class="flex items-center gap-4">
-                      <div class="w-14 h-14 rounded-[18px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-lg shrink-0">
-                        ${getSvg('zap', 'w-7 h-7 text-slate-950')}
+                      <div class="w-14 h-14 rounded-[18px] overflow-hidden border border-white/15 bg-white/10 shadow-lg shrink-0">
+                        <img src="${getAssistantPersonaAvatar()}" alt="${getAssistantPersonaLabel()}" class="w-full h-full object-cover object-top" />
                       </div>
                       <div>
                         <div class="flex items-center gap-2">
@@ -13838,7 +13844,7 @@
                         <h2 class="text-xl sm:text-3xl font-black text-white tracking-tight mt-1">
                           Oi, ${getPlanesUserFirstName()}
                         </h2>
-                        <p class="text-sm sm:text-base font-black text-[#d4ff00] mt-0.5">Copiloto de Engenharia & Diagnóstico Preditivo</p>
+                        <p class="text-sm sm:text-base font-black text-[#d4ff00] mt-0.5">${getAssistantPersonaLabel()} · Copiloto de Engenharia & Diagnóstico Preditivo</p>
                         <p class="text-xs text-slate-300 font-medium max-w-2xl mt-1 leading-relaxed">
                           Inteligência aplicada aos dados da Linha de Balanço 16.03, Lookahead R4, Curva S, PAC e Validações para predição de gargalos e planos de ação.
                         </p>
@@ -13957,8 +13963,8 @@
                         ${intelligenceChatHistory.map(msg => `
                           <div class="flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}">
                             ${msg.sender === 'ai' ? `
-                              <div class="w-9 h-9 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center shrink-0 shadow-xs">
-                                ${getSvg('zap', 'w-4 h-4 text-[#d4ff00]')}
+                              <div class="w-9 h-9 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0 shadow-xs">
+                                <img src="${getAssistantPersonaAvatar()}" alt="${getAssistantPersonaLabel()}" class="w-full h-full object-cover object-top" />
                               </div>
                             ` : ''}
                             
