@@ -471,7 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r3" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r4" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -4265,8 +4265,8 @@
           // Busca o perfil corporativo correspondente
           const { data: profile, error: profError } = await supabaseClient
             .from('profiles')
-            .select('*')
-            .eq('auth_user_id', authUser.id)
+            .select('id,full_name,email,avatar_url,status,role,approved_at,approved_by,created_at,updated_at')
+            .eq('id', authUser.id)
             .single();
 
           if (profError || !profile) {
@@ -4278,10 +4278,10 @@
 
           if (profile.status === 'pending') {
             currentPendingModalUser = {
-              name: profile.name,
+              name: profile.full_name || profile.email || 'Usuário',
               email: profile.email,
-              provider: profile.auth_provider || 'Email',
-              requestedLevel: profile.role_id,
+              provider: authUser.app_metadata?.provider || 'Email',
+              requestedLevel: profile.role || 'Engenharia',
               date: new Date(profile.created_at).toLocaleDateString('pt-BR')
             };
             showPendingStatusModal(currentPendingModalUser);
@@ -4303,17 +4303,17 @@
           // Aprovado: carrega sessão
           currentUser = {
             id: profile.id,
-            auth_user_id: profile.auth_user_id,
-            name: profile.name,
+            auth_user_id: profile.id,
+            name: profile.full_name || profile.email || 'Usuário',
             email: profile.email,
-            role: profile.role_id,
-            role_id: profile.role_id,
-            level: profile.role_id,
-            company: profile.company || 'Planes ENG',
-            department: profile.department || 'Geral',
-            avatar: profile.avatar_url || (profile.name ? profile.name.slice(0, 2).toUpperCase() : 'US')
+            role: profile.role || 'cliente',
+            role_id: profile.role || 'cliente',
+            level: profile.role || 'cliente',
+            company: 'Planes OS',
+            department: 'Geral',
+            avatar: profile.avatar_url || ((profile.full_name || profile.email || 'US').slice(0, 2).toUpperCase())
           };
-          accessLevel = profile.role_id;
+          accessLevel = profile.role || 'cliente';
           currentScreen = 'projects';
           saveSessionState();
           setupRealtimeSubscriptions();
