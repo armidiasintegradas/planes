@@ -461,7 +461,7 @@
 
 <!-- PLANES_AUTH_GATE_DISABLED: OAuth handled by canonical legacy SPA Supabase client -->
 
-<meta name="planes-iam-live-fix" content="2026-09-21-r14" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r16" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -8900,11 +8900,47 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       showToast('📲 No Safari: toque em Compartilhar ⎋ e selecione "Adicionar à Tela de Início"');
     }
 
-    function incMobileAmount(delta) {
+    let mobileFieldUnit = 'm²';
+
+    function getMobileUnitStep(unit) {
+      const map = {
+        'm²': 5,
+        'm³': 1,
+        'm': 1,
+        'un': 1,
+        'kg': 10,
+        't': 0.1,
+        'h': 0.5
+      };
+      return map[unit] ?? 1;
+    }
+
+    function setMobileFieldUnit(unit) {
+      mobileFieldUnit = unit || 'm²';
+      const select = document.getElementById('mobile-field-unit');
+      if (select && select.value !== mobileFieldUnit) select.value = mobileFieldUnit;
+
+      const stepLabel = document.getElementById('mobile-field-step-label');
+      if (stepLabel) {
+        const step = getMobileUnitStep(mobileFieldUnit);
+        stepLabel.innerText = `Incremento 1-Touch · ${mobileFieldUnit} · passo ${step}`;
+      }
+
+      const amount = document.getElementById('mobile-field-amount');
+      if (amount) {
+        const step = getMobileUnitStep(mobileFieldUnit);
+        amount.step = String(step);
+      }
+    }
+
+    function incMobileAmount(multiplier) {
       const inp = document.getElementById('mobile-field-amount');
       if (inp) {
-        let val = parseFloat(inp.value) || 0;
-        inp.value = Math.max(0, val + delta);
+        const unit = document.getElementById('mobile-field-unit')?.value || mobileFieldUnit || 'm²';
+        const step = getMobileUnitStep(unit);
+        const current = parseFloat(inp.value) || 0;
+        const next = Math.max(0, current + (Number(multiplier) * step));
+        inp.value = Number.isInteger(next) ? String(next) : String(Number(next.toFixed(2)));
       }
     }
 
@@ -8935,7 +8971,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       const front = (document.getElementById('mobile-field-front') ? document.getElementById('mobile-field-front').value : 'ARENA');
       const act = (document.getElementById('mobile-field-activity') ? document.getElementById('mobile-field-activity').value : 'Concretagem Laje');
       const amount = (document.getElementById('mobile-field-amount') ? document.getElementById('mobile-field-amount').value : '15');
-      const unit = (document.getElementById('mobile-field-unit') ? document.getElementById('mobile-field-unit').value : 'm³');
+      const unit = (document.getElementById('mobile-field-unit') ? document.getElementById('mobile-field-unit').value : mobileFieldUnit || 'm²');
 
       const newLog = {
         id: Date.now(),
@@ -8956,6 +8992,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
     }
 
     function renderMobileCampoView(selectedProject) {
+      window.setTimeout(() => setMobileFieldUnit(mobileFieldUnit || 'm²'), 0);
       const pTitle = selectedProject ? selectedProject.title : 'Mirante do Parque';
       const recentLogs = Array.isArray(window.pendingValidationsList) && window.pendingValidationsList.length > 0
         ? window.pendingValidationsList
@@ -9020,13 +9057,13 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="text-[11px] font-bold text-slate-700">Volume Medido</label>
-                <span class="text-[9.5px] text-slate-400 font-mono">Incremento 1-Touch</span>
+                <span id="mobile-field-step-label" class="text-[9.5px] text-slate-400 font-mono">Incremento 1-Touch · m² · passo 5</span>
               </div>
               <div class="grid grid-cols-4 gap-2 mb-2">
-                <button type="button" onclick="incMobileAmount(5)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+5</button>
-                <button type="button" onclick="incMobileAmount(10)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+10</button>
-                <button type="button" onclick="incMobileAmount(25)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+25</button>
-                <button type="button" onclick="incMobileAmount(50)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+50</button>
+                <button type="button" onclick="incMobileAmount(1)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+5</button>
+                <button type="button" onclick="incMobileAmount(2)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+10</button>
+                <button type="button" onclick="incMobileAmount(5)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+25</button>
+                <button type="button" onclick="incMobileAmount(10)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+50</button>
               </div>
               <div class="flex gap-2">
                 <input
@@ -9035,12 +9072,19 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                   value="25"
                   class="flex-1 p-2.5 rounded-[12px] border border-slate-200 bg-slate-50 text-base font-black text-slate-950 font-mono focus:bg-white focus:outline-none"
                 />
-                <input
-                  type="text"
+                <select
                   id="mobile-field-unit"
-                  value="m²"
-                  class="w-20 p-2.5 rounded-[12px] border border-slate-200 bg-slate-50 text-xs font-bold text-center text-slate-900 focus:bg-white focus:outline-none"
-                />
+                  onchange="setMobileFieldUnit(this.value)"
+                  class="w-24 p-2.5 rounded-[12px] border border-slate-200 bg-slate-50 text-xs font-bold text-center text-slate-900 focus:bg-white focus:outline-none"
+                >
+                  <option value="m²" selected>m²</option>
+                  <option value="m³">m³</option>
+                  <option value="m">m</option>
+                  <option value="un">un</option>
+                  <option value="kg">kg</option>
+                  <option value="t">t</option>
+                  <option value="h">h</option>
+                </select>
               </div>
             </div>
 
