@@ -451,20 +451,6 @@
   }
   </script>
 
-
-
-
-
-
-
-<!-- PLANES_AUTH_GATE_DISABLED: OAuth handled by canonical legacy SPA Supabase client -->
-
-<meta name="planes-iam-live-fix" content="2026-09-21-r16" />
-
-
-<!-- PLANES_MOBILE_LAYOUT_START -->
-<link rel="stylesheet" href="./live-mobile-layout.css?v=ab64c8561250" />
-<!-- PLANES_MOBILE_LAYOUT_END -->
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -1787,7 +1773,7 @@
               maxlength="3"
               placeholder="Ex: AR"
               class="w-24 px-3 py-1.5 bg-white border border-slate-200 rounded-[10px] text-xs font-mono font-bold text-slate-900 uppercase focus:outline-none focus:border-slate-950"
-              oninput="if (/^https?:\/\//i.test(this.value.trim())) { this.value = ((document.getElementById('edit-profile-name')?.value || 'US').split(/\s+/).map(p=>p[0]).join('').slice(0,2) || 'US').toUpperCase(); } document.getElementById('edit-profile-avatar-preview').innerText = (this.value.trim().toUpperCase().slice(0,3) || 'US')"
+              oninput="document.getElementById('edit-profile-avatar-preview').innerText = (this.value.trim().toUpperCase() || 'US')"
             />
             <span class="text-[10.5px] text-slate-500 block">Exibido nos badges e relatórios da plataforma</span>
           </div>
@@ -2037,21 +2023,6 @@
     };
 
     
-    function getAvatarMarkup(avatar, name = '', classes = '') {
-      const value = String(avatar || '').trim();
-      const safeName = String(name || 'Avatar').replace(/[<>"'&]/g, '');
-      const initials = ((safeName || 'US').split(/\s+/).filter(Boolean).map(p => p[0]).join('').slice(0, 2) || 'US').toUpperCase();
-      const isUrl = /^https?:\/\//i.test(value);
-
-      if (isUrl) {
-        const safeUrl = value.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return `<img src="${safeUrl}" alt="${safeName}" class="w-full h-full object-cover rounded-[inherit] block max-w-full max-h-full" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.textContent='${initials}'" />`;
-      }
-
-      const text = value && !/[\/:?#=&]/.test(value) ? value : initials;
-      return String(text || initials).toUpperCase().slice(0, 3);
-    }
-
     // VER / OCULTAR SENHA NO LOGIN
     function toggleShowPassword(inputId, btn) {
       const input = document.getElementById(inputId);
@@ -2094,41 +2065,83 @@
     // AÇÕES INTERATIVAS DA FILA DE VALIDAÇÕES
     async function approveValidation(id) {
       const valIndex = validations.findIndex(v => v.id === id);
-      if (valIndex !== -1) {
-        const item = validations[valIndex];
-        validations.splice(valIndex, 1);
-        physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
-        if (selectedProject) selectedProject.progress = physicalProgress;
+      if (valIndex === -1) return;
+
+      const item = validations[valIndex];
+      const previousProgress = physicalProgress;
+      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+
+      validations.splice(valIndex, 1);
+      physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
+      if (selectedProject) selectedProject.progress = physicalProgress;
+      render();
+
+      const [validationOk, metricsOk] = await Promise.all([
+        persistValidationStatus(item, 'Aprovado'),
+        persistProjectMetrics()
+      ]);
+
+      if (validationOk && metricsOk) {
+        await refreshIntelligenceOperationalData();
         render();
-        const [validationOk, metricsOk] = await Promise.all([
-          persistValidationStatus(item, 'Aprovado'),
-          persistProjectMetrics()
-        ]);
-        showToast(validationOk && metricsOk ? `✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%` : `Medição aprovada localmente; sincronização pendente.`);
+        showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) {
+        validations.splice(Math.min(valIndex, validations.length), 0, item);
+        physicalProgress = previousProgress;
+        if (selectedProject) selectedProject.progress = previousProjectProgress;
+      }
+      render();
+      showToast('Não foi possível concluir a aprovação no Supabase. A tela foi reconciliada com o último estado confirmado.');
     }
 
     async function rejectValidation(id) {
       const valIndex = validations.findIndex(v => v.id === id);
-      if (valIndex !== -1) {
-        const item = validations[valIndex];
-        validations.splice(valIndex, 1);
+      if (valIndex === -1) return;
+
+      const item = validations[valIndex];
+      validations.splice(valIndex, 1);
+      render();
+
+      const ok = await persistValidationStatus(item, 'Rejeitado');
+      if (ok) {
+        await refreshIntelligenceOperationalData();
         render();
-        const ok = await persistValidationStatus(item, 'Rejeitado');
-        showToast(ok ? `✕ Medição de "${item.item}" devolvida e sincronizada.` : `Medição devolvida localmente; sincronização pendente.`);
+        showToast(`✕ Medição de "${item.item}" devolvida e sincronizada.`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) validations.splice(Math.min(valIndex, validations.length), 0, item);
+      render();
+      showToast('Não foi possível devolver a medição no Supabase. O estado confirmado foi restaurado.');
     }
 
     // AÇÕES DE SUPRIMENTOS
     async function confirmSupplyReceipt(id) {
       const sup = suppliesList.find(s => s.id === id);
-      if (sup) {
-        sup.status = 'No Canteiro';
-        sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      if (!sup) return;
+
+      const previous = { ...sup };
+      sup.status = 'No Canteiro';
+      sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      render();
+
+      const ok = await persistSupplyRecord(sup);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
         render();
-        const ok = await persistSupplyRecord(sup);
-        showToast(ok ? `✓ Recebimento de "${sup.name}" confirmado e sincronizado.` : `Recebimento atualizado localmente; sincronização pendente.`);
+        showToast(`✓ Recebimento de "${sup.name}" confirmado e sincronizado.`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) Object.assign(sup, previous);
+      render();
+      showToast('Falha ao confirmar recebimento. A tela voltou ao último estado confirmado no Supabase.');
     }
 
 // Ações de aprovação consolidadas na seção de autenticação
@@ -2139,6 +2152,7 @@
       const sup = suppliesList.find(s => s.id === editingSupplyId);
       if (!sup) return;
 
+      const previous = { ...sup };
       const name = document.getElementById('edit-sup-name').value.trim();
       const supplier = document.getElementById('edit-sup-supplier').value.trim();
       const qtd = document.getElementById('edit-sup-qtd').value.trim();
@@ -2166,19 +2180,41 @@
 
       closeEditSupplyModal();
       render();
+
       const ok = await persistSupplyRecord(sup);
-      showToast(ok ? `✓ Insumo "${name}" atualizado e sincronizado.` : `Insumo atualizado localmente; sincronização pendente.`);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast(`✓ Insumo "${name}" atualizado e sincronizado.`);
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) Object.assign(sup, previous);
+      render();
+      showToast('Falha ao atualizar o insumo. A alteração local foi revertida para o último estado confirmado.');
     }
 
     async function deleteSupply(supId) {
       const idx = suppliesList.findIndex(s => s.id === supId);
-      if (idx !== -1) {
-        const item = suppliesList[idx];
-        suppliesList.splice(idx, 1);
+      if (idx === -1) return;
+
+      const item = suppliesList[idx];
+      suppliesList.splice(idx, 1);
+      render();
+
+      const ok = await deleteSupplyRecordRemote(item.id);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
         render();
-        const ok = await deleteSupplyRecordRemote(item.id);
-        showToast(ok ? `✓ Insumo "${item.name}" excluído e sincronizado.` : `Insumo removido localmente; sincronização pendente.`);
+        showToast(`✓ Insumo "${item.name}" excluído e sincronizado.`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) suppliesList.splice(Math.min(idx, suppliesList.length), 0, item);
+      render();
+      showToast('Falha ao excluir o insumo. O registro confirmado foi restaurado.');
     }
 
     let currentScreen = 'login';
@@ -2319,23 +2355,17 @@
     // =========================================================================
     // PLANES OS — SUPABASE BACKEND CLIENT, REALTIME & PRESENCE ENGINE
     // =========================================================================
-    // Produção canônica: nunca permitir que credenciais legadas salvas no navegador
-    // sobreponham o projeto Supabase oficial do Planes OS.
-    try {
-      localStorage.removeItem('planes_supabase_url');
-      localStorage.removeItem('planes_supabase_anon_key');
-    } catch (e) {}
-    window.PLANES_CONFIG = {
-      supabaseUrl: 'https://xfgcbxppsbwmxwsuajou.supabase.co',
-      supabaseAnonKey: 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS'
+    window.PLANES_CONFIG = window.PLANES_CONFIG || {
+      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://odknhfcvuvjphxndtsqj.supabase.co',
+      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ka25oZmN2dXZqcGh4bmR0c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDM4NzQsImV4cCI6MjAyNTA3OTg3NH0.demo-placeholder'
     };
 
     function isSupabaseConfigured() {
       const url = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseUrl ? window.PLANES_CONFIG.supabaseUrl : '';
       const key = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseAnonKey ? window.PLANES_CONFIG.supabaseAnonKey : '';
       if (!url || !key) return false;
-      if (!url.startsWith('https://')) return false;
-      if (!(key.startsWith('ey') || key.startsWith('sb_publishable_'))) return false;
+      if (key.indexOf('demo-placeholder') !== -1 || url.indexOf('odknhfcvuvjphxndtsqj') !== -1) return false;
+      if (!url.startsWith('https://') || !key.startsWith('ey')) return false;
       return true;
     }
 
@@ -2362,8 +2392,7 @@
             auth: {
               persistSession: true,
               autoRefreshToken: true,
-              detectSessionInUrl: true,
-              flowType: 'pkce'
+              detectSessionInUrl: true
             }
           });
           console.log('✓ Supabase Client inicializado para:', url);
@@ -2374,143 +2403,6 @@
       }
     }
     initSupabaseClient();
-
-    let supabaseAuthBridgeSubscription = null;
-
-    async function completeSupabaseSession(session, source = 'auth') {
-      try {
-        if (!session?.user || !supabaseClient) return false;
-
-        const authUser = session.user;
-        const { data: profile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('id,full_name,email,avatar_url,status,role,approved_at,approved_by,created_at,updated_at')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.error('Perfil não encontrado após autenticação:', profileError);
-          return false;
-        }
-
-        if (profile.status === 'pending') {
-          currentPendingModalUser = {
-            name: profile.full_name || authUser.user_metadata?.full_name || authUser.email || 'Usuário',
-            email: profile.email || authUser.email || '',
-            provider: authUser.app_metadata?.provider || 'Google',
-            requestedLevel: profile.role || 'Engenharia',
-            date: new Date(profile.created_at).toLocaleDateString('pt-BR')
-          };
-          currentScreen = 'login';
-          showPendingStatusModal(currentPendingModalUser);
-          return true;
-        }
-
-        if (profile.status === 'suspended') {
-          currentScreen = 'access_suspended';
-          render();
-          return true;
-        }
-
-        if (profile.status === 'rejected') {
-          currentScreen = 'access_rejected';
-          render();
-          return true;
-        }
-
-        if (profile.status !== 'approved') return false;
-
-        currentUser = {
-          id: profile.id,
-          auth_user_id: profile.id,
-          name: profile.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || profile.email || authUser.email || 'Usuário',
-          email: profile.email || authUser.email || '',
-          role: profile.role || 'cliente',
-          role_id: profile.role || 'cliente',
-          level: profile.role || 'cliente',
-          company: 'Planes OS',
-          department: 'Geral',
-          avatar: profile.avatar_url || ((profile.full_name || profile.email || authUser.email || 'US').slice(0, 2).toUpperCase()),
-          status: 'Aprovado'
-        };
-
-        accessLevel = profile.role || 'cliente';
-        currentScreen = 'projects';
-        saveSessionState();
-        setupRealtimeSubscriptions();
-        updateUserPresence();
-        render();
-        showToast('✓ Login concluído com sucesso.');
-        return true;
-      } catch (error) {
-        console.error('Falha ao concluir sessão Supabase (' + source + '):', error);
-        return false;
-      }
-    }
-
-    async function processOAuthCallbackIfPresent() {
-      if (!supabaseClient) return null;
-      const url = new URL(window.location.href);
-      const code = url.searchParams.get('code');
-
-      if (code) {
-        try {
-          const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-
-          // Remove o código da URL depois de persistir a sessão.
-          url.searchParams.delete('code');
-          url.searchParams.delete('state');
-          const cleanUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash;
-          window.history.replaceState({}, document.title, cleanUrl);
-
-          if (data?.session?.user) {
-            await completeSupabaseSession(data.session, 'oauth_callback');
-            return data.session;
-          }
-        } catch (error) {
-          console.error('Falha no callback OAuth PKCE:', error);
-          showToast('Falha ao concluir login do Google. Tente novamente.');
-        }
-      }
-
-      return null;
-    }
-
-    async function attachSupabaseAuthBridge() {
-      if (!supabaseClient) return;
-
-      try {
-        if (supabaseAuthBridgeSubscription?.unsubscribe) {
-          supabaseAuthBridgeSubscription.unsubscribe();
-        }
-      } catch (e) {}
-
-      const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_OUT') {
-          currentUser = null;
-          currentScreen = 'login';
-          render();
-          return;
-        }
-        if (session?.user) {
-          window.setTimeout(() => void completeSupabaseSession(session, event), 0);
-        }
-      });
-      supabaseAuthBridgeSubscription = data?.subscription || null;
-
-      // Primeiro processa explicitamente o retorno PKCE do Google.
-      const callbackSession = await processOAuthCallbackIfPresent();
-      if (callbackSession?.user) return;
-
-      // Se já houver sessão persistida, entra sem novo login.
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
-      if (!error && session?.user) {
-        await completeSupabaseSession(session, 'startup');
-      }
-    }
-
-    window.setTimeout(() => void attachSupabaseAuthBridge(), 0);
 
     // Métricas oficiais em tempo real conectadas ao banco
     function getActiveUsersCount() {
@@ -2536,68 +2428,81 @@
 
     // Busca real de dados IAM no Supabase (Perfis, Solicitações e Notificações)
     async function fetchAdminIAMData(manual = false) {
-      if (!supabaseClient) initSupabaseClient();
       if (!supabaseClient) {
-        if (manual) showToast('Não foi possível conectar ao Supabase de produção.');
+        if (manual) showToast('✓ Sincronização concluída (Modo Local).');
         return;
       }
 
       try {
-        const { data, error } = await supabaseClient.functions.invoke('admin-list-iam', {
-          body: {}
-        });
-        if (error || !data?.ok) {
-          throw new Error(data?.error || error?.message || 'Falha ao carregar IAM.');
-        }
+        // 1. Busca perfis aprovados e ativos
+        const { data: profs, error: profError } = await supabaseClient
+            .from('profiles')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
 
-        const profs = Array.isArray(data.profiles) ? data.profiles : [];
-        registeredUsers = profs
-          .filter(p => p.status === 'approved' || p.status === 'suspended')
-          .map(p => ({
+        if (!profError && Array.isArray(profs)) {
+          registeredUsers = profs.map(p => ({
             id: p.id,
-            auth_user_id: p.id,
-            name: p.full_name || p.email || 'Usuário',
-            email: p.email || '',
-            role: p.role || '',
-            role_id: p.role || '',
-            level: p.role || '',
-            status: p.status === 'approved' ? 'Aprovado' : 'Suspenso',
-            avatar: p.avatar_url || ((p.full_name || p.email || 'US').slice(0, 2).toUpperCase()),
-            company: 'Planes OS',
-            department: 'Geral',
+            auth_user_id: p.auth_user_id,
+            name: p.name,
+            email: p.email,
+            role: p.role_id,
+            level: p.role_id,
+            status: p.status === 'approved' ? 'Aprovado' : (p.status === 'suspended' ? 'Suspenso' : 'Pendente'),
+            avatar: p.avatar_url || (p.name ? p.name.slice(0, 2).toUpperCase() : 'US'),
+            company: p.company || 'Planes ENG',
+            department: p.department || 'Geral',
+            phone: p.phone,
             created_at: p.created_at
           }));
+        }
 
-        const pending = Array.isArray(data.pending) ? data.pending : [];
-        pendingUsers = pending.map(r => ({
-          id: r.id,
-          userId: r.userId,
-          name: r.full_name || r.email || 'Novo Colaborador',
-          email: r.email || '',
-          requestedLevel: r.requested_role || 'Engenharia',
-          role: r.requested_role || 'Engenharia',
-          provider: 'Google',
-          status: 'Pendente',
-          company: 'Planes OS',
-          sector: 'Geral',
-          phone: '',
-          cpf: '',
-          rg: '',
-          avatar: r.avatar_url || ((r.full_name || r.email || 'US').slice(0, 2).toUpperCase()),
-          created_at: r.requested_at,
-          date: new Date(r.requested_at).toLocaleString('pt-BR'),
-          requestDate: new Date(r.requested_at).toLocaleDateString('pt-BR')
-        }));
+        // 2. Busca solicitações de acesso pendentes
+        const { data: reqs, error: reqError } = await supabaseClient
+            .from('access_requests')
+          .select('*, profiles(*)')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
 
-        try {
-          localStorage.removeItem('planes_pending_users');
-          localStorage.removeItem('planes_registered_users');
-        } catch (e) {}
+        if (!reqError && Array.isArray(reqs)) {
+          pendingUsers = reqs.map(r => {
+            const pr = r.profiles || {};
+            return {
+              id: r.id,
+              userId: r.user_id,
+              name: pr.name || r.name || 'Novo Colaborador',
+              email: pr.email || r.email,
+              requestedLevel: r.requested_role || 'Engenharia',
+              role: r.requested_role || 'Engenharia',
+              provider: r.provider || 'Google',
+              status: 'Pendente',
+              company: pr.company || 'Planes ENG',
+              sector: pr.department || 'Geral',
+              phone: pr.phone,
+              reason: r.reason,
+              created_at: r.created_at,
+              requestDate: new Date(r.created_at).toLocaleDateString('pt-BR')
+            };
+          });
+        }
+
+        // 3. Busca notificações administrativas não lidas
+        const { data: notifs, error: notifError } = await supabaseClient
+            .from('admin_notifications')
+          .select('*')
+          .is('read_at', null)
+          .order('created_at', { ascending: false });
+
+        if (!notifError && Array.isArray(notifs)) {
+          adminNotificationsList = notifs;
+          unreadAdminNotificationsCount = notifs.length;
+        }
 
         lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         if (manual) {
-          showToast(`✓ Produção sincronizada: ${registeredUsers.length} perfis, ${pendingUsers.length} pendentes.`);
+          showToast(`✓ Dados sincronizados com o Supabase! (${registeredUsers.length} perfis ativos, ${pendingUsers.length} pendentes).`);
         }
 
         if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
@@ -2605,7 +2510,6 @@
         }
       } catch (err) {
         console.error('Erro na sincronização IAM do Supabase:', err);
-        if (manual) showToast('Falha ao sincronizar o IAM com o Supabase de produção: ' + (err?.message || 'erro desconhecido'));
       }
     }
 
@@ -2627,31 +2531,7 @@
       presenceChannel
         .on('presence', { event: 'sync' }, () => {
           const state = presenceChannel.presenceState();
-          const nextCloudSessions = {};
-          Object.entries(state || {}).forEach(([presenceKey, entries]) => {
-            const list = Array.isArray(entries) ? entries : [];
-            list.forEach((entry, index) => {
-              const email = (entry?.email || '').toLowerCase();
-              if (!email) return;
-              const lastSeenValue = entry?.last_seen || entry?.online_at || new Date().toISOString();
-              nextCloudSessions[email] = {
-                sessionId: `presence-${presenceKey}-${index}`,
-                userId: entry?.user_id || presenceKey,
-                name: entry?.name || entry?.email || 'Usuário',
-                email: entry?.email || '',
-                role: entry?.role || 'cliente',
-                avatar: (entry?.name || entry?.email || 'US').slice(0, 2).toUpperCase(),
-                company: 'Planes OS',
-                sector: 'Geral',
-                activeNav: entry?.module || 'Planes OS',
-                device: entry?.device || 'Web',
-                lastSeen: Date.parse(lastSeenValue) || Date.now(),
-                loginTime: entry?.online_at ? new Date(entry.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Agora'
-              };
-            });
-          });
-          cloudOnlineSessions = nextCloudSessions;
-          onlineUsersCount = Object.keys(nextCloudSessions).length;
+          onlineUsersCount = Math.max(1, Object.keys(state).length);
           if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
             render();
           }
@@ -2721,8 +2601,8 @@
             liveEl.innerText = realtimeStatus === 'Ao vivo' ? '● Ao vivo' : (realtimeStatus === 'Reconectando' ? '● Reconectando' : '● Offline');
           }
         });
+      setupOperationalRealtime();
     }
-
 
     // Inicializa carregamento dos dados e canais
     fetchAdminIAMData();
@@ -3668,104 +3548,90 @@
     }
 
     async function finalizeUserApproval(u, roleObj) {
-      const roleMap = {
-        SUPER_ADMIN: 'super_admin',
-        ADMIN: 'admin',
-        DIRETORIA: 'gestor',
-        GERENCIA: 'gestor',
-        GERENTE: 'gestor',
-        ENGENHARIA: 'engenharia',
-        COORDENADOR_OBRA: 'campo',
-        CAMPO: 'campo',
-        FINANCEIRO: 'financeiro',
-        SUPRIMENTOS: 'gestor',
-        COMERCIAL: 'gestor',
-        RH: 'gestor',
-        COLABORADOR: 'campo',
-        CONSULTOR: 'cliente',
-        CLIENTE: 'cliente',
-        VISUALIZADOR: 'cliente'
-      };
-      const productionRole = roleMap[roleObj.id] || 'cliente';
+      // Coleta projetos selecionados
+      const allowedProjects = Array.from(document.querySelectorAll('input[name="config-allowed-project"]:checked')).map(cb => cb.value);
+      const allowedWorks = Array.from(document.querySelectorAll('input[name="config-allowed-work"]:checked')).map(cb => cb.value);
 
-      if (!supabaseClient) initSupabaseClient();
-      if (!supabaseClient || !u?.id) {
-        showToast('Não foi possível acessar o Supabase de produção.');
-        return;
+      // Coleta overrides
+      const overrides = {};
+      const permissionsArray = [];
+      if (document.getElementById('override-export-reports')?.checked) {
+        overrides['reports.export'] = 'allow';
+        permissionsArray.push({ permission_id: 'reports.export', override_type: 'allow' });
+      }
+      if (document.getElementById('override-financial-view')?.checked) {
+        overrides['financial.view'] = 'allow';
+        permissionsArray.push({ permission_id: 'financial.view', override_type: 'allow' });
+      }
+      if (document.getElementById('override-users-view')?.checked) {
+        overrides['users.view'] = 'allow';
+        permissionsArray.push({ permission_id: 'users.view', override_type: 'allow' });
+      }
+      if (document.getElementById('override-supplies-edit')?.checked) {
+        overrides['suppliers.edit'] = 'allow';
+        permissionsArray.push({ permission_id: 'suppliers.edit', override_type: 'allow' });
       }
 
-      showToast('Gravando aprovação no Supabase...');
-      try {
-        const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
-          body: {
-            requestId: u.id,
-            decision: 'approve',
-            role: productionRole,
-            projectIds: [],
-            workIds: []
-          }
-        });
-        if (error || !data?.ok) {
-          throw new Error(data?.error || error?.message || 'A aprovação não foi concluída.');
-        }
-
-        const { data: confirmedRequest, error: confirmReqError } = await supabaseClient
-          .from('access_requests')
-          .select('id,user_id,status,reviewed_at,reviewed_by')
-          .eq('id', u.id)
-          .single();
-        if (confirmReqError || !confirmedRequest || confirmedRequest.status !== 'approved') {
-          throw new Error('O backend não confirmou a solicitação como aprovada.');
-        }
-
-        const { data: confirmedProfile, error: confirmProfileError } = await supabaseClient
-          .from('profiles')
-          .select('id,status,role,approved_at,approved_by')
-          .eq('id', confirmedRequest.user_id)
-          .single();
-        if (confirmProfileError || !confirmedProfile || confirmedProfile.status !== 'approved' || confirmedProfile.role !== productionRole) {
-          throw new Error('O backend não confirmou o perfil aprovado com o papel selecionado.');
-        }
-
-        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-        closeConfigAccessModal();
-        await fetchAdminIAMData(false);
-        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-        render();
-        showToast(`✓ Acesso de ${u.name} aprovado e confirmado pelo backend como ${productionRole}.`);
-      } catch (err) {
-        console.error('Falha ao aprovar acesso:', err);
-
+      // 1. Supabase RPC Transacional
+      if (supabaseClient && u.id) {
+        showToast('Gravando aprovação no Supabase...');
         try {
-          const { data: recoveredRequest } = await supabaseClient
-            .from('access_requests')
-            .select('id,user_id,status')
-            .eq('id', u.id)
-            .single();
-          if (recoveredRequest?.status === 'approved') {
-            const { data: recoveredProfile } = await supabaseClient
-              .from('profiles')
-              .select('id,status,role')
-              .eq('id', recoveredRequest.user_id)
-              .single();
-            if (recoveredProfile?.status === 'approved' && recoveredProfile?.role === productionRole) {
-              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-              closeConfigAccessModal();
-              await fetchAdminIAMData(false);
-              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-              render();
-              showToast(`✓ Acesso de ${u.name} já estava aprovado no backend. Painel sincronizado.`);
-              return;
-            }
-          }
-        } catch (recoveryError) {
-          console.error('Falha na recuperação pós-aprovação:', recoveryError);
-        }
+          const { data, error } = await supabaseClient.rpc('approve_access_request', {
+            p_request_id: u.id,
+            p_role_id: roleObj.id,
+            p_projects: allowedProjects,
+            p_works: allowedWorks,
+            p_permissions: permissionsArray
+          });
 
-        showToast('Erro ao aprovar: ' + (err?.message || 'falha no Supabase'));
-        await fetchAdminIAMData(false);
-        render();
+          if (error) {
+            console.error('Erro na stored procedure:', error);
+            showToast('Erro no banco: ' + error.message);
+          } else {
+            // Dispara Edge Function para envio de email real via Resend
+            try {
+              supabaseClient.functions.invoke('send-iam-email', {
+                body: {
+                  type: 'APPROVAL',
+                  to: u.email,
+                  name: u.name,
+                  roleName: roleObj.name,
+                  projects: allowedProjects
+                }
+              }).then(res => {
+                if (res.data && res.data.success) {
+                  showToast('✓ E-mail de liberação enviado via Resend!');
+                }
+              });
+            } catch (e) {}
+          }
+        } catch (err) {
+          console.error('Falha ao acionar Supabase RPC:', err);
+        }
       }
+
+      // 2. Atualização de estado local
+      const pIdx = pendingUsers.findIndex(x => String(x.id) === String(u.id));
+      if (pIdx !== -1) pendingUsers.splice(pIdx, 1);
+
+      u.status = 'Aprovado';
+      u.role_id = roleObj.id;
+      u.level = roleObj.name;
+      u.role = roleObj.name;
+      u.allowed_projects = allowedProjects.length > 0 ? allowedProjects : ['*'];
+      u.allowed_works = allowedWorks.length > 0 ? allowedWorks : ['*'];
+      u.user_permissions = overrides;
+      u.approvedAt = new Date().toISOString();
+      u.approvedBy = currentUser ? currentUser.name : 'Administrador Geral';
+
+      registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
+      registeredUsers.push(u);
+
+      closeConfigAccessModal();
+      showEmailPreviewModal(u, roleObj.name);
+      showToast(`✓ Acesso de ${u.name} APROVADO como "${roleObj.name}"!`);
+      if (supabaseClient) fetchAdminIAMData();
+      render();
     }
 
     // 11. Rejeição e Suspensão com Justificativa
@@ -3793,91 +3659,35 @@
 
     async function confirmRejectWithReason() {
       if (!currentRejectUserId) return;
-      const reason = document.getElementById('reject-reason-text')?.value.trim() || 'Solicitação não autorizada pela administração do Planes OS.';
-      const u = pendingUsers.find(x => String(x.id) === String(currentRejectUserId));
-      if (!u) {
+      const reason = document.getElementById('reject-reason-text')?.value.trim() || 'Solicitação não autorizada pela administração da Planes ENG.';
+      const idx = pendingUsers.findIndex(u => String(u.id) === String(currentRejectUserId) || (u.email && u.email.toLowerCase() === String(currentRejectUserId).toLowerCase()));
+      
+      if (idx !== -1) {
+        const u = pendingUsers.splice(idx, 1)[0];
+        u.status = 'Rejeitado';
+        u.rejection_reason = reason;
+        u.rejected_at = new Date().toISOString();
+        u.rejected_by = currentUser ? currentUser.name : 'Administrador';
+
+        if (supabaseClient && u.id) {
+          try {
+            await supabaseClient.rpc('reject_access_request', {
+              p_request_id: u.id,
+              p_reason: reason
+            });
+            // Envia e-mail de recusa via Resend
+            supabaseClient.functions.invoke('send-iam-email', {
+              body: { type: 'REJECTION', to: u.email, name: u.name, reason: reason }
+            }).catch(() => {});
+          } catch (e) {}
+        }
+        
+        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id));
+        registeredUsers.push(u);
+
         closeRejectReasonModal();
-        await fetchAdminIAMData(false);
-        render();
-        return;
-      }
-
-      if (!supabaseClient) initSupabaseClient();
-      if (!supabaseClient) {
-        showToast('Não foi possível acessar o Supabase de produção.');
-        return;
-      }
-
-      try {
-        const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
-          body: {
-            requestId: u.id,
-            decision: 'reject',
-            role: null,
-            projectIds: [],
-            workIds: [],
-            rejectionReason: reason
-          }
-        });
-        if (error || !data?.ok) {
-          throw new Error(data?.error || error?.message || 'A recusa não foi concluída.');
-        }
-
-        const { data: confirmedRequest, error: confirmReqError } = await supabaseClient
-          .from('access_requests')
-          .select('id,user_id,status,reviewed_at,reviewed_by,rejection_reason')
-          .eq('id', u.id)
-          .single();
-        if (confirmReqError || !confirmedRequest || confirmedRequest.status !== 'rejected') {
-          throw new Error('O backend não confirmou a solicitação como recusada.');
-        }
-
-        const { data: confirmedProfile, error: confirmProfileError } = await supabaseClient
-          .from('profiles')
-          .select('id,status,role')
-          .eq('id', confirmedRequest.user_id)
-          .single();
-        if (confirmProfileError || !confirmedProfile || confirmedProfile.status !== 'rejected') {
-          throw new Error('O backend não confirmou o perfil como recusado.');
-        }
-
-        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-        closeRejectReasonModal();
-        await fetchAdminIAMData(false);
-        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-        render();
-        showToast(`Solicitação de ${u.name} recusada e confirmada pelo backend.`);
-      } catch (err) {
-        console.error('Falha ao recusar solicitação:', err);
-
-        try {
-          const { data: recoveredRequest } = await supabaseClient
-            .from('access_requests')
-            .select('id,user_id,status')
-            .eq('id', u.id)
-            .single();
-          if (recoveredRequest?.status === 'rejected') {
-            const { data: recoveredProfile } = await supabaseClient
-              .from('profiles')
-              .select('id,status')
-              .eq('id', recoveredRequest.user_id)
-              .single();
-            if (recoveredProfile?.status === 'rejected') {
-              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-              closeRejectReasonModal();
-              await fetchAdminIAMData(false);
-              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
-              render();
-              showToast(`Solicitação de ${u.name} já estava recusada no backend. Painel sincronizado.`);
-              return;
-            }
-          }
-        } catch (recoveryError) {
-          console.error('Falha na recuperação pós-recusa:', recoveryError);
-        }
-
-        showToast('Erro ao recusar: ' + (err?.message || 'falha no Supabase'));
-        await fetchAdminIAMData(false);
+        showToast(`Solicitação de ${u.name} NÃO AUTORIZADA.`);
+        if (supabaseClient) fetchAdminIAMData();
         render();
       }
     }
@@ -4436,8 +4246,7 @@
           </div>
 
           <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 10px; color: #94a3b8; text-align: center;">
-            © 2026 Planes Engenharia. Todos os direitos reservados.<br>
-            Design &amp; Tecnologia por AR Mídias Integradas
+            Planes ENG • AR Mídias Integradas • 2026 Todos os direitos reservados
           </div>
         </div>
       `;
@@ -4536,8 +4345,8 @@
           // Busca o perfil corporativo correspondente
           const { data: profile, error: profError } = await supabaseClient
             .from('profiles')
-            .select('id,full_name,email,avatar_url,status,role,approved_at,approved_by,created_at,updated_at')
-            .eq('id', authUser.id)
+            .select('*')
+            .eq('auth_user_id', authUser.id)
             .single();
 
           if (profError || !profile) {
@@ -4549,10 +4358,10 @@
 
           if (profile.status === 'pending') {
             currentPendingModalUser = {
-              name: profile.full_name || profile.email || 'Usuário',
+              name: profile.name,
               email: profile.email,
-              provider: authUser.app_metadata?.provider || 'Email',
-              requestedLevel: profile.role || 'Engenharia',
+              provider: profile.auth_provider || 'Email',
+              requestedLevel: profile.role_id,
               date: new Date(profile.created_at).toLocaleDateString('pt-BR')
             };
             showPendingStatusModal(currentPendingModalUser);
@@ -4574,17 +4383,17 @@
           // Aprovado: carrega sessão
           currentUser = {
             id: profile.id,
-            auth_user_id: profile.id,
-            name: profile.full_name || profile.email || 'Usuário',
+            auth_user_id: profile.auth_user_id,
+            name: profile.name,
             email: profile.email,
-            role: profile.role || 'cliente',
-            role_id: profile.role || 'cliente',
-            level: profile.role || 'cliente',
-            company: 'Planes OS',
-            department: 'Geral',
-            avatar: profile.avatar_url || ((profile.full_name || profile.email || 'US').slice(0, 2).toUpperCase())
+            role: profile.role_id,
+            role_id: profile.role_id,
+            level: profile.role_id,
+            company: profile.company || 'Planes ENG',
+            department: profile.department || 'Geral',
+            avatar: profile.avatar_url || (profile.name ? profile.name.slice(0, 2).toUpperCase() : 'US')
           };
-          accessLevel = profile.role || 'cliente';
+          accessLevel = profile.role_id;
           currentScreen = 'projects';
           saveSessionState();
           setupRealtimeSubscriptions();
@@ -4939,29 +4748,25 @@
     async function submitMobileCampoApontamento() {
       const input = document.getElementById('mobile-campo-qtd');
       const finalQtd = input ? (parseInt(input.value) || campoQtd) : campoQtd;
-      
+
       const newValidItem = {
         id: Date.now(),
         frente: campoFrente,
         activity: campoAtividade,
         volume: finalQtd + ' m³ / un',
-        author: currentUser ? currentUser.name : 'Alex Ribeiro',
+        author: currentUser ? currentUser.name : 'Usuário',
         time: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         photo: campoPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
         gps: 'Verificado (-9.0912, -35.2481)',
         status: 'Pendente'
       };
 
-      if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList.unshift(newValidItem);
-      } else {
-        window.pendingValidationsList = [newValidItem];
-      }
+      if (Array.isArray(window.pendingValidationsList)) window.pendingValidationsList.unshift(newValidItem);
+      else window.pendingValidationsList = [newValidItem];
 
-      // Reset
       campoPhoto = null;
       campoQtd = 10;
-      
+
       const validationRecord = {
         id: newValidItem.id,
         resp: newValidItem.author,
@@ -4973,25 +4778,35 @@
         gps: newValidItem.gps,
         status: 'Pendente'
       };
+
+      render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
-      if (synced && isUuidLike(validationRecord.id)) newValidItem.id = validationRecord.id;
-      showToast(synced ? '✓ Apontamento enviado e sincronizado para Validação.' : 'Apontamento salvo localmente; sincronização pendente.');
-      setMobileTab('validar');
+      if (synced) {
+        await refreshIntelligenceOperationalData();
+        setMobileTab('validar');
+        showToast('✓ Apontamento enviado e confirmado no Supabase.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled && Array.isArray(window.pendingValidationsList)) {
+        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry !== newValidItem);
+      }
+      render();
+      showToast('Falha ao salvar o apontamento. O registro provisório foi removido.');
     }
 
     async function approveMobileValidation(id) {
       const item = Array.isArray(window.pendingValidationsList)
         ? window.pendingValidationsList.find(entry => entry.id === id)
         : null;
-      if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
-      }
-      render();
-
       if (!item) {
-        showToast('✓ Medição removida da fila local.');
+        showToast('Medição não encontrada na fila atual.');
         return;
       }
+
+      window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
+      render();
 
       const validationRecord = {
         id: item.id,
@@ -5004,23 +4819,32 @@
         gps: item.gps || '',
         status: 'Aprovado'
       };
+
       const ok = await persistValidationStatus(validationRecord, 'Aprovado');
-      showToast(ok ? '✓ Medição de campo APROVADA e sincronizada.' : 'Medição aprovada localmente; sincronização pendente.');
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('✓ Medição de campo aprovada e sincronizada.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) window.pendingValidationsList.unshift(item);
+      render();
+      showToast('Falha ao aprovar a medição. A fila foi restaurada ao último estado confirmado.');
     }
 
     async function rejectMobileValidation(id) {
       const item = Array.isArray(window.pendingValidationsList)
         ? window.pendingValidationsList.find(entry => entry.id === id)
         : null;
-      if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
-      }
-      render();
-
       if (!item) {
-        showToast('⚠️ Medição removida da fila local.');
+        showToast('Medição não encontrada na fila atual.');
         return;
       }
+
+      window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
+      render();
 
       const validationRecord = {
         id: item.id,
@@ -5033,10 +4857,20 @@
         gps: item.gps || '',
         status: 'Rejeitado'
       };
-      const ok = await persistValidationStatus(validationRecord, 'Rejeitado');
-      showToast(ok ? '⚠️ Medição devolvida e sincronizada.' : 'Medição devolvida localmente; sincronização pendente.');
-    }
 
+      const ok = await persistValidationStatus(validationRecord, 'Rejeitado');
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('⚠️ Medição devolvida e sincronizada.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) window.pendingValidationsList.unshift(item);
+      render();
+      showToast('Falha ao devolver a medição. A fila foi restaurada.');
+    }
 
     // ESTADO E CONTROLE DA APRESENTAÇÃO DE SLIDES 16:9 (SEM PERDER FULLSCREEN)
     let currentSlideIndex = 0;
@@ -5647,13 +5481,8 @@
       const newpassInput = document.getElementById('edit-profile-newpass');
       const passconfirmInput = document.getElementById('edit-profile-passconfirm');
 
-      const rawAvatar = String(u.avatar || '');
-      const avatarIsUrl = /^https?:\/\//i.test(rawAvatar);
-      const avatarInitials = avatarIsUrl
-        ? (((u.name || u.email || 'US').split(/\s+/).map(p => p[0]).join('').slice(0, 2)) || 'US').toUpperCase()
-        : (rawAvatar || (((u.name || u.email || 'US').split(/\s+/).map(p => p[0]).join('').slice(0, 2)) || 'US')).toUpperCase().slice(0, 3);
-      if (avatarInput) avatarInput.value = avatarInitials;
-      if (preview) preview.innerHTML = getAvatarMarkup(rawAvatar || avatarInitials, u.name || u.email || 'Usuário');
+      if (avatarInput) avatarInput.value = u.avatar || 'AR';
+      if (preview) preview.innerText = u.avatar || 'AR';
       if (nameInput) nameInput.value = u.name || '';
       if (emailInput) emailInput.value = u.email || '';
       if (phoneInput) phoneInput.value = maskPhone(u.phone || '');
@@ -5814,81 +5643,50 @@
     function getOnlineSessions() {
       try {
         const now = Date.now();
-        const combined = [];
-        const seen = new Set();
+        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+        let combined = [];
 
-        // 1. Fonte canônica: Supabase Presence, compartilhada entre dispositivos.
-        if (presenceChannel) {
-          const state = presenceChannel.presenceState();
-          Object.entries(state || {}).forEach(([presenceKey, entries]) => {
-            const list = Array.isArray(entries) ? entries : [];
-            list.forEach((entry, index) => {
-              const email = (entry?.email || '').toLowerCase();
-              if (!email || seen.has(email)) return;
-              seen.add(email);
-              const lastSeenValue = entry?.last_seen || entry?.online_at || new Date().toISOString();
-              combined.push({
-                sessionId: `presence-${presenceKey}-${index}`,
-                userId: entry?.user_id || presenceKey,
-                name: entry?.name || entry?.email || 'Usuário',
-                email: entry?.email || '',
-                role: entry?.role || 'cliente',
-                avatar: (entry?.name || entry?.email || 'US').slice(0, 2).toUpperCase(),
-                company: 'Planes OS',
-                sector: 'Geral',
-                activeNav: entry?.module || 'Planes OS',
-                device: entry?.device || 'Web',
-                lastSeen: Date.parse(lastSeenValue) || now,
-                loginTime: entry?.online_at ? new Date(entry.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Agora'
-              });
-            });
-          });
-        }
-
-        // 2. Compatibilidade temporária: sessões Presence já normalizadas no sync.
-        for (const email in cloudOnlineSessions) {
-          if (seen.has(email)) continue;
-          const sess = cloudOnlineSessions[email];
-          if (!sess) continue;
-          seen.add(email);
-          combined.push(sess);
-        }
-
-        // 3. Garante a sessão atual enquanto o Presence ainda está conectando.
-        if (currentUser && currentScreen !== 'login') {
-          const email = (currentUser.email || '').toLowerCase();
-          if (email && !seen.has(email)) {
-            combined.unshift({
-              sessionId: 'sess-current',
-              userId: currentUser.id || currentUser.email,
-              name: currentUser.name,
-              email: currentUser.email,
-              role: currentUser.level || currentUser.role || 'Admin',
-              avatar: currentUser.avatar || 'AR',
-              company: currentUser.company || 'Planes OS',
-              sector: currentUser.sector || 'Geral',
-              activeNav: activeNav,
-              device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile Web' : 'Web Desktop',
-              lastSeen: now,
-              loginTime: 'Agora'
-            });
+        // 1. Sessões sincronizadas pela nuvem (usuários em outros computadores/celulares)
+        if (typeof cloudOnlineSessions === 'object') {
+          for (const email in cloudOnlineSessions) {
+            const sess = cloudOnlineSessions[email];
+            if (sess && (now - sess.lastSeen) < 120000 && !blacklist.includes(email.toLowerCase())) {
+              combined.push(sess);
+            }
           }
         }
 
+        // 2. Sessões locais
+        const raw = localStorage.getItem('planes_online_sessions');
+        let localSessions = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(localSessions)) {
+          for (const s of localSessions) {
+            const sEmail = (s.email || '').toLowerCase();
+            if ((now - s.lastSeen) < 120000 && !blacklist.includes(sEmail) && !combined.some(c => (c.email || '').toLowerCase() === sEmail)) {
+              combined.push(s);
+            }
+          }
+        }
+
+        // 3. Garante que o usuário logado atualmente esteja na lista
+        if (currentUser && currentScreen !== 'login' && !combined.some(s => (s.email || '').toLowerCase() === currentUser.email.toLowerCase())) {
+          combined.unshift({
+            sessionId: 'sess-current',
+            name: currentUser.name,
+            email: currentUser.email,
+            role: currentUser.level || currentUser.role || 'Admin',
+            avatar: currentUser.avatar || 'AR',
+            company: currentUser.company || 'Planes ENG',
+            sector: currentUser.sector || 'Geral',
+            activeNav: activeNav,
+            device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile Web' : 'Web Desktop',
+            lastSeen: now,
+            loginTime: 'Agora'
+          });
+        }
         return combined;
       } catch (e) {
-        console.error('Falha ao ler Supabase Presence:', e);
-        return currentUser ? [{
-          sessionId: 'sess-current-fallback',
-          name: currentUser.name,
-          email: currentUser.email,
-          role: currentUser.level || currentUser.role || 'Admin',
-          avatar: currentUser.avatar || 'AR',
-          activeNav: activeNav,
-          device: 'Web Desktop',
-          lastSeen: Date.now(),
-          loginTime: 'Agora'
-        }] : [];
+        return currentUser ? [{ name: currentUser.name, email: currentUser.email, role: currentUser.level || 'Admin', avatar: currentUser.avatar || 'AR', activeNav: activeNav, device: 'Web Desktop', lastSeen: Date.now() }] : [];
       }
     }
 
@@ -6718,8 +6516,19 @@
 
       closeAddSupplyModal();
       render();
+
       const ok = await persistSupplyRecord(newSupply);
-      showToast(ok ? `✓ Insumo "${name}" cadastrado e sincronizado.` : `Insumo cadastrado localmente; sincronização pendente.`);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast(`✓ Insumo "${name}" cadastrado e sincronizado.`);
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) suppliesList = suppliesList.filter(item => item !== newSupply);
+      render();
+      showToast('Falha ao cadastrar o insumo no Supabase. O item provisório foi removido.');
     }
 
     function handleSupplyExcelUpload(event) {
@@ -6731,15 +6540,18 @@
           { id: Date.now()+1, name: 'Argamassa AC-III 20kg (Revisão Excel)', supplier: 'Votoran Cimentos', qtd: '400 Sacos', date: 'Hoje', sector: 'Prédios', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { id: Date.now()+2, name: 'Cabos Elétricos Cobre 4mm (Revisão Excel)', supplier: 'Prysmian Cabos', qtd: '1.200 Metros', date: 'Amanhã', sector: 'Arena Shows', status: 'Em Transporte', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
         ];
+
         suppliesList.unshift(...imported);
         render();
         const results = await Promise.all(imported.map(persistSupplyRecord));
+        await refreshIntelligenceOperationalData();
+        render();
+
         showToast(results.every(Boolean)
-          ? `✓ 2 novos insumos importados e sincronizados da planilha "${file.name}".`
-          : `Insumos importados localmente; parte da sincronização ficou pendente.`);
+          ? `✓ 2 novos insumos importados e confirmados no Supabase a partir de "${file.name}".`
+          : 'A importação foi reconciliada: somente os registros confirmados no Supabase permaneceram.');
       }, 700);
     }
-
 
     function openProjectCockpit(projId) {
       selectedProjectId = projId;
@@ -6971,6 +6783,11 @@
     async function applyExcelProjectUpdate() {
       if (!excelDiffData) return;
 
+      const previousProgress = physicalProgress;
+      const previousPacScore = pacScore;
+      const previousFinancialSpent = financialSpent;
+      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+
       physicalProgress = 64.2;
       pacScore = 82;
       financialSpent = 15.45;
@@ -6983,17 +6800,31 @@
         pac: '82%',
         status: 'Versão Atual em Produção'
       });
-      projectVersions[1].status = 'Arquivado';
+      if (projectVersions[1]) projectVersions[1].status = 'Arquivado';
 
-      if (selectedProject) {
-        selectedProject.progress = physicalProgress;
-      }
+      if (selectedProject) selectedProject.progress = physicalProgress;
       excelDiffData = null;
       render();
+
       const synced = await persistProjectMetrics();
-      showToast(synced
-        ? '✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.'
-        : 'Projeto atualizado localmente; sincronização operacional pendente.');
+      if (synced) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) {
+        physicalProgress = previousProgress;
+        pacScore = previousPacScore;
+        financialSpent = previousFinancialSpent;
+        if (selectedProject) selectedProject.progress = previousProjectProgress;
+        projectVersions.shift();
+        if (projectVersions[0]) projectVersions[0].status = 'Versão Atual em Produção';
+      }
+      render();
+      showToast('Falha ao sincronizar a atualização do Excel. A tela voltou ao último estado confirmado.');
     }
 
     function cancelExcelDiff() {
@@ -7018,92 +6849,103 @@
       }
     }
 
-    async function deleteUser(userId) {
+    function deleteUser(userId) {
       if (!userId) return;
       const strId = String(userId).toLowerCase();
-      const u = registeredUsers.find(x =>
-        String(x.id).toLowerCase() === strId ||
-        (x.email && x.email.toLowerCase() === strId) ||
-        (x.name && x.name.toLowerCase() === strId)
-      );
-
+      const u = registeredUsers.find(x => String(x.id).toLowerCase() === strId || (x.email && x.email.toLowerCase() === strId) || (x.name && x.name.toLowerCase() === strId));
+      
       if (!u) {
         showToast('Usuário não encontrado na base.');
         return;
       }
 
-      if ((u.email || '').toLowerCase() === 'armidiasintegradas@gmail.com') {
+      if (u.email && u.email.toLowerCase() === 'armidiasintegradas@gmail.com') {
         showToast('O Administrador Master não pode ser excluído.');
         return;
       }
 
-      if (!confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email})? Esta ação remove também o login e não pode ser desfeita.`)) {
-        return;
-      }
-
-      if (!supabaseClient) initSupabaseClient();
-      if (!supabaseClient) {
-        showToast('Não foi possível conectar ao Supabase de produção.');
-        return;
-      }
-
-      showToast(`Excluindo ${u.name} do Supabase...`);
-
-      try {
-        const { data, error } = await supabaseClient.functions.invoke('admin-delete-user', {
-          body: { userId: u.id }
-        });
-
-        if (error || !data?.ok) {
-          throw new Error(data?.error || error?.message || 'A exclusão não foi concluída.');
-        }
-
+      if (confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email}) da base de dados?`)) {
         const userEmail = (u.email || '').toLowerCase();
+        const userName = (u.name || '').toLowerCase();
         const userObjId = String(u.id || '').toLowerCase();
 
-        registeredUsers = registeredUsers.filter(x =>
-          String(x.id || '').toLowerCase() !== userObjId &&
-          (x.email || '').toLowerCase() !== userEmail
-        );
-        pendingUsers = pendingUsers.filter(x =>
-          String(x.id || '').toLowerCase() !== userObjId &&
-          String(x.userId || '').toLowerCase() !== userObjId &&
-          (x.email || '').toLowerCase() !== userEmail
-        );
-        teamMembersList = teamMembersList.filter(x =>
-          String(x.id || '').toLowerCase() !== userObjId &&
-          (x.email || '').toLowerCase() !== userEmail
-        );
-
+        // 1. Grava na blacklist permanente de exclusão definitiva
         try {
-          localStorage.removeItem('planes_deleted_users_blacklist');
+          let blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+          if (userEmail && !blacklist.includes(userEmail)) blacklist.push(userEmail);
+          if (userObjId && !blacklist.includes(userObjId)) blacklist.push(userObjId);
+          localStorage.setItem('planes_deleted_users_blacklist', JSON.stringify(blacklist));
+        } catch (e) {}
+
+        // 2. Remove de registeredUsers
+        registeredUsers = registeredUsers.filter(x => {
+          const xEmail = (x.email || '').toLowerCase();
+          const xId = String(x.id || '').toLowerCase();
+          const xName = (x.name || '').toLowerCase();
+          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
+        });
+
+        // 3. Remove de pendingUsers
+        pendingUsers = pendingUsers.filter(x => {
+          const xEmail = (x.email || '').toLowerCase();
+          const xId = String(x.id || '').toLowerCase();
+          return xEmail !== userEmail && xId !== userObjId;
+        });
+
+        // 4. Remove de teamMembersList
+        teamMembersList = teamMembersList.filter(x => {
+          const xEmail = (x.email || '').toLowerCase();
+          const xId = String(x.id || '').toLowerCase();
+          const xName = (x.name || '').toLowerCase();
+          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
+        });
+
+        // 5. Remove de online sessions
+        try {
           const raw = localStorage.getItem('planes_online_sessions');
           if (raw) {
-            const sessions = JSON.parse(raw).filter(s => (s.email || '').toLowerCase() !== userEmail);
+            let sessions = JSON.parse(raw);
+            sessions = sessions.filter(s => (s.email || '').toLowerCase() !== userEmail);
             localStorage.setItem('planes_online_sessions', JSON.stringify(sessions));
           }
         } catch (e) {}
 
-        await fetchAdminIAMData(false);
-        render();
-        showToast(`✓ ${u.name} foi excluído do Supabase e não poderá mais entrar com essa conta até se cadastrar novamente.`);
-      } catch (err) {
-        console.error('Falha ao excluir usuário:', err);
-        showToast('Erro ao excluir usuário: ' + (err?.message || 'falha no Supabase'));
-        await fetchAdminIAMData(false);
+        // Transmite exclusão para a nuvem para todos os dispositivos
+        broadcastCloudAction('USER_DELETE', { userEmail: userEmail, userId: userObjId, userName: u.name });
+
+        saveUsersStorage();
+        saveSessionState();
+        showToast(`✓ Usuário ${u.name} foi EXCLUÍDO PERMANENTEMENTE da base!`);
         render();
       }
     }
 
-    async function refreshUsersTable(manual = true) {
+    function refreshUsersTable(manual = true) {
       try {
-        await fetchAdminIAMData(false);
-        if (manual) {
-          showToast(`✓ Painel sincronizado com o Supabase (${registeredUsers.length} perfis ativos)`);
+        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
+        
+        // Recarrega e purga qualquer item excluído
+        const savedUsers = localStorage.getItem('planes_registered_users');
+        if (savedUsers) {
+          let parsed = JSON.parse(savedUsers);
+          if (Array.isArray(parsed)) {
+            registeredUsers = parsed.filter(u => {
+              const e = (u.email || '').toLowerCase();
+              const id = String(u.id || '').toLowerCase();
+              return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves';
+            });
+          }
         }
-      } catch (e) {
-        console.error('Falha ao atualizar usuários:', e);
-        if (manual) showToast('Falha ao atualizar usuários a partir do Supabase.');
+
+        if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
+          registeredUsers.unshift(defaultRegisteredUsers[0]);
+        }
+
+        saveUsersStorage();
+      } catch (e) {}
+
+      if (manual) {
+        showToast(`✓ Painel de usuários atualizado (${registeredUsers.length} perfis ativos)`);
       }
       render();
     }
@@ -7200,14 +7042,14 @@
         if (supabaseClient && isSupabaseConfigured()) {
           showToast('Iniciando Google OAuth oficial...');
           try {
-            const redirectUrl = 'https://armidiasintegradas.github.io/planes/';
+            const redirectUrl = window.location.origin + window.location.pathname;
             const { data, error } = await supabaseClient.auth.signInWithOAuth({
               provider: 'google',
               options: {
                 redirectTo: redirectUrl,
                 queryParams: {
                   access_type: 'offline',
-                  prompt: 'select_account'
+                  prompt: 'consent'
                 }
               }
             });
@@ -7431,7 +7273,7 @@
       if (mem) {
         document.getElementById('m-modal-name').innerText = mem.name;
         document.getElementById('m-modal-role').innerText = mem.role;
-        document.getElementById('m-modal-avatar').innerHTML = getAvatarMarkup(mem.avatar, mem.name || mem.email || 'Usuário');
+        document.getElementById('m-modal-avatar').innerText = mem.avatar;
         document.getElementById('m-modal-cpf').innerText = mem.cpf;
         document.getElementById('m-modal-rg').innerText = mem.rg;
         document.getElementById('m-modal-phone').innerText = mem.phone;
@@ -7678,7 +7520,7 @@
       }
     }
 
-    function executeVoiceCommand(cmd) {
+    async function executeVoiceCommand(cmd) {
       const clean = cmd.trim();
       if (!clean) return;
 
@@ -7775,8 +7617,16 @@
           done: false
         };
         tasksList.unshift(newTask);
-        persistTaskRecord(newTask);
-        responseText = `Tarefa adicionada e enviada para sincronização: ${newTask.title}.`;
+        render();
+        const taskSynced = await persistTaskRecord(newTask);
+        if (taskSynced) {
+          await refreshIntelligenceOperationalData();
+          responseText = `Tarefa adicionada e confirmada: ${newTask.title}.`;
+        } else {
+          const reconciled = await refreshIntelligenceOperationalData();
+          if (!reconciled) tasksList = tasksList.filter(task => task !== newTask);
+          responseText = 'Não foi possível criar a tarefa. O estado confirmado foi restaurado.';
+        }
       } 
       else if (lower.includes('avanço') || lower.includes('progresso') || lower.includes('status') || lower.includes('como está') || lower.includes('obra')) {
         responseText = `Obra em ${physicalProgress}% de avanço físico, PAC em ${pacScore}% e R$ ${financialSpent}M medidos.`;
@@ -7793,8 +7643,16 @@
           done: false
         };
         tasksList.unshift(fallbackTask);
-        persistTaskRecord(fallbackTask);
-        responseText = `Comando executado e enviado para sincronização.`;
+        render();
+        const fallbackSynced = await persistTaskRecord(fallbackTask);
+        if (fallbackSynced) {
+          await refreshIntelligenceOperationalData();
+          responseText = 'Comando executado e confirmado no Supabase.';
+        } else {
+          const reconciled = await refreshIntelligenceOperationalData();
+          if (!reconciled) tasksList = tasksList.filter(task => task !== fallbackTask);
+          responseText = 'O comando não pôde ser persistido. O estado confirmado foi restaurado.';
+        }
       }
 
       assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
@@ -7805,10 +7663,23 @@
     }
 
     async function toggleTaskDone(id) {
+      const before = tasksList.map(t => ({ ...t }));
       tasksList = tasksList.map(t => t.id === id ? { ...t, done: !t.done } : t);
       const task = tasksList.find(t => t.id === id);
       render();
-      if (task) await persistTaskRecord(task);
+      if (!task) return;
+
+      const ok = await persistTaskRecord(task);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) tasksList = before;
+      render();
+      showToast('Falha ao atualizar a tarefa. O estado confirmado foi restaurado.');
     }
 
     function removeReminder(id) {
@@ -7964,7 +7835,7 @@
             <div class="space-y-3 text-xs">
               <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs ${mem.color}">
-                  ${getAvatarMarkup(mem.avatar, mem.name || mem.email || 'Usuário')}
+                  ${mem.avatar}
                 </div>
                 <div>
                   <strong class="text-sm font-bold text-slate-950 block">${mem.name}</strong>
@@ -8307,9 +8178,9 @@
 
     async function deleteSupplyRecordRemote(id) {
       if (!supabaseClient || !isUuidLike(id)) return true;
-      const { error } = await supabaseClient.from('project_supplies').delete().eq('id', id);
-      if (error) {
-        console.warn('Falha ao excluir suprimento no Supabase:', error);
+      const { data, error } = await supabaseClient.from('project_supplies').delete().eq('id', id).select('id');
+      if (error || !Array.isArray(data) || data.length === 0) {
+        console.warn('Falha ao excluir suprimento no Supabase:', error || 'nenhuma linha removida');
         return false;
       }
       return true;
@@ -8482,6 +8353,17 @@
             status: v.status
           }));
         }
+        window.pendingValidationsList = validations.map(v => ({
+          id: v.id,
+          frente: v.front,
+          activity: v.item,
+          volume: v.qtd,
+          author: v.resp,
+          cargo: v.cargo,
+          time: v.data,
+          gps: v.gps,
+          status: v.status
+        }));
 
         if (Array.isArray(tasksRes.data)) {
           tasksList = tasksRes.data.map((t, idx) => ({
@@ -8761,7 +8643,7 @@
               class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-black text-xs cursor-pointer ios-press-action shadow-2xs border border-white/20"
               title="Meu Perfil"
             >
-              ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
+              ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
             </div>
           </div>
         </header>
@@ -9662,47 +9544,11 @@
       showToast('📲 No Safari: toque em Compartilhar ⎋ e selecione "Adicionar à Tela de Início"');
     }
 
-    let mobileFieldUnit = 'm²';
-
-    function getMobileUnitStep(unit) {
-      const map = {
-        'm²': 5,
-        'm³': 1,
-        'm': 1,
-        'un': 1,
-        'kg': 10,
-        't': 0.1,
-        'h': 0.5
-      };
-      return map[unit] ?? 1;
-    }
-
-    function setMobileFieldUnit(unit) {
-      mobileFieldUnit = unit || 'm²';
-      const select = document.getElementById('mobile-field-unit');
-      if (select && select.value !== mobileFieldUnit) select.value = mobileFieldUnit;
-
-      const stepLabel = document.getElementById('mobile-field-step-label');
-      if (stepLabel) {
-        const step = getMobileUnitStep(mobileFieldUnit);
-        stepLabel.innerText = `Incremento 1-Touch · ${mobileFieldUnit} · passo ${step}`;
-      }
-
-      const amount = document.getElementById('mobile-field-amount');
-      if (amount) {
-        const step = getMobileUnitStep(mobileFieldUnit);
-        amount.step = String(step);
-      }
-    }
-
-    function incMobileAmount(multiplier) {
+    function incMobileAmount(delta) {
       const inp = document.getElementById('mobile-field-amount');
       if (inp) {
-        const unit = document.getElementById('mobile-field-unit')?.value || mobileFieldUnit || 'm²';
-        const step = getMobileUnitStep(unit);
-        const current = parseFloat(inp.value) || 0;
-        const next = Math.max(0, current + (Number(multiplier) * step));
-        inp.value = Number.isInteger(next) ? String(next) : String(Number(next.toFixed(2)));
+        let val = parseFloat(inp.value) || 0;
+        inp.value = Math.max(0, val + delta);
       }
     }
 
@@ -9733,7 +9579,7 @@
       const front = (document.getElementById('mobile-field-front') ? document.getElementById('mobile-field-front').value : 'ARENA');
       const act = (document.getElementById('mobile-field-activity') ? document.getElementById('mobile-field-activity').value : 'Concretagem Laje');
       const amount = (document.getElementById('mobile-field-amount') ? document.getElementById('mobile-field-amount').value : '15');
-      const unit = (document.getElementById('mobile-field-unit') ? document.getElementById('mobile-field-unit').value : mobileFieldUnit || 'm²');
+      const unit = (document.getElementById('mobile-field-unit') ? document.getElementById('mobile-field-unit').value : 'm³');
 
       const newLog = {
         id: Date.now(),
@@ -9760,16 +9606,23 @@
         gps: newLog.gps,
         status: 'Pendente'
       };
+
       render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
-      if (synced && isUuidLike(validationRecord.id)) newLog.id = validationRecord.id;
-      showToast(synced
-        ? `⚡ Apontamento de ${amount} ${unit} registrado e sincronizado.`
-        : `Apontamento de ${amount} ${unit} salvo localmente; sincronização pendente.`);
+      if (synced) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast(`⚡ Apontamento de ${amount} ${unit} registrado e confirmado.`);
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry !== newLog);
+      render();
+      showToast('Falha ao registrar o apontamento. O item provisório foi removido.');
     }
 
     function renderMobileCampoView(selectedProject) {
-      window.setTimeout(() => setMobileFieldUnit(mobileFieldUnit || 'm²'), 0);
       const pTitle = selectedProject ? selectedProject.title : 'Mirante do Parque';
       const recentLogs = Array.isArray(window.pendingValidationsList) && window.pendingValidationsList.length > 0
         ? window.pendingValidationsList
@@ -9834,13 +9687,13 @@
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="text-[11px] font-bold text-slate-700">Volume Medido</label>
-                <span id="mobile-field-step-label" class="text-[9.5px] text-slate-400 font-mono">Incremento 1-Touch · m² · passo 5</span>
+                <span class="text-[9.5px] text-slate-400 font-mono">Incremento 1-Touch</span>
               </div>
               <div class="grid grid-cols-4 gap-2 mb-2">
-                <button type="button" onclick="incMobileAmount(1)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+5</button>
-                <button type="button" onclick="incMobileAmount(2)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+10</button>
-                <button type="button" onclick="incMobileAmount(5)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+25</button>
-                <button type="button" onclick="incMobileAmount(10)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+50</button>
+                <button type="button" onclick="incMobileAmount(5)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+5</button>
+                <button type="button" onclick="incMobileAmount(10)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+10</button>
+                <button type="button" onclick="incMobileAmount(25)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+25</button>
+                <button type="button" onclick="incMobileAmount(50)" class="min-h-[44px] py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-[14px] text-xs font-black text-slate-900 border border-slate-200 ios-press-action shadow-2xs cursor-pointer">+50</button>
               </div>
               <div class="flex gap-2">
                 <input
@@ -9849,19 +9702,12 @@
                   value="25"
                   class="flex-1 p-2.5 rounded-[12px] border border-slate-200 bg-slate-50 text-base font-black text-slate-950 font-mono focus:bg-white focus:outline-none"
                 />
-                <select
+                <input
+                  type="text"
                   id="mobile-field-unit"
-                  onchange="setMobileFieldUnit(this.value)"
-                  class="w-24 p-2.5 rounded-[12px] border border-slate-200 bg-slate-50 text-xs font-bold text-center text-slate-900 focus:bg-white focus:outline-none"
-                >
-                  <option value="m²" selected>m²</option>
-                  <option value="m³">m³</option>
-                  <option value="m">m</option>
-                  <option value="un">un</option>
-                  <option value="kg">kg</option>
-                  <option value="t">t</option>
-                  <option value="h">h</option>
-                </select>
+                  value="m²"
+                  class="w-20 p-2.5 rounded-[12px] border border-slate-200 bg-slate-50 text-xs font-bold text-center text-slate-900 focus:bg-white focus:outline-none"
+                />
               </div>
             </div>
 
@@ -11288,8 +11134,7 @@
             </main>
 
             <footer class="w-full text-center text-xs text-slate-500 py-4 font-mono">
-              © 2026 Planes Engenharia. Todos os direitos reservados.<br>
-              Design &amp; Tecnologia por AR Mídias Integradas
+              Planes OS · IAM Security Engine · CREA/AL 10948-D
             </footer>
           </div>
         `;
@@ -11416,9 +11261,8 @@
 
               <!-- Footer Credits (50% Mais Claro, Fonte Fina e Tamanho Reduzido) -->
               <div class="mt-6 text-center pb-4">
-                <p class="text-[8.5px] font-light text-slate-400/75 tracking-widest select-none">
-                  © 2026 Planes Engenharia. Todos os direitos reservados.<br>
-                  Design &amp; Tecnologia por AR Mídias Integradas
+                <p class="text-[8.5px] font-light text-slate-400/75 tracking-widest uppercase select-none">
+                  DESENVOLVIDO POR AR MIDIAS INTEGRADAS • 2026 TODOS OS DIREITOS RESERVADOS
                 </p>
               </div>
 
@@ -11548,7 +11392,7 @@
                 <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
                   <div onclick="openEditProfileModal()" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition group" title="Editar Meu Perfil">
                     <div class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-extrabold text-xs group-hover:scale-105 transition">
-                      ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
+                      ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
                     </div>
                     <div class="text-left hidden md:block">
                       <strong class="text-xs font-bold text-slate-900 block leading-tight group-hover:text-blue-950">${currentUser ? currentUser.name : 'Alex Ribeiro'}</strong>
@@ -11832,7 +11676,7 @@
                 <!-- User Profile & Quick Edit -->
                 <div class="flex items-center pl-2 xl:pl-3 border-l border-slate-200">
                   <div onclick="openEditProfileModal()" class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-extrabold text-xs cursor-pointer hover:ring-2 hover:ring-[#d4ff00] transition" title="Editar Meu Perfil">
-                    ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
+                    ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
                   </div>
                 </div>
               </div>
@@ -11876,7 +11720,7 @@
                   <div class="p-3 bg-slate-50 hover:bg-slate-100/90 rounded-[16px] border border-slate-200 flex items-center justify-between gap-2 shadow-2xs transition group">
                     <div onclick="openEditProfileModal()" class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" title="Clique para Editar seu Perfil">
                       <div class="w-8 h-8 rounded-[10px] bg-[#0b2535] text-white font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:scale-105 transition">
-                        ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
+                        ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
                       </div>
                       <div class="truncate">
                         <strong class="text-xs font-bold text-slate-950 block leading-tight truncate group-hover:text-blue-950">${currentUser ? currentUser.name : 'Alex Ribeiro'}</strong>
@@ -13827,7 +13671,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                           <div class="flex items-start justify-between gap-3 mb-3.5">
                             <div class="flex items-center gap-3 min-w-0 flex-1 pr-1">
                               <div class="w-11 h-11 rounded-[14px] flex items-center justify-center font-black text-xs shadow-2xs ${mem.color || 'bg-slate-900 text-white'} shrink-0">
-                                ${getAvatarMarkup(mem.avatar, mem.name || mem.email || 'Usuário')}
+                                ${mem.avatar}
                               </div>
                               <div class="min-w-0 flex-1">
                                 <strong class="text-sm font-bold text-slate-950 block leading-tight truncate group-hover:text-slate-800 transition">
@@ -14902,7 +14746,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                               <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2.5">
                                   <div class="w-8 h-8 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-bold text-xs shrink-0">
-                                    ${getAvatarMarkup(u.avatar, u.name || u.email || 'Usuário')}
+                                    ${u.avatar || 'US'}
                                   </div>
                                   <div>
                                     <strong class="text-sm font-black text-slate-950 block">${u.name}</strong>
@@ -14993,7 +14837,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                             <div class="flex items-center gap-2.5 min-w-0">
                               <div class="relative shrink-0">
                                 <div class="w-9 h-9 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-xs">
-                                  ${getAvatarMarkup(sess.avatar, sess.name || sess.email || 'Usuário')}
+                                  ${sess.avatar || 'US'}
                                 </div>
                                 <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse"></span>
                               </div>
@@ -15091,7 +14935,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                             <tr class="hover:bg-slate-50 transition">
                               <td class="p-3 font-bold text-slate-950 flex items-center gap-2">
                                 <div class="w-7 h-7 rounded-full bg-slate-950 text-white flex items-center justify-center font-bold text-[10px]">
-                                  ${getAvatarMarkup(usr.avatar, usr.name || usr.email || 'Usuário')}
+                                  ${usr.avatar || 'US'}
                                 </div>
                                 <span>${usr.name}</span>
                               </td>
