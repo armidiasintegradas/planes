@@ -4936,7 +4936,7 @@
       render();
     }
 
-    function submitMobileCampoApontamento() {
+    async function submitMobileCampoApontamento() {
       const input = document.getElementById('mobile-campo-qtd');
       const finalQtd = input ? (parseInt(input.value) || campoQtd) : campoQtd;
       
@@ -4962,7 +4962,19 @@
       campoPhoto = null;
       campoQtd = 10;
       
-      showToast('✓ Apontamento de Campo enviado para Validação!');
+      const validationRecord = {
+        id: newValidItem.id,
+        resp: newValidItem.author,
+        cargo: 'Campo',
+        front: newValidItem.frente,
+        item: newValidItem.activity,
+        qtd: newValidItem.volume,
+        data: newValidItem.time,
+        gps: newValidItem.gps,
+        status: 'Pendente'
+      };
+      const synced = await persistValidationStatus(validationRecord, 'Pendente');
+      showToast(synced ? '✓ Apontamento enviado e sincronizado para Validação.' : 'Apontamento salvo localmente; sincronização pendente.');
       setMobileTab('validar');
     }
 
@@ -5979,9 +5991,21 @@
       return clean.startsWith('Oi, ' + firstName) ? clean : 'Oi, ' + firstName + '.\n' + clean;
     }
 
-    function selectMobileModule(navName) {
+    function selectMobileModule(navName, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       isMoreSheetOpen = false;
       isProjectSwitcherOpen = false;
+
+      const sheet = document.getElementById('mobile-more-sheet');
+      if (sheet) {
+        sheet.style.pointerEvents = 'none';
+        sheet.setAttribute('aria-hidden', 'true');
+        sheet.remove();
+      }
+
       setNavWithHistory(navName);
     }
 
@@ -5989,6 +6013,11 @@
     let navHistory = [];
 
     function setNavWithHistory(navName) {
+      isMoreSheetOpen = false;
+      isProjectSwitcherOpen = false;
+      const residualMoreSheet = document.getElementById('mobile-more-sheet');
+      if (residualMoreSheet) residualMoreSheet.remove();
+
       if (activeNav !== navName) {
         navHistory.push(activeNav);
         if (navHistory.length > 30) navHistory.shift();
@@ -6654,13 +6683,17 @@
       const file = event.target.files[0];
       if (!file) return;
       showToast(`Lendo planilha de suprimentos "${file.name}"...`);
-      setTimeout(() => {
-        suppliesList.unshift(
+      setTimeout(async () => {
+        const imported = [
           { id: Date.now()+1, name: 'Argamassa AC-III 20kg (Revisão Excel)', supplier: 'Votoran Cimentos', qtd: '400 Sacos', date: 'Hoje', sector: 'Prédios', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { id: Date.now()+2, name: 'Cabos Elétricos Cobre 4mm (Revisão Excel)', supplier: 'Prysmian Cabos', qtd: '1.200 Metros', date: 'Amanhã', sector: 'Arena Shows', status: 'Em Transporte', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
-        );
-        showToast(`✓ 2 novos insumos importados da planilha "${file.name}"!`);
+        ];
+        suppliesList.unshift(...imported);
         render();
+        const results = await Promise.all(imported.map(persistSupplyRecord));
+        showToast(results.every(Boolean)
+          ? `✓ 2 novos insumos importados e sincronizados da planilha "${file.name}".`
+          : `Insumos importados localmente; parte da sincronização ficou pendente.`);
       }, 700);
     }
 
@@ -6779,13 +6812,17 @@
       if (!file) return;
 
       showToast(`Processando planilha de insumos "${file.name}"...`);
-      setTimeout(() => {
-        suppliesList.unshift(
+      setTimeout(async () => {
+        const imported = [
           { id: Date.now()+1, name: 'Treliças Metálicas Modulares (Lote Extra)', supplier: 'Gerdau Aços', qtd: '18 Toneladas', date: 'Hoje', sector: 'Arena Shows', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { id: Date.now()+2, name: 'Pastilhas de Porcelana 20x20 Azul Cobalto', supplier: 'Portobello Shop', qtd: '450 m²', date: 'Amanhã', sector: 'Parque de Piscinas', status: 'Em Transporte', badge: 'bg-sky-100 text-sky-900 border-sky-300' }
-        );
-        showToast(`✓ 2 novos insumos cadastrados a partir da planilha "${file.name}"!`);
+        ];
+        suppliesList.unshift(...imported);
         render();
+        const results = await Promise.all(imported.map(persistSupplyRecord));
+        showToast(results.every(Boolean)
+          ? `✓ 2 novos insumos cadastrados e sincronizados a partir de "${file.name}".`
+          : `Insumos cadastrados localmente; parte da sincronização ficou pendente.`);
       }, 700);
     }
 
@@ -7615,8 +7652,11 @@
       if (lower.startsWith('abrir ') || lower.startsWith('ir para ') || lower.startsWith('mostrar ')) {
         const destination = navigationCommands.find(item => item.terms.some(term => lower.includes(term)));
         if (destination) {
-          activeNav = destination.target;
-          mobileCurrentTab = 'modulo';
+          isMoreSheetOpen = false;
+          isProjectSwitcherOpen = false;
+          const residualMoreSheet = document.getElementById('mobile-more-sheet');
+          if (residualMoreSheet) residualMoreSheet.remove();
+          setNavWithHistory(destination.target);
           responseText = 'Abrindo ' + destination.target + '.';
           assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
           liveTranscript = '';
@@ -7635,8 +7675,11 @@
         lower.includes('risco de atraso') ||
         lower.includes('qual o risco')
       ) {
-        activeNav = 'Planes Intelligence';
-        mobileCurrentTab = 'modulo';
+        isMoreSheetOpen = false;
+        isProjectSwitcherOpen = false;
+        const residualMoreSheet = document.getElementById('mobile-more-sheet');
+        if (residualMoreSheet) residualMoreSheet.remove();
+        setNavWithHistory('Planes Intelligence');
         showToast('Planes Intelligence está analisando sua pergunta…');
         speakText('Vou analisar os dados da obra.');
         askPlanesIntelligence(clean);
@@ -9484,7 +9527,7 @@
 
       return `
         <!-- BOTTOM SHEET: MENU MAIS -->
-        <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="toggleMobileMoreSheet()">
+        <div id="mobile-more-sheet" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="toggleMobileMoreSheet()" role="dialog" aria-modal="true" aria-label="Mais módulos da obra">
           <div class="bg-white rounded-t-[26px] p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl animate-card-fade" onclick="event.stopPropagation()">
             
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -9496,7 +9539,7 @@
             <div class="grid grid-cols-2 gap-2.5">
               ${menuItems.map(item => `
                 <div
-                  onclick="selectMobileModule('${item.name}')"
+                  onclick="selectMobileModule('${item.name}', event)"
                   class="p-3 bg-slate-50 hover:bg-slate-100 rounded-[16px] border border-slate-200 cursor-pointer ios-press-action space-y-1 shadow-2xs"
                 >
                   <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-white flex items-center justify-center font-black">
@@ -9631,7 +9674,7 @@
       }
     }
 
-    function submitMobileFieldLog() {
+    async function submitMobileFieldLog() {
       const front = (document.getElementById('mobile-field-front') ? document.getElementById('mobile-field-front').value : 'ARENA');
       const act = (document.getElementById('mobile-field-activity') ? document.getElementById('mobile-field-activity').value : 'Concretagem Laje');
       const amount = (document.getElementById('mobile-field-amount') ? document.getElementById('mobile-field-amount').value : '15');
@@ -9651,8 +9694,22 @@
       if (!window.pendingValidationsList) window.pendingValidationsList = [];
       window.pendingValidationsList.unshift(newLog);
 
-      showToast(`⚡ Apontamento de ${amount} ${unit} registrado com sucesso!`);
+      const validationRecord = {
+        id: newLog.id,
+        resp: newLog.author,
+        cargo: 'Campo',
+        front: newLog.frente,
+        item: newLog.activity,
+        qtd: newLog.volume,
+        data: newLog.time,
+        gps: newLog.gps,
+        status: 'Pendente'
+      };
       render();
+      const synced = await persistValidationStatus(validationRecord, 'Pendente');
+      showToast(synced
+        ? `⚡ Apontamento de ${amount} ${unit} registrado e sincronizado.`
+        : `Apontamento de ${amount} ${unit} salvo localmente; sincronização pendente.`);
     }
 
     function renderMobileCampoView(selectedProject) {
@@ -10272,9 +10329,9 @@
                   ${isListening ? '● Ouvindo' : '● Online'}
                 </span>
               </div>
-              <span class="text-[12px] font-black text-slate-700 block mt-1">Oi, ${getPlanesUserFirstName()}</span>
-              <h2 class="text-lg font-black text-slate-950 leading-tight mt-0.5">Planes Intelligence</h2>
-              <p class="text-[11px] text-slate-500 mt-1">Copiloto operacional · voz, diagnóstico e ação</p>
+              <h2 class="text-xl font-black text-slate-950 leading-tight mt-1">Oi, ${getPlanesUserFirstName()}</h2>
+              <p class="text-[12px] font-black text-purple-800 mt-0.5">Planes Intelligence</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Copiloto operacional · voz, diagnóstico e ação</p>
               <div class="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono">
                 <span class="w-1.5 h-1.5 rounded-full ${intelligenceDataSource === 'supabase' ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
                 <span class="${intelligenceDataSource === 'supabase' ? 'text-emerald-700' : 'text-slate-500'}">
