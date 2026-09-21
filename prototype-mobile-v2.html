@@ -26,7 +26,8 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 .fab{position:fixed;right:14px;bottom:84px;z-index:55;background:var(--navy);color:#fff;border:0;border-radius:999px;min-height:52px;padding:0 16px;font-weight:900;box-shadow:0 12px 30px rgba(7,21,43,.2)}
 .drawer{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:none;align-items:flex-end}.drawer.open{display:flex}.sheet{background:#fff;width:100%;border-radius:26px 26px 0 0;max-height:78dvh;padding:12px 14px max(18px,env(safe-area-inset-bottom));overflow:auto}.handle{width:44px;height:5px;border-radius:99px;background:#d0d5dd;margin:0 auto 14px}
 .chat{display:grid;gap:10px}.msg{max-width:86%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.4}.ai{background:#f2f4f7}.user{background:var(--navy);color:#fff;margin-left:auto}.composer{display:flex;gap:8px;margin-top:14px}.composer input{flex:1;height:48px;border:1px solid var(--line);border-radius:14px;padding:0 12px}.composer button{width:48px;height:48px;border:0;border-radius:14px;background:var(--navy);color:var(--lime)}
-@media(min-width:700px) and (max-width:1023px){main{padding-left:22px;padding-right:22px}.grid4{grid-template-columns:repeat(4,1fr)}.masterdetail{grid-template-columns:minmax(280px,.9fr) minmax(360px,1.4fr);align-items:start}.fab{right:24px}}
+.rolebar{display:flex;gap:7px;overflow:auto;padding-bottom:2px;scrollbar-width:none}.rolebar::-webkit-scrollbar{display:none}.rolechip{flex:0 0 auto;min-height:40px;border-radius:999px;border:1px solid var(--line);background:#fff;padding:0 12px;font-size:12px;font-weight:800;color:#475467}.rolechip.active{background:var(--navy);color:#fff;border-color:var(--navy)}.role-note{font-size:12px;color:var(--muted);line-height:1.4}.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.quick{min-height:58px;border-radius:16px;border:1px solid var(--line);background:#fff;padding:10px 12px;text-align:left;font-weight:800}.quick small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
+@media(min-width:700px) and (max-width:1023px){main{padding-left:22px;padding-right:22px}.grid4{grid-template-columns:repeat(4,1fr)}.masterdetail{grid-template-columns:minmax(280px,.9fr) minmax(360px,1.4fr);align-items:start}.quick-grid{grid-template-columns:repeat(4,1fr)}.fab{right:24px}}
 </style>
 </head>
 <body>
@@ -34,9 +35,27 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 <header class="topbar"><div class="brand"><div class="logo">P</div><button class="project" onclick="openSheet('projectSheet')">Reserva da Lagoa ▾</button></div><div class="actions"><button class="iconbtn voice" onclick="openSheet('intelligenceSheet')">🎙</button><button class="iconbtn">AR</button></div></header>
 <main>
 <section id="home" class="screen active">
-  <div><div class="eyebrow">Sua obra hoje</div><h1>Bom dia, Alex 👋</h1><p class="sub">Reserva da Lagoa · Recife</p></div>
-  <div class="hero"><div class="assistant"><div class="avatar">🐶</div><div class="bubble"><div class="eyebrow" style="color:#aeb7c6">Brita · Planes Intelligence</div><h2>Tem 2 pontos que valem olhar primeiro.</h2><p>Uma validação ficou parada desde ontem e o aço da Arena entrou em atraso. O resto está estável por enquanto.</p></div></div><div class="actions" style="margin-top:14px"><button class="primary" onclick="showScreen('validations')">Ver prioridades</button><button class="secondary" onclick="openSheet('intelligenceSheet')">🎙 Falar comigo</button></div></div>
-  <div class="grid4"><div class="metric"><span>Validações</span><strong>2</strong><span>aguardando</span></div><div class="metric"><span>Suprimentos</span><strong style="color:#b42318">1</strong><span>atrasado</span></div><div class="metric"><span>Tarefas</span><strong>5</strong><span>abertas</span></div><div class="metric"><span>PAC</span><strong>84</strong><span>atenção</span></div></div>
+  <div><div class="eyebrow">Sua obra hoje</div><h1 id="homeGreeting">Bom dia, Alex 👋</h1><p class="sub">Reserva da Lagoa · Recife</p></div>
+  <div>
+    <div class="rolebar" aria-label="Simular perfil de usuário">
+      <button class="rolechip active" data-role="engenharia" onclick="setPrototypeRole('engenharia',this)">Engenharia</button>
+      <button class="rolechip" data-role="campo" onclick="setPrototypeRole('campo',this)">Campo</button>
+      <button class="rolechip" data-role="gestor" onclick="setPrototypeRole('gestor',this)">Gestor</button>
+      <button class="rolechip" data-role="cliente" onclick="setPrototypeRole('cliente',this)">Cliente</button>
+    </div>
+    <p class="role-note" id="roleNote">Visão técnica: restrições, validações, suprimentos e PAC em prioridade.</p>
+  </div>
+  <div class="hero"><div class="assistant"><div class="avatar">🐶</div><div class="bubble"><div class="eyebrow" style="color:#aeb7c6">Brita · Planes Intelligence</div><h2 id="assistantHeadline">Tem 2 pontos que valem olhar primeiro.</h2><p id="assistantBrief">Uma validação ficou parada desde ontem e o aço da Arena entrou em atraso. O resto está estável por enquanto.</p></div></div><div class="actions" style="margin-top:14px"><button class="primary" onclick="showScreen('validations')">Ver prioridades</button><button class="secondary" onclick="openSheet('intelligenceSheet')">🎙 Falar comigo</button></div></div>
+  <div class="grid4" id="roleMetrics"><div class="metric"><span>Validações</span><strong>2</strong><span>aguardando</span></div><div class="metric"><span>Suprimentos</span><strong style="color:#b42318">1</strong><span>atrasado</span></div><div class="metric"><span>Tarefas</span><strong>5</strong><span>abertas</span></div><div class="metric"><span>PAC</span><strong>84</strong><span>atenção</span></div></div>
+  <div>
+    <div class="eyebrow" style="margin-bottom:8px">Ações rápidas</div>
+    <div class="quick-grid" id="roleQuickActions">
+      <button class="quick" onclick="showScreen('validations')">✓ Validar<small>2 aguardando você</small></button>
+      <button class="quick" onclick="showScreen('plan')">▦ Planejar<small>3 restrições em S+1</small></button>
+      <button class="quick" onclick="showScreen('field')">⚡ Registrar<small>Apontamento de campo</small></button>
+      <button class="quick" onclick="openSheet('intelligenceSheet')">🎙 Perguntar<small>Falar com Brita</small></button>
+    </div>
+  </div>
   <div class="priority"><div class="left"><span class="dot red"></span><div><strong>Validação parada desde ontem</strong><p class="sub">Concretagem · Torre 2</p></div></div><button class="ghost" onclick="showScreen('validations')">Abrir</button></div>
   <div class="priority"><div class="left"><span class="dot amber"></span><div><strong>Aço CA-50 em atraso</strong><p class="sub">Arena · 1 dia</p></div></div><button class="ghost" onclick="openSheet('intelligenceSheet')">Resolver</button></div>
 </section>
@@ -89,6 +108,77 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 </div></div><div class="drawer" id="intelligenceSheet" onclick="closeSheet('intelligenceSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow">Planes Intelligence</div><h2>Brita</h2><span class="context-chip" id="intelligenceContext">● Vendo: Sua obra hoje</span></div><button class="iconbtn" onclick="closeSheet('intelligenceSheet')">✕</button></div><div class="chat" style="margin-top:14px"><div class="msg ai">Oi, Alex. Tô vendo a mesma tela que você. Pode falar comigo normalmente.</div><div class="msg user">O que tá pegando nessa obra hoje?</div><div class="msg ai">Tem duas coisas que merecem atenção: uma validação parada desde ontem e o aço da Arena em atraso. Quer começar por qual?</div></div><div class="actions" style="margin-top:12px"><button class="ghost">Validação</button><button class="ghost">Aço da Arena</button><button class="ghost">Me resume tudo</button><button class="ghost" onclick="simulateEndDay()">Encerrar por hoje</button></div><div class="composer"><input placeholder="Fala ou escreve do seu jeito..."><button>🎙</button></div></div></div>
 <div class="drawer" id="projectSheet" onclick="closeSheet('projectSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><h2>Trocar obra</h2><button class="iconbtn" onclick="closeSheet('projectSheet')">✕</button></div><div class="list" style="margin-top:14px"><button class="card" style="text-align:left"><strong>Reserva da Lagoa</strong><p class="sub">Recife · 61,8%</p></button><button class="card" style="text-align:left"><strong>Mirante do Parque</strong><p class="sub">Recife · 44,2%</p></button></div></div></div>
 <script>
+const prototypeProfiles={
+  engenharia:{
+    note:'Visão técnica: restrições, validações, suprimentos e PAC em prioridade.',
+    headline:'Tem 2 pontos que valem olhar primeiro.',
+    brief:'Uma validação ficou parada desde ontem e o aço da Arena entrou em atraso. O resto está estável por enquanto.',
+    metrics:[
+      ['Validações','2','aguardando'],['Suprimentos','1','atrasado'],['Tarefas','5','abertas'],['PAC','84','atenção']
+    ],
+    actions:[
+      ['✓ Validar','2 aguardando você',"showScreen('validations')"],
+      ['▦ Planejar','3 restrições em S+1',"showScreen('plan')"],
+      ['⚡ Registrar','Apontamento de campo',"showScreen('field')"],
+      ['🎙 Perguntar','Falar com Brita',"openSheet('intelligenceSheet')"]
+    ]
+  },
+  campo:{
+    note:'Visão operacional: registrar produção, ver tarefas e responder validações rapidamente.',
+    headline:'Seu dia está bem direto: registrar, conferir e seguir.',
+    brief:'Tem um apontamento para concluir e uma tarefa aberta na Torre 2. Se quiser, eu te levo direto para o que precisa fazer.',
+    metrics:[
+      ['Minha produção','3','registros hoje'],['Tarefas','2','para você'],['Validações','1','pendente'],['Equipe','8','no canteiro']
+    ],
+    actions:[
+      ['⚡ Registrar','Novo apontamento',"showScreen('field')"],
+      ['✓ Minhas tarefas','2 abertas',"openSheet('intelligenceSheet')"],
+      ['📷 Evidência','Anexar foto',"showScreen('field')"],
+      ['🎙 Falar','Pedir ajuda à Brita',"openSheet('intelligenceSheet')"]
+    ]
+  },
+  gestor:{
+    note:'Visão executiva: riscos, avanço, PAC e decisões que exigem atenção.',
+    headline:'A obra está estável, mas tem 2 decisões para acompanhar.',
+    brief:'O PAC está em 84 e o atraso do aço pode afetar a próxima semana. O avanço físico segue acima da meta.',
+    metrics:[
+      ['Avanço','61,8%','acima da meta'],['PAC','84','atenção'],['Riscos','2','em acompanhamento'],['Decisões','2','pendentes']
+    ],
+    actions:[
+      ['↗ Ver riscos','2 relevantes',"showScreen('plan')"],
+      ['▦ PAC','Acompanhar aderência',"showScreen('plan')"],
+      ['✓ Pendências','2 decisões',"showScreen('validations')"],
+      ['🎙 Resumo','Pedir briefing',"openSheet('intelligenceSheet')"]
+    ]
+  },
+  cliente:{
+    note:'Visão simples: progresso, fotos e marcos aprovados — sem excesso de informação operacional.',
+    headline:'A obra segue avançando e não há alerta crítico para você.',
+    brief:'O avanço está em 61,8%. As últimas evidências foram aprovadas e tenho novas fotos disponíveis.',
+    metrics:[
+      ['Avanço','61,8%','obra'],['Fotos','24','novas'],['Marcos','3','concluídos'],['Próximo marco','12 dias','estimativa']
+    ],
+    actions:[
+      ['🖼 Ver fotos','24 novas',"openSheet('intelligenceSheet')"],
+      ['✓ Marcos','3 concluídos',"openSheet('intelligenceSheet')"],
+      ['↗ Progresso','Ver evolução',"showScreen('plan')"],
+      ['🎙 Perguntar','Falar com Brita',"openSheet('intelligenceSheet')"]
+    ]
+  }
+};
+let prototypeRole='engenharia';
+function setPrototypeRole(role,el){
+  prototypeRole=role;
+  document.querySelectorAll('.rolechip').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
+  const p=prototypeProfiles[role]||prototypeProfiles.engenharia;
+  document.getElementById('roleNote').textContent=p.note;
+  document.getElementById('assistantHeadline').textContent=p.headline;
+  document.getElementById('assistantBrief').textContent=p.brief;
+  document.getElementById('roleMetrics').innerHTML=p.metrics.map((m,i)=>'<div class="metric"><span>'+m[0]+'</span><strong'+(i===1&&role==='engenharia'?' style="color:#b42318"':'')+'>'+m[1]+'</strong><span>'+m[2]+'</span></div>').join('');
+  document.getElementById('roleQuickActions').innerHTML=p.actions.map(a=>'<button class="quick" onclick="'+a[2]+'">'+a[0]+'<small>'+a[1]+'</small></button>').join('');
+  const ctx=document.getElementById('intelligenceContext');
+  if(ctx) ctx.textContent='● '+role.charAt(0).toUpperCase()+role.slice(1)+' · Vendo: '+(screenNames[currentScreen]||'Planes');
+}
 let currentScreen='home';
 const screenNames={home:'Sua obra hoje',plan:'Planejamento',field:'Canteiro',validations:'Validações'};
 function showScreen(id){
@@ -97,13 +187,13 @@ function showScreen(id){
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.target===id));
   const ctx=document.getElementById('intelligenceContext');
-  if(ctx) ctx.textContent='● Vendo: '+(screenNames[id]||'Planes');
+  if(ctx) ctx.textContent='● '+prototypeRole.charAt(0).toUpperCase()+prototypeRole.slice(1)+' · Vendo: '+(screenNames[id]||'Planes');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function openSheet(id){
   if(id==='intelligenceSheet'){
     const ctx=document.getElementById('intelligenceContext');
-    if(ctx) ctx.textContent='● Vendo: '+(screenNames[currentScreen]||'Planes');
+    if(ctx) ctx.textContent='● '+prototypeRole.charAt(0).toUpperCase()+prototypeRole.slice(1)+' · Vendo: '+(screenNames[currentScreen]||'Planes');
   }
   document.getElementById(id).classList.add('open');
 }
