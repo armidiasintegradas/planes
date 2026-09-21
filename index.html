@@ -7677,6 +7677,8 @@
     // =========================================================================
     // PLANES INTELLIGENCE: COPILOTO DE ENGENHARIA & DIAGNÓSTICO PREDITIVO
     // =========================================================================
+    let lastIntelligenceAnalysis = null;
+
     let intelligenceChatHistory = [
       {
         sender: 'ai',
@@ -7684,6 +7686,141 @@
         time: 'Hoje 09:30'
       }
     ];
+
+    function formatPct(value, fallback = 0) {
+      const n = Number.parseFloat(value);
+      return Number.isFinite(n) ? n.toFixed(1).replace('.', ',') + '%' : Number(fallback).toFixed(1).replace('.', ',') + '%';
+    }
+
+    function buildPlanesIntelligenceAnalysis(promptText) {
+      const p = String(promptText || '').toLowerCase();
+      const project = selectedProject || projectsList[0] || {};
+      const progress = Number.parseFloat(project.progress ?? physicalProgress) || Number.parseFloat(physicalProgress) || 0;
+      const target = Number.parseFloat(project.targetProgress) || progress;
+      const deviation = progress - target;
+      const pendingValidations = Array.isArray(validations) ? validations.filter(v => String(v.status || '').toLowerCase() !== 'aprovado') : [];
+      const delayedSupplies = Array.isArray(suppliesList) ? suppliesList.filter(s => String(s.status || '').toLowerCase().includes('atras')) : [];
+      const transportSupplies = Array.isArray(suppliesList) ? suppliesList.filter(s => String(s.status || '').toLowerCase().includes('transporte')) : [];
+      const scheduledSupplies = Array.isArray(suppliesList) ? suppliesList.filter(s => String(s.status || '').toLowerCase().includes('program')) : [];
+      const onsiteSupplies = Array.isArray(suppliesList) ? suppliesList.filter(s => String(s.status || '').toLowerCase().includes('canteiro')) : [];
+      const openTasks = Array.isArray(tasksList) ? tasksList.filter(t => !t.done) : [];
+      const activeReminders = Array.isArray(remindersList) ? remindersList.filter(r => r.active !== false) : [];
+      const currentMonth = Array.isArray(barChartData) ? (barChartData.find(x => String(x.month).toLowerCase() === 'jun') || barChartData[barChartData.length - 1]) : null;
+      const plan = currentMonth ? Number(currentMonth.plan) : target;
+      const real = currentMonth ? Number(currentMonth.real) : progress;
+      const chartDeviation = real - plan;
+
+      let riskScore = 0;
+      if (deviation < -5) riskScore += 3;
+      else if (deviation < -2) riskScore += 2;
+      else if (deviation < 0) riskScore += 1;
+      riskScore += Math.min(3, delayedSupplies.length * 2);
+      riskScore += Math.min(3, Math.ceil(pendingValidations.length / 2));
+      if (Number(pacScore) < 80) riskScore += 2;
+      else if (Number(pacScore) < 90) riskScore += 1;
+
+      const risk = riskScore >= 6 ? 'Crítico' : riskScore >= 3 ? 'Atenção' : 'Controlado';
+      const riskTone = risk === 'Crítico' ? 'rose' : risk === 'Atenção' ? 'amber' : 'emerald';
+
+      const criticalSupply = delayedSupplies[0] || transportSupplies[0] || scheduledSupplies[0] || null;
+      const criticalValidation = pendingValidations[0] || null;
+      const criticalTask = openTasks[0] || null;
+
+      let priority = 'Manter cadência atual';
+      let action = 'Acompanhar marcos';
+      if (delayedSupplies.length) {
+        priority = 'Regularizar suprimento atrasado: ' + delayedSupplies[0].name;
+        action = 'Abrir Suprimentos';
+      } else if (pendingValidations.length >= 3) {
+        priority = 'Reduzir fila de validações pendentes';
+        action = 'Ver validações';
+      } else if (deviation < -2 || Number(pacScore) < 80) {
+        priority = 'Recuperar aderência de prazo e PAC';
+        action = 'Abrir Lookahead R4';
+      }
+
+      let answer = '';
+      let category = 'executive';
+
+      if (p.includes('suprimento') || p.includes('fornecedor') || p.includes('entrega') || p.includes('material')) {
+        category = 'supply';
+        const rows = (suppliesList || []).map(s => '• ' + s.name + ' — ' + s.status + ' — ' + s.qtd + ' — ' + s.sector).join('\n');
+        answer = '• **Suprimentos — leitura atual do Planes:**\n' +
+          '• No canteiro: **' + onsiteSupplies.length + '** | Em transporte: **' + transportSupplies.length + '** | Programados: **' + scheduledSupplies.length + '** | Atrasados: **' + delayedSupplies.length + '**.\n' +
+          (criticalSupply ? '• Item que exige mais atenção: **' + criticalSupply.name + '** (' + criticalSupply.status + ', ' + criticalSupply.sector + ').\n' : '') +
+          (rows ? '\n**Itens atuais:**\n' + rows : '');
+      } else if (p.includes('valida') || p.includes('medição') || p.includes('medicao') || p.includes('fila')) {
+        category = 'validation';
+        const rows = pendingValidations.map(v => '• ' + v.item + ' — ' + v.front + ' — ' + v.qtd + ' — ' + v.data).join('\n');
+        answer = '• **Fila de validações — estado atual:**\n' +
+          '• Existem **' + pendingValidations.length + '** registros pendentes.\n' +
+          (criticalValidation ? '• Mais antigo/prioritário na fila atual: **' + criticalValidation.item + '**, responsável ' + criticalValidation.resp + '.\n' : '') +
+          (rows ? '\n' + rows : '• Nenhuma medição pendente neste momento.');
+      } else if (p.includes('tarefa') || p.includes('pendência') || p.includes('pendencia') || p.includes('hoje') || p.includes('prioridade')) {
+        category = 'tasks';
+        const rows = openTasks.map(t => '• ' + t.title + ' — ' + t.deadline + ' — ' + t.resp).join('\n');
+        answer = '• **Pendências operacionais atuais:**\n' +
+          '• Tarefas abertas: **' + openTasks.length + '** | Lembretes ativos: **' + activeReminders.length + '**.\n' +
+          (criticalTask ? '• Próxima prioridade registrada: **' + criticalTask.title + '** (' + criticalTask.deadline + ').\n' : '') +
+          (rows ? '\n' + rows : '');
+      } else if (p.includes('pac') || p.includes('avanço') || p.includes('avanco') || p.includes('progresso') || p.includes('curva') || p.includes('físico') || p.includes('fisico')) {
+        category = 'progress';
+        answer = '• **Desempenho físico e aderência — dados atuais:**\n' +
+          '• Projeto: **' + (project.title || 'Projeto ativo') + '**.\n' +
+          '• Avanço atual: **' + formatPct(progress) + '** | Meta do projeto: **' + formatPct(target) + '** | Desvio: **' + (deviation >= 0 ? '+' : '') + deviation.toFixed(1).replace('.', ',') + ' p.p.**\n' +
+          '• PAC atual: **' + Number(pacScore).toFixed(0) + '%**.\n' +
+          '• Referência da Curva S (' + (currentMonth?.month || 'período atual') + '): planejado **' + plan + '%**, realizado **' + real + '%**, diferença **' + (chartDeviation >= 0 ? '+' : '') + chartDeviation.toFixed(1).replace('.', ',') + ' p.p.**.';
+      } else if (p.includes('risco') || p.includes('atras') || p.includes('frente') || p.includes('restrição') || p.includes('restricao') || p.includes('lookahead')) {
+        category = 'risk';
+        const drivers = [];
+        if (deviation < 0) drivers.push('avanço ' + Math.abs(deviation).toFixed(1).replace('.', ',') + ' p.p. abaixo da meta');
+        if (Number(pacScore) < 90) drivers.push('PAC em ' + Number(pacScore).toFixed(0) + '%');
+        if (delayedSupplies.length) drivers.push(delayedSupplies.length + ' suprimento(s) atrasado(s)');
+        if (pendingValidations.length) drivers.push(pendingValidations.length + ' validação(ões) pendente(s)');
+        answer = '• **Diagnóstico de risco calculado a partir do estado atual:**\n' +
+          '• Nível: **' + risk.toUpperCase() + '**.\n' +
+          '• Principais sinais: ' + (drivers.length ? drivers.join('; ') : 'sem desvios críticos detectados') + '.\n' +
+          '• Prioridade recomendada: **' + priority + '**.\n' +
+          (criticalSupply && delayedSupplies.length ? '• Suprimento crítico: **' + criticalSupply.name + '** — ' + criticalSupply.status + '.\n' : '') +
+          (criticalValidation ? '• Validação que merece atenção: **' + criticalValidation.item + '** — ' + criticalValidation.front + '.' : '');
+      } else if (p.includes('resumo') || p.includes('reunião') || p.includes('reuniao') || p.includes('diretoria') || p.includes('decisão') || p.includes('decisao')) {
+        category = 'meeting';
+        answer = '• **Resumo executivo calculado agora:**\n' +
+          '1. Avanço físico: **' + formatPct(progress) + '** versus meta **' + formatPct(target) + '**.\n' +
+          '2. PAC: **' + Number(pacScore).toFixed(0) + '%**.\n' +
+          '3. Suprimentos atrasados: **' + delayedSupplies.length + '**; em transporte: **' + transportSupplies.length + '**.\n' +
+          '4. Validações pendentes: **' + pendingValidations.length + '**.\n' +
+          '5. Tarefas abertas: **' + openTasks.length + '**.\n' +
+          '6. Risco consolidado: **' + risk.toUpperCase() + '**.\n' +
+          '7. Próxima decisão recomendada: **' + priority + '**.';
+      } else {
+        category = 'executive';
+        answer = '• **Leitura integrada do empreendimento:**\n' +
+          '• **' + (project.title || 'Projeto ativo') + '** está em **' + formatPct(progress) + '** de avanço, com meta de **' + formatPct(target) + '**.\n' +
+          '• PAC: **' + Number(pacScore).toFixed(0) + '%** | Validações pendentes: **' + pendingValidations.length + '** | Suprimentos atrasados: **' + delayedSupplies.length + '** | Tarefas abertas: **' + openTasks.length + '**.\n' +
+          '• Risco consolidado: **' + risk.toUpperCase() + '**.\n' +
+          '• Prioridade: **' + priority + '**.';
+      }
+
+      return {
+        answer,
+        category,
+        risk,
+        riskTone,
+        priority,
+        action,
+        metrics: {
+          progress,
+          target,
+          deviation,
+          pac: Number(pacScore) || 0,
+          pendingValidations: pendingValidations.length,
+          delayedSupplies: delayedSupplies.length,
+          transportSupplies: transportSupplies.length,
+          openTasks: openTasks.length
+        }
+      };
+    }
 
     function summarizeIntelligenceForVoice(promptText, answer) {
       const p = String(promptText || '').toLowerCase();
@@ -7718,67 +7855,23 @@
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       });
 
-      addAuditLog('AI_DIAGNOSTIC', `Consulta ao Planes Intelligence: "${promptText.slice(0, 50)}..."`);
+      addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence: "' + promptText.slice(0, 80) + '"');
       render();
 
       setTimeout(() => {
-        let answer = '';
-        const pLower = promptText.toLowerCase();
-
-        if (pLower.includes('atrasar') || pLower.includes('frentes')) {
-          answer = `• **Diagnóstico Preditivo de Prazos por Frente:**
-• **Arena Shows & Quadras (88.5%):** Risco **BAIXO**. A montagem da cobertura metálica está sincronizada com o Takt (1 nível/semana).
-• **Bloco Apartamentos (74.2%):** Risco **MÉDIO**. Alvenarias do N3 têm 1 restrição de furação de tubulação hidráulica. Buffer de segurança é de 5 dias úteis.
-• **Infraestrutura Viária (62.0%):** Risco **BAIXO**. Drenagem desimpedida para pavimentação na próxima semana.
-• **Recomendação:** Priorizar liberação da equipe de instalações no Bloco Apartamentos para não consumir o buffer do N3.`;
-        } else if (pLower.includes('torre 2') || pLower.includes('pac') || pLower.includes('abaixo')) {
-          answer = `• **Análise de Causa-Raiz do PAC (Aderência Atual: 78.4% no Bloco):**
-• **Causas de Não Cumprimento (CNC) Identificadas:**
-  1. **Chuva / Intempéries (40%):** 4 paralisações parciais no canteiro externo.
-  2. **Logística de Entrega (30%):** Atraso de 48h na descarga de vergalhões CA-50.
-  3. **Mão de Obra (20%):** Remanejamento de 6 armadores para reforço da Arena.
-• **Plano de Recuperação Aprovado:** Turno compensatório estendido no sábado (08h às 14h) para recuperar +3.2% de avanço e atingir meta PAC de 90%.`;
-        } else if (pLower.includes('restrição') || pLower.includes('impacto') || pLower.includes('lookahead')) {
-          answer = `• **Restrição de Maior Impacto no Caminho Crítico (Lookahead R4):**
-• **Item Crítico:** *RFI-2026-089 — Detalhamento de Fixação das Telhas PIR Termoacústicas*.
-• **Impacto Potencial:** Se não liberada até sexta-feira (07/06), paralisa a frente de cobertura da Arena por 4 dias úteis, gerando custo ocioso de R$ 14.200/dia.
-• **Ação Imediata da Engenharia:** SLA de resposta técnica acordado com o calculista para hoje às 17h.`;
-        } else if (pLower.includes('fornecedores') || pLower.includes('suprimentos') || pLower.includes('entregas')) {
-          answer = `• **Status de Suprimentos Críticos Just-in-Time:**
-• **Aço CA-50 (Gerdau):** 45 Toneladas ✓ 100% em Canteiro (Estoque para 3 semanas).
-• **Concreto Usinado FCK 30 (Polimix):** 80 m³ Programado p/ Sexta-feira 07h.
-• **Telhas PIR (Isoeste):** 1.200 m² ✓ Descarga concluída no almoxarifado central.
-• **Argamassa AC-III:** 400 Sacos ✓ OK.
-• **Status Geral de Suprimentos:** **98.5% no prazo**, sem rupturas de estoque no canteiro.`;
-        } else if (pLower.includes('30 dias') || pLower.includes('compar')) {
-          answer = `• **Comparativo Físico-Financeiro nos Últimos 30 Dias:**
-• **Avanço Físico:** Realizado +5.3% vs Meta Planejada +4.8% (Superávit de +0.5 p.p.).
-• **Curva de Valor Agregado:** SPI = 1.03 (Prazo adiantado) e CPI = 1.02 (Custo -1.8% abaixo do orçamento).
-• **Medições Aprovadas:** R$ 1.700.000,00 auditados e chancelados com ART.`;
-        } else if (pLower.includes('reunião') || pLower.includes('amanhã') || pLower.includes('pauta') || pLower.includes('decid')) {
-          answer = `• **Pauta e Decisões Críticas para a Reunião de Obra de Amanhã:**
-1. **Decisão 1:** Aprovar turno extra no Bloco de Apartamentos (Sábado) para recuperação do PAC.
-2. **Decisão 2:** Assinar ordem de compra de esquadrias e vidros temperados (R$ 88.000) para manter o Takt da SEM 5.
-3. **Decisão 3:** Homologar relatório de medição da empreiteira de instalações hidráulicas.
-4. **Decisão 4:** Validação do plano de segurança e ancoragem para trabalho em altura na cobertura.`;
-        } else {
-          answer = `• **Diagnóstico Executivo Integrado para "${promptText}":**
-Com base nos dados ativos do empreendimento **${selectedProject ? selectedProject.title : 'Empreendimento'}**:
-• O índice de sincronismo da Linha de Balanço 16.03 é de **97.8%** com cadência Takt de 1 nível/semana.
-• O Forecast final projetado é de conclusão em **15/12/2027** com aderência financeira de **101.6%** do orçamento previsto.
-• 12 medições de canteiro estão aguardando validação técnica para inclusão no próximo faturamento.`;
-        }
+        const analysis = buildPlanesIntelligenceAnalysis(promptText);
+        lastIntelligenceAnalysis = analysis;
 
         intelligenceChatHistory.push({
           sender: 'ai',
-          text: answer,
+          text: analysis.answer,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
-        speakText(summarizeIntelligenceForVoice(promptText, answer));
-        render();
-      }, 500);
-    }
 
+        speakText(summarizeIntelligenceForVoice(promptText, analysis.answer));
+        render();
+      }, 180);
+    }
 
     // ==========================================
     // MOBILE RENDERING COMPONENTS (PLANES OS)
@@ -9334,6 +9427,15 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
     }
 
     function getIntelligenceCockpitSnapshot() {
+      if (lastIntelligenceAnalysis) {
+        return {
+          risk: lastIntelligenceAnalysis.risk,
+          riskTone: lastIntelligenceAnalysis.riskTone,
+          priority: lastIntelligenceAnalysis.priority,
+          action: lastIntelligenceAnalysis.action,
+          signal: 'PAC ' + (lastIntelligenceAnalysis.metrics?.pac ?? pacScore) + '%'
+        };
+      }
       const lastAi = [...(intelligenceChatHistory || [])].reverse().find(m => m && (m.sender === 'ai' || m.sender === 'assistant'));
       const text = (lastAi && lastAi.text ? lastAi.text : '').toLowerCase();
 
@@ -9369,6 +9471,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       const map = {
         'Abrir Lookahead R4': 'Médio Prazo (R4)',
         'Ver validações': 'Fila de Validações',
+        'Abrir Suprimentos': 'Suprimentos',
         'Acompanhar marcos': 'Linha de Balanço',
         'Revisar Lookahead R4': 'Médio Prazo (R4)'
       };
