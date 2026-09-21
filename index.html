@@ -2701,6 +2701,7 @@
     let realtimeVoiceAudioEl = null;
     let realtimeVoiceSessionStartedAt = null;
     let realtimeVoiceHandledCalls = new Set();
+    let realtimeVoicePendingMutation = null;
 
     function getRealtimeVoiceStatusLabel() {
       const labels = {
@@ -8247,6 +8248,7 @@
       realtimeVoiceAudioEl = null;
       realtimeVoiceSessionStartedAt = null;
       realtimeVoiceHandledCalls = new Set();
+      realtimeVoicePendingMutation = null;
       realtimeVoiceState = 'idle';
       isListening = false;
       isSpeaking = false;
@@ -8361,6 +8363,180 @@
       return { ok: true, opened: target };
     }
 
+    function normalizeVoiceLookup(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function findVoiceValidation(query) {
+      const q = normalizeVoiceLookup(query);
+      const list = Array.isArray(validations) ? validations : [];
+      if (!q) return null;
+
+      if (/^(primeira|primeiro|1|um|uma)$/.test(q)) return list[0] || null;
+      if (/^(segunda|segundo|2|dois|duas)$/.test(q)) return list[1] || null;
+      if (/^(terceira|terceiro|3|tres)$/.test(q)) return list[2] || null;
+
+      return list.find(v => {
+        const haystack = [v.id, v.item, v.front, v.resp, v.cargo, v.qtd]
+          .map(normalizeVoiceLookup)
+          .join(' ');
+        return haystack.includes(q) || q.includes(normalizeVoiceLookup(v.item));
+      }) || null;
+    }
+
+    function findVoiceSupply(query) {
+      const q = normalizeVoiceLookup(query);
+      const list = Array.isArray(suppliesList) ? suppliesList : [];
+      if (!q) return null;
+
+      if (/^(primeiro|primeira|1|um|uma)$/.test(q)) return list[0] || null;
+      if (/^(segundo|segunda|2|dois|duas)$/.test(q)) return list[1] || null;
+
+      return list.find(s => {
+        const haystack = [s.id, s.name, s.supplier, s.sector, s.status]
+          .map(normalizeVoiceLookup)
+          .join(' ');
+        return haystack.includes(q) || q.includes(normalizeVoiceLookup(s.name));
+      }) || null;
+    }
+
+    function canUseVoiceMutations() {
+      return getIntelligenceAudience() !== 'client';
+    }
+
+    function prepareRealtimeVoiceMutation(kind, payload, summary) {
+      if (!canUseVoiceMutations()) {
+        realtimeVoicePendingMutation = null;
+        return {
+          ok: false,
+          error: 'not_authorized_for_operational_changes',
+          message: 'Este perfil não pode alterar dados operacionais.'
+        };
+      }
+      realtimeVoicePendingMutation = {
+        kind,
+        payload,
+        summary,
+        createdAt: new Date().toISOString()
+      };
+      return {
+        ok: true,
+        requires_confirmation: true,
+        summary,
+        instruction: 'Peça confirmação explícita ao usuário antes de executar.'
+      };
+    }
+
+    async function executePendingRealtimeVoiceMutation(confirmed) {
+      const pending = realtimeVoicePendingMutation;
+      if (!pending) {
+        return { ok: false, error: 'no_pending_action', message: 'Não existe ação pendente para confirmar.' };
+      }
+
+      if (!confirmed) {
+        realtimeVoicePendingMutation = null;
+        return { ok: true, cancelled: true, message: 'Ação cancelada.' };
+      }
+
+      let result = { ok: false, error: 'unsupported_pending_action' };
+
+      if (pending.kind === 'create_task') {
+        const task = {
+          id: Date.now(),
+          title: pending.payload.title,
+          resp: pending.payload.responsible || currentUser?.name || 'Eng. de Planejamento',
+          deadline: pending.payload.deadline || 'Hoje',
+          done: false
+        };
+        tasksList.unshift(task);
+        render();
+        const ok = await persistTaskRecord(task);
+        if (ok) {
+          await refreshIntelligenceOperationalData();
+          result = { ok: true, created: task.title, responsible: task.resp, deadline: task.deadline };
+        } else {
+          const reconciled = await refreshIntelligenceOperationalData();
+          if (!reconciled) tasksList = tasksList.filter(item => item !== task);
+          result = { ok: false, error: 'task_persist_failed' };
+        }
+      }
+
+      if (pending.kind === 'approve_validation') {
+        const validation = findVoiceValidation(pending.payload.query) || pending.payload.validation;
+        if (!validation) {
+          result = { ok: false, error: 'validation_not_found' };
+        } else {
+          const ok = await persistValidationStatus(validation, 'Aprovado');
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, approved: validation.item, front: validation.front };
+          } else {
+            result = { ok: false, error: 'validation_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'update_pac') {
+        const before = { pacScore, physicalProgress };
+        if (Number.isFinite(Number(pending.payload.pac_score))) {
+          pacScore = Math.max(0, Math.min(100, Number(pending.payload.pac_score)));
+        }
+        if (Number.isFinite(Number(pending.payload.physical_progress))) {
+          physicalProgress = Math.max(0, Math.min(100, Number(pending.payload.physical_progress)));
+          if (selectedProject) selectedProject.progress = physicalProgress;
+        }
+        render();
+        const ok = await persistProjectMetrics();
+        if (ok) {
+          await refreshIntelligenceOperationalData();
+          result = { ok: true, pac: pacScore, physical_progress: physicalProgress };
+        } else {
+          pacScore = before.pacScore;
+          physicalProgress = before.physicalProgress;
+          result = { ok: false, error: 'metrics_update_failed' };
+        }
+      }
+
+      if (pending.kind === 'update_supply_status') {
+        const supply = findVoiceSupply(pending.payload.query) || pending.payload.supply;
+        if (!supply) {
+          result = { ok: false, error: 'supply_not_found' };
+        } else {
+          const previousStatus = supply.status;
+          supply.status = pending.payload.status;
+          render();
+          const ok = await persistSupplyRecord(supply);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, supply: supply.name, status: pending.payload.status };
+          } else {
+            supply.status = previousStatus;
+            result = { ok: false, error: 'supply_update_failed' };
+          }
+        }
+      }
+
+      if (result.ok) {
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('voice_confirmed_mutation', {
+            module: 'Planes Intelligence',
+            topic: pending.kind,
+            mode: 'voice',
+            metadata: { kind: pending.kind }
+          });
+        }
+        showToast('✓ Ação por voz confirmada e sincronizada.');
+        render();
+      }
+
+      realtimeVoicePendingMutation = null;
+      return result;
+    }
+
     async function executePlanesRealtimeTool(name, args = {}) {
       switch (name) {
         case 'get_project_overview': {
@@ -8402,6 +8578,87 @@
           return getVoicePrioritySnapshot();
         case 'get_followups':
           return getVoiceFollowUpSnapshot();
+        case 'prepare_create_task': {
+          const title = String(args?.title || '').trim();
+          if (!title) return { ok: false, error: 'task_title_required' };
+          const responsible = String(args?.responsible || currentUser?.name || 'Eng. de Planejamento').trim();
+          const deadline = String(args?.deadline || 'Hoje').trim();
+          return prepareRealtimeVoiceMutation(
+            'create_task',
+            { title, responsible, deadline },
+            'Criar a tarefa "' + title + '" para ' + responsible + ', com prazo ' + deadline + '.'
+          );
+        }
+        case 'prepare_approve_validation': {
+          const query = String(args?.query || '').trim();
+          const validation = findVoiceValidation(query);
+          if (!validation) {
+            return {
+              ok: false,
+              error: 'validation_not_found',
+              available: (validations || []).slice(0, 5).map((v, index) => ({
+                position: index + 1,
+                item: v.item,
+                front: v.front,
+                responsible: v.resp
+              }))
+            };
+          }
+          return prepareRealtimeVoiceMutation(
+            'approve_validation',
+            { query, validation },
+            'Aprovar a validação "' + validation.item + '" da frente ' + validation.front + '.'
+          );
+        }
+        case 'prepare_update_pac': {
+          const hasPac = Number.isFinite(Number(args?.pac_score));
+          const hasProgress = Number.isFinite(Number(args?.physical_progress));
+          if (!hasPac && !hasProgress) return { ok: false, error: 'pac_or_progress_required' };
+          const payload = {
+            pac_score: hasPac ? Number(args.pac_score) : null,
+            physical_progress: hasProgress ? Number(args.physical_progress) : null
+          };
+          if (
+            (payload.pac_score !== null && (payload.pac_score < 0 || payload.pac_score > 100)) ||
+            (payload.physical_progress !== null && (payload.physical_progress < 0 || payload.physical_progress > 100))
+          ) {
+            return { ok: false, error: 'percentage_out_of_range' };
+          }
+          const parts = [];
+          if (payload.pac_score !== null) parts.push('PAC para ' + payload.pac_score + '%');
+          if (payload.physical_progress !== null) parts.push('avanço físico para ' + payload.physical_progress + '%');
+          return prepareRealtimeVoiceMutation(
+            'update_pac',
+            payload,
+            'Atualizar ' + parts.join(' e ') + '.'
+          );
+        }
+        case 'prepare_update_supply_status': {
+          const query = String(args?.query || '').trim();
+          const status = String(args?.status || '').trim();
+          const allowed = ['Programado','Em Transporte','No Canteiro','Atrasado'];
+          if (!allowed.includes(status)) return { ok: false, error: 'invalid_supply_status' };
+          const supply = findVoiceSupply(query);
+          if (!supply) {
+            return {
+              ok: false,
+              error: 'supply_not_found',
+              available: (suppliesList || []).slice(0, 5).map((s, index) => ({
+                position: index + 1,
+                name: s.name,
+                supplier: s.supplier,
+                status: s.status
+              }))
+            };
+          }
+          return prepareRealtimeVoiceMutation(
+            'update_supply_status',
+            { query, status, supply },
+            'Alterar o status de "' + supply.name + '" de ' + supply.status + ' para ' + status + '.'
+          );
+        }
+        case 'confirm_pending_action':
+          return await executePendingRealtimeVoiceMutation(args?.confirmed === true);
         case 'open_module':
           return navigatePlanesFromVoice(String(args?.module || ''));
         default:
