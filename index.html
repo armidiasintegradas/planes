@@ -6292,6 +6292,7 @@
 
     function inferIntelligenceTopic(text) {
       const p = String(text || '').toLowerCase();
+      if (p.includes('depois') || p.includes('acompanhar') || p.includes('retomar') || p.includes('memória') || p.includes('memoria')) return 'memoria';
       if (p.includes('supr') || p.includes('fornecedor') || p.includes('material')) return 'suprimentos';
       if (p.includes('pac') || p.includes('avanço') || p.includes('avanco') || p.includes('curva')) return 'pac';
       if (p.includes('valid') || p.includes('medição') || p.includes('medicao')) return 'validacoes';
@@ -9206,6 +9207,7 @@
       const plan = currentMonth ? Number(currentMonth.plan) : target;
       const real = currentMonth ? Number(currentMonth.real) : progress;
       const chartDeviation = real - plan;
+      const followUpMemory = getIntelligenceFollowUpState();
 
       let riskScore = 0;
       if (deviation < -5) riskScore += 3;
@@ -9239,7 +9241,28 @@
       let answer = '';
       let category = 'executive';
 
-      if (p.includes('suprimento') || p.includes('fornecedor') || p.includes('entrega') || p.includes('material')) {
+      if (
+        p.includes('deixei para depois') ||
+        p.includes('ver depois') ||
+        p.includes('para acompanhar') ||
+        p.includes('retomar') ||
+        p.includes('minha memória') ||
+        p.includes('minhas decisões')
+      ) {
+        category = 'memory';
+        const pendingRows = followUpMemory.pending.map((item, index) =>
+          (index + 1) + '. **' + item.label + '**' + (item.text ? ' — ' + item.text : '') + '.'
+        ).join('\n');
+        const decisionRows = followUpMemory.decisions.slice(0, 4).map(item =>
+          '• ' + item.label + ': **' + item.detail + '**.'
+        ).join('\n');
+
+        answer = '• **Sua memória operacional nesta obra:**\n' +
+          (followUpMemory.pending.length
+            ? '• Você deixou **' + followUpMemory.pending.length + '** item(ns) para acompanhar:\n' + pendingRows
+            : '• Você não tem itens marcados para acompanhar agora.') +
+          (decisionRows ? '\n\n**Decisões recentes:**\n' + decisionRows : '');
+      } else if (p.includes('suprimento') || p.includes('fornecedor') || p.includes('entrega') || p.includes('material')) {
         category = 'supply';
         const rows = (suppliesList || []).map(s => '• ' + s.name + ' — ' + s.status + ' — ' + s.qtd + ' — ' + s.sector).join('\n');
         answer = '• **Suprimentos — leitura atual do Planes:**\n' +
@@ -9322,6 +9345,12 @@
     function summarizeIntelligenceForVoice(promptText, answer) {
       const firstName = getPlanesUserFirstName();
       const p = String(promptText || '').toLowerCase();
+      if (p.includes('deixei para depois') || p.includes('ver depois') || p.includes('para acompanhar') || p.includes('retomar') || p.includes('minha memória')) {
+        const memory = getIntelligenceFollowUpState();
+        return memory.pending.length
+          ? 'Oi, ' + firstName + '. Você tem ' + memory.pending.length + ' item(ns) salvo(s) para acompanhar. Eles estão disponíveis na sua memória desta obra.'
+          : 'Oi, ' + firstName + '. Você não tem itens salvos para acompanhar nesta obra agora.';
+      }
       if (p.includes('atras') || p.includes('frentes')) {
         return 'Oi, ' + firstName + '. Identifiquei atenção no Bloco de Apartamentos. A prioridade é liberar a equipe de instalações antes de consumir o buffer.';
       }
