@@ -9129,6 +9129,31 @@
 
       assistantLog.unshift({ text: clean, sender: 'user', time: 'Agora' });
 
+      if (realtimeVoicePendingMutation) {
+        if (/^(sim|confirmo|confirma|pode|pode fazer|pode executar|ok|certo)$/i.test(lower)) {
+          const result = await executePendingRealtimeVoiceMutation(true);
+          responseText = result?.ok
+            ? 'Confirmado. A alteração foi sincronizada no Planes.'
+            : 'Não consegui concluir a alteração. O estado confirmado foi preservado.';
+          assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
+          liveTranscript = '';
+          showToast(responseText);
+          speakText(responseText);
+          render();
+          return;
+        }
+        if (/^(não|nao|cancelar|cancela|deixa|deixa pra la|deixa para la)$/i.test(lower)) {
+          await executePendingRealtimeVoiceMutation(false);
+          responseText = 'Certo. Cancelei a alteração.';
+          assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
+          liveTranscript = '';
+          showToast(responseText);
+          speakText(responseText);
+          render();
+          return;
+        }
+      }
+
       const navigationCommands = [
         { terms: ['visão geral', 'inicio', 'início', 'dashboard'], target: 'Visão Geral' },
         { terms: ['linha de balanço', 'linha'], target: 'Linha de Balanço' },
@@ -9206,24 +9231,18 @@
       } 
       else if (lower.includes('tarefa') || lower.includes('fazer') || lower.includes('anotar') || lower.includes('adicionar') || lower.includes('providenciar') || lower.includes('pendência')) {
         const taskClean = clean.replace(/^(adicionar tarefa|criar tarefa|tarefa|anotar|pendência)\s*/i, '');
-        const newTask = {
-          id: Date.now(),
-          title: taskClean.charAt(0).toUpperCase() + taskClean.slice(1),
-          resp: currentUser ? currentUser.name : 'Eng. de Planejamento',
-          deadline: 'Amanhã',
-          done: false
-        };
-        tasksList.unshift(newTask);
+        const title = taskClean.charAt(0).toUpperCase() + taskClean.slice(1);
+        const responsible = currentUser ? currentUser.name : 'Eng. de Planejamento';
+        const deadline = 'Amanhã';
+        const prepared = prepareRealtimeVoiceMutation(
+          'create_task',
+          { title, responsible, deadline },
+          'Criar a tarefa "' + title + '" para ' + responsible + ', com prazo ' + deadline + '.'
+        );
+        responseText = prepared.ok
+          ? 'Vou criar a tarefa ' + title + ' para ' + responsible + ', com prazo amanhã. Confirma?'
+          : (prepared.message || 'Este perfil não pode criar tarefas por voz.');
         render();
-        const taskSynced = await persistTaskRecord(newTask);
-        if (taskSynced) {
-          await refreshIntelligenceOperationalData();
-          responseText = `Tarefa adicionada e confirmada: ${newTask.title}.`;
-        } else {
-          const reconciled = await refreshIntelligenceOperationalData();
-          if (!reconciled) tasksList = tasksList.filter(task => task !== newTask);
-          responseText = 'Não foi possível criar a tarefa. O estado confirmado foi restaurado.';
-        }
       } 
       else if (lower.includes('avanço') || lower.includes('progresso') || lower.includes('status') || lower.includes('como está') || lower.includes('obra')) {
         responseText = `Obra em ${physicalProgress}% de avanço físico, PAC em ${pacScore}% e R$ ${financialSpent}M medidos.`;
@@ -9232,24 +9251,7 @@
         responseText = `Você tem ${calendarEvents.length} eventos no calendário e ${remindersList.filter(r => !r.done).length} lembretes pendentes.`;
       } 
       else {
-        const fallbackTask = {
-          id: Date.now(),
-          title: clean,
-          resp: currentUser ? currentUser.name : 'Eng. de Planejamento',
-          deadline: 'Hoje',
-          done: false
-        };
-        tasksList.unshift(fallbackTask);
-        render();
-        const fallbackSynced = await persistTaskRecord(fallbackTask);
-        if (fallbackSynced) {
-          await refreshIntelligenceOperationalData();
-          responseText = 'Comando executado e confirmado no Supabase.';
-        } else {
-          const reconciled = await refreshIntelligenceOperationalData();
-          if (!reconciled) tasksList = tasksList.filter(task => task !== fallbackTask);
-          responseText = 'O comando não pôde ser persistido. O estado confirmado foi restaurado.';
-        }
+        responseText = 'Entendi. Posso consultar a obra, abrir módulos ou preparar uma ação específica. Diga, por exemplo: abrir suprimentos, qual é o PAC ou criar tarefa.';
       }
 
       assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
