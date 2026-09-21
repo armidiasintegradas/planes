@@ -5746,6 +5746,23 @@
       };
     }
 
+    function getProactiveActionForChange(change) {
+      const map = {
+        supplies: { action: 'Abrir Suprimentos', target: 'Suprimentos', label: 'Tratar suprimento crítico', weight: 50 },
+        validations: { action: 'Ver validações', target: 'Fila de Validações', label: 'Reduzir fila de validações', weight: 40 },
+        pac: { action: 'Abrir Lookahead R4', target: 'Médio Prazo (R4)', label: 'Revisar aderência e PAC', weight: 35 },
+        progress: { action: 'Abrir Lookahead R4', target: 'Médio Prazo (R4)', label: 'Revisar recuperação de avanço', weight: 30 },
+        tasks: { action: 'Abrir Planes Intelligence', target: 'Planes Intelligence', label: 'Priorizar tarefas abertas', weight: 20 }
+      };
+      return map[change.type] || { action: 'Revisar Lookahead R4', target: 'Médio Prazo (R4)', label: 'Revisar situação da obra', weight: 10 };
+    }
+
+    function scoreProactiveChange(change) {
+      const action = getProactiveActionForChange(change);
+      const severityWeight = change.severity === 'critical' ? 100 : change.severity === 'attention' ? 60 : 10;
+      return severityWeight + action.weight;
+    }
+
     function compareOperationalSnapshots(previous, current) {
       if (!previous || !Object.keys(previous).length) return [];
       const changes = [];
@@ -5790,7 +5807,19 @@
           text: `${Math.abs(tasksDiff)} tarefa(s) aberta(s) ${tasksDiff > 0 ? 'a mais' : 'a menos'}`
         });
       }
-      return changes.slice(0, 5);
+
+      return changes
+        .map(change => {
+          const action = getProactiveActionForChange(change);
+          return { ...change, ...action, score: scoreProactiveChange(change) };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+    }
+
+    function getPrimaryProactiveAction(changes) {
+      const actionable = (changes || []).filter(change => change.severity !== 'positive');
+      return actionable[0] || null;
     }
 
     async function refreshProactiveIntelligenceBrief() {
@@ -5814,9 +5843,11 @@
 
         const previous = data?.last_snapshot || {};
         const changes = compareOperationalSnapshots(previous, current);
+        const primaryAction = getPrimaryProactiveAction(changes);
         proactiveIntelligenceBrief = changes.length
           ? {
               changes,
+              primaryAction,
               previousSeenAt: data?.last_seen_at || null,
               generatedAt: new Date().toISOString()
             }
@@ -10495,10 +10526,19 @@
         'Abrir Lookahead R4': 'Médio Prazo (R4)',
         'Ver validações': 'Fila de Validações',
         'Abrir Suprimentos': 'Suprimentos',
+        'Abrir Planes Intelligence': 'Planes Intelligence',
         'Acompanhar marcos': 'Linha de Balanço',
         'Revisar Lookahead R4': 'Médio Prazo (R4)'
       };
       const target = map[action] || 'Médio Prazo (R4)';
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('operational_action', {
+          module: target,
+          topic: target === 'Suprimentos' ? 'suprimentos' : target === 'Fila de Validações' ? 'validacoes' : target === 'Planes Intelligence' ? 'tarefas' : 'pac',
+          mode: 'touch',
+          metadata: { source: 'proactive_recommendation', action }
+        });
+      }
       activeNav = target;
       mobileCurrentTab = 'modulo';
       showToast('Abrindo ' + target + '.');
@@ -10526,6 +10566,7 @@
         ? 'Memória desta obra: ' + [habits.lastModule, habits.lastTopic].filter(Boolean).join(' · ')
         : 'Construindo memória operacional desta obra';
       const proactiveChanges = proactiveIntelligenceBrief?.changes || [];
+      const proactivePrimaryAction = proactiveIntelligenceBrief?.primaryAction || null;
       const toneMap = {
         emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         amber: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -10578,6 +10619,21 @@
                       </div>
                     `).join('')}
                   </div>
+                  ${proactivePrimaryAction ? `
+                    <div class="mt-3 rounded-xl border border-violet-200 bg-white p-2.5">
+                      <p class="text-[9px] font-black uppercase tracking-wider text-violet-600">Próxima ação recomendada</p>
+                      <p class="text-[11px] font-black text-slate-900 mt-0.5">${proactivePrimaryAction.label}</p>
+                      <button
+                        type="button"
+                        onclick="openIntelligenceAction('${proactivePrimaryAction.action.replace(/'/g, "\\'")}')"
+                        class="mt-2 w-full px-3 py-2 rounded-lg bg-violet-700 text-white text-[10px] font-black ios-press-action"
+                      >
+                        ${proactivePrimaryAction.action}
+                      </button>
+                    </div>
+                  ` : `
+                    <p class="mt-2.5 text-[10px] text-emerald-700 font-bold">As mudanças detectadas são favoráveis. Nenhuma intervenção prioritária agora.</p>
+                  `}
                   <button type="button" onclick="askPlanesIntelligence('O que mudou nesta obra desde minha última visita?')" class="mt-2.5 text-[10px] font-black text-violet-800 underline underline-offset-2">
                     Analisar mudanças
                   </button>
