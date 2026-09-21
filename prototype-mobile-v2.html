@@ -27,7 +27,8 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 .drawer{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:none;align-items:flex-end}.drawer.open{display:flex}.sheet{background:#fff;width:100%;border-radius:26px 26px 0 0;max-height:78dvh;padding:12px 14px max(18px,env(safe-area-inset-bottom));overflow:auto}.handle{width:44px;height:5px;border-radius:99px;background:#d0d5dd;margin:0 auto 14px}
 .chat{display:grid;gap:10px}.msg{max-width:86%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.4}.ai{background:#f2f4f7}.user{background:var(--navy);color:#fff;margin-left:auto}.composer{display:flex;gap:8px;margin-top:14px}.composer input{flex:1;height:48px;border:1px solid var(--line);border-radius:14px;padding:0 12px}.composer button{width:48px;height:48px;border:0;border-radius:14px;background:var(--navy);color:var(--lime)}
 .rolebar{display:flex;gap:7px;overflow:auto;padding-bottom:2px;scrollbar-width:none}.rolebar::-webkit-scrollbar{display:none}.rolechip{flex:0 0 auto;min-height:40px;border-radius:999px;border:1px solid var(--line);background:#fff;padding:0 12px;font-size:12px;font-weight:800;color:#475467}.rolechip.active{background:var(--navy);color:#fff;border-color:var(--navy)}.role-note{font-size:12px;color:var(--muted);line-height:1.4}.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.quick{min-height:58px;border-radius:16px;border:1px solid var(--line);background:#fff;padding:10px 12px;text-align:left;font-weight:800}.quick small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
-@media(min-width:700px) and (max-width:1023px){main{padding-left:22px;padding-right:22px}.grid4{grid-template-columns:repeat(4,1fr)}.masterdetail{grid-template-columns:minmax(280px,.9fr) minmax(360px,1.4fr);align-items:start}.quick-grid{grid-template-columns:repeat(4,1fr)}.fab{right:24px}}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);transform:translateX(-50%) translateY(10px);z-index:120;width:min(420px,calc(100vw - 24px));background:var(--navy);color:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 18px 45px rgba(7,21,43,.24);opacity:0;pointer-events:none;transition:.18s ease;font-size:13px;font-weight:800}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.confirm-copy{font-size:14px;line-height:1.45;color:#344054;margin-top:8px}.confirm-summary{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px;font-size:13px;line-height:1.45}.dirty-note{display:none;font-size:11px;font-weight:800;color:#b54708}.dirty-note.show{display:block}
+@media(min-width:700px) and (max-width:1023px){main{padding-left:22px;padding-right:22px}.grid4{grid-template-columns:repeat(4,1fr)}.masterdetail{grid-template-columns:minmax(280px,.9fr) minmax(360px,1.4fr);align-items:start}.quick-grid{grid-template-columns:repeat(4,1fr)}.fab{right:24px}.toast{left:auto;right:24px;transform:translateY(10px)}.toast.show{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -65,13 +66,13 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
   <div class="card"><div class="row"><strong>RFI hidráulico · Shaft 4</strong><span class="pill">S+1</span></div><p class="sub">Aguardando projetista · Torre 1</p><div class="actions" style="margin-top:12px"><button class="primary">Cobrar responsável</button><button class="ghost">Detalhes</button></div></div>
 </section>
 <section id="field" class="screen">
-  <div class="internalhead"><button class="backbtn" onclick="showScreen('home')">←</button><div class="sectiontitle"><div class="eyebrow">Canteiro</div><h1>Registrar atividade</h1><p class="sub">Fluxo rápido para uso com uma mão.</p></div></div>
+  <div class="internalhead"><button class="backbtn" onclick="smartBackFromField()">←</button><div class="sectiontitle"><div class="eyebrow">Canteiro</div><h1>Registrar atividade</h1><p class="sub">Fluxo rápido para uso com uma mão.</p><span class="dirty-note" id="fieldDirtyNote">Alterações ainda não registradas</span></div></div>
   <div class="card" style="display:grid;gap:14px">
-    <div class="step"><div class="stepnum">1</div><div class="field"><label>Onde?</label><select><option>Torre 2</option><option>Arena</option><option>Piscina</option></select></div></div>
-    <div class="step"><div class="stepnum">2</div><div class="field"><label>O que foi feito?</label><input value="Reboco"></div></div>
-    <div class="step"><div class="stepnum">3</div><div class="field"><label>Quanto?</label><input value="15 m²"></div></div>
+    <div class="step"><div class="stepnum">1</div><div class="field"><label>Onde?</label><select id="fieldPlace" onchange="markFieldDirty()"><option>Torre 2</option><option>Arena</option><option>Piscina</option></select></div></div>
+    <div class="step"><div class="stepnum">2</div><div class="field"><label>O que foi feito?</label><input id="fieldActivity" value="Reboco" oninput="markFieldDirty()"></div></div>
+    <div class="step"><div class="stepnum">3</div><div class="field"><label>Quanto?</label><input id="fieldAmount" value="15 m²" oninput="markFieldDirty()"></div></div>
     <div class="step"><div class="stepnum">4</div><div><button class="secondary" style="width:100%">📷 Tirar foto</button><p class="sub">GPS anexado automaticamente.</p></div></div>
-    <button class="primary" style="width:100%;min-height:52px" onclick="alert('Protótipo: atividade registrada')">Registrar atividade</button>
+    <button class="primary" style="width:100%;min-height:52px" onclick="requestFieldRegistration()">Registrar atividade</button>
   </div>
 </section>
 <section id="validations" class="screen">
@@ -81,7 +82,7 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
       <button class="card" style="text-align:left;width:100%" onclick="selectValidation(0)"><div class="row"><strong>Concretagem · Torre 2</strong><span class="pill">Ontem</span></div><p class="sub">João Ferreira · 15 m³ · GPS confirmado</p></button>
       <button class="card" style="text-align:left;width:100%" onclick="selectValidation(1)"><div class="row"><strong>Reboco · Torre 1</strong><span class="pill">Hoje</span></div><p class="sub">Carlos Souza · 34 m² · 2 fotos</p></button>
     </div>
-    <div class="card" id="validationDetail"><div class="eyebrow">Evidência selecionada</div><h2>Concretagem · Torre 2</h2><p class="sub">15 m³ · João Ferreira · GPS confirmado</p><div style="height:180px;background:#dfe4ea;border-radius:16px;margin:14px 0;display:grid;place-items:center;color:#667085;font-weight:800">Foto da evidência</div><div class="actions"><button class="primary" onclick="confirmValidation()">Aprovar</button><button class="danger">Rejeitar</button></div></div>
+    <div class="card" id="validationDetail"><div class="eyebrow">Evidência selecionada</div><h2>Concretagem · Torre 2</h2><p class="sub">15 m³ · João Ferreira · GPS confirmado</p><div style="height:180px;background:#dfe4ea;border-radius:16px;margin:14px 0;display:grid;place-items:center;color:#667085;font-weight:800">Foto da evidência</div><div class="actions"><button class="primary" onclick="confirmValidation()">Aprovar</button><button class="danger" onclick="requestValidationRejection()">Rejeitar</button></div></div>
   </div>
 </section>
 </main>
@@ -106,8 +107,81 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
   </div></div>
   <button class="primary" style="width:100%;margin-top:16px" onclick="closeSheet('moreSheet');openSheet('intelligenceSheet')">🎙 Falar com Brita</button>
 </div></div><div class="drawer" id="intelligenceSheet" onclick="closeSheet('intelligenceSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow">Planes Intelligence</div><h2>Brita</h2><span class="context-chip" id="intelligenceContext">● Vendo: Sua obra hoje</span><span class="learning-chip" id="communicationStyleChip">Aprendendo seu jeito</span></div><button class="iconbtn" onclick="closeSheet('intelligenceSheet')">✕</button></div><div class="chat" id="intelligenceChat" style="margin-top:14px"><div class="msg ai">Oi, Alex. Tô vendo a mesma tela que você. Pode falar comigo normalmente.</div><div class="msg user">O que tá pegando nessa obra hoje?</div><div class="msg ai">Tem duas coisas que merecem atenção: uma validação parada desde ontem e o aço da Arena em atraso. Quer começar por qual?</div></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="quickAsk('Validação')">Validação</button><button class="ghost" onclick="quickAsk('Aço da Arena')">Aço da Arena</button><button class="ghost" onclick="quickAsk('Me resume tudo')">Me resume tudo</button><button class="ghost" onclick="simulateEndDay()">Encerrar por hoje</button></div><div class="composer"><input id="intelligenceInput" placeholder="Fala ou escreve do seu jeito..." onkeydown="if(event.key==='Enter'){sendPrototypeMessage()}"><button aria-label="Enviar mensagem" onclick="sendPrototypeMessage()">➤</button></div><p class="conversation-note" id="conversationNote">Brita vai ajustando o tamanho e o jeito das respostas conforme você conversa.</p></div></div>
+<div class="drawer" id="confirmSheet" onclick="closeSheet('confirmSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow" id="confirmEyebrow">Confirmar ação</div><h2 id="confirmTitle">Confirmar</h2></div><button class="iconbtn" onclick="closeSheet('confirmSheet')">✕</button></div><p class="confirm-copy" id="confirmCopy"></p><div class="confirm-summary" id="confirmSummary"></div><div class="actions" style="margin-top:14px"><button class="secondary" style="flex:1" onclick="closeSheet('confirmSheet')">Cancelar</button><button class="primary" style="flex:1" id="confirmActionButton">Confirmar</button></div></div></div>
+<div class="toast" id="prototypeToast" role="status" aria-live="polite"></div>
 <div class="drawer" id="projectSheet" onclick="closeSheet('projectSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><h2>Trocar obra</h2><button class="iconbtn" onclick="closeSheet('projectSheet')">✕</button></div><div class="list" style="margin-top:14px"><button class="card" style="text-align:left"><strong>Reserva da Lagoa</strong><p class="sub">Recife · 61,8%</p></button><button class="card" style="text-align:left"><strong>Mirante do Parque</strong><p class="sub">Recife · 44,2%</p></button></div></div></div>
 <script>
+let fieldDirty=false;
+let confirmAction=null;
+let toastTimer=null;
+function showPrototypeToast(message){
+  const t=document.getElementById('prototypeToast');
+  if(!t)return;
+  t.textContent=message;
+  t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.classList.remove('show');toastTimer=null},2600);
+}
+function openConfirmation({eyebrow='Confirmar ação',title='Confirmar',copy='',summary='',actionLabel='Confirmar',onConfirm}){
+  document.getElementById('confirmEyebrow').textContent=eyebrow;
+  document.getElementById('confirmTitle').textContent=title;
+  document.getElementById('confirmCopy').textContent=copy;
+  document.getElementById('confirmSummary').textContent=summary;
+  const btn=document.getElementById('confirmActionButton');
+  btn.textContent=actionLabel;
+  confirmAction=typeof onConfirm==='function'?onConfirm:null;
+  btn.onclick=()=>{
+    const fn=confirmAction;
+    confirmAction=null;
+    closeSheet('confirmSheet');
+    if(fn)fn();
+  };
+  openSheet('confirmSheet');
+}
+function markFieldDirty(){
+  fieldDirty=true;
+  const note=document.getElementById('fieldDirtyNote');
+  if(note)note.classList.add('show');
+}
+function clearFieldDirty(){
+  fieldDirty=false;
+  const note=document.getElementById('fieldDirtyNote');
+  if(note)note.classList.remove('show');
+}
+function smartBackFromField(){
+  if(!fieldDirty){showScreen('home');return;}
+  openConfirmation({
+    eyebrow:'Alterações não registradas',
+    title:'Sair do apontamento?',
+    copy:'Você fez alterações que ainda não foram registradas.',
+    summary:'Se sair agora, essas alterações serão descartadas.',
+    actionLabel:'Sair sem registrar',
+    onConfirm:()=>{clearFieldDirty();showScreen('home');}
+  });
+}
+function requestFieldRegistration(){
+  const place=document.getElementById('fieldPlace')?.value||'Torre 2';
+  const activity=document.getElementById('fieldActivity')?.value||'Atividade';
+  const amount=document.getElementById('fieldAmount')?.value||'';
+  openConfirmation({
+    eyebrow:'Revisar antes de registrar',
+    title:'Registrar atividade?',
+    copy:'Confere rapidinho antes de salvar.',
+    summary:activity+' · '+place+' · '+amount+' · GPS será anexado automaticamente.',
+    actionLabel:'Registrar',
+    onConfirm:()=>{clearFieldDirty();showPrototypeToast('✓ Atividade registrada com sucesso');}
+  });
+}
+function requestValidationRejection(){
+  openConfirmation({
+    eyebrow:'Validação',
+    title:'Rejeitar esta evidência?',
+    copy:'O responsável será informado de que precisa revisar o registro.',
+    summary:'Concretagem · Torre 2 · João Ferreira',
+    actionLabel:'Rejeitar',
+    onConfirm:()=>showPrototypeToast('Validação devolvida para correção')
+  });
+}
 const communicationProfile={
   mode:'balanced',
   interactions:0,
@@ -272,7 +346,16 @@ function openSheet(id){
 }
 function closeSheet(id){document.getElementById(id).classList.remove('open')}
 function selectValidation(i){document.getElementById('validationDetail').querySelector('h2').textContent=i?'Reboco · Torre 1':'Concretagem · Torre 2'}
-function confirmValidation(){confirm('Vou aprovar esta validação e atualizar o avanço físico. É isso?')&&alert('Pronto. Validação aprovada e avanço atualizado.')}
+function confirmValidation(){
+  openConfirmation({
+    eyebrow:'Validação',
+    title:'Aprovar concretagem?',
+    copy:'Vou aprovar esta evidência e atualizar o avanço físico.',
+    summary:'Concretagem · Torre 2 · 15 m³ · João Ferreira',
+    actionLabel:'Aprovar',
+    onConfirm:()=>showPrototypeToast('✓ Aprovada e avanço atualizado')
+  });
+}
 function simulateEndDay(){
   communicationProfile.lastIntent='end_day';
   const endings={
