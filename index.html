@@ -6347,10 +6347,10 @@
         localStorage.setItem('planes_intelligence_habits', JSON.stringify(store));
       } catch (e) {}
 
-      if (!supabaseClient || !currentUser || !currentUser.id) return;
+      if (!supabaseClient || !currentUser || !currentUser.id) return false;
 
       try {
-        await supabaseClient.from('user_behavior_events').insert({
+        const { error: behaviorError } = await supabaseClient.from('user_behavior_events').insert({
           user_id: currentUser.id,
           event_type: eventType,
           module: moduleName || null,
@@ -6358,6 +6358,7 @@
           interaction_mode: mode || null,
           metadata: details.metadata || {}
         });
+        if (behaviorError) throw behaviorError;
 
         const topMode = Object.entries(store.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || mode || 'touch';
         await supabaseClient.from('user_intelligence_profiles').upsert({
@@ -6371,8 +6372,10 @@
         }, { onConflict: 'user_id' });
 
         await persistUserProjectIntelligenceContext(eventType, details);
+        return true;
       } catch (err) {
         console.warn('Planes Intelligence: hábito salvo apenas localmente.', err);
+        return false;
       }
     }
 
