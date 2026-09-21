@@ -2065,44 +2065,90 @@
     // AÇÕES INTERATIVAS DA FILA DE VALIDAÇÕES
     async function approveValidation(id) {
       const valIndex = validations.findIndex(v => v.id === id);
-      if (valIndex !== -1) {
-        const item = validations[valIndex];
-        validations.splice(valIndex, 1);
-        physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
-        if (selectedProject) selectedProject.progress = physicalProgress;
+      if (valIndex === -1) return;
+
+      const item = validations[valIndex];
+      const previousProgress = physicalProgress;
+      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+
+      validations.splice(valIndex, 1);
+      physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
+      if (selectedProject) selectedProject.progress = physicalProgress;
+      render();
+
+      const [validationOk, metricsOk] = await Promise.all([
+        persistValidationStatus(item, 'Aprovado'),
+        persistProjectMetrics()
+      ]);
+
+      if (validationOk && metricsOk) {
+        await refreshIntelligenceOperationalData();
         render();
-        const [validationOk, metricsOk] = await Promise.all([
-          persistValidationStatus(item, 'Aprovado'),
-          persistProjectMetrics()
-        ]);
-        showToast(validationOk && metricsOk ? `✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%` : `Medição aprovada localmente; sincronização pendente.`);
+        showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) {
+        validations.splice(Math.min(valIndex, validations.length), 0, item);
+        physicalProgress = previousProgress;
+        if (selectedProject) selectedProject.progress = previousProjectProgress;
+      }
+      render();
+      showToast('Não foi possível concluir a aprovação no Supabase. A tela foi reconciliada com o último estado confirmado.');
     }
 
     async function rejectValidation(id) {
       const valIndex = validations.findIndex(v => v.id === id);
-      if (valIndex !== -1) {
-        const item = validations[valIndex];
-        validations.splice(valIndex, 1);
+      if (valIndex === -1) return;
+
+      const item = validations[valIndex];
+      validations.splice(valIndex, 1);
+      render();
+
+      const ok = await persistValidationStatus(item, 'Rejeitado');
+      if (ok) {
+        await refreshIntelligenceOperationalData();
         render();
-        const ok = await persistValidationStatus(item, 'Rejeitado');
-        showToast(ok ? `✕ Medição de "${item.item}" devolvida e sincronizada.` : `Medição devolvida localmente; sincronização pendente.`);
+        showToast(`✕ Medição de "${item.item}" devolvida e sincronizada.`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) validations.splice(Math.min(valIndex, validations.length), 0, item);
+      render();
+      showToast('Não foi possível devolver a medição no Supabase. O estado confirmado foi restaurado.');
     }
+
+    // AÇÕES DE SUPRIMENTOS
 
     // AÇÕES DE SUPRIMENTOS
     async function confirmSupplyReceipt(id) {
       const sup = suppliesList.find(s => s.id === id);
-      if (sup) {
-        sup.status = 'No Canteiro';
-        sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      if (!sup) return;
+
+      const previous = { ...sup };
+      sup.status = 'No Canteiro';
+      sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      render();
+
+      const ok = await persistSupplyRecord(sup);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
         render();
-        const ok = await persistSupplyRecord(sup);
-        showToast(ok ? `✓ Recebimento de "${sup.name}" confirmado e sincronizado.` : `Recebimento atualizado localmente; sincronização pendente.`);
+        showToast(`✓ Recebimento de "${sup.name}" confirmado e sincronizado.`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) Object.assign(sup, previous);
+      render();
+      showToast('Falha ao confirmar recebimento. A tela voltou ao último estado confirmado no Supabase.');
     }
 
 // Ações de aprovação consolidadas na seção de autenticação
+
+    // Ações de aprovação consolidadas na seção de autenticação
 
 // Ação de recusa de usuário consolidada na seção de autenticação
 
@@ -2110,6 +2156,7 @@
       const sup = suppliesList.find(s => s.id === editingSupplyId);
       if (!sup) return;
 
+      const previous = { ...sup };
       const name = document.getElementById('edit-sup-name').value.trim();
       const supplier = document.getElementById('edit-sup-supplier').value.trim();
       const qtd = document.getElementById('edit-sup-qtd').value.trim();
@@ -2137,20 +2184,44 @@
 
       closeEditSupplyModal();
       render();
+
       const ok = await persistSupplyRecord(sup);
-      showToast(ok ? `✓ Insumo "${name}" atualizado e sincronizado.` : `Insumo atualizado localmente; sincronização pendente.`);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast(`✓ Insumo "${name}" atualizado e sincronizado.`);
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) Object.assign(sup, previous);
+      render();
+      showToast('Falha ao atualizar o insumo. A alteração local foi revertida para o último estado confirmado.');
     }
 
     async function deleteSupply(supId) {
       const idx = suppliesList.findIndex(s => s.id === supId);
-      if (idx !== -1) {
-        const item = suppliesList[idx];
-        suppliesList.splice(idx, 1);
+      if (idx === -1) return;
+
+      const item = suppliesList[idx];
+      suppliesList.splice(idx, 1);
+      render();
+
+      const ok = await deleteSupplyRecordRemote(item.id);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
         render();
-        const ok = await deleteSupplyRecordRemote(item.id);
-        showToast(ok ? `✓ Insumo "${item.name}" excluído e sincronizado.` : `Insumo removido localmente; sincronização pendente.`);
+        showToast(`✓ Insumo "${item.name}" excluído e sincronizado.`);
+        return;
       }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) suppliesList.splice(Math.min(idx, suppliesList.length), 0, item);
+      render();
+      showToast('Falha ao excluir o insumo. O registro confirmado foi restaurado.');
     }
+
+    let currentScreen = 'login';
 
     let currentScreen = 'login';
     let authMode = 'login';
@@ -6426,9 +6497,22 @@
 
       closeAddSupplyModal();
       render();
+
       const ok = await persistSupplyRecord(newSupply);
-      showToast(ok ? `✓ Insumo "${name}" cadastrado e sincronizado.` : `Insumo cadastrado localmente; sincronização pendente.`);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast(`✓ Insumo "${name}" cadastrado e sincronizado.`);
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) suppliesList = suppliesList.filter(item => item !== newSupply);
+      render();
+      showToast('Falha ao cadastrar o insumo no Supabase. O item provisório foi removido.');
     }
+
+    function handleSupplyExcelUpload(event) {
 
     function handleSupplyExcelUpload(event) {
       const file = event.target.files[0];
@@ -6679,30 +6763,43 @@
     async function applyExcelProjectUpdate() {
       if (!excelDiffData) return;
 
+      const previousProgress = physicalProgress;
+      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+
       physicalProgress = 64.2;
-      pacScore = 82;
-      financialSpent = 15.45;
-
       projectVersions.unshift({
-        version: 'v16.04',
-        date: 'Hoje (Atualização via Excel)',
-        author: currentUser ? currentUser.name : 'Admin',
-        progress: '64.2%',
-        pac: '82%',
-        status: 'Versão Atual em Produção'
+        id: Date.now(),
+        name: 'Cronograma_Executivo_R4.xlsx',
+        version: 'R4',
+        uploadedBy: currentUser ? currentUser.name : 'Usuário',
+        date: new Date().toLocaleString('pt-BR'),
+        size: '2.8 MB',
+        status: 'Atual'
       });
-      projectVersions[1].status = 'Arquivado';
+      if (projectVersions[1]) projectVersions[1].status = 'Arquivado';
+      if (selectedProject) selectedProject.progress = physicalProgress;
 
-      if (selectedProject) {
-        selectedProject.progress = physicalProgress;
-      }
       excelDiffData = null;
       render();
+
       const synced = await persistProjectMetrics();
-      showToast(synced
-        ? '✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.'
-        : 'Projeto atualizado localmente; sincronização operacional pendente.');
+      if (synced) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) {
+        physicalProgress = previousProgress;
+        if (selectedProject) selectedProject.progress = previousProjectProgress;
+      }
+      render();
+      showToast('Falha ao sincronizar o avanço. A tela foi restaurada para o último valor confirmado no Supabase.');
     }
+
+    function cancelExcelDiff() {
 
     function cancelExcelDiff() {
       excelDiffData = null;
@@ -7524,11 +7621,26 @@
     }
 
     async function toggleTaskDone(id) {
+      const before = tasksList.map(t => ({ ...t }));
       tasksList = tasksList.map(t => t.id === id ? { ...t, done: !t.done } : t);
       const task = tasksList.find(t => t.id === id);
       render();
-      if (task) await persistTaskRecord(task);
+      if (!task) return;
+
+      const ok = await persistTaskRecord(task);
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) tasksList = before;
+      render();
+      showToast('Falha ao atualizar a tarefa. O estado confirmado foi restaurado.');
     }
+
+    function removeReminder(id) {
 
     function removeReminder(id) {
       remindersList = remindersList.filter(r => r.id !== id);
@@ -8026,9 +8138,9 @@
 
     async function deleteSupplyRecordRemote(id) {
       if (!supabaseClient || !isUuidLike(id)) return true;
-      const { error } = await supabaseClient.from('project_supplies').delete().eq('id', id);
-      if (error) {
-        console.warn('Falha ao excluir suprimento no Supabase:', error);
+      const { data, error } = await supabaseClient.from('project_supplies').delete().eq('id', id).select('id');
+      if (error || !Array.isArray(data) || data.length === 0) {
+        console.warn('Falha ao excluir suprimento no Supabase:', error || 'nenhuma linha removida');
         return false;
       }
       return true;
