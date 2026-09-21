@@ -5822,7 +5822,8 @@
       return actionable[0] || null;
     }
 
-    async function refreshProactiveIntelligenceBrief() {
+    async function refreshProactiveIntelligenceBrief(options = {}) {
+      const commitSnapshot = options.commitSnapshot !== false;
       if (!supabaseClient || !currentUser || !currentUser.id) return null;
       const projectId = await getOperationalProjectId();
       if (!projectId) return null;
@@ -5849,25 +5850,67 @@
               changes,
               primaryAction,
               previousSeenAt: data?.last_seen_at || null,
-              generatedAt: new Date().toISOString()
+              generatedAt: new Date().toISOString(),
+              live: !commitSnapshot
             }
           : null;
 
-        await supabaseClient
-          .from('user_project_intelligence_context')
-          .upsert({
-            user_id: currentUser.id,
-            project_id: projectId,
-            last_snapshot: current,
-            last_seen_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id,project_id' });
+        if (commitSnapshot) {
+          const { error: upsertError } = await supabaseClient
+            .from('user_project_intelligence_context')
+            .upsert({
+              user_id: currentUser.id,
+              project_id: projectId,
+              last_snapshot: current,
+              last_seen_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,project_id' });
+
+          if (upsertError) {
+            console.warn('Planes Intelligence: não foi possível confirmar o novo baseline.', upsertError);
+          } else if (projectIntelligenceContext) {
+            projectIntelligenceContext.lastSnapshot = current;
+            projectIntelligenceContext.lastSeenAt = new Date().toISOString();
+            saveLocalProjectIntelligenceContext(projectIntelligenceContext);
+          }
+        }
 
         return proactiveIntelligenceBrief;
       } catch (err) {
         console.warn('Planes Intelligence: resumo proativo não pôde ser atualizado.', err);
         return null;
       }
+    }
+
+    async function refreshOperationalRealtimeState() {
+      if (operationalRealtimeRefreshInFlight) return;
+      operationalRealtimeRefreshInFlight = true;
+      try {
+        const refreshed = await refreshIntelligenceOperationalData();
+        if (refreshed) {
+          await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
+        }
+
+        if (
+          activeNav === 'Planes Intelligence' ||
+          activeNav === 'Suprimentos' ||
+          activeNav === 'Fila de Validações' ||
+          activeNav === 'Curva S & PAC' ||
+          activeNav === 'Visão Geral'
+        ) {
+          render();
+        }
+      } finally {
+        operationalRealtimeRefreshInFlight = false;
+      }
+    }
+
+    function scheduleOperationalRealtimeRefresh() {
+      if (operationalRealtimeRefreshTimer) clearTimeout(operationalRealtimeRefreshTimer);
+      operationalRealtimeRefreshTimer = setTimeout(() => {
+        operationalRealtimeRefreshTimer = null;
+        refreshOperationalRealtimeState();
+      }, 180);
     }
 
     function getProjectContextStorageKey() {
@@ -8436,6 +8479,8 @@
 
     let operationalProjectIdCache = null;
     let operationalRealtimeChannel = null;
+    let operationalRealtimeRefreshTimer = null;
+    let operationalRealtimeRefreshInFlight = false;
 
     function isUuidLike(value) {
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
@@ -8573,27 +8618,37 @@
 
     function setupOperationalRealtime() {
       if (!supabaseClient) return;
+
+      if (operationalRealtimeRefreshTimer) {
+        clearTimeout(operationalRealtimeRefreshTimer);
+        operationalRealtimeRefreshTimer = null;
+      }
       if (operationalRealtimeChannel) {
         try { operationalRealtimeChannel.unsubscribe(); } catch (e) {}
       }
+
       operationalRealtimeChannel = supabaseClient.channel('planes-operational-feed');
+
       ['project_metrics','project_supplies','project_validations','project_tasks'].forEach(table => {
-        operationalRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, async () => {
-          await refreshIntelligenceOperationalData();
-          if (
-            activeNav === 'Planes Intelligence' ||
-            activeNav === 'Suprimentos' ||
-            activeNav === 'Fila de Validações' ||
-            activeNav === 'Curva S & PAC' ||
-            activeNav === 'Visão Geral'
-          ) {
-            render();
+        operationalRealtimeChannel.on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table },
+          async payload => {
+            const activeProjectId = await getOperationalProjectId();
+            const changedProjectId = payload?.new?.project_id || payload?.old?.project_id || null;
+
+            if (changedProjectId && activeProjectId && changedProjectId !== activeProjectId) return;
+            scheduleOperationalRealtimeRefresh();
           }
-        });
+        );
       });
+
       operationalRealtimeChannel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
-          await refreshIntelligenceOperationalData();
+          const refreshed = await refreshIntelligenceOperationalData();
+          if (refreshed) {
+            await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
+          }
           render();
         }
       });
@@ -10535,6 +10590,7 @@
           ? 'bg-amber-100 text-amber-800 border-amber-200'
           : 'bg-emerald-100 text-emerald-800 border-emerald-200';
       const detail = changes[0]?.text || primary.label;
+      const isLivePriority = proactiveIntelligenceBrief?.live === true;
 
       if (isMobile) {
         return `
@@ -10544,7 +10600,10 @@
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-2">
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-wider text-violet-700">Planes Intelligence</p>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <p class="text-[9px] font-black uppercase tracking-wider text-violet-700">Planes Intelligence</p>
+                      ${isLivePriority ? '<span class="text-[8px] font-black text-emerald-700">● AO VIVO</span>' : ''}
+                    </div>
                     <p class="text-xs font-black text-slate-950 mt-0.5">Prioridade agora</p>
                   </div>
                   <span class="px-2 py-0.5 rounded-full border text-[9px] font-black ${riskClass}">${riskLabel}</span>
@@ -10572,6 +10631,7 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-[10px] font-black uppercase tracking-widest text-violet-700 font-mono">PLANES INTELLIGENCE</span>
+                  ${isLivePriority ? '<span class="text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">● AO VIVO</span>' : ''}
                   <span class="px-2 py-0.5 rounded-full border text-[10px] font-black ${riskClass}">${riskLabel}</span>
                 </div>
                 <h3 class="text-sm sm:text-base font-black text-slate-950 mt-1">Prioridade agora: ${primary.label}</h3>
