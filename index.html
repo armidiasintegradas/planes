@@ -1784,7 +1784,7 @@
               maxlength="3"
               placeholder="Ex: AR"
               class="w-24 px-3 py-1.5 bg-white border border-slate-200 rounded-[10px] text-xs font-mono font-bold text-slate-900 uppercase focus:outline-none focus:border-slate-950"
-              oninput="document.getElementById('edit-profile-avatar-preview').innerText = (this.value.trim().toUpperCase() || 'US')"
+              oninput="if (/^https?:\/\//i.test(this.value.trim())) { this.value = ((document.getElementById('edit-profile-name')?.value || 'US').split(/\s+/).map(p=>p[0]).join('').slice(0,2) || 'US').toUpperCase(); } document.getElementById('edit-profile-avatar-preview').innerText = (this.value.trim().toUpperCase().slice(0,3) || 'US')"
             />
             <span class="text-[10.5px] text-slate-500 block">Exibido nos badges e relatórios da plataforma</span>
           </div>
@@ -2036,12 +2036,17 @@
     
     function getAvatarMarkup(avatar, name = '', classes = '') {
       const value = String(avatar || '').trim();
+      const safeName = String(name || 'Avatar').replace(/[<>"'&]/g, '');
+      const initials = ((safeName || 'US').split(/\s+/).filter(Boolean).map(p => p[0]).join('').slice(0, 2) || 'US').toUpperCase();
       const isUrl = /^https?:\/\//i.test(value);
+
       if (isUrl) {
-        return `<img src="${value.replace(/"/g, '&quot;')}" alt="${(name || 'Avatar').replace(/"/g, '&quot;')}" class="w-full h-full object-cover rounded-[inherit] block" referrerpolicy="no-referrer" onerror="this.style.display='none';this.parentElement.textContent='${((name || 'US').split(/\s+/).map(p=>p[0]).join('').slice(0,2)||'US').toUpperCase()}'" />`;
+        const safeUrl = value.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<img src="${safeUrl}" alt="${safeName}" class="w-full h-full object-cover rounded-[inherit] block max-w-full max-h-full" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.textContent='${initials}'" />`;
       }
-      const initials = (value || (name || 'US').split(/\s+/).map(p => p[0]).join('').slice(0, 2) || 'US').toUpperCase().slice(0, 3);
-      return initials;
+
+      const text = value && !/[\/:?#=&]/.test(value) ? value : initials;
+      return String(text || initials).toUpperCase().slice(0, 3);
     }
 
     // VER / OCULTAR SENHA NO LOGIN
@@ -5574,8 +5579,13 @@
       const newpassInput = document.getElementById('edit-profile-newpass');
       const passconfirmInput = document.getElementById('edit-profile-passconfirm');
 
-      if (avatarInput) avatarInput.value = u.avatar || 'AR';
-      if (preview) preview.innerText = u.avatar || 'AR';
+      const rawAvatar = String(u.avatar || '');
+      const avatarIsUrl = /^https?:\/\//i.test(rawAvatar);
+      const avatarInitials = avatarIsUrl
+        ? (((u.name || u.email || 'US').split(/\s+/).map(p => p[0]).join('').slice(0, 2)) || 'US').toUpperCase()
+        : (rawAvatar || (((u.name || u.email || 'US').split(/\s+/).map(p => p[0]).join('').slice(0, 2)) || 'US')).toUpperCase().slice(0, 3);
+      if (avatarInput) avatarInput.value = avatarInitials;
+      if (preview) preview.innerHTML = getAvatarMarkup(rawAvatar || avatarInitials, u.name || u.email || 'Usuário');
       if (nameInput) nameInput.value = u.name || '';
       if (emailInput) emailInput.value = u.email || '';
       if (phoneInput) phoneInput.value = maskPhone(u.phone || '');
@@ -7171,7 +7181,7 @@
       if (mem) {
         document.getElementById('m-modal-name').innerText = mem.name;
         document.getElementById('m-modal-role').innerText = mem.role;
-        document.getElementById('m-modal-avatar').innerText = mem.avatar;
+        document.getElementById('m-modal-avatar').innerHTML = getAvatarMarkup(mem.avatar, mem.name || mem.email || 'Usuário');
         document.getElementById('m-modal-cpf').innerText = mem.cpf;
         document.getElementById('m-modal-rg').innerText = mem.rg;
         document.getElementById('m-modal-phone').innerText = mem.phone;
@@ -7604,7 +7614,7 @@
             <div class="space-y-3 text-xs">
               <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs ${mem.color}">
-                  ${mem.avatar}
+                  ${getAvatarMarkup(mem.avatar, mem.name || mem.email || 'Usuário')}
                 </div>
                 <div>
                   <strong class="text-sm font-bold text-slate-950 block">${mem.name}</strong>
@@ -12938,7 +12948,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                           <div class="flex items-start justify-between gap-3 mb-3.5">
                             <div class="flex items-center gap-3 min-w-0 flex-1 pr-1">
                               <div class="w-11 h-11 rounded-[14px] flex items-center justify-center font-black text-xs shadow-2xs ${mem.color || 'bg-slate-900 text-white'} shrink-0">
-                                ${mem.avatar}
+                                ${getAvatarMarkup(mem.avatar, mem.name || mem.email || 'Usuário')}
                               </div>
                               <div class="min-w-0 flex-1">
                                 <strong class="text-sm font-bold text-slate-950 block leading-tight truncate group-hover:text-slate-800 transition">
@@ -14104,7 +14114,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                             <div class="flex items-center gap-2.5 min-w-0">
                               <div class="relative shrink-0">
                                 <div class="w-9 h-9 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-xs">
-                                  ${sess.avatar || 'US'}
+                                  ${getAvatarMarkup(sess.avatar, sess.name || sess.email || 'Usuário')}
                                 </div>
                                 <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse"></span>
                               </div>
@@ -14202,7 +14212,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                             <tr class="hover:bg-slate-50 transition">
                               <td class="p-3 font-bold text-slate-950 flex items-center gap-2">
                                 <div class="w-7 h-7 rounded-full bg-slate-950 text-white flex items-center justify-center font-bold text-[10px]">
-                                  ${usr.avatar || 'US'}
+                                  ${getAvatarMarkup(usr.avatar, usr.name || usr.email || 'Usuário')}
                                 </div>
                                 <span>${usr.name}</span>
                               </td>
