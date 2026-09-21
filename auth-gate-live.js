@@ -114,7 +114,17 @@ async function ensurePresence(profile, user) {
 function allowApp(profile = null, user = null) {
   document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
   document.getElementById(ROOT_ID)?.remove();
-  window.dispatchEvent(new CustomEvent('planes-auth-approved'));
+  window.dispatchEvent(new CustomEvent('planes-auth-approved', {
+    detail: {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        app_metadata: user.app_metadata || {},
+        user_metadata: user.user_metadata || {}
+      } : null,
+      profile: profile || null
+    }
+  }));
   if (profile && user) {
     void ensurePresence(profile, user);
   }
