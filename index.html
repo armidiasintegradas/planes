@@ -7687,6 +7687,114 @@
       }
     ];
 
+    let intelligenceDataSource = 'local';
+    let intelligenceLastSyncAt = null;
+
+    async function refreshIntelligenceOperationalData() {
+      if (!supabaseClient) {
+        intelligenceDataSource = 'local';
+        return false;
+      }
+
+      try {
+        const projectCode = (selectedProject && selectedProject.id) ? String(selectedProject.id) : 'japaratinga-r3';
+        const { data: projects, error: projectError } = await supabaseClient
+          .from('projects')
+          .select('id, code, name, active')
+          .eq('code', projectCode)
+          .limit(1);
+
+        if (projectError || !Array.isArray(projects) || !projects[0]) {
+          intelligenceDataSource = 'local';
+          return false;
+        }
+
+        const projectRow = projects[0];
+        const [metricsRes, suppliesRes, validationsRes, tasksRes] = await Promise.all([
+          supabaseClient.from('project_metrics').select('*').eq('project_id', projectRow.id).limit(1),
+          supabaseClient.from('project_supplies').select('*').eq('project_id', projectRow.id).order('created_at', { ascending: true }),
+          supabaseClient.from('project_validations').select('*').eq('project_id', projectRow.id).order('created_at', { ascending: true }),
+          supabaseClient.from('project_tasks').select('*').eq('project_id', projectRow.id).order('created_at', { ascending: true })
+        ]);
+
+        if (metricsRes.error || suppliesRes.error || validationsRes.error || tasksRes.error) {
+          console.warn('Planes Intelligence: leitura operacional parcial/negada pelo Supabase.', {
+            metrics: metricsRes.error,
+            supplies: suppliesRes.error,
+            validations: validationsRes.error,
+            tasks: tasksRes.error
+          });
+          intelligenceDataSource = 'local';
+          return false;
+        }
+
+        const metrics = Array.isArray(metricsRes.data) ? metricsRes.data[0] : null;
+        if (metrics) {
+          physicalProgress = Number(metrics.physical_progress) || physicalProgress;
+          pacScore = Number(metrics.pac_score) || pacScore;
+          financialSpent = Number(metrics.financial_spent_m) || financialSpent;
+          workersCount = Number(metrics.workers_count) || workersCount;
+          if (selectedProject) {
+            selectedProject.progress = Number(metrics.physical_progress);
+            selectedProject.targetProgress = Number(metrics.target_progress);
+            selectedProject.spent = 'R$ ' + Number(metrics.financial_spent_m).toFixed(1).replace('.', ',') + 'M';
+            selectedProject.workers = Number(metrics.workers_count);
+          }
+        }
+
+        if (Array.isArray(suppliesRes.data)) {
+          suppliesList = suppliesRes.data.map((s, idx) => ({
+            id: s.id || ('cloud-supply-' + idx),
+            name: s.name,
+            supplier: s.supplier,
+            qtd: s.quantity_text,
+            date: s.delivery_text,
+            sector: s.sector,
+            status: s.status,
+            badge: s.status === 'No Canteiro'
+              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+              : s.status === 'Em Transporte'
+                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                : s.status === 'Atrasado'
+                  ? 'bg-rose-100 text-rose-900 border-rose-300'
+                  : 'bg-blue-100 text-blue-900 border-blue-300'
+          }));
+        }
+
+        if (Array.isArray(validationsRes.data)) {
+          validations = validationsRes.data.map((v, idx) => ({
+            id: v.id || ('cloud-validation-' + idx),
+            resp: v.responsible,
+            cargo: v.role_title,
+            front: v.front,
+            item: v.item,
+            qtd: v.quantity_text,
+            data: v.recorded_at_text,
+            gps: v.gps,
+            status: v.status
+          }));
+        }
+
+        if (Array.isArray(tasksRes.data)) {
+          tasksList = tasksRes.data.map((t, idx) => ({
+            id: t.id || ('cloud-task-' + idx),
+            title: t.title,
+            resp: t.responsible,
+            deadline: t.deadline_text,
+            done: !!t.done
+          }));
+        }
+
+        intelligenceDataSource = 'supabase';
+        intelligenceLastSyncAt = new Date();
+        return true;
+      } catch (err) {
+        console.warn('Planes Intelligence: fallback local após falha de sincronização.', err);
+        intelligenceDataSource = 'local';
+        return false;
+      }
+    }
+
     function formatPct(value, fallback = 0) {
       const n = Number.parseFloat(value);
       return Number.isFinite(n) ? n.toFixed(1).replace('.', ',') + '%' : Number(fallback).toFixed(1).replace('.', ',') + '%';
@@ -7842,7 +7950,7 @@
       return 'Análise concluída. O cockpit foi atualizado com risco, prioridade e próxima ação recomendada.';
     }
 
-    function askPlanesIntelligence(predefinedPrompt) {
+    async function askPlanesIntelligence(predefinedPrompt) {
       const inputElem = document.getElementById('intelligence-custom-input');
       const promptText = predefinedPrompt || (inputElem ? inputElem.value : '');
       if (!promptText || promptText.trim() === '') return;
@@ -7858,19 +7966,18 @@
       addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence: "' + promptText.slice(0, 80) + '"');
       render();
 
-      setTimeout(() => {
-        const analysis = buildPlanesIntelligenceAnalysis(promptText);
-        lastIntelligenceAnalysis = analysis;
+      await refreshIntelligenceOperationalData();
+      const analysis = buildPlanesIntelligenceAnalysis(promptText);
+      lastIntelligenceAnalysis = analysis;
 
-        intelligenceChatHistory.push({
-          sender: 'ai',
-          text: analysis.answer,
-          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        });
+      intelligenceChatHistory.push({
+        sender: 'ai',
+        text: analysis.answer,
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      });
 
-        speakText(summarizeIntelligenceForVoice(promptText, analysis.answer));
-        render();
-      }, 180);
+      speakText(summarizeIntelligenceForVoice(promptText, analysis.answer));
+      render();
     }
 
     // ==========================================
@@ -9507,6 +9614,12 @@
               </div>
               <h2 class="text-lg font-black text-slate-950 leading-tight mt-0.5">Planes Intelligence</h2>
               <p class="text-[11px] text-slate-500 mt-1">Copiloto operacional · voz, diagnóstico e ação</p>
+              <div class="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono">
+                <span class="w-1.5 h-1.5 rounded-full ${intelligenceDataSource === 'supabase' ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                <span class="${intelligenceDataSource === 'supabase' ? 'text-emerald-700' : 'text-slate-500'}">
+                  ${intelligenceDataSource === 'supabase' ? 'Dados operacionais sincronizados' : 'Modo local com fallback'}
+                </span>
+              </div>
             </div>
             <button
               type="button"
