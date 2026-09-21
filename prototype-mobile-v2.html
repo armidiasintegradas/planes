@@ -27,7 +27,7 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
 .drawer{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:none;align-items:flex-end}.drawer.open{display:flex}.sheet{background:#fff;width:100%;border-radius:26px 26px 0 0;max-height:78dvh;padding:12px 14px max(18px,env(safe-area-inset-bottom));overflow:auto}.handle{width:44px;height:5px;border-radius:99px;background:#d0d5dd;margin:0 auto 14px}
 .chat{display:grid;gap:10px}.msg{max-width:86%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.4}.ai{background:#f2f4f7}.user{background:var(--navy);color:#fff;margin-left:auto}.composer{display:flex;gap:8px;margin-top:14px}.composer input{flex:1;height:48px;border:1px solid var(--line);border-radius:14px;padding:0 12px}.composer button{width:48px;height:48px;border:0;border-radius:14px;background:var(--navy);color:var(--lime)}
 .rolebar{display:flex;gap:7px;overflow:auto;padding-bottom:2px;scrollbar-width:none}.rolebar::-webkit-scrollbar{display:none}.rolechip{flex:0 0 auto;min-height:40px;border-radius:999px;border:1px solid var(--line);background:#fff;padding:0 12px;font-size:12px;font-weight:800;color:#475467}.rolechip.active{background:var(--navy);color:#fff;border-color:var(--navy)}.role-note{font-size:12px;color:var(--muted);line-height:1.4}.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.quick{min-height:58px;border-radius:16px;border:1px solid var(--line);background:#fff;padding:10px 12px;text-align:left;font-weight:800}.quick small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);transform:translateX(-50%) translateY(10px);z-index:120;width:min(420px,calc(100vw - 24px));background:var(--navy);color:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 18px 45px rgba(7,21,43,.24);opacity:0;pointer-events:none;transition:.18s ease;font-size:13px;font-weight:800}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.confirm-copy{font-size:14px;line-height:1.45;color:#344054;margin-top:8px}.confirm-summary{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px;font-size:13px;line-height:1.45}.dirty-note{display:none;font-size:11px;font-weight:800;color:#b54708}.dirty-note.show{display:block}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);transform:translateX(-50%) translateY(10px);z-index:120;width:min(420px,calc(100vw - 24px));background:var(--navy);color:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 18px 45px rgba(7,21,43,.24);opacity:0;pointer-events:none;transition:.18s ease;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:12px}.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}.toast-action{border:0;background:var(--lime);color:var(--navy);min-height:34px;padding:0 10px;border-radius:10px;font-size:12px;font-weight:900;display:none}.toast-action.show{display:block}.field-error{border-color:#fda29b!important;background:#fff7f6!important}.help-card{background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:12px;margin-top:10px;display:none}.help-card.show{display:block}.help-card strong{display:block;font-size:13px}.help-card p{font-size:12px;color:#7c2d12;line-height:1.4;margin-top:4px}.confirm-copy{font-size:14px;line-height:1.45;color:#344054;margin-top:8px}.confirm-summary{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px;font-size:13px;line-height:1.45}.dirty-note{display:none;font-size:11px;font-weight:800;color:#b54708}.dirty-note.show{display:block}
 .tablet-rail{display:none}
 @media(min-width:700px) and (max-width:1023px){
   .topbar{padding-left:18px;padding-right:18px}
@@ -117,7 +117,8 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
   <div class="card" style="display:grid;gap:14px">
     <div class="step"><div class="stepnum">1</div><div class="field"><label>Onde?</label><select id="fieldPlace" onchange="markFieldDirty()"><option>Torre 2</option><option>Arena</option><option>Piscina</option></select></div></div>
     <div class="step"><div class="stepnum">2</div><div class="field"><label>O que foi feito?</label><input id="fieldActivity" value="Reboco" oninput="markFieldDirty()"></div></div>
-    <div class="step"><div class="stepnum">3</div><div class="field"><label>Quanto?</label><input id="fieldAmount" value="15 m²" oninput="markFieldDirty()"></div></div>
+    <div class="step"><div class="stepnum">3</div><div class="field"><label>Quanto?</label><input id="fieldAmount" value="15 m²" oninput="markFieldDirty();clearFieldHelp()"></div></div>
+    <div class="help-card" id="fieldHelp"><strong>Falta uma informação</strong><p id="fieldHelpText">Confira os campos antes de registrar.</p><button class="ghost" style="margin-top:8px" onclick="askForFieldHelp()">Pedir ajuda ao Intelligence</button></div>
     <div class="step"><div class="stepnum">4</div><div><button class="secondary" style="width:100%">📷 Tirar foto</button><p class="sub">GPS anexado automaticamente.</p></div></div>
     <button class="primary" style="width:100%;min-height:52px" onclick="requestFieldRegistration()">Registrar atividade</button>
   </div>
@@ -161,7 +162,7 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
   <div class="toggle-row"><div><strong>Reduzir movimento</strong><p class="sub">Diminui animações e transições.</p></div><button class="switch" id="motionSwitch" onclick="toggleAccessibility('motion',this)" aria-label="Reduzir movimento"></button></div>
 </div><div class="card" style="margin-top:14px"><div class="eyebrow">Teste de conexão</div><p class="sub">No protótipo, você pode simular perda de sinal para validar o comportamento.</p><div class="actions" style="margin-top:10px"><button class="ghost" onclick="setPrototypeConnection(false)">Simular offline</button><button class="ghost" onclick="setPrototypeConnection(true)">Voltar online</button></div></div><button class="replay-link" onclick="closeSheet('accessibilitySheet');replayOnboarding()">Rever primeiro acesso</button></div></div>
 <div class="drawer" id="confirmSheet" onclick="closeSheet('confirmSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow" id="confirmEyebrow">Confirmar ação</div><h2 id="confirmTitle">Confirmar</h2></div><button class="iconbtn" onclick="closeSheet('confirmSheet')">✕</button></div><p class="confirm-copy" id="confirmCopy"></p><div class="confirm-summary" id="confirmSummary"></div><div class="actions" style="margin-top:14px"><button class="secondary" style="flex:1" onclick="closeSheet('confirmSheet')">Cancelar</button><button class="primary" style="flex:1" id="confirmActionButton">Confirmar</button></div></div></div>
-<div class="toast" id="prototypeToast" role="status" aria-live="polite"></div>
+<div class="toast" id="prototypeToast" role="status" aria-live="polite"><span id="prototypeToastMessage"></span><button class="toast-action" id="prototypeToastAction" onclick="runToastAction()">Desfazer</button></div>
 <div class="drawer" id="projectSheet" onclick="closeSheet('projectSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><h2>Trocar obra</h2><button class="iconbtn" onclick="closeSheet('projectSheet')">✕</button></div><div class="list" style="margin-top:14px"><button class="card" style="text-align:left"><strong>Reserva da Lagoa</strong><p class="sub">Recife · 61,8%</p></button><button class="card" style="text-align:left"><strong>Mirante do Parque</strong><p class="sub">Recife · 44,2%</p></button></div></div></div>
 <script>
 const prototypeAccessibility={largeText:false,contrast:false,motion:false};
@@ -251,13 +252,45 @@ function setPersona(persona,options={}){
 let fieldDirty=false;
 let confirmAction=null;
 let toastTimer=null;
-function showPrototypeToast(message){
+let toastAction=null;
+function showPrototypeToast(message,options={}){
   const t=document.getElementById('prototypeToast');
-  if(!t)return;
-  t.textContent=message;
+  const msg=document.getElementById('prototypeToastMessage');
+  const btn=document.getElementById('prototypeToastAction');
+  if(!t||!msg||!btn)return;
+  msg.textContent=message;
+  toastAction=typeof options.onAction==='function'?options.onAction:null;
+  btn.textContent=options.actionLabel||'Desfazer';
+  btn.classList.toggle('show',!!toastAction);
   t.classList.add('show');
   if(toastTimer)clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>{t.classList.remove('show');toastTimer=null},2600);
+  toastTimer=setTimeout(()=>{t.classList.remove('show');btn.classList.remove('show');toastAction=null;toastTimer=null},options.duration||3200);
+}
+function runToastAction(){
+  const fn=toastAction;
+  toastAction=null;
+  document.getElementById('prototypeToast')?.classList.remove('show');
+  document.getElementById('prototypeToastAction')?.classList.remove('show');
+  if(fn)fn();
+}
+function clearFieldHelp(){
+  document.getElementById('fieldHelp')?.classList.remove('show');
+  document.getElementById('fieldActivity')?.classList.remove('field-error');
+  document.getElementById('fieldAmount')?.classList.remove('field-error');
+}
+function showFieldHelp(message,targetId){
+  const help=document.getElementById('fieldHelp');
+  const text=document.getElementById('fieldHelpText');
+  if(text)text.textContent=message;
+  help?.classList.add('show');
+  const target=document.getElementById(targetId);
+  target?.classList.add('field-error');
+  target?.focus();
+}
+function askForFieldHelp(){
+  openSheet('intelligenceSheet');
+  appendChatMessage('user','Me ajuda a preencher esse apontamento.');
+  setTimeout(()=>appendChatMessage('ai','Claro. Tô vendo o apontamento com você. Me diz o que foi feito e eu te ajudo a completar o restante.'),160);
 }
 function openConfirmation({eyebrow='Confirmar ação',title='Confirmar',copy='',summary='',actionLabel='Confirmar',onConfirm}){
   document.getElementById('confirmEyebrow').textContent=eyebrow;
@@ -297,16 +330,19 @@ function smartBackFromField(){
   });
 }
 function requestFieldRegistration(){
+  clearFieldHelp();
   const place=document.getElementById('fieldPlace')?.value||'Torre 2';
-  const activity=document.getElementById('fieldActivity')?.value||'Atividade';
-  const amount=document.getElementById('fieldAmount')?.value||'';
+  const activity=(document.getElementById('fieldActivity')?.value||'').trim();
+  const amount=(document.getElementById('fieldAmount')?.value||'').trim();
+  if(!activity){showFieldHelp('Me diz o que foi feito antes de registrar.','fieldActivity');return;}
+  if(!amount){showFieldHelp('Falta informar a quantidade. Pode colocar o valor e a unidade.','fieldAmount');return;}
   openConfirmation({
     eyebrow:'Revisar antes de registrar',
     title:'Registrar atividade?',
     copy:'Confere rapidinho antes de salvar.',
     summary:activity+' · '+place+' · '+amount+' · GPS será anexado automaticamente.',
     actionLabel:'Registrar',
-    onConfirm:()=>{clearFieldDirty();handlePrototypeSave('Atividade registrada','Atividade aguardando sincronização');}
+    onConfirm:()=>{clearFieldDirty();handlePrototypeSave('Atividade registrada','Atividade aguardando sincronização');if(prototypeOnline){showPrototypeToast('✓ Atividade registrada',{actionLabel:'Desfazer',onAction:()=>showPrototypeToast('Registro desfeito. Você pode editar e salvar de novo.')});}}
   });
 }
 function requestValidationRejection(){
@@ -492,7 +528,7 @@ function confirmValidation(){
     copy:'Vou aprovar esta evidência e atualizar o avanço físico.',
     summary:'Concretagem · Torre 2 · 15 m³ · João Ferreira',
     actionLabel:'Aprovar',
-    onConfirm:()=>handlePrototypeSave('Aprovada e avanço atualizado','Aprovação salva neste aparelho e aguardando sincronização')
+    onConfirm:()=>{handlePrototypeSave('Aprovada e avanço atualizado','Aprovação salva neste aparelho e aguardando sincronização');if(prototypeOnline){showPrototypeToast('✓ Aprovada e avanço atualizado',{actionLabel:'Desfazer',onAction:()=>showPrototypeToast('Aprovação desfeita. A validação voltou para pendente.')});}}
   });
 }
 function simulateEndDay(){
