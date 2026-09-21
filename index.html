@@ -5726,6 +5726,159 @@
       }
     }
 
+    let projectIntelligenceContext = null;
+
+    function getProjectContextStorageKey() {
+      const userKey = currentUser && currentUser.id ? currentUser.id : 'anonymous';
+      const projectKey = selectedProject && selectedProject.id ? selectedProject.id : 'default';
+      return 'planes_intelligence_project_context:' + userKey + ':' + projectKey;
+    }
+
+    function getLocalProjectIntelligenceContext() {
+      try {
+        const raw = localStorage.getItem(getProjectContextStorageKey());
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && typeof parsed === 'object' ? parsed : {
+          moduleCounts: {},
+          topicCounts: {},
+          modeCounts: {},
+          recentActions: [],
+          lastModule: null,
+          lastTopic: null,
+          preferredMode: 'touch',
+          totalInteractions: 0,
+          lastInteractionAt: null
+        };
+      } catch (e) {
+        return {
+          moduleCounts: {},
+          topicCounts: {},
+          modeCounts: {},
+          recentActions: [],
+          lastModule: null,
+          lastTopic: null,
+          preferredMode: 'touch',
+          totalInteractions: 0,
+          lastInteractionAt: null
+        };
+      }
+    }
+
+    function saveLocalProjectIntelligenceContext(context) {
+      projectIntelligenceContext = context;
+      try {
+        localStorage.setItem(getProjectContextStorageKey(), JSON.stringify(context));
+      } catch (e) {}
+    }
+
+    async function hydrateUserProjectIntelligenceContext() {
+      if (!supabaseClient || !currentUser || !currentUser.id) return null;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return null;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_project_intelligence_context')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .eq('project_id', projectId)
+          .maybeSingle();
+
+        const local = getLocalProjectIntelligenceContext();
+        if (error || !data) {
+          saveLocalProjectIntelligenceContext(local);
+          return local;
+        }
+
+        const merged = {
+          moduleCounts: { ...(data.module_counts || {}), ...(local.moduleCounts || {}) },
+          topicCounts: { ...(data.topic_counts || {}), ...(local.topicCounts || {}) },
+          modeCounts: local.modeCounts || {},
+          recentActions: Array.isArray(data.recent_actions) ? data.recent_actions.slice(-12) : (local.recentActions || []),
+          lastModule: data.last_module || local.lastModule || null,
+          lastTopic: data.last_topic || local.lastTopic || null,
+          preferredMode: data.preferred_mode || local.preferredMode || 'touch',
+          totalInteractions: Math.max(Number(data.total_interactions || 0), Number(local.totalInteractions || 0)),
+          lastInteractionAt: data.last_interaction_at || local.lastInteractionAt || null
+        };
+        saveLocalProjectIntelligenceContext(merged);
+        return merged;
+      } catch (err) {
+        console.warn('Planes Intelligence: contexto da obra mantido localmente.', err);
+        const local = getLocalProjectIntelligenceContext();
+        saveLocalProjectIntelligenceContext(local);
+        return local;
+      }
+    }
+
+    async function persistUserProjectIntelligenceContext(eventType, details = {}) {
+      if (!currentUser || !currentUser.id) return false;
+
+      const context = projectIntelligenceContext || getLocalProjectIntelligenceContext();
+      const moduleName = details.module || '';
+      const topic = details.topic || '';
+      const mode = details.mode || 'touch';
+
+      if (moduleName) context.moduleCounts[moduleName] = (context.moduleCounts[moduleName] || 0) + 1;
+      if (topic) context.topicCounts[topic] = (context.topicCounts[topic] || 0) + 1;
+      if (mode) context.modeCounts[mode] = (context.modeCounts[mode] || 0) + 1;
+
+      context.lastModule = moduleName || context.lastModule || null;
+      context.lastTopic = topic || context.lastTopic || null;
+      context.totalInteractions = Number(context.totalInteractions || 0) + 1;
+      context.lastInteractionAt = new Date().toISOString();
+      context.preferredMode = Object.entries(context.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || mode || 'touch';
+
+      const safeMetadata = details.metadata && typeof details.metadata === 'object'
+        ? Object.fromEntries(Object.entries(details.metadata).slice(0, 8))
+        : {};
+
+      context.recentActions = [
+        ...(Array.isArray(context.recentActions) ? context.recentActions : []),
+        {
+          type: eventType,
+          module: moduleName || null,
+          topic: topic || null,
+          mode: mode || null,
+          metadata: safeMetadata,
+          at: context.lastInteractionAt
+        }
+      ].slice(-12);
+
+      saveLocalProjectIntelligenceContext(context);
+
+      if (!supabaseClient) return false;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return false;
+
+      try {
+        const { error } = await supabaseClient
+          .from('user_project_intelligence_context')
+          .upsert({
+            user_id: currentUser.id,
+            project_id: projectId,
+            module_counts: context.moduleCounts || {},
+            topic_counts: context.topicCounts || {},
+            recent_actions: context.recentActions || [],
+            last_module: context.lastModule,
+            last_topic: context.lastTopic,
+            preferred_mode: context.preferredMode,
+            total_interactions: context.totalInteractions || 0,
+            last_interaction_at: context.lastInteractionAt,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,project_id' });
+
+        if (error) {
+          console.warn('Planes Intelligence: contexto do projeto salvo apenas localmente.', error);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.warn('Planes Intelligence: falha ao persistir contexto do projeto.', err);
+        return false;
+      }
+    }
+
     function inferIntelligenceTopic(text) {
       const p = String(text || '').toLowerCase();
       if (p.includes('supr') || p.includes('fornecedor') || p.includes('material')) return 'suprimentos';
@@ -5775,6 +5928,8 @@
           total_interactions: store.totalInteractions || 0,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
+
+        await persistUserProjectIntelligenceContext(eventType, details);
       } catch (err) {
         console.warn('Planes Intelligence: hábito salvo apenas localmente.', err);
       }
@@ -5782,6 +5937,7 @@
 
     async function hydrateUserIntelligenceProfile() {
       if (!supabaseClient || !currentUser || !currentUser.id) return;
+      hydrateUserProjectIntelligenceContext();
       try {
         const { data, error } = await supabaseClient
           .from('user_intelligence_profiles')
@@ -5819,11 +5975,34 @@
     }
 
     function getIntelligenceHabitProfile() {
-      const store = getLocalHabitStore();
-      const topModule = Object.entries(store.moduleCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || null;
-      const topTopic = Object.entries(store.topicCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || null;
-      const preferredMode = Object.entries(store.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || 'touch';
-      return { ...store, topModule, topTopic, preferredMode };
+      const globalStore = getLocalHabitStore();
+      const projectStore = projectIntelligenceContext || getLocalProjectIntelligenceContext();
+      const moduleCounts = { ...(globalStore.moduleCounts || {}) };
+      const topicCounts = { ...(globalStore.topicCounts || {}) };
+
+      Object.entries(projectStore.moduleCounts || {}).forEach(([key, value]) => {
+        moduleCounts[key] = (moduleCounts[key] || 0) + Number(value || 0) * 2;
+      });
+      Object.entries(projectStore.topicCounts || {}).forEach(([key, value]) => {
+        topicCounts[key] = (topicCounts[key] || 0) + Number(value || 0) * 2;
+      });
+
+      const topModule = Object.entries(moduleCounts).sort((a,b) => b[1] - a[1])[0]?.[0] || projectStore.lastModule || null;
+      const topTopic = Object.entries(topicCounts).sort((a,b) => b[1] - a[1])[0]?.[0] || projectStore.lastTopic || null;
+      const preferredMode = projectStore.preferredMode ||
+        Object.entries(globalStore.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] ||
+        'touch';
+
+      return {
+        ...globalStore,
+        projectContext: projectStore,
+        topModule,
+        topTopic,
+        preferredMode,
+        lastModule: projectStore.lastModule || null,
+        lastTopic: projectStore.lastTopic || null,
+        recentActions: projectStore.recentActions || []
+      };
     }
 
     function personalizeIntelligenceAnswer(answer) {
@@ -6561,12 +6740,16 @@
       if (proj) {
         selectedProject = proj;
         operationalProjectIdCache = null;
+        projectIntelligenceContext = null;
         lastIntelligenceAnalysis = null;
         showToast(`✓ Explorando projeto: ${proj.title}`);
       }
       saveSessionState();
       render();
-      refreshIntelligenceOperationalData().then(() => {
+      Promise.all([
+        refreshIntelligenceOperationalData(),
+        hydrateUserProjectIntelligenceContext()
+      ]).then(() => {
         if (activeNav === 'Planes Intelligence' || activeNav === 'Visão Geral') render();
       });
     }
@@ -10223,6 +10406,9 @@
       const cockpit = getIntelligenceCockpitSnapshot();
       const habits = getIntelligenceHabitProfile();
       const habitPrompt = getHabitSuggestedPrompt(habits.topTopic);
+      const projectMemoryLabel = habits.lastModule || habits.lastTopic
+        ? 'Memória desta obra: ' + [habits.lastModule, habits.lastTopic].filter(Boolean).join(' · ')
+        : 'Construindo memória operacional desta obra';
       const toneMap = {
         emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         amber: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -10243,6 +10429,7 @@
               <h2 class="text-xl font-black text-slate-950 leading-tight mt-1">Oi, ${getPlanesUserFirstName()}</h2>
               <p class="text-[12px] font-black text-purple-800 mt-0.5">Planes Intelligence</p>
               <p class="text-[11px] text-slate-500 mt-0.5">Copiloto operacional · voz, diagnóstico e ação</p>
+              <p class="text-[9px] text-violet-600 font-bold mt-1">${projectMemoryLabel}</p>
               <div class="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono">
                 <span class="w-1.5 h-1.5 rounded-full ${intelligenceDataSource === 'supabase' ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
                 <span class="${intelligenceDataSource === 'supabase' ? 'text-emerald-700' : 'text-slate-500'}">
