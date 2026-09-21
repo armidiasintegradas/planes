@@ -2693,6 +2693,30 @@
     ];
     let liveTranscript = '';
 
+    // --- PLANES INTELLIGENCE REALTIME VOICE (WebRTC) ---
+    let realtimeVoiceState = 'idle'; // idle | connecting | listening | speaking | reconnecting | error
+    let realtimeVoicePc = null;
+    let realtimeVoiceDc = null;
+    let realtimeVoiceStream = null;
+    let realtimeVoiceAudioEl = null;
+    let realtimeVoiceSessionStartedAt = null;
+
+    function getRealtimeVoiceStatusLabel() {
+      const labels = {
+        idle: 'Online',
+        connecting: 'Conectando',
+        listening: 'Ouvindo',
+        speaking: 'Falando',
+        reconnecting: 'Reconectando',
+        error: 'Fallback local'
+      };
+      return labels[realtimeVoiceState] || 'Online';
+    }
+
+    function isRealtimeVoiceActive() {
+      return ['connecting', 'listening', 'speaking', 'reconnecting'].includes(realtimeVoiceState);
+    }
+
     
     // BANCO DE FOTOS HD DA GALERIA DO CLIENTE
     let galleryPhotos = [
@@ -8161,7 +8185,309 @@
     }
 
     // --- CHATGPT FAST CONVERSATIONAL ENGINE ---
-    // Resposta de voz desativada a pedido do usuário - Apenas confirmação visual na tela
+    // O Web Speech API permanece apenas como fallback. A experiência principal usa WebRTC Realtime.
+
+    function sameLocalDay(value) {
+      if (!value) return false;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return false;
+      return d.toLocaleDateString('pt-BR') === new Date().toLocaleDateString('pt-BR');
+    }
+
+    function shouldSendDailyPersonaGreeting() {
+      return !!getAssistantPersona() && !sameLocalDay(currentUser?.assistant_last_daily_greeting_at);
+    }
+
+    async function markDailyPersonaGreetingUsed() {
+      if (!currentUser?.id) return;
+      const now = new Date().toISOString();
+      currentUser.assistant_last_daily_greeting_at = now;
+      saveSessionState();
+      if (!supabaseClient) return;
+      try {
+        await supabaseClient
+          .from('profiles')
+          .update({ assistant_last_daily_greeting_at: now, updated_at: now })
+          .eq('id', currentUser.id);
+      } catch (err) {
+        console.warn('Planes Voice: saudação diária registrada apenas localmente.', err);
+      }
+    }
+
+    function setRealtimeVoiceState(state) {
+      realtimeVoiceState = state;
+      isListening = state === 'listening';
+      isSpeaking = state === 'speaking';
+      render();
+    }
+
+    function cleanupRealtimeVoice() {
+      try {
+        if (realtimeVoiceDc && realtimeVoiceDc.readyState === 'open') {
+          realtimeVoiceDc.close();
+        }
+      } catch (e) {}
+      try {
+        if (realtimeVoicePc) realtimeVoicePc.close();
+      } catch (e) {}
+      try {
+        if (realtimeVoiceStream) realtimeVoiceStream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+      try {
+        if (realtimeVoiceAudioEl) {
+          realtimeVoiceAudioEl.pause();
+          realtimeVoiceAudioEl.srcObject = null;
+          realtimeVoiceAudioEl.remove();
+        }
+      } catch (e) {}
+      realtimeVoicePc = null;
+      realtimeVoiceDc = null;
+      realtimeVoiceStream = null;
+      realtimeVoiceAudioEl = null;
+      realtimeVoiceSessionStartedAt = null;
+      realtimeVoiceState = 'idle';
+      isListening = false;
+      isSpeaking = false;
+    }
+
+    function sendRealtimeVoiceEvent(event) {
+      if (!realtimeVoiceDc || realtimeVoiceDc.readyState !== 'open') return false;
+      realtimeVoiceDc.send(JSON.stringify(event));
+      return true;
+    }
+
+    async function sendDailyPersonaGreeting() {
+      if (!shouldSendDailyPersonaGreeting()) return false;
+      const personaName = getAssistantPersonaLabel();
+      const firstName = getPlanesUserFirstName();
+      const phrase = `Oi, ${firstName}, tudo bem? Aqui é ${personaName === 'Castanha' ? 'o Castanha' : 'a Brita'}. Vamos trabalhar?`;
+
+      const sent = sendRealtimeVoiceEvent({
+        type: 'response.create',
+        response: {
+          input: [],
+          output_modalities: ['audio'],
+          instructions: 'Diga exatamente esta frase em português brasileiro, com tom natural, simpático e breve: "' + phrase + '"'
+        }
+      });
+      if (sent) {
+        await markDailyPersonaGreetingUsed();
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('assistant_daily_greeting', {
+            module: 'Planes Intelligence',
+            topic: 'voz',
+            mode: 'voice',
+            metadata: { persona: getAssistantPersona() }
+          });
+        }
+      }
+      return sent;
+    }
+
+    function handleRealtimeVoiceServerEvent(raw) {
+      try {
+        const event = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        const type = String(event?.type || '');
+
+        if (type === 'input_audio_buffer.speech_started') {
+          realtimeVoiceState = 'listening';
+          isListening = true;
+          isSpeaking = false;
+          render();
+          return;
+        }
+
+        if (type === 'response.created' || type.includes('response.output_audio')) {
+          realtimeVoiceState = 'speaking';
+          isListening = false;
+          isSpeaking = true;
+          render();
+          return;
+        }
+
+        if (type === 'response.done') {
+          realtimeVoiceState = 'listening';
+          isListening = true;
+          isSpeaking = false;
+          render();
+          return;
+        }
+
+        if (type === 'conversation.item.input_audio_transcription.completed') {
+          const transcript = String(event.transcript || '').trim();
+          if (transcript) {
+            liveTranscript = transcript;
+            if (typeof trackUserHabit === 'function') {
+              trackUserHabit('voice_command', {
+                module: activeNav || 'Planes Intelligence',
+                topic: inferIntelligenceTopic(transcript),
+                mode: 'voice'
+              });
+            }
+          }
+          return;
+        }
+
+        if (type === 'error') {
+          console.warn('Planes Realtime event error:', event);
+        }
+      } catch (err) {
+        console.warn('Planes Realtime: evento inválido.', err);
+      }
+    }
+
+    async function waitForIceGatheringComplete(pc) {
+      if (!pc || pc.iceGatheringState === 'complete') return;
+      await new Promise((resolve) => {
+        const timeout = setTimeout(resolve, 5000);
+        const onState = () => {
+          if (pc.iceGatheringState !== 'complete') return;
+          clearTimeout(timeout);
+          pc.removeEventListener('icegatheringstatechange', onState);
+          resolve();
+        };
+        pc.addEventListener('icegatheringstatechange', onState);
+      });
+    }
+
+    async function startRealtimeVoiceAssistant() {
+      if (!getAssistantPersona()) {
+        showToast('Escolha Brita ou Castanha antes de iniciar a conversa por voz.');
+        activeNav = 'Planes Intelligence';
+        render();
+        return false;
+      }
+
+      if (!supabaseClient || !navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === 'undefined') {
+        realtimeVoiceState = 'error';
+        showToast('Voz Realtime indisponível neste dispositivo. Usando reconhecimento local.');
+        startVoiceAssistant();
+        return false;
+      }
+
+      cleanupRealtimeVoice();
+      setRealtimeVoiceState('connecting');
+
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const accessToken = session?.access_token;
+        if (!accessToken) throw new Error('Sessão autenticada necessária para voz Realtime.');
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        realtimeVoiceStream = stream;
+
+        const pc = new RTCPeerConnection();
+        realtimeVoicePc = pc;
+
+        const audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        audioEl.playsInline = true;
+        audioEl.style.display = 'none';
+        document.body.appendChild(audioEl);
+        realtimeVoiceAudioEl = audioEl;
+
+        pc.ontrack = (event) => {
+          audioEl.srcObject = event.streams[0];
+          audioEl.play().catch(() => {});
+        };
+
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+        const dc = pc.createDataChannel('oai-events');
+        realtimeVoiceDc = dc;
+
+        dc.addEventListener('open', async () => {
+          realtimeVoiceSessionStartedAt = new Date().toISOString();
+          setRealtimeVoiceState('listening');
+          showToast(getAssistantPersonaLabel() + ' está ouvindo.');
+          await sendDailyPersonaGreeting();
+        });
+
+        dc.addEventListener('message', event => handleRealtimeVoiceServerEvent(event.data));
+        dc.addEventListener('close', () => {
+          if (realtimeVoiceState !== 'idle') {
+            realtimeVoiceState = 'reconnecting';
+            isListening = false;
+            isSpeaking = false;
+            render();
+          }
+        });
+
+        pc.addEventListener('connectionstatechange', () => {
+          if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+            realtimeVoiceState = 'reconnecting';
+            isListening = false;
+            isSpeaking = false;
+            render();
+          } else if (pc.connectionState === 'connected' && realtimeVoiceState === 'reconnecting') {
+            setRealtimeVoiceState('listening');
+          }
+        });
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await waitForIceGatheringComplete(pc);
+
+        const sdp = pc.localDescription?.sdp;
+        if (!sdp) throw new Error('Não foi possível gerar a sessão de áudio.');
+
+        const endpoint = String(window.PLANES_CONFIG?.supabaseUrl || '').replace(/\/$/, '') + '/functions/v1/planes-voice-session';
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + accessToken,
+            'apikey': window.PLANES_CONFIG.supabaseAnonKey
+          },
+          body: JSON.stringify({
+            sdp,
+            persona: getAssistantPersona(),
+            firstName: getPlanesUserFirstName(),
+            projectTitle: selectedProject?.title || projectsList?.[0]?.title || 'obra ativa'
+          })
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.sdp) {
+          const code = result?.error || 'realtime_unavailable';
+          if (code === 'openai_api_key_missing') {
+            throw new Error('OPENAI_API_KEY_NOT_CONFIGURED');
+          }
+          throw new Error(result?.message || result?.detail || 'Falha ao abrir sessão Realtime.');
+        }
+
+        await pc.setRemoteDescription({ type: 'answer', sdp: result.sdp });
+        return true;
+      } catch (err) {
+        console.warn('Planes Realtime Voice:', err);
+        cleanupRealtimeVoice();
+        realtimeVoiceState = 'error';
+        if (String(err?.message || err).includes('OPENAI_API_KEY_NOT_CONFIGURED')) {
+          showToast('Gateway Realtime pronto; falta configurar a chave OpenAI no Supabase. Usando voz local por enquanto.');
+        } else {
+          showToast('Não foi possível iniciar a voz Realtime. Usando modo local.');
+        }
+        startVoiceAssistant();
+        return false;
+      }
+    }
+
+    function stopRealtimeVoiceAssistant() {
+      try {
+        if (realtimeVoiceDc?.readyState === 'open') {
+          realtimeVoiceDc.send(JSON.stringify({ type: 'session.close' }));
+        }
+      } catch (e) {}
+      cleanupRealtimeVoice();
+      render();
+    }
+
     function speakText(text) {
       if (!text || !('speechSynthesis' in window)) {
         isSpeaking = false;
@@ -8212,15 +8538,18 @@
 
     function toggleVoiceAssistant() {
       unlockAudioContextOnce();
-      if (isSpeaking) {
+
+      if (isRealtimeVoiceActive()) {
+        stopRealtimeVoiceAssistant();
+        return;
+      }
+
+      if (isSpeaking && realtimeVoiceState === 'error') {
         stopSpeaking();
         return;
       }
-      if (isListening) {
-        stopVoiceAssistant();
-      } else {
-        startVoiceAssistant();
-      }
+
+      startRealtimeVoiceAssistant();
     }
 
     function startVoiceAssistant() {
@@ -8289,6 +8618,10 @@
     }
 
     function stopVoiceAssistant() {
+      if (isRealtimeVoiceActive()) {
+        stopRealtimeVoiceAssistant();
+        return;
+      }
       if (voiceRecognition) {
         try { voiceRecognition.stop(); } catch(e){}
       }
@@ -11262,7 +11595,7 @@
             <div class="min-w-0">
               <p class="text-[9px] font-black uppercase tracking-wider text-violet-600">Seu assistente</p>
               <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
-              <p class="text-[10px] text-slate-500">Planes Intelligence · voz e memória desta obra</p>
+              <p class="text-[10px] text-slate-500">Planes Intelligence · ${getRealtimeVoiceStatusLabel()} · memória desta obra</p>
             </div>
           </div>
           <button type="button" onclick="currentUser.assistant_persona=null; render();" class="px-3 py-2 rounded-xl border border-slate-200 text-[10px] font-black text-slate-700 hover:bg-slate-50">Trocar</button>
@@ -11317,7 +11650,7 @@
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 font-mono">IA DE ENGENHARIA</span>
                 <span class="planes-intelligence-status text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full border ${isListening ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}">
-                  ${isListening ? '● Ouvindo' : '● Online'}
+                  ● ${getRealtimeVoiceStatusLabel()}
                 </span>
               </div>
               <h2 class="text-xl font-black text-slate-950 leading-tight mt-1">Oi, ${getPlanesUserFirstName()}</h2>
