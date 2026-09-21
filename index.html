@@ -2121,8 +2121,6 @@
     }
 
     // AÇÕES DE SUPRIMENTOS
-
-    // AÇÕES DE SUPRIMENTOS
     async function confirmSupplyReceipt(id) {
       const sup = suppliesList.find(s => s.id === id);
       if (!sup) return;
@@ -2147,8 +2145,6 @@
     }
 
 // Ações de aprovação consolidadas na seção de autenticação
-
-    // Ações de aprovação consolidadas na seção de autenticação
 
 // Ação de recusa de usuário consolidada na seção de autenticação
 
@@ -2220,8 +2216,6 @@
       render();
       showToast('Falha ao excluir o insumo. O registro confirmado foi restaurado.');
     }
-
-    let currentScreen = 'login';
 
     let currentScreen = 'login';
     let authMode = 'login';
@@ -6513,8 +6507,6 @@
     }
 
     function handleSupplyExcelUpload(event) {
-
-    function handleSupplyExcelUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
       showToast(`Lendo planilha de suprimentos "${file.name}"...`);
@@ -6764,21 +6756,25 @@
       if (!excelDiffData) return;
 
       const previousProgress = physicalProgress;
+      const previousPacScore = pacScore;
+      const previousFinancialSpent = financialSpent;
       const previousProjectProgress = selectedProject ? selectedProject.progress : null;
 
       physicalProgress = 64.2;
+      pacScore = 82;
+      financialSpent = 15.45;
+
       projectVersions.unshift({
-        id: Date.now(),
-        name: 'Cronograma_Executivo_R4.xlsx',
-        version: 'R4',
-        uploadedBy: currentUser ? currentUser.name : 'Usuário',
-        date: new Date().toLocaleString('pt-BR'),
-        size: '2.8 MB',
-        status: 'Atual'
+        version: 'v16.04',
+        date: 'Hoje (Atualização via Excel)',
+        author: currentUser ? currentUser.name : 'Admin',
+        progress: '64.2%',
+        pac: '82%',
+        status: 'Versão Atual em Produção'
       });
       if (projectVersions[1]) projectVersions[1].status = 'Arquivado';
-      if (selectedProject) selectedProject.progress = physicalProgress;
 
+      if (selectedProject) selectedProject.progress = physicalProgress;
       excelDiffData = null;
       render();
 
@@ -6793,13 +6789,15 @@
       const reconciled = await refreshIntelligenceOperationalData();
       if (!reconciled) {
         physicalProgress = previousProgress;
+        pacScore = previousPacScore;
+        financialSpent = previousFinancialSpent;
         if (selectedProject) selectedProject.progress = previousProjectProgress;
+        projectVersions.shift();
+        if (projectVersions[0]) projectVersions[0].status = 'Versão Atual em Produção';
       }
       render();
-      showToast('Falha ao sincronizar o avanço. A tela foi restaurada para o último valor confirmado no Supabase.');
+      showToast('Falha ao sincronizar a atualização do Excel. A tela voltou ao último estado confirmado.');
     }
-
-    function cancelExcelDiff() {
 
     function cancelExcelDiff() {
       excelDiffData = null;
@@ -7639,8 +7637,6 @@
       render();
       showToast('Falha ao atualizar a tarefa. O estado confirmado foi restaurado.');
     }
-
-    function removeReminder(id) {
 
     function removeReminder(id) {
       remindersList = remindersList.filter(r => r.id !== id);
