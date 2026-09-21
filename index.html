@@ -4748,29 +4748,25 @@
     async function submitMobileCampoApontamento() {
       const input = document.getElementById('mobile-campo-qtd');
       const finalQtd = input ? (parseInt(input.value) || campoQtd) : campoQtd;
-      
+
       const newValidItem = {
         id: Date.now(),
         frente: campoFrente,
         activity: campoAtividade,
         volume: finalQtd + ' m³ / un',
-        author: currentUser ? currentUser.name : 'Alex Ribeiro',
+        author: currentUser ? currentUser.name : 'Usuário',
         time: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         photo: campoPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
         gps: 'Verificado (-9.0912, -35.2481)',
         status: 'Pendente'
       };
 
-      if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList.unshift(newValidItem);
-      } else {
-        window.pendingValidationsList = [newValidItem];
-      }
+      if (Array.isArray(window.pendingValidationsList)) window.pendingValidationsList.unshift(newValidItem);
+      else window.pendingValidationsList = [newValidItem];
 
-      // Reset
       campoPhoto = null;
       campoQtd = 10;
-      
+
       const validationRecord = {
         id: newValidItem.id,
         resp: newValidItem.author,
@@ -4782,25 +4778,35 @@
         gps: newValidItem.gps,
         status: 'Pendente'
       };
+
+      render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
-      if (synced && isUuidLike(validationRecord.id)) newValidItem.id = validationRecord.id;
-      showToast(synced ? '✓ Apontamento enviado e sincronizado para Validação.' : 'Apontamento salvo localmente; sincronização pendente.');
-      setMobileTab('validar');
+      if (synced) {
+        await refreshIntelligenceOperationalData();
+        setMobileTab('validar');
+        showToast('✓ Apontamento enviado e confirmado no Supabase.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled && Array.isArray(window.pendingValidationsList)) {
+        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry !== newValidItem);
+      }
+      render();
+      showToast('Falha ao salvar o apontamento. O registro provisório foi removido.');
     }
 
     async function approveMobileValidation(id) {
       const item = Array.isArray(window.pendingValidationsList)
         ? window.pendingValidationsList.find(entry => entry.id === id)
         : null;
-      if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
-      }
-      render();
-
       if (!item) {
-        showToast('✓ Medição removida da fila local.');
+        showToast('Medição não encontrada na fila atual.');
         return;
       }
+
+      window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
+      render();
 
       const validationRecord = {
         id: item.id,
@@ -4813,23 +4819,32 @@
         gps: item.gps || '',
         status: 'Aprovado'
       };
+
       const ok = await persistValidationStatus(validationRecord, 'Aprovado');
-      showToast(ok ? '✓ Medição de campo APROVADA e sincronizada.' : 'Medição aprovada localmente; sincronização pendente.');
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('✓ Medição de campo aprovada e sincronizada.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) window.pendingValidationsList.unshift(item);
+      render();
+      showToast('Falha ao aprovar a medição. A fila foi restaurada ao último estado confirmado.');
     }
 
     async function rejectMobileValidation(id) {
       const item = Array.isArray(window.pendingValidationsList)
         ? window.pendingValidationsList.find(entry => entry.id === id)
         : null;
-      if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
-      }
-      render();
-
       if (!item) {
-        showToast('⚠️ Medição removida da fila local.');
+        showToast('Medição não encontrada na fila atual.');
         return;
       }
+
+      window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
+      render();
 
       const validationRecord = {
         id: item.id,
@@ -4842,10 +4857,20 @@
         gps: item.gps || '',
         status: 'Rejeitado'
       };
-      const ok = await persistValidationStatus(validationRecord, 'Rejeitado');
-      showToast(ok ? '⚠️ Medição devolvida e sincronizada.' : 'Medição devolvida localmente; sincronização pendente.');
-    }
 
+      const ok = await persistValidationStatus(validationRecord, 'Rejeitado');
+      if (ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('⚠️ Medição devolvida e sincronizada.');
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) window.pendingValidationsList.unshift(item);
+      render();
+      showToast('Falha ao devolver a medição. A fila foi restaurada.');
+    }
 
     // ESTADO E CONTROLE DA APRESENTAÇÃO DE SLIDES 16:9 (SEM PERDER FULLSCREEN)
     let currentSlideIndex = 0;
@@ -6515,15 +6540,18 @@
           { id: Date.now()+1, name: 'Argamassa AC-III 20kg (Revisão Excel)', supplier: 'Votoran Cimentos', qtd: '400 Sacos', date: 'Hoje', sector: 'Prédios', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { id: Date.now()+2, name: 'Cabos Elétricos Cobre 4mm (Revisão Excel)', supplier: 'Prysmian Cabos', qtd: '1.200 Metros', date: 'Amanhã', sector: 'Arena Shows', status: 'Em Transporte', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
         ];
+
         suppliesList.unshift(...imported);
         render();
         const results = await Promise.all(imported.map(persistSupplyRecord));
+        await refreshIntelligenceOperationalData();
+        render();
+
         showToast(results.every(Boolean)
-          ? `✓ 2 novos insumos importados e sincronizados da planilha "${file.name}".`
-          : `Insumos importados localmente; parte da sincronização ficou pendente.`);
+          ? `✓ 2 novos insumos importados e confirmados no Supabase a partir de "${file.name}".`
+          : 'A importação foi reconciliada: somente os registros confirmados no Supabase permaneceram.');
       }, 700);
     }
-
 
     function openProjectCockpit(projId) {
       selectedProjectId = projId;
@@ -7492,7 +7520,7 @@
       }
     }
 
-    function executeVoiceCommand(cmd) {
+    async function executeVoiceCommand(cmd) {
       const clean = cmd.trim();
       if (!clean) return;
 
@@ -7589,8 +7617,16 @@
           done: false
         };
         tasksList.unshift(newTask);
-        persistTaskRecord(newTask);
-        responseText = `Tarefa adicionada e enviada para sincronização: ${newTask.title}.`;
+        render();
+        const taskSynced = await persistTaskRecord(newTask);
+        if (taskSynced) {
+          await refreshIntelligenceOperationalData();
+          responseText = `Tarefa adicionada e confirmada: ${newTask.title}.`;
+        } else {
+          const reconciled = await refreshIntelligenceOperationalData();
+          if (!reconciled) tasksList = tasksList.filter(task => task !== newTask);
+          responseText = 'Não foi possível criar a tarefa. O estado confirmado foi restaurado.';
+        }
       } 
       else if (lower.includes('avanço') || lower.includes('progresso') || lower.includes('status') || lower.includes('como está') || lower.includes('obra')) {
         responseText = `Obra em ${physicalProgress}% de avanço físico, PAC em ${pacScore}% e R$ ${financialSpent}M medidos.`;
@@ -7607,8 +7643,16 @@
           done: false
         };
         tasksList.unshift(fallbackTask);
-        persistTaskRecord(fallbackTask);
-        responseText = `Comando executado e enviado para sincronização.`;
+        render();
+        const fallbackSynced = await persistTaskRecord(fallbackTask);
+        if (fallbackSynced) {
+          await refreshIntelligenceOperationalData();
+          responseText = 'Comando executado e confirmado no Supabase.';
+        } else {
+          const reconciled = await refreshIntelligenceOperationalData();
+          if (!reconciled) tasksList = tasksList.filter(task => task !== fallbackTask);
+          responseText = 'O comando não pôde ser persistido. O estado confirmado foi restaurado.';
+        }
       }
 
       assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
@@ -8309,6 +8353,17 @@
             status: v.status
           }));
         }
+        window.pendingValidationsList = validations.map(v => ({
+          id: v.id,
+          frente: v.front,
+          activity: v.item,
+          volume: v.qtd,
+          author: v.resp,
+          cargo: v.cargo,
+          time: v.data,
+          gps: v.gps,
+          status: v.status
+        }));
 
         if (Array.isArray(tasksRes.data)) {
           tasksList = tasksRes.data.map((t, idx) => ({
@@ -9551,12 +9606,20 @@
         gps: newLog.gps,
         status: 'Pendente'
       };
+
       render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
-      if (synced && isUuidLike(validationRecord.id)) newLog.id = validationRecord.id;
-      showToast(synced
-        ? `⚡ Apontamento de ${amount} ${unit} registrado e sincronizado.`
-        : `Apontamento de ${amount} ${unit} salvo localmente; sincronização pendente.`);
+      if (synced) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast(`⚡ Apontamento de ${amount} ${unit} registrado e confirmado.`);
+        return;
+      }
+
+      const reconciled = await refreshIntelligenceOperationalData();
+      if (!reconciled) window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry !== newLog);
+      render();
+      showToast('Falha ao registrar o apontamento. O item provisório foi removido.');
     }
 
     function renderMobileCampoView(selectedProject) {
