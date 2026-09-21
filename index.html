@@ -6361,7 +6361,7 @@
         if (behaviorError) throw behaviorError;
 
         const topMode = Object.entries(store.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || mode || 'touch';
-        await supabaseClient.from('user_intelligence_profiles').upsert({
+        const { error: profileError } = await supabaseClient.from('user_intelligence_profiles').upsert({
           user_id: currentUser.id,
           module_counts: store.moduleCounts || {},
           topic_counts: store.topicCounts || {},
@@ -6370,8 +6370,10 @@
           total_interactions: store.totalInteractions || 0,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
+        if (profileError) throw profileError;
 
-        await persistUserProjectIntelligenceContext(eventType, details);
+        const contextPersisted = await persistUserProjectIntelligenceContext(eventType, details);
+        if (!contextPersisted) throw new Error('project_intelligence_context_not_persisted');
         return true;
       } catch (err) {
         console.warn('Planes Intelligence: hábito salvo apenas localmente.', err);
