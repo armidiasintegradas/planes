@@ -459,19 +459,9 @@
 
 
 
-<!-- PLANES_AUTH_GATE_START -->
-<style id="planes-auth-bootstrap">
-  html.planes-auth-loading body{visibility:hidden!important}
-  html.planes-auth-blocked body{visibility:visible!important}
-  html.planes-auth-blocked body>*:not(#planes-auth-root){visibility:hidden!important;pointer-events:none!important}
-  html.planes-auth-blocked #planes-auth-root{visibility:visible!important;pointer-events:auto!important}
-</style>
-<script>document.documentElement.classList.add('planes-auth-loading');</script>
-<script type="module" src="./legacy-auth-sanitizer-live.js?v=fe6b7f71079a"></script>
-<script type="module" src="./auth-gate-live.js?v=d0168346f99b"></script>
-<script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
-<!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r10" />
+<!-- PLANES_AUTH_GATE_DISABLED: OAuth handled by canonical legacy SPA Supabase client -->
+
+<meta name="planes-iam-live-fix" content="2026-09-21-r11" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -2357,6 +2347,111 @@
     }
     initSupabaseClient();
 
+    let supabaseAuthBridgeSubscription = null;
+
+    async function completeSupabaseSession(session, source = 'auth') {
+      try {
+        if (!session?.user || !supabaseClient) return false;
+
+        const authUser = session.user;
+        const { data: profile, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('id,full_name,email,avatar_url,status,role,approved_at,approved_by,created_at,updated_at')
+          .eq('id', authUser.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error('Perfil não encontrado após autenticação:', profileError);
+          return false;
+        }
+
+        if (profile.status === 'pending') {
+          currentPendingModalUser = {
+            name: profile.full_name || authUser.user_metadata?.full_name || authUser.email || 'Usuário',
+            email: profile.email || authUser.email || '',
+            provider: authUser.app_metadata?.provider || 'Google',
+            requestedLevel: profile.role || 'Engenharia',
+            date: new Date(profile.created_at).toLocaleDateString('pt-BR')
+          };
+          currentScreen = 'login';
+          showPendingStatusModal(currentPendingModalUser);
+          return true;
+        }
+
+        if (profile.status === 'suspended') {
+          currentScreen = 'access_suspended';
+          render();
+          return true;
+        }
+
+        if (profile.status === 'rejected') {
+          currentScreen = 'access_rejected';
+          render();
+          return true;
+        }
+
+        if (profile.status !== 'approved') return false;
+
+        currentUser = {
+          id: profile.id,
+          auth_user_id: profile.id,
+          name: profile.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || profile.email || authUser.email || 'Usuário',
+          email: profile.email || authUser.email || '',
+          role: profile.role || 'cliente',
+          role_id: profile.role || 'cliente',
+          level: profile.role || 'cliente',
+          company: 'Planes OS',
+          department: 'Geral',
+          avatar: profile.avatar_url || ((profile.full_name || profile.email || authUser.email || 'US').slice(0, 2).toUpperCase()),
+          status: 'Aprovado'
+        };
+
+        accessLevel = profile.role || 'cliente';
+        currentScreen = 'projects';
+        saveSessionState();
+        setupRealtimeSubscriptions();
+        updateUserPresence();
+        render();
+        showToast('✓ Login concluído com sucesso.');
+        return true;
+      } catch (error) {
+        console.error('Falha ao concluir sessão Supabase (' + source + '):', error);
+        return false;
+      }
+    }
+
+    function attachSupabaseAuthBridge() {
+      if (!supabaseClient) return;
+
+      try {
+        if (supabaseAuthBridgeSubscription?.unsubscribe) {
+          supabaseAuthBridgeSubscription.unsubscribe();
+        }
+      } catch (e) {}
+
+      const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          currentUser = null;
+          currentScreen = 'login';
+          render();
+          return;
+        }
+        if (session?.user) {
+          window.setTimeout(() => void completeSupabaseSession(session, event), 0);
+        }
+      });
+      supabaseAuthBridgeSubscription = data?.subscription || null;
+
+      window.setTimeout(async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user) {
+          await completeSupabaseSession(session, 'startup');
+        }
+      }, 50);
+    }
+
+    attachSupabaseAuthBridge();
+
     // Métricas oficiais em tempo real conectadas ao banco
     function getActiveUsersCount() {
       return registeredUsers.filter(u => u.status === 'Aprovado' || u.status === 'approved').length;
@@ -2577,74 +2672,6 @@
         });
     }
 
-
-    // Ponte robusta entre Supabase Auth/Auth Gate e a SPA legada.
-    // Funciona tanto por evento quanto por recuperação direta da sessão persistida,
-    // evitando corrida de carregamento entre scripts module no mobile.
-    function hydrateApprovedLegacySession(profile, authUser = {}) {
-      if (!profile?.id || profile.status !== 'approved') return false;
-
-      currentUser = {
-        id: profile.id,
-        auth_user_id: profile.id,
-        name: profile.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || profile.email || authUser.email || 'Usuário',
-        email: profile.email || authUser.email || '',
-        role: profile.role || 'cliente',
-        role_id: profile.role || 'cliente',
-        level: profile.role || 'cliente',
-        company: 'Planes OS',
-        department: 'Geral',
-        avatar: profile.avatar_url || ((profile.full_name || profile.email || authUser.email || 'US').slice(0,2).toUpperCase()),
-        status: 'Aprovado'
-      };
-
-      accessLevel = profile.role || 'cliente';
-      currentScreen = 'projects';
-      saveSessionState();
-      setupRealtimeSubscriptions();
-      updateUserPresence();
-      render();
-      return true;
-    }
-
-    window.addEventListener('planes-auth-approved', (event) => {
-      try {
-        const detail = event?.detail || {};
-        if (hydrateApprovedLegacySession(detail.profile || {}, detail.user || {})) {
-          showToast('✓ Login concluído com sucesso.');
-        }
-      } catch (error) {
-        console.error('Falha ao integrar sessão do Auth Gate:', error);
-      }
-    });
-
-    async function recoverApprovedSessionFromSupabase() {
-      try {
-        if (!supabaseClient) initSupabaseClient();
-        if (!supabaseClient) return false;
-
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-        if (sessionError || !session?.user) return false;
-
-        const { data: profile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('id,full_name,email,avatar_url,status,role,approved_at')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError || !profile) return false;
-        return hydrateApprovedLegacySession(profile, session.user);
-      } catch (error) {
-        console.error('Falha ao recuperar sessão autenticada:', error);
-        return false;
-      }
-    }
-
-    // Executa após a SPA ter inicializado, inclusive quando o evento do Auth Gate
-    // ocorreu antes deste listener existir.
-    window.addEventListener('load', () => {
-      window.setTimeout(() => void recoverApprovedSessionFromSupabase(), 150);
-    });
 
     // Inicializa carregamento dos dados e canais
     fetchAdminIAMData();
