@@ -471,7 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r2" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r3" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -2302,9 +2302,15 @@
     // =========================================================================
     // PLANES OS — SUPABASE BACKEND CLIENT, REALTIME & PRESENCE ENGINE
     // =========================================================================
-    window.PLANES_CONFIG = window.PLANES_CONFIG || {
-      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://xfgcbxppsbwmxwsuajou.supabase.co',
-      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS'
+    // Produção canônica: nunca permitir que credenciais legadas salvas no navegador
+    // sobreponham o projeto Supabase oficial do Planes OS.
+    try {
+      localStorage.removeItem('planes_supabase_url');
+      localStorage.removeItem('planes_supabase_anon_key');
+    } catch (e) {}
+    window.PLANES_CONFIG = {
+      supabaseUrl: 'https://xfgcbxppsbwmxwsuajou.supabase.co',
+      supabaseAnonKey: 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS'
     };
 
     function isSupabaseConfigured() {
@@ -2444,7 +2450,7 @@
         lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         if (manual) {
-          showToast(`✓ Supabase sincronizado: ${registeredUsers.length} perfis, ${pendingUsers.length} solicitações pendentes.`);
+          showToast(`✓ Produção sincronizada: ${registeredUsers.length} perfis, ${pendingUsers.length} pendentes.`);
         }
 
         if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
@@ -2452,7 +2458,7 @@
         }
       } catch (err) {
         console.error('Erro na sincronização IAM do Supabase:', err);
-        if (manual) showToast('Falha ao sincronizar o IAM com o Supabase de produção.');
+        if (manual) showToast('Falha ao sincronizar o IAM com o Supabase de produção: ' + (err?.message || 'erro desconhecido'));
       }
     }
 
