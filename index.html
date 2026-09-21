@@ -8437,11 +8437,14 @@
       }
 
       if (isFinance) {
+        if (kind === 'create_followup') {
+          return { allowed: true, audience: 'finance' };
+        }
         return {
           allowed: false,
           audience: 'finance',
           error: 'voice_mutation_not_authorized',
-          message: 'O perfil Financeiro pode consultar indicadores no Planes Intelligence, mas não altera dados operacionais por voz.'
+          message: 'O perfil Financeiro pode consultar indicadores e salvar acompanhamentos pessoais no Planes Intelligence, mas não altera dados operacionais por voz.'
         };
       }
 
@@ -8583,12 +8586,33 @@
         if (!validation) {
           result = { ok: false, error: 'validation_not_found' };
         } else {
-          const ok = await persistValidationStatus(validation, 'Aprovado');
-          if (ok) {
+          const previousProgress = physicalProgress;
+          const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+          physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
+          if (selectedProject) selectedProject.progress = physicalProgress;
+          render();
+
+          const [validationOk, metricsOk] = await Promise.all([
+            persistValidationStatus(validation, 'Aprovado'),
+            persistProjectMetrics()
+          ]);
+
+          if (validationOk && metricsOk) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, approved: validation.item, front: validation.front };
+            result = {
+              ok: true,
+              approved: validation.item,
+              front: validation.front,
+              physical_progress: physicalProgress
+            };
           } else {
-            result = { ok: false, error: 'validation_update_failed' };
+            physicalProgress = previousProgress;
+            if (selectedProject) selectedProject.progress = previousProjectProgress;
+            await refreshIntelligenceOperationalData();
+            result = {
+              ok: false,
+              error: validationOk ? 'metrics_update_failed' : 'validation_update_failed'
+            };
           }
         }
       }
