@@ -72,7 +72,52 @@ A escolha final deve ser feita ouvindo as duas em português brasileiro com voca
 
 Não tentar replicar ou clonar uma voz específica do aplicativo ChatGPT. O objetivo é naturalidade equivalente de interação, não identidade vocal idêntica.
 
-### 4. Comportamento conversacional
+### 4. Personas de voz do Planes Intelligence
+
+O usuário poderá escolher entre duas personas oficiais de voz dentro do próprio Planes Intelligence:
+
+- **Castanha** — voz masculina;
+- **Brita** — voz feminina.
+
+A escolha deve acontecer no **primeiro uso do assistente de voz**. Não usar popup externo ou tela separada do sistema: o onboarding deve aparecer dentro da própria tela do Planes Intelligence, integrado ao layout do assistente.
+
+No primeiro acesso à voz, exibir uma escolha simples com as duas opções e um botão de prévia para ouvir cada voz antes de confirmar.
+
+A preferência será salva por usuário e deverá sincronizar entre dispositivos. A escolha precisa permanecer disponível posteriormente em **Planes Intelligence → Voz**, permitindo trocar entre Castanha e Brita a qualquer momento.
+
+#### Saudação diária
+
+Na primeira interação de voz de cada dia, o assistente deve se apresentar automaticamente usando o primeiro nome do usuário e a persona escolhida.
+
+**Castanha:**
+> "Oi, [primeiro nome], tudo bem? Aqui é o Castanha. Vamos trabalhar?"
+
+**Brita:**
+> "Oi, [primeiro nome], tudo bem? Aqui é a Brita. Vamos trabalhar?"
+
+Regras:
+
+- a saudação ocorre somente na primeira interação de voz do dia para aquele usuário;
+- novas sessões no mesmo dia não devem repetir a apresentação completa;
+- a data da última saudação deve ser persistida por usuário;
+- se o usuário trocar a persona durante o dia, a nova voz pode fazer uma apresentação curta: "Oi, [nome]. Agora quem fala é a Brita." / "Oi, [nome]. Agora quem fala é o Castanha.";
+- o usuário deve continuar podendo interromper a saudação naturalmente;
+- a persona escolhida deve manter o mesmo nome e identidade em desktop, tablet e mobile;
+- Castanha e Brita são nomes de produto/persona; a voz técnica subjacente da API pode ser alterada no futuro sem mudar a identidade apresentada ao usuário.
+
+#### Persistência
+
+Adicionar à memória/perfil do usuário uma preferência de voz e o controle da saudação diária. Estrutura recomendada:
+
+- `voice_persona`: `castanha` | `brita`;
+- `voice_onboarding_completed_at`;
+- `voice_last_daily_greeting_at`;
+- `voice_enabled`;
+- opcionalmente `voice_settings` em JSON para futuras preferências.
+
+Esses dados devem ficar vinculados ao usuário autenticado, nunca somente no `localStorage`. O armazenamento local pode ser usado apenas como cache/fallback.
+
+### 5. Comportamento conversacional
 
 O Planes Voice deve:
 
@@ -90,7 +135,7 @@ O Planes Voice deve:
 - confirmar verbalmente somente ações destrutivas ou importantes;
 - executar navegação e ações do Planes por tool/function calling.
 
-### 5. Integração com Planes Intelligence
+### 6. Integração com Planes Intelligence
 
 A sessão de voz deve receber contexto mínimo e atualizado:
 
@@ -107,7 +152,7 @@ A sessão de voz deve receber contexto mínimo e atualizado:
 
 Evitar enviar todo o banco a cada turno. O modelo deve chamar funções do Planes para consultar dados quando necessário.
 
-### 6. Ferramentas que a voz poderá acionar
+### 7. Ferramentas que a voz poderá acionar
 
 Primeira versão:
 
@@ -172,6 +217,10 @@ A nova voz só substitui a implementação atual quando:
 - o assistente mantiver contexto da obra e do usuário;
 - nenhuma chave OpenAI estiver exposta no navegador;
 - funcionar em desktop, tablet e mobile;
+- escolha entre Castanha e Brita persistir por usuário e entre dispositivos;
+- onboarding de voz aparecer apenas no primeiro uso;
+- troca de persona permanecer disponível dentro da tela do assistente;
+- saudação "Oi, [nome], tudo bem? Aqui é o Castanha/Brita. Vamos trabalhar?" ocorrer somente na primeira interação de voz do dia;
 - falha de rede tiver fallback seguro.
 
 ## Ordem no fluxo de desenvolvimento
@@ -181,12 +230,21 @@ A nova voz só substitui a implementação atual quando:
 - configurar segredo OpenAI;
 - implementar cliente WebRTC;
 - estados de conexão;
-- voz `marin` / `cedar`;
+- implementar as duas personas oficiais: **Castanha** (masculina) e **Brita** (feminina);
+- mapear cada persona para a voz técnica de melhor qualidade disponível na API, começando pelos testes com `marin` e `cedar`;
+- criar onboarding de voz dentro da tela do Intelligence no primeiro uso;
+- permitir prévia das duas vozes antes da escolha;
+- persistir a persona selecionada no perfil do usuário;
+- permitir troca posterior da voz dentro da tela do assistente;
+- implementar saudação diária na primeira interação de voz;
 - conversa contínua;
 - barge-in.
 
 ### Fase V2 — Planes Intelligence
 - primeiro nome;
+- identidade persistente Castanha/Brita;
+- saudação diária personalizada;
+- estado de último cumprimento diário;
 - contexto do projeto;
 - memória e hábitos;
 - prioridades;
