@@ -1,8 +1,9 @@
 /*
- * Planes OS — narrowly scoped production layout correction.
- * Status pills inside tables must remain one atomic visual unit on desktop and mobile.
- * No structural, spacing or general desktop styles are changed here.
+ * Planes OS — production layout guardrails.
+ * 1) Status pills inside tables remain atomic on every breakpoint.
+ * 2) Global toast/feedback never covers the top navigation/header on any device.
  */
+
 table td [class~="rounded-full"][class*="emerald"],
 table td [class~="rounded-full"][class*="green"] {
   display: inline-flex !important;
@@ -18,4 +19,50 @@ table td [class~="rounded-full"][class*="green"] {
 table td [class~="rounded-full"][class*="emerald"] > *,
 table td [class~="rounded-full"][class*="green"] > * {
   flex-shrink: 0 !important;
+}
+
+/*
+ * Global feedback placement.
+ * The legacy SPA renders one shared #toast for every screen. Keeping it at top-5
+ * caused it to overlap sticky headers and page controls in multiple routes.
+ * Move it to a safe lower layer globally instead of patching individual screens.
+ */
+#toast {
+  top: auto !important;
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+  right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+  width: auto !important;
+  max-width: min(24rem, calc(100vw - 2rem)) !important;
+  margin: 0 !important;
+  z-index: 80 !important;
+  pointer-events: none !important;
+}
+
+/* Tablet and mobile: keep feedback centered and above the persistent bottom nav. */
+@media (max-width: 1023px) {
+  #toast {
+    left: 50% !important;
+    right: auto !important;
+    bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    width: min(28rem, calc(100vw - 1.5rem)) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+/* Very small phones: preserve lateral breathing room and readable wrapping. */
+@media (max-width: 420px) {
+  #toast {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+  }
+
+  #toast-msg {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+  }
 }
