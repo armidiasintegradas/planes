@@ -8408,9 +8408,19 @@
       const audience = getIntelligenceAudience();
       const effectiveRole = normalizeIntelligenceRole(getEffectiveIntelligenceRole());
       const isAdmin = effectiveRole.includes('admin') || effectiveRole.includes('super_admin');
+      const isFinance = effectiveRole.includes('financeiro') || effectiveRole.includes('finance');
 
       if (isAdmin) {
         return { allowed: true, audience: 'admin' };
+      }
+
+      if (isFinance) {
+        return {
+          allowed: false,
+          audience: 'finance',
+          error: 'voice_mutation_not_authorized',
+          message: 'O perfil Financeiro pode consultar indicadores no Planes Intelligence, mas não altera dados operacionais por voz.'
+        };
       }
 
       const policies = {
