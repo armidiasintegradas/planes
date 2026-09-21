@@ -7685,6 +7685,26 @@
       }
     ];
 
+    function summarizeIntelligenceForVoice(promptText, answer) {
+      const p = String(promptText || '').toLowerCase();
+      if (p.includes('atras') || p.includes('frentes')) {
+        return 'Identifiquei atenção no Bloco de Apartamentos. A prioridade é liberar a equipe de instalações antes de consumir o buffer.';
+      }
+      if (p.includes('restrição') || p.includes('impacto') || p.includes('lookahead')) {
+        return 'A restrição de maior impacto está na cobertura da Arena. Recomendo tratar a liberação técnica como prioridade imediata.';
+      }
+      if (p.includes('pac') || p.includes('abaixo')) {
+        return 'O PAC está abaixo da meta principalmente por clima, logística e remanejamento de mão de obra. Há plano de recuperação sugerido.';
+      }
+      if (p.includes('suprimentos') || p.includes('fornecedores')) {
+        return 'Os suprimentos críticos estão majoritariamente no prazo e não há ruptura relevante indicada neste momento.';
+      }
+      if (p.includes('reunião') || p.includes('pauta') || p.includes('decid')) {
+        return 'Preparei as decisões críticas para a reunião. Revise as prioridades exibidas no cockpit.';
+      }
+      return 'Análise concluída. O cockpit foi atualizado com risco, prioridade e próxima ação recomendada.';
+    }
+
     function askPlanesIntelligence(predefinedPrompt) {
       const inputElem = document.getElementById('intelligence-custom-input');
       const promptText = predefinedPrompt || (inputElem ? inputElem.value : '');
@@ -7754,6 +7774,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
           text: answer,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         });
+        speakText(summarizeIntelligenceForVoice(promptText, answer));
         render();
       }, 500);
     }
