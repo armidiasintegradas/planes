@@ -9300,86 +9300,147 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
       `;
     }
 
+    function getIntelligenceCockpitSnapshot() {
+      const lastAi = [...(intelligenceChatHistory || [])].reverse().find(m => m && (m.sender === 'ai' || m.sender === 'assistant'));
+      const text = (lastAi && lastAi.text ? lastAi.text : '').toLowerCase();
+
+      let risk = 'Moderado';
+      let riskTone = 'amber';
+      let priority = 'Monitorar ritmo e restrições';
+      let action = 'Revisar Lookahead R4';
+      let signal = 'PAC ' + pacScore + '%';
+
+      if (text.includes('risco baixo') || text.includes('98.5% no prazo') || text.includes('spi = 1.03')) {
+        risk = 'Controlado';
+        riskTone = 'emerald';
+        priority = 'Manter cadência atual';
+        action = 'Acompanhar marcos';
+      }
+      if (text.includes('risco médio') || text.includes('restrição') || text.includes('caminho crítico') || text.includes('atraso')) {
+        risk = 'Atenção';
+        riskTone = 'amber';
+        priority = 'Remover restrição crítica';
+        action = 'Abrir Lookahead R4';
+      }
+      if (text.includes('paralisa') || text.includes('críticas') || text.includes('crítico') || text.includes('custo ocioso')) {
+        risk = 'Crítico';
+        riskTone = 'rose';
+        priority = 'Decisão imediata';
+        action = 'Ver validações';
+      }
+
+      return { risk, riskTone, priority, action, signal };
+    }
+
+    function openIntelligenceAction(action) {
+      const map = {
+        'Abrir Lookahead R4': 'Médio Prazo (R4)',
+        'Ver validações': 'Fila de Validações',
+        'Acompanhar marcos': 'Linha de Balanço',
+        'Revisar Lookahead R4': 'Médio Prazo (R4)'
+      };
+      const target = map[action] || 'Médio Prazo (R4)';
+      activeNav = target;
+      mobileCurrentTab = 'modulo';
+      showToast('Abrindo ' + target + '.');
+      render();
+    }
+
     function renderMobileIntelligenceView() {
       const messages = (Array.isArray(intelligenceChatHistory) && intelligenceChatHistory.length
         ? intelligenceChatHistory
         : [{ sender: 'ai', text: 'Olá! Sou o Planes Intelligence. Como posso ajudar?', time: 'Agora' }]
       ).slice(-12);
+      const cockpit = getIntelligenceCockpitSnapshot();
+      const toneMap = {
+        emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+        amber: 'bg-amber-50 text-amber-800 border-amber-200',
+        rose: 'bg-rose-50 text-rose-800 border-rose-200'
+      };
+      const riskClass = toneMap[cockpit.riskTone] || toneMap.amber;
 
-      return 
+      return `
         <div class="planes-intelligence-mobile p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
-          <!-- Header -->
-          <div class="flex items-center justify-between">
-            <div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 font-mono">IA DE ENGENHARIA</span>
                 <span class="planes-intelligence-status text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full border ${isListening ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}">
                   ${isListening ? '● Ouvindo' : '● Online'}
                 </span>
               </div>
-              <h2 class="text-base font-black text-slate-950">Planes Intelligence</h2>
+              <h2 class="text-lg font-black text-slate-950 leading-tight mt-0.5">Planes Intelligence</h2>
+              <p class="text-[11px] text-slate-500 mt-1">Copiloto operacional · voz, diagnóstico e ação</p>
             </div>
             <button
               type="button"
               onclick="setMobileTab('inicio')"
-              class="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-2xs ios-press-action cursor-pointer"
+              class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-2xs ios-press-action cursor-pointer shrink-0"
             >
               ← Início
             </button>
           </div>
 
-          <!-- Prompt Chips Rápidos -->
+          <section class="intelligence-cockpit-grid grid grid-cols-2 gap-2.5">
+            <div class="bg-white rounded-[18px] border border-slate-200 p-3 shadow-2xs">
+              <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 font-mono">Risco atual</span>
+              <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-1 rounded-full border text-[11px] font-black ${riskClass}">
+                <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                ${cockpit.risk}
+              </div>
+            </div>
+            <div class="bg-white rounded-[18px] border border-slate-200 p-3 shadow-2xs">
+              <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 font-mono">Sinal executivo</span>
+              <strong class="block text-sm font-black text-slate-950 mt-1.5">${cockpit.signal}</strong>
+            </div>
+            <div class="bg-slate-950 rounded-[18px] p-3 text-white shadow-sm col-span-2">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <span class="text-[9px] font-black uppercase tracking-wider text-[#d4ff00] font-mono">Prioridade recomendada</span>
+                  <strong class="block text-sm font-black mt-1 leading-snug">${cockpit.priority}</strong>
+                </div>
+                <button
+                  type="button"
+                  onclick="openIntelligenceAction('${cockpit.action}')"
+                  class="shrink-0 px-3 py-2 rounded-[12px] bg-[#d4ff00] text-slate-950 text-[10px] font-black ios-press-action"
+                >
+                  ${cockpit.action} →
+                </button>
+              </div>
+            </div>
+          </section>
+
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-            <button
-              type="button"
-              onclick="askPlanesIntelligence('Quais frentes podem atrasar a entrega?')"
-              class="px-3 py-1.5 bg-slate-900 text-white rounded-full text-[11px] font-bold shrink-0 ios-press-action cursor-pointer shadow-2xs"
-            >
-              ⚡ Frentes em Risco
-            </button>
-            <button
-              type="button"
-              onclick="askPlanesIntelligence('Quais ações recomenda para recuperar atrasos e proteger o Takt?')"
-              class="px-3 py-1.5 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action cursor-pointer"
-            >
-              📈 Recuperar Atrasos
-            </button>
-            <button
-              type="button"
-              onclick="askPlanesIntelligence('Gere um resumo executivo da situação atual da obra para a diretoria.')"
-              class="px-3 py-1.5 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action cursor-pointer"
-            >
-              📄 Resumo Executivo
-            </button>
+            <button type="button" onclick="askPlanesIntelligence('Quais frentes podem atrasar a entrega?')" class="px-3 py-2 bg-slate-900 text-white rounded-full text-[11px] font-bold shrink-0 ios-press-action shadow-2xs">⚡ Frentes em risco</button>
+            <button type="button" onclick="askPlanesIntelligence('Qual restrição do Lookahead R4 tem maior impacto na Linha de Balanço?')" class="px-3 py-2 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action">🚧 Restrição crítica</button>
+            <button type="button" onclick="askPlanesIntelligence('Quais ações recomenda para recuperar atrasos e proteger o Takt?')" class="px-3 py-2 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action">📈 Recuperar atraso</button>
+            <button type="button" onclick="askPlanesIntelligence('Gere a pauta e as decisões críticas para a próxima reunião de obra.')" class="px-3 py-2 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action">🎯 Decisões</button>
           </div>
 
-          <!-- Chat Messages Container -->
-          <div class="space-y-3">
+          <div class="intelligence-chat-stream space-y-3">
             ${messages.map(m => `
               <div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="max-w-[85%] rounded-[20px] p-3.5 text-xs leading-relaxed shadow-2xs ${
-                  m.sender === 'user'
-                    ? 'bg-slate-950 text-white rounded-br-xs'
-                    : 'bg-white border border-slate-200 text-slate-900 rounded-bl-xs'
-                }">
+                <div class="max-w-[88%] rounded-[20px] p-3.5 text-xs leading-relaxed shadow-2xs ${m.sender === 'user' ? 'bg-slate-950 text-white rounded-br-xs' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-xs'}">
                   ${(m.sender === 'assistant' || m.sender === 'ai') ? `
-                    <div class="flex items-center gap-1.5 mb-1.5 text-[10px] font-bold text-purple-700 font-mono">
-                      <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
-                      <span>${isListening ? 'Ouvindo comando…' : 'Copiloto Planes AI · Online'}</span>
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                      <div class="flex items-center gap-1.5 text-[10px] font-bold text-purple-700 font-mono">
+                        <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
+                        <span>${isListening ? 'Ouvindo comando…' : 'Copiloto Planes AI'}</span>
+                      </div>
+                      <span class="text-[9px] text-slate-400 font-mono">${m.time || ''}</span>
                     </div>
                   ` : ''}
-                  <p class="whitespace-pre-line">${m.text}</p>
+                  <p class="whitespace-pre-line intelligence-message-text">${m.text}</p>
                 </div>
               </div>
             `).join('')}
           </div>
 
-          <!-- Input Bar Fixa Inferior -->
-          <div class="p-2 bg-white rounded-[18px] border border-slate-200 shadow-lg flex items-center gap-2">
+          <div class="intelligence-compose p-2 bg-white/95 rounded-[18px] border border-slate-200 shadow-lg flex items-center gap-2">
             <input
               id="intelligence-custom-input"
               type="text"
-              placeholder="Pergunte ao Copiloto sobre a obra..."
+              placeholder="Pergunte, dite ou peça uma ação..."
               onkeydown="if(event.key === 'Enter'){ event.preventDefault(); askPlanesIntelligence(); }"
               class="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none"
               autocomplete="off"
@@ -9387,19 +9448,19 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
             <button
               type="button"
               onclick="toggleVoiceAssistant()"
-              class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center ios-press-action shrink-0"
+              class="w-10 h-10 rounded-full ${isListening ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'} flex items-center justify-center ios-press-action shrink-0"
               title="Comando de voz"
               aria-label="Ativar comando de voz"
             >
-              ${isListening ? '⏹️' : '🎙️'}
+              ${isListening ? '■' : '🎙️'}
             </button>
             <button
               type="button"
               onclick="askPlanesIntelligence()"
-              class="w-9 h-9 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-bold text-xs ios-press-action shrink-0"
+              class="w-10 h-10 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-sm ios-press-action shrink-0"
               title="Enviar"
             >
-              ➔
+              ➜
             </button>
           </div>
         </div>
