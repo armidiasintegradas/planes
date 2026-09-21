@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Planes Mobile/Tablet V2 Prototype</title>
+<style>
+:root{--bg:#f3f5f7;--card:#fff;--ink:#0f172a;--muted:#667085;--line:#e2e8f0;--lime:#d4ff00;--navy:#07152b;--danger:#d92d20}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--ink)}
+button,input,select{font:inherit}button{cursor:pointer}.app{min-height:100dvh}.topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);padding:max(12px,env(safe-area-inset-top)) 14px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand,.actions,.row{display:flex;align-items:center}.brand{gap:10px;min-width:0}.actions{gap:8px;flex-wrap:wrap}.row{justify-content:space-between;gap:10px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--navy);color:var(--lime);display:grid;place-items:center;font-weight:900;font-size:22px}
+.project{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--line);background:#f8fafc;border-radius:999px;padding:9px 12px;font-weight:800}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:#fff}.voice{background:var(--navy);color:var(--lime)}
+main{padding:16px 14px 110px}.screen{display:none}.screen.active{display:grid;gap:12px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800}
+h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{font-size:13px;color:var(--muted);margin-top:5px}
+.hero{background:var(--navy);color:white;border-radius:24px;padding:18px}.assistant{display:flex;gap:12px;align-items:flex-start}.avatar{width:52px;height:52px;border-radius:16px;background:#a77d59;display:grid;place-items:center;font-size:24px;flex:0 0 auto}.bubble{flex:1}.bubble p{font-size:14px;line-height:1.45;color:#e6eaf0;margin-top:7px}
+.primary,.secondary,.ghost,.danger{min-height:46px;border-radius:14px;padding:0 15px;font-weight:800}.primary{background:var(--lime);border:0;color:var(--navy)}.secondary,.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}.danger{background:#fff0ee;border:1px solid #fecdca;color:var(--danger)}
+.grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric,.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px}.metric strong{display:block;font-size:21px;margin-top:5px}.metric span{font-size:12px;color:var(--muted)}
+.priority{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}.left{display:flex;gap:10px;align-items:flex-start}.dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:0 0 auto}.red{background:#f04438}.amber{background:#f79009}
+.field{display:grid;gap:7px}.field label{font-size:12px;font-weight:800}.field input,.field select{height:48px;border:1px solid var(--line);border-radius:14px;padding:0 13px;background:#fff}
+.step{display:grid;grid-template-columns:34px 1fr;gap:10px}.stepnum{width:34px;height:34px;border-radius:12px;background:var(--navy);color:var(--lime);display:grid;place-items:center;font-weight:900}
+.list{display:grid;gap:10px}.pill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;background:#fff0ee;color:#b42318}.masterdetail{display:grid;gap:12px}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);padding:8px 8px max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.navitem{border:0;background:transparent;min-height:58px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#667085;font-size:11px;font-weight:800}.navitem.active{background:#f1f5f9;color:var(--navy)}.navitem b{font-size:19px}
+.fab{position:fixed;right:14px;bottom:84px;z-index:55;background:var(--navy);color:#fff;border:0;border-radius:999px;min-height:52px;padding:0 16px;font-weight:900;box-shadow:0 12px 30px rgba(7,21,43,.2)}
+.drawer{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);display:none;align-items:flex-end}.drawer.open{display:flex}.sheet{background:#fff;width:100%;border-radius:26px 26px 0 0;max-height:78dvh;padding:12px 14px max(18px,env(safe-area-inset-bottom));overflow:auto}.handle{width:44px;height:5px;border-radius:99px;background:#d0d5dd;margin:0 auto 14px}
+.chat{display:grid;gap:10px}.msg{max-width:86%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.4}.ai{background:#f2f4f7}.user{background:var(--navy);color:#fff;margin-left:auto}.composer{display:flex;gap:8px;margin-top:14px}.composer input{flex:1;height:48px;border:1px solid var(--line);border-radius:14px;padding:0 12px}.composer button{width:48px;height:48px;border:0;border-radius:14px;background:var(--navy);color:var(--lime)}
+@media(min-width:700px) and (max-width:1023px){main{padding-left:22px;padding-right:22px}.grid4{grid-template-columns:repeat(4,1fr)}.masterdetail{grid-template-columns:minmax(280px,.9fr) minmax(360px,1.4fr);align-items:start}.fab{right:24px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar"><div class="brand"><div class="logo">P</div><button class="project" onclick="openSheet('projectSheet')">Reserva da Lagoa ▾</button></div><div class="actions"><button class="iconbtn voice" onclick="openSheet('intelligenceSheet')">🎙</button><button class="iconbtn">AR</button></div></header>
+<main>
+<section id="home" class="screen active">
+  <div><div class="eyebrow">Sua obra hoje</div><h1>Bom dia, Alex 👋</h1><p class="sub">Reserva da Lagoa · Recife</p></div>
+  <div class="hero"><div class="assistant"><div class="avatar">🐶</div><div class="bubble"><div class="eyebrow" style="color:#aeb7c6">Brita · Planes Intelligence</div><h2>Tem 2 pontos que valem olhar primeiro.</h2><p>Uma validação ficou parada desde ontem e o aço da Arena entrou em atraso. O resto está estável por enquanto.</p></div></div><div class="actions" style="margin-top:14px"><button class="primary" onclick="showScreen('validations')">Ver prioridades</button><button class="secondary" onclick="openSheet('intelligenceSheet')">🎙 Falar comigo</button></div></div>
+  <div class="grid4"><div class="metric"><span>Validações</span><strong>2</strong><span>aguardando</span></div><div class="metric"><span>Suprimentos</span><strong style="color:#b42318">1</strong><span>atrasado</span></div><div class="metric"><span>Tarefas</span><strong>5</strong><span>abertas</span></div><div class="metric"><span>PAC</span><strong>84</strong><span>atenção</span></div></div>
+  <div class="priority"><div class="left"><span class="dot red"></span><div><strong>Validação parada desde ontem</strong><p class="sub">Concretagem · Torre 2</p></div></div><button class="ghost" onclick="showScreen('validations')">Abrir</button></div>
+  <div class="priority"><div class="left"><span class="dot amber"></span><div><strong>Aço CA-50 em atraso</strong><p class="sub">Arena · 1 dia</p></div></div><button class="ghost" onclick="openSheet('intelligenceSheet')">Resolver</button></div>
+</section>
+<section id="plan" class="screen">
+  <div><div class="eyebrow">Planejamento</div><h1>Próximas semanas</h1><p class="sub">Primeiro o que pode travar a produção.</p></div>
+  <div class="card"><div class="row"><strong>3 restrições podem impactar S+1</strong><span class="pill">Crítico</span></div><p class="sub">Brita priorizou pelo impacto no caminho crítico.</p></div>
+  <div class="card"><div class="row"><strong>RFI hidráulico · Shaft 4</strong><span class="pill">S+1</span></div><p class="sub">Aguardando projetista · Torre 1</p><div class="actions" style="margin-top:12px"><button class="primary">Cobrar responsável</button><button class="ghost">Detalhes</button></div></div>
+</section>
+<section id="field" class="screen">
+  <div><div class="eyebrow">Canteiro</div><h1>Registrar atividade</h1><p class="sub">Fluxo rápido para uso com uma mão.</p></div>
+  <div class="card" style="display:grid;gap:14px">
+    <div class="step"><div class="stepnum">1</div><div class="field"><label>Onde?</label><select><option>Torre 2</option><option>Arena</option><option>Piscina</option></select></div></div>
+    <div class="step"><div class="stepnum">2</div><div class="field"><label>O que foi feito?</label><input value="Reboco"></div></div>
+    <div class="step"><div class="stepnum">3</div><div class="field"><label>Quanto?</label><input value="15 m²"></div></div>
+    <div class="step"><div class="stepnum">4</div><div><button class="secondary" style="width:100%">📷 Tirar foto</button><p class="sub">GPS anexado automaticamente.</p></div></div>
+    <button class="primary" style="width:100%;min-height:52px" onclick="alert('Protótipo: atividade registrada')">Registrar atividade</button>
+  </div>
+</section>
+<section id="validations" class="screen">
+  <div><div class="eyebrow">Validações</div><h1>2 aguardando você</h1><p class="sub">Revise a evidência e avance para a próxima.</p></div>
+  <div class="masterdetail">
+    <div class="list">
+      <button class="card" style="text-align:left;width:100%" onclick="selectValidation(0)"><div class="row"><strong>Concretagem · Torre 2</strong><span class="pill">Ontem</span></div><p class="sub">João Ferreira · 15 m³ · GPS confirmado</p></button>
+      <button class="card" style="text-align:left;width:100%" onclick="selectValidation(1)"><div class="row"><strong>Reboco · Torre 1</strong><span class="pill">Hoje</span></div><p class="sub">Carlos Souza · 34 m² · 2 fotos</p></button>
+    </div>
+    <div class="card" id="validationDetail"><div class="eyebrow">Evidência selecionada</div><h2>Concretagem · Torre 2</h2><p class="sub">15 m³ · João Ferreira · GPS confirmado</p><div style="height:180px;background:#dfe4ea;border-radius:16px;margin:14px 0;display:grid;place-items:center;color:#667085;font-weight:800">Foto da evidência</div><div class="actions"><button class="primary" onclick="confirmValidation()">Aprovar</button><button class="danger">Rejeitar</button></div></div>
+  </div>
+</section>
+</main>
+<button class="fab" onclick="openSheet('intelligenceSheet')">🎙 Brita</button>
+<nav class="bottomnav"><button class="navitem active" data-target="home" onclick="showScreen('home')"><b>⌂</b>Início</button><button class="navitem" data-target="plan" onclick="showScreen('plan')"><b>▦</b>Planejar</button><button class="navitem" data-target="field" onclick="showScreen('field')"><b>⚡</b>Canteiro</button><button class="navitem" data-target="validations" onclick="showScreen('validations')"><b>✓</b>Validar</button></nav>
+<div class="drawer" id="intelligenceSheet" onclick="closeSheet('intelligenceSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow">Planes Intelligence</div><h2>Brita</h2></div><button class="iconbtn" onclick="closeSheet('intelligenceSheet')">✕</button></div><div class="chat" style="margin-top:14px"><div class="msg ai">Oi, Alex. Tô vendo a mesma tela que você. Pode falar comigo normalmente.</div><div class="msg user">O que tá pegando nessa obra hoje?</div><div class="msg ai">Tem duas coisas que merecem atenção: uma validação parada desde ontem e o aço da Arena em atraso. Quer começar por qual?</div></div><div class="actions" style="margin-top:12px"><button class="ghost">Validação</button><button class="ghost">Aço da Arena</button><button class="ghost">Me resume tudo</button></div><div class="composer"><input placeholder="Fala ou escreve do seu jeito..."><button>🎙</button></div></div></div>
+<div class="drawer" id="projectSheet" onclick="closeSheet('projectSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><h2>Trocar obra</h2><button class="iconbtn" onclick="closeSheet('projectSheet')">✕</button></div><div class="list" style="margin-top:14px"><button class="card" style="text-align:left"><strong>Reserva da Lagoa</strong><p class="sub">Recife · 61,8%</p></button><button class="card" style="text-align:left"><strong>Mirante do Parque</strong><p class="sub">Recife · 44,2%</p></button></div></div></div>
+<script>
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.target===id));window.scrollTo({top:0,behavior:'smooth'})}
+function openSheet(id){document.getElementById(id).classList.add('open')} function closeSheet(id){document.getElementById(id).classList.remove('open')}
+function selectValidation(i){document.getElementById('validationDetail').querySelector('h2').textContent=i?'Reboco · Torre 1':'Concretagem · Torre 2'}
+function confirmValidation(){confirm('Vou aprovar esta validação e atualizar o avanço físico. Confirmar?')&&alert('Protótipo: validação aprovada.')}
+</script>
+</div></body></html>
