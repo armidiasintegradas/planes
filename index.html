@@ -82,6 +82,39 @@
         position: relative;
         z-index: 0;
       }
+
+      /* Safe-area belongs to the app chrome, not to <body>.
+         Prevents the iOS/PWA top inset from being counted twice. */
+      body {
+        padding-top: 0 !important;
+      }
+
+      .ios-blur-tabbar {
+        background: #ffffff !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        isolation: isolate;
+        contain: paint;
+        z-index: 900 !important;
+      }
+
+      .planes-mobile-sheet-overlay {
+        z-index: 1100 !important;
+        isolation: isolate;
+        overscroll-behavior: contain;
+      }
+
+      .planes-mobile-sheet-panel {
+        background: #ffffff !important;
+        padding-bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 1rem)) !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      [id$="-modal"].fixed.inset-0 {
+        z-index: 1200 !important;
+        isolation: isolate;
+      }
     }
     .ios-blur-tabbar {
       padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 16px));
@@ -11361,8 +11394,8 @@
       if (!isProjectSwitcherOpen) return '';
       return `
         <!-- BOTTOM SHEET: PROJECT SWITCHER COM BUSCA E TROCA RÁPIDA -->
-        <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="toggleMobileProjectSwitcher()">
-          <div class="bg-white rounded-t-[28px] p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl animate-card-fade border-t border-slate-200" onclick="event.stopPropagation()">
+        <div class="planes-mobile-sheet-overlay fixed inset-0 bg-black/60 flex flex-col justify-end" onclick="toggleMobileProjectSwitcher()">
+          <div class="planes-mobile-sheet-panel bg-white rounded-t-[28px] p-5 space-y-4 max-h-[85dvh] overflow-y-auto shadow-2xl animate-card-fade border-t border-slate-200" onclick="event.stopPropagation()">
             
             <!-- Drag Indicator Bar -->
             <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto -mt-1 mb-1"></div>
@@ -11432,8 +11465,8 @@
 
       return `
         <!-- BOTTOM SHEET: MENU MAIS -->
-        <div id="mobile-more-sheet" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="toggleMobileMoreSheet()" role="dialog" aria-modal="true" aria-label="Mais módulos da obra">
-          <div class="bg-white rounded-t-[26px] p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl animate-card-fade" onclick="event.stopPropagation()">
+        <div id="mobile-more-sheet" class="planes-mobile-sheet-overlay fixed inset-0 bg-black/60 flex flex-col justify-end" onclick="toggleMobileMoreSheet()" role="dialog" aria-modal="true" aria-label="Mais módulos da obra">
+          <div class="planes-mobile-sheet-panel bg-white rounded-t-[26px] p-5 space-y-4 max-h-[85dvh] overflow-y-auto shadow-2xl animate-card-fade" onclick="event.stopPropagation()">
             
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
               <strong class="text-sm font-black text-slate-950">Mais Módulos da Obra</strong>
