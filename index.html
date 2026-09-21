@@ -2516,7 +2516,10 @@
     // Configuração dos Canais Supabase Realtime & Presence
     function setupRealtimeSubscriptions() {
       if (!supabaseClient) return;
-      if (currentUser) hydrateUserIntelligenceProfile();
+      if (currentUser) {
+        hydrateUserIntelligenceProfile();
+        hydrateAssistantPersona();
+      }
 
       // 1. Canal de Presença Realtime (ONLINE AGORA)
       if (presenceChannel) presenceChannel.unsubscribe();
@@ -11141,6 +11144,132 @@
       render();
     }
 
+
+    const PLANES_PERSONA_AVATARS = {
+      brita: 'data:image/webp;base64,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',
+      castanha: 'data:image/webp;base64,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'
+    };
+
+    function getAssistantPersona() {
+      const value = String(currentUser?.assistant_persona || '').toLowerCase();
+      return value === 'brita' || value === 'castanha' ? value : null;
+    }
+
+    function getAssistantPersonaLabel(persona = getAssistantPersona()) {
+      return persona === 'brita' ? 'Brita' : persona === 'castanha' ? 'Castanha' : 'Planes Intelligence';
+    }
+
+    function getAssistantPersonaAvatar(persona = getAssistantPersona()) {
+      return PLANES_PERSONA_AVATARS[persona] || '';
+    }
+
+    async function hydrateAssistantPersona() {
+      if (!supabaseClient || !currentUser?.id) return null;
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('assistant_persona,assistant_voice_enabled,assistant_onboarding_completed_at,assistant_last_daily_greeting_at')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        if (error || !data) return null;
+        currentUser.assistant_persona = data.assistant_persona || null;
+        currentUser.assistant_voice_enabled = data.assistant_voice_enabled !== false;
+        currentUser.assistant_onboarding_completed_at = data.assistant_onboarding_completed_at || null;
+        currentUser.assistant_last_daily_greeting_at = data.assistant_last_daily_greeting_at || null;
+        saveSessionState();
+        if (activeNav === 'Planes Intelligence') render();
+        return data;
+      } catch (err) {
+        console.warn('Planes Intelligence: preferência de persona indisponível.', err);
+        return null;
+      }
+    }
+
+    async function chooseAssistantPersona(persona) {
+      if (!['brita','castanha'].includes(persona)) return;
+      const now = new Date().toISOString();
+      if (currentUser) {
+        currentUser.assistant_persona = persona;
+        currentUser.assistant_voice_enabled = true;
+        currentUser.assistant_onboarding_completed_at = currentUser.assistant_onboarding_completed_at || now;
+      }
+      saveSessionState();
+      render();
+
+      if (supabaseClient && currentUser?.id) {
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({
+            assistant_persona: persona,
+            assistant_voice_enabled: true,
+            assistant_onboarding_completed_at: currentUser.assistant_onboarding_completed_at || now,
+            updated_at: now
+          })
+          .eq('id', currentUser.id);
+        if (error) console.warn('Planes Intelligence: persona salva apenas localmente.', error);
+      }
+
+      showToast(getAssistantPersonaLabel(persona) + ' agora é seu assistente no Planes Intelligence.');
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('assistant_persona_selected', {
+          module: 'Planes Intelligence',
+          topic: 'persona',
+          mode: 'touch',
+          metadata: { persona }
+        });
+      }
+    }
+
+    function renderAssistantPersonaOnboarding(compact = false) {
+      const card = (persona, subtitle) => `
+        <button type="button" onclick="chooseAssistantPersona('${persona}')" class="group text-left rounded-[20px] border border-slate-200 bg-white hover:border-violet-300 hover:shadow-md transition overflow-hidden">
+          <div class="${compact ? 'h-28' : 'h-44'} bg-slate-100 overflow-hidden">
+            <img src="${getAssistantPersonaAvatar(persona)}" alt="${getAssistantPersonaLabel(persona)}" class="w-full h-full object-cover object-top group-hover:scale-[1.02] transition duration-300" />
+          </div>
+          <div class="${compact ? 'p-3' : 'p-4'}">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
+                <p class="text-[10px] text-slate-500 mt-0.5">${subtitle}</p>
+              </div>
+              <span class="w-8 h-8 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">P</span>
+            </div>
+            <p class="mt-2 text-[10px] font-black text-violet-700">Escolher ${getAssistantPersonaLabel(persona)} →</p>
+          </div>
+        </button>
+      `;
+
+      return `
+        <section class="${compact ? 'rounded-[22px] p-4' : 'rounded-[26px] p-6'} bg-slate-950 text-white border border-slate-800 shadow-xl">
+          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#d4ff00]">Primeiro uso</p>
+          <h3 class="${compact ? 'text-xl' : 'text-2xl'} font-black mt-1">Quem vai trabalhar com você?</h3>
+          <p class="text-xs text-slate-300 mt-1.5 max-w-xl">Escolha a persona do seu Planes Intelligence. Você poderá trocar a qualquer momento aqui no assistente.</p>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            ${card('brita', 'Persona feminina · voz feminina')}
+            ${card('castanha', 'Persona masculina · voz masculina')}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderAssistantPersonaControl(compact = false) {
+      const persona = getAssistantPersona();
+      if (!persona) return '';
+      return `
+        <section class="${compact ? 'rounded-[18px] p-3' : 'rounded-[20px] p-4'} bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <img src="${getAssistantPersonaAvatar(persona)}" alt="${getAssistantPersonaLabel(persona)}" class="${compact ? 'w-11 h-11' : 'w-14 h-14'} rounded-2xl object-cover object-top border border-slate-200 bg-slate-100 shrink-0" />
+            <div class="min-w-0">
+              <p class="text-[9px] font-black uppercase tracking-wider text-violet-600">Seu assistente</p>
+              <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
+              <p class="text-[10px] text-slate-500">Planes Intelligence · voz e memória desta obra</p>
+            </div>
+          </div>
+          <button type="button" onclick="currentUser.assistant_persona=null; render();" class="px-3 py-2 rounded-xl border border-slate-200 text-[10px] font-black text-slate-700 hover:bg-slate-50">Trocar</button>
+        </section>
+      `;
+    }
+
     function renderMobileIntelligenceView() {
       const firstName = getPlanesUserFirstName();
       if (
@@ -11172,8 +11301,17 @@
       };
       const riskClass = toneMap[cockpit.riskTone] || toneMap.amber;
 
+      if (!getAssistantPersona()) {
+        return `
+          <div class="planes-intelligence-mobile p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
+            ${renderAssistantPersonaOnboarding(true)}
+          </div>
+        `;
+      }
+
       return `
         <div class="planes-intelligence-mobile p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
+          ${renderAssistantPersonaControl(true)}
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
@@ -13673,6 +13811,8 @@
                     </div>
                   </div>
                 </div>
+                  `}
+                </div>
               ` : ''}
 
               <!-- EQUIPE & CONTATOS (FULL HD) -->
@@ -13681,6 +13821,8 @@
               <!-- ========================================================= -->
               ${activeNav === 'Planes Intelligence' ? `
                 <div class="space-y-6 animate-card-fade">
+                  ${!getAssistantPersona() ? renderAssistantPersonaOnboarding(false) : `
+                  ${renderAssistantPersonaControl(false)}
                   
                   <!-- Top Banner do Copiloto -->
                   <div class="bg-slate-950 text-white rounded-[24px] border border-slate-800 p-6 xl:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
