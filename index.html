@@ -8103,6 +8103,18 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
 
           <!-- Top Right: Notifications & Profile Avatar -->
           <div class="flex items-center gap-2 shrink-0">
+            <!-- Comando de Voz Global -->
+            <button
+              type="button"
+              onclick="toggleVoiceAssistant()"
+              class="global-voice-trigger w-8 h-8 rounded-full ${isListening ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-950 text-[#d4ff00] border-slate-800'} border flex items-center justify-center ios-press-action cursor-pointer shadow-2xs"
+              title="${isListening ? 'Parar comando de voz' : 'Comando de voz Planes'}"
+              aria-label="${isListening ? 'Parar comando de voz' : 'Ativar comando de voz'}"
+              aria-pressed="${isListening ? 'true' : 'false'}"
+            >
+              ${isListening ? '■' : '🎙️'}
+            </button>
+
             <!-- Notificações / Status Ao Vivo -->
             <button
               type="button"
