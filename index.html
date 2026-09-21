@@ -471,7 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r7" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r8" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -2481,7 +2481,31 @@
       presenceChannel
         .on('presence', { event: 'sync' }, () => {
           const state = presenceChannel.presenceState();
-          onlineUsersCount = Math.max(1, Object.keys(state).length);
+          const nextCloudSessions = {};
+          Object.entries(state || {}).forEach(([presenceKey, entries]) => {
+            const list = Array.isArray(entries) ? entries : [];
+            list.forEach((entry, index) => {
+              const email = (entry?.email || '').toLowerCase();
+              if (!email) return;
+              const lastSeenValue = entry?.last_seen || entry?.online_at || new Date().toISOString();
+              nextCloudSessions[email] = {
+                sessionId: `presence-${presenceKey}-${index}`,
+                userId: entry?.user_id || presenceKey,
+                name: entry?.name || entry?.email || 'Usuário',
+                email: entry?.email || '',
+                role: entry?.role || 'cliente',
+                avatar: (entry?.name || entry?.email || 'US').slice(0, 2).toUpperCase(),
+                company: 'Planes OS',
+                sector: 'Geral',
+                activeNav: entry?.module || 'Planes OS',
+                device: entry?.device || 'Web',
+                lastSeen: Date.parse(lastSeenValue) || Date.now(),
+                loginTime: entry?.online_at ? new Date(entry.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Agora'
+              };
+            });
+          });
+          cloudOnlineSessions = nextCloudSessions;
+          onlineUsersCount = Object.keys(nextCloudSessions).length;
           if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
             render();
           }
@@ -5583,50 +5607,81 @@
     function getOnlineSessions() {
       try {
         const now = Date.now();
-        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
-        let combined = [];
+        const combined = [];
+        const seen = new Set();
 
-        // 1. Sessões sincronizadas pela nuvem (usuários em outros computadores/celulares)
-        if (typeof cloudOnlineSessions === 'object') {
-          for (const email in cloudOnlineSessions) {
-            const sess = cloudOnlineSessions[email];
-            if (sess && (now - sess.lastSeen) < 120000 && !blacklist.includes(email.toLowerCase())) {
-              combined.push(sess);
-            }
-          }
-        }
-
-        // 2. Sessões locais
-        const raw = localStorage.getItem('planes_online_sessions');
-        let localSessions = raw ? JSON.parse(raw) : [];
-        if (Array.isArray(localSessions)) {
-          for (const s of localSessions) {
-            const sEmail = (s.email || '').toLowerCase();
-            if ((now - s.lastSeen) < 120000 && !blacklist.includes(sEmail) && !combined.some(c => (c.email || '').toLowerCase() === sEmail)) {
-              combined.push(s);
-            }
-          }
-        }
-
-        // 3. Garante que o usuário logado atualmente esteja na lista
-        if (currentUser && currentScreen !== 'login' && !combined.some(s => (s.email || '').toLowerCase() === currentUser.email.toLowerCase())) {
-          combined.unshift({
-            sessionId: 'sess-current',
-            name: currentUser.name,
-            email: currentUser.email,
-            role: currentUser.level || currentUser.role || 'Admin',
-            avatar: currentUser.avatar || 'AR',
-            company: currentUser.company || 'Planes ENG',
-            sector: currentUser.sector || 'Geral',
-            activeNav: activeNav,
-            device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile Web' : 'Web Desktop',
-            lastSeen: now,
-            loginTime: 'Agora'
+        // 1. Fonte canônica: Supabase Presence, compartilhada entre dispositivos.
+        if (presenceChannel) {
+          const state = presenceChannel.presenceState();
+          Object.entries(state || {}).forEach(([presenceKey, entries]) => {
+            const list = Array.isArray(entries) ? entries : [];
+            list.forEach((entry, index) => {
+              const email = (entry?.email || '').toLowerCase();
+              if (!email || seen.has(email)) return;
+              seen.add(email);
+              const lastSeenValue = entry?.last_seen || entry?.online_at || new Date().toISOString();
+              combined.push({
+                sessionId: `presence-${presenceKey}-${index}`,
+                userId: entry?.user_id || presenceKey,
+                name: entry?.name || entry?.email || 'Usuário',
+                email: entry?.email || '',
+                role: entry?.role || 'cliente',
+                avatar: (entry?.name || entry?.email || 'US').slice(0, 2).toUpperCase(),
+                company: 'Planes OS',
+                sector: 'Geral',
+                activeNav: entry?.module || 'Planes OS',
+                device: entry?.device || 'Web',
+                lastSeen: Date.parse(lastSeenValue) || now,
+                loginTime: entry?.online_at ? new Date(entry.online_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Agora'
+              });
+            });
           });
         }
+
+        // 2. Compatibilidade temporária: sessões Presence já normalizadas no sync.
+        for (const email in cloudOnlineSessions) {
+          if (seen.has(email)) continue;
+          const sess = cloudOnlineSessions[email];
+          if (!sess) continue;
+          seen.add(email);
+          combined.push(sess);
+        }
+
+        // 3. Garante a sessão atual enquanto o Presence ainda está conectando.
+        if (currentUser && currentScreen !== 'login') {
+          const email = (currentUser.email || '').toLowerCase();
+          if (email && !seen.has(email)) {
+            combined.unshift({
+              sessionId: 'sess-current',
+              userId: currentUser.id || currentUser.email,
+              name: currentUser.name,
+              email: currentUser.email,
+              role: currentUser.level || currentUser.role || 'Admin',
+              avatar: currentUser.avatar || 'AR',
+              company: currentUser.company || 'Planes OS',
+              sector: currentUser.sector || 'Geral',
+              activeNav: activeNav,
+              device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile Web' : 'Web Desktop',
+              lastSeen: now,
+              loginTime: 'Agora'
+            });
+          }
+        }
+
         return combined;
       } catch (e) {
-        return currentUser ? [{ name: currentUser.name, email: currentUser.email, role: currentUser.level || 'Admin', avatar: currentUser.avatar || 'AR', activeNav: activeNav, device: 'Web Desktop', lastSeen: Date.now() }] : [];
+        console.error('Falha ao ler Supabase Presence:', e);
+        return currentUser ? [{
+          sessionId: 'sess-current-fallback',
+          name: currentUser.name,
+          email: currentUser.email,
+          role: currentUser.level || currentUser.role || 'Admin',
+          avatar: currentUser.avatar || 'AR',
+          activeNav: activeNav,
+          device: 'Web Desktop',
+          lastSeen: Date.now(),
+          loginTime: 'Agora'
+        }] : [];
       }
     }
 
