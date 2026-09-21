@@ -2063,35 +2063,42 @@
 
     
     // AÇÕES INTERATIVAS DA FILA DE VALIDAÇÕES
-    function approveValidation(id) {
+    async function approveValidation(id) {
       const valIndex = validations.findIndex(v => v.id === id);
       if (valIndex !== -1) {
         const item = validations[valIndex];
         validations.splice(valIndex, 1);
-        physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 0.8).toFixed(1));
-        showToast(`✓ Medição de "${item.item}" aprovada com sucesso! Avanço: ${physicalProgress}%`);
+        physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
+        if (selectedProject) selectedProject.progress = physicalProgress;
         render();
+        const [validationOk, metricsOk] = await Promise.all([
+          persistValidationStatus(item, 'Aprovado'),
+          persistProjectMetrics()
+        ]);
+        showToast(validationOk && metricsOk ? `✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%` : `Medição aprovada localmente; sincronização pendente.`);
       }
     }
 
-    function rejectValidation(id) {
+    async function rejectValidation(id) {
       const valIndex = validations.findIndex(v => v.id === id);
       if (valIndex !== -1) {
         const item = validations[valIndex];
         validations.splice(valIndex, 1);
-        showToast(`✕ Medição de "${item.item}" devolvida para revisão de campo.`);
         render();
+        const ok = await persistValidationStatus(item, 'Rejeitado');
+        showToast(ok ? `✕ Medição de "${item.item}" devolvida e sincronizada.` : `Medição devolvida localmente; sincronização pendente.`);
       }
     }
 
     // AÇÕES DE SUPRIMENTOS
-    function confirmSupplyReceipt(id) {
+    async function confirmSupplyReceipt(id) {
       const sup = suppliesList.find(s => s.id === id);
       if (sup) {
         sup.status = 'No Canteiro';
         sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-        showToast(`✓ Recebimento de "${sup.name}" confirmado no canteiro!`);
         render();
+        const ok = await persistSupplyRecord(sup);
+        showToast(ok ? `✓ Recebimento de "${sup.name}" confirmado e sincronizado.` : `Recebimento atualizado localmente; sincronização pendente.`);
       }
     }
 
@@ -2099,7 +2106,7 @@
 
 // Ação de recusa de usuário consolidada na seção de autenticação
 
-    function handleEditSupplySubmit() {
+    async function handleEditSupplySubmit() {
       const sup = suppliesList.find(s => s.id === editingSupplyId);
       if (!sup) return;
 
@@ -2129,17 +2136,19 @@
       sup.badge = badge;
 
       closeEditSupplyModal();
-      showToast(`✓ Insumo "${name}" atualizado com sucesso!`);
       render();
+      const ok = await persistSupplyRecord(sup);
+      showToast(ok ? `✓ Insumo "${name}" atualizado e sincronizado.` : `Insumo atualizado localmente; sincronização pendente.`);
     }
 
-    function deleteSupply(supId) {
+    async function deleteSupply(supId) {
       const idx = suppliesList.findIndex(s => s.id === supId);
       if (idx !== -1) {
         const item = suppliesList[idx];
         suppliesList.splice(idx, 1);
-        showToast(`✓ Insumo "${item.name}" excluído.`);
         render();
+        const ok = await deleteSupplyRecordRemote(item.id);
+        showToast(ok ? `✓ Insumo "${item.name}" excluído e sincronizado.` : `Insumo removido localmente; sincronização pendente.`);
       }
     }
 
@@ -2526,6 +2535,7 @@
             liveEl.innerText = realtimeStatus === 'Ao vivo' ? '● Ao vivo' : (realtimeStatus === 'Reconectando' ? '● Reconectando' : '● Offline');
           }
         });
+      setupOperationalRealtime();
     }
 
     // Inicializa carregamento dos dados e canais
@@ -6279,7 +6289,7 @@
       document.getElementById('add-supply-modal').classList.add('hidden');
     }
 
-    function handleAddSupplySubmit() {
+    async function handleAddSupplySubmit() {
       const name = document.getElementById('sup-name').value.trim();
       const supplier = document.getElementById('sup-supplier').value.trim();
       const qtd = document.getElementById('sup-qtd').value.trim();
@@ -6297,14 +6307,16 @@
       if (status === 'Em Transporte') badge = 'bg-amber-100 text-amber-900 border-amber-300';
       if (status === 'Atrasado') badge = 'bg-rose-100 text-rose-900 border-rose-300';
 
-      suppliesList.unshift({
+      const newSupply = {
         id: Date.now(),
         name, supplier, qtd, date: date || 'Programado', sector, status, badge
-      });
+      };
+      suppliesList.unshift(newSupply);
 
       closeAddSupplyModal();
-      showToast(`✓ Insumo "${name}" cadastrado com sucesso!`);
       render();
+      const ok = await persistSupplyRecord(newSupply);
+      showToast(ok ? `✓ Insumo "${name}" cadastrado e sincronizado.` : `Insumo cadastrado localmente; sincronização pendente.`);
     }
 
     function handleSupplyExcelUpload(event) {
@@ -6424,8 +6436,10 @@
         projectUpdateLogs.unshift(newLog);
         saveProjectLogsStorage();
 
-        showToast(`✓ Planilha "${file.name}" analisada e aplicada! Novo avanço: ${newP}%.`);
         render();
+        persistProjectMetrics().then(ok => {
+          showToast(ok ? `✓ Planilha "${file.name}" aplicada e sincronizada. Novo avanço: ${newP}%.` : `Planilha aplicada localmente; sincronização pendente.`);
+        });
       }, 900);
     }
 
@@ -7344,7 +7358,8 @@
           done: false
         };
         tasksList.unshift(newTask);
-        responseText = `Tarefa adicionada: ${newTask.title}.`;
+        persistTaskRecord(newTask);
+        responseText = `Tarefa adicionada e enviada para sincronização: ${newTask.title}.`;
       } 
       else if (lower.includes('avanço') || lower.includes('progresso') || lower.includes('status') || lower.includes('como está') || lower.includes('obra')) {
         responseText = `Obra em ${physicalProgress}% de avanço físico, PAC em ${pacScore}% e R$ ${financialSpent}M medidos.`;
@@ -7353,14 +7368,16 @@
         responseText = `Você tem ${calendarEvents.length} eventos no calendário e ${remindersList.filter(r => !r.done).length} lembretes pendentes.`;
       } 
       else {
-        tasksList.unshift({
+        const fallbackTask = {
           id: Date.now(),
           title: clean,
           resp: currentUser ? currentUser.name : 'Eng. de Planejamento',
           deadline: 'Hoje',
           done: false
-        });
-        responseText = `Comando executado e salvo na central.`;
+        };
+        tasksList.unshift(fallbackTask);
+        persistTaskRecord(fallbackTask);
+        responseText = `Comando executado e enviado para sincronização.`;
       }
 
       assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
@@ -7370,9 +7387,11 @@
       render();
     }
 
-    function toggleTaskDone(id) {
+    async function toggleTaskDone(id) {
       tasksList = tasksList.map(t => t.id === id ? { ...t, done: !t.done } : t);
+      const task = tasksList.find(t => t.id === id);
       render();
+      if (task) await persistTaskRecord(task);
     }
 
     function removeReminder(id) {
@@ -7797,6 +7816,170 @@
     let intelligenceDataSource = 'local';
     let intelligenceLastSyncAt = null;
 
+    let operationalProjectIdCache = null;
+    let operationalRealtimeChannel = null;
+
+    function isUuidLike(value) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+    }
+
+    async function getOperationalProjectId() {
+      if (operationalProjectIdCache) return operationalProjectIdCache;
+      if (!supabaseClient) return null;
+      const projectCode = selectedProject && selectedProject.id ? String(selectedProject.id) : 'japaratinga-r3';
+      const { data, error } = await supabaseClient
+        .from('projects')
+        .select('id')
+        .eq('code', projectCode)
+        .limit(1);
+      if (error || !Array.isArray(data) || !data[0]) return null;
+      operationalProjectIdCache = data[0].id;
+      return operationalProjectIdCache;
+    }
+
+    async function persistProjectMetrics() {
+      if (!supabaseClient) return false;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return false;
+      const target = Number.parseFloat(selectedProject && selectedProject.targetProgress) || Number.parseFloat(physicalProgress) || 0;
+      const spent = Number.parseFloat(financialSpent) || Number.parseFloat(String(selectedProject?.spent || '').replace(/[^0-9,.-]/g,'').replace(',','.')) || 0;
+      const { error } = await supabaseClient.from('project_metrics').upsert({
+        project_id: projectId,
+        physical_progress: Number.parseFloat(physicalProgress) || 0,
+        target_progress: target,
+        pac_score: Number.parseFloat(pacScore) || 0,
+        financial_spent_m: spent,
+        workers_count: Number.parseInt(workersCount) || Number.parseInt(selectedProject?.workers) || 0,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'project_id' });
+      if (error) {
+        console.warn('Falha ao persistir métricas operacionais:', error);
+        return false;
+      }
+      trackUserHabit('operational_action', { module: 'Curva S & PAC', topic: 'pac', mode: 'touch', metadata: { action: 'metrics_update' } });
+      return true;
+    }
+
+    async function persistSupplyRecord(sup) {
+      if (!supabaseClient || !sup) return false;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return false;
+      const payload = {
+        project_id: projectId,
+        name: sup.name || '',
+        supplier: sup.supplier || '',
+        quantity_text: sup.qtd || '',
+        delivery_text: sup.date || '',
+        sector: sup.sector || '',
+        status: sup.status || 'Programado'
+      };
+      let result;
+      if (isUuidLike(sup.id)) {
+        result = await supabaseClient.from('project_supplies').update(payload).eq('id', sup.id).select('id').single();
+      } else {
+        result = await supabaseClient.from('project_supplies').insert(payload).select('id').single();
+        if (!result.error && result.data?.id) sup.id = result.data.id;
+      }
+      if (result.error) {
+        console.warn('Falha ao persistir suprimento:', result.error);
+        return false;
+      }
+      trackUserHabit('operational_action', { module: 'Suprimentos', topic: 'suprimentos', mode: 'touch', metadata: { action: 'upsert' } });
+      return true;
+    }
+
+    async function deleteSupplyRecordRemote(id) {
+      if (!supabaseClient || !isUuidLike(id)) return true;
+      const { error } = await supabaseClient.from('project_supplies').delete().eq('id', id);
+      if (error) {
+        console.warn('Falha ao excluir suprimento no Supabase:', error);
+        return false;
+      }
+      return true;
+    }
+
+    async function persistValidationStatus(validation, status) {
+      if (!supabaseClient || !validation) return false;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return false;
+      if (isUuidLike(validation.id)) {
+        const { error } = await supabaseClient.from('project_validations').update({ status }).eq('id', validation.id);
+        if (error) {
+          console.warn('Falha ao atualizar validação:', error);
+          return false;
+        }
+      } else {
+        const { error } = await supabaseClient.from('project_validations').insert({
+          project_id: projectId,
+          responsible: validation.resp || '',
+          role_title: validation.cargo || '',
+          front: validation.front || '',
+          item: validation.item || '',
+          quantity_text: validation.qtd || '',
+          recorded_at_text: validation.data || '',
+          gps: validation.gps || '',
+          status
+        });
+        if (error) return false;
+      }
+      trackUserHabit('operational_action', { module: 'Fila de Validações', topic: 'validacoes', mode: 'touch', metadata: { action: status } });
+      return true;
+    }
+
+    async function persistTaskRecord(task) {
+      if (!supabaseClient || !task) return false;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return false;
+      const payload = {
+        project_id: projectId,
+        title: task.title || '',
+        responsible: task.resp || '',
+        deadline_text: task.deadline || '',
+        done: !!task.done
+      };
+      let result;
+      if (isUuidLike(task.id)) {
+        result = await supabaseClient.from('project_tasks').update(payload).eq('id', task.id).select('id').single();
+      } else {
+        result = await supabaseClient.from('project_tasks').insert(payload).select('id').single();
+        if (!result.error && result.data?.id) task.id = result.data.id;
+      }
+      if (result.error) {
+        console.warn('Falha ao persistir tarefa:', result.error);
+        return false;
+      }
+      trackUserHabit('operational_action', { module: 'Planes Intelligence', topic: 'tarefas', mode: 'touch', metadata: { action: 'task_update' } });
+      return true;
+    }
+
+    function setupOperationalRealtime() {
+      if (!supabaseClient) return;
+      if (operationalRealtimeChannel) {
+        try { operationalRealtimeChannel.unsubscribe(); } catch (e) {}
+      }
+      operationalRealtimeChannel = supabaseClient.channel('planes-operational-feed');
+      ['project_metrics','project_supplies','project_validations','project_tasks'].forEach(table => {
+        operationalRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, async () => {
+          await refreshIntelligenceOperationalData();
+          if (
+            activeNav === 'Planes Intelligence' ||
+            activeNav === 'Suprimentos' ||
+            activeNav === 'Fila de Validações' ||
+            activeNav === 'Curva S & PAC' ||
+            activeNav === 'Visão Geral'
+          ) {
+            render();
+          }
+        });
+      });
+      operationalRealtimeChannel.subscribe(async status => {
+        if (status === 'SUBSCRIBED') {
+          await refreshIntelligenceOperationalData();
+          render();
+        }
+      });
+    }
+
     async function refreshIntelligenceOperationalData() {
       if (!supabaseClient) {
         intelligenceDataSource = 'local';
@@ -7820,7 +8003,7 @@
         const [metricsRes, suppliesRes, validationsRes, tasksRes] = await Promise.all([
           supabaseClient.from('project_metrics').select('*').eq('project_id', projectRow.id).limit(1),
           supabaseClient.from('project_supplies').select('*').eq('project_id', projectRow.id).order('created_at', { ascending: true }),
-          supabaseClient.from('project_validations').select('*').eq('project_id', projectRow.id).order('created_at', { ascending: true }),
+          supabaseClient.from('project_validations').select('*').eq('project_id', projectRow.id).eq('status', 'Pendente').order('created_at', { ascending: true }),
           supabaseClient.from('project_tasks').select('*').eq('project_id', projectRow.id).order('created_at', { ascending: true })
         ]);
 
