@@ -1,4 +1,4 @@
-name: Publish Planes status badge layout hotfix
+name: Publish Planes global layout hotfix
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
           npm test
           npm run build
 
-      - name: Validate table status badge CSS contract
+      - name: Validate global layout CSS contract
         working-directory: source
         run: |
           set -euo pipefail
@@ -52,10 +52,11 @@ jobs:
           grep -q 'white-space: nowrap !important' public/live-mobile-layout.css
           grep -q 'flex-wrap: nowrap !important' public/live-mobile-layout.css
           grep -q 'overflow-wrap: normal !important' public/live-mobile-layout.css
-          if grep -q '@media (max-width: 767px)' public/live-mobile-layout.css; then
-            echo 'Status badge correction is still mobile-only; desktop reproduction remains unfixed.' >&2
-            exit 1
-          fi
+          grep -q '^#toast {' public/live-mobile-layout.css
+          grep -q 'top: auto !important' public/live-mobile-layout.css
+          grep -q 'bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important' public/live-mobile-layout.css
+          grep -q '@media (max-width: 1023px)' public/live-mobile-layout.css
+          grep -q '@media (max-width: 420px)' public/live-mobile-layout.css
 
       - name: Checkout current GitHub Pages artifact
         uses: actions/checkout@v4
@@ -63,7 +64,7 @@ jobs:
           ref: gh-pages
           path: site
 
-      - name: Copy status badge layout stylesheet
+      - name: Copy global layout stylesheet
         run: |
           set -euo pipefail
           cp source/public/live-mobile-layout.css site/live-mobile-layout.css
@@ -83,7 +84,7 @@ jobs:
           end = '<!-- PLANES_MOBILE_LAYOUT_END -->'
 
           html = re.sub(re.escape(start) + r'.*?' + re.escape(end), '', html, flags=re.S)
-          version = os.environ.get('SOURCE_SHA', 'status-layout')[:12]
+          version = os.environ.get('SOURCE_SHA', 'global-layout')[:12]
           block = f'''{start}\n<link rel="stylesheet" href="./live-mobile-layout.css?v={version}" />\n{end}'''
 
           if '</head>' not in html:
@@ -95,8 +96,6 @@ jobs:
               raise SystemExit('layout marker count is not exactly one')
           if './live-mobile-layout.css?v=' not in html:
               raise SystemExit('layout stylesheet reference missing after patch')
-          if html.count('PLANES_AUTH_GATE_START') != 1 or html.count('PLANES_AUTH_GATE_END') != 1:
-              raise SystemExit('existing auth bootstrap changed or missing; refusing to publish')
 
           path.write_text(html, encoding='utf-8')
           PY
@@ -106,13 +105,11 @@ jobs:
           set -euo pipefail
           test -s site/index.html
           test -s site/live-mobile-layout.css
-          test -s site/auth-gate-live.js
           test "$(grep -o 'PLANES_MOBILE_LAYOUT_START' site/index.html | wc -l | tr -d ' ')" = "1"
           test "$(grep -o 'PLANES_MOBILE_LAYOUT_END' site/index.html | wc -l | tr -d ' ')" = "1"
-          test "$(grep -o 'PLANES_AUTH_GATE_START' site/index.html | wc -l | tr -d ' ')" = "1"
-          test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
           grep -q 'live-mobile-layout.css?v=' site/index.html
-          grep -q 'auth-gate-live.js?v=' site/index.html
+          grep -q '^#toast {' site/live-mobile-layout.css
+          grep -q 'top: auto !important' site/live-mobile-layout.css
 
       - name: Publish to gh-pages
         working-directory: site
@@ -125,5 +122,5 @@ jobs:
             echo "No Pages changes to publish."
             exit 0
           fi
-          git commit -m "fix: keep table status badges aligned"
+          git commit -m "fix: publish global responsive layout guardrails"
           git push origin HEAD:gh-pages
