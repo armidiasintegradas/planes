@@ -9635,7 +9635,12 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
           <!-- Header -->
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 font-mono">IA DE ENGENHARIA</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 font-mono">IA DE ENGENHARIA</span>
+                <span class="planes-intelligence-status text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full border ${isListening ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}">
+                  ${isListening ? '● Ouvindo' : '● Online'}
+                </span>
+              </div>
               <h2 class="text-base font-black text-slate-950">Planes Intelligence</h2>
             </div>
             <button
@@ -9681,10 +9686,10 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                     ? 'bg-slate-950 text-white rounded-br-xs'
                     : 'bg-white border border-slate-200 text-slate-900 rounded-bl-xs'
                 }">
-                  ${m.sender === 'assistant' ? `
+                  ${(m.sender === 'assistant' || m.sender === 'ai') ? `
                     <div class="flex items-center gap-1.5 mb-1.5 text-[10px] font-bold text-purple-700 font-mono">
-                      <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-                      <span>Copiloto Planes AI</span>
+                      <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
+                      <span>${isListening ? 'Ouvindo comando…' : 'Copiloto Planes AI · Online'}</span>
                     </div>
                   ` : ''}
                   <p class="whitespace-pre-line">${m.text}</p>
