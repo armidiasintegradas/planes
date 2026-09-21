@@ -5994,6 +5994,67 @@
       }
     }
 
+    async function acknowledgeProactiveIntelligenceBrief(source = 'user_action') {
+      if (!supabaseClient || !currentUser || !currentUser.id) {
+        proactiveIntelligenceBrief = null;
+        return false;
+      }
+
+      const projectId = await getOperationalProjectId();
+      if (!projectId) {
+        proactiveIntelligenceBrief = null;
+        return false;
+      }
+
+      const current = buildCurrentOperationalSnapshot();
+      const acknowledgedAt = new Date().toISOString();
+
+      proactiveIntelligenceBrief = null;
+
+      if (projectIntelligenceContext) {
+        projectIntelligenceContext.lastSnapshot = current;
+        projectIntelligenceContext.lastSeenAt = acknowledgedAt;
+        saveLocalProjectIntelligenceContext(projectIntelligenceContext);
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from('user_project_intelligence_context')
+          .upsert({
+            user_id: currentUser.id,
+            project_id: projectId,
+            last_snapshot: current,
+            last_seen_at: acknowledgedAt,
+            updated_at: acknowledgedAt
+          }, { onConflict: 'user_id,project_id' });
+
+        if (error) {
+          console.warn('Planes Intelligence: não foi possível confirmar a leitura da prioridade.', error);
+          return false;
+        }
+
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('intelligence_acknowledged', {
+            module: 'Planes Intelligence',
+            topic: 'prioridade',
+            mode: 'touch',
+            metadata: { source }
+          });
+        }
+
+        return true;
+      } catch (err) {
+        console.warn('Planes Intelligence: falha ao confirmar a leitura da prioridade.', err);
+        return false;
+      }
+    }
+
+    async function analyzeProactiveIntelligenceChanges() {
+      await askPlanesIntelligence('O que mudou nesta obra desde minha última visita?');
+      await acknowledgeProactiveIntelligenceBrief('analyze_changes');
+      render();
+    }
+
     async function refreshOperationalRealtimeState() {
       if (operationalRealtimeRefreshInFlight) return;
       operationalRealtimeRefreshInFlight = true;
@@ -10785,6 +10846,7 @@
           metadata: { source: 'proactive_recommendation', action }
         });
       }
+      acknowledgeProactiveIntelligenceBrief('priority_action:' + action);
       activeNav = target;
       mobileCurrentTab = 'modulo';
       showToast('Abrindo ' + target + '.');
@@ -10882,7 +10944,7 @@
                   ` : `
                     <p class="mt-2.5 text-[10px] text-emerald-700 font-bold">As mudanças detectadas são favoráveis. Nenhuma intervenção prioritária agora.</p>
                   `}
-                  <button type="button" onclick="askPlanesIntelligence('O que mudou nesta obra desde minha última visita?')" class="mt-2.5 text-[10px] font-black text-violet-800 underline underline-offset-2">
+                  <button type="button" onclick="analyzeProactiveIntelligenceChanges()" class="mt-2.5 text-[10px] font-black text-violet-800 underline underline-offset-2">
                     Analisar mudanças
                   </button>
                 </div>
