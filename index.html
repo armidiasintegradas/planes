@@ -471,7 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r5" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r6" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -3554,12 +3554,41 @@
           throw new Error('O backend não confirmou o perfil aprovado com o papel selecionado.');
         }
 
+        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
         closeConfigAccessModal();
         await fetchAdminIAMData(false);
+        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
         render();
         showToast(`✓ Acesso de ${u.name} aprovado e confirmado pelo backend como ${productionRole}.`);
       } catch (err) {
         console.error('Falha ao aprovar acesso:', err);
+
+        try {
+          const { data: recoveredRequest } = await supabaseClient
+            .from('access_requests')
+            .select('id,user_id,status')
+            .eq('id', u.id)
+            .single();
+          if (recoveredRequest?.status === 'approved') {
+            const { data: recoveredProfile } = await supabaseClient
+              .from('profiles')
+              .select('id,status,role')
+              .eq('id', recoveredRequest.user_id)
+              .single();
+            if (recoveredProfile?.status === 'approved' && recoveredProfile?.role === productionRole) {
+              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
+              closeConfigAccessModal();
+              await fetchAdminIAMData(false);
+              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
+              render();
+              showToast(`✓ Acesso de ${u.name} já estava aprovado no backend. Painel sincronizado.`);
+              return;
+            }
+          }
+        } catch (recoveryError) {
+          console.error('Falha na recuperação pós-aprovação:', recoveryError);
+        }
+
         showToast('Erro ao aprovar: ' + (err?.message || 'falha no Supabase'));
         await fetchAdminIAMData(false);
         render();
@@ -3639,12 +3668,41 @@
           throw new Error('O backend não confirmou o perfil como recusado.');
         }
 
+        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
         closeRejectReasonModal();
         await fetchAdminIAMData(false);
+        pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
         render();
         showToast(`Solicitação de ${u.name} recusada e confirmada pelo backend.`);
       } catch (err) {
         console.error('Falha ao recusar solicitação:', err);
+
+        try {
+          const { data: recoveredRequest } = await supabaseClient
+            .from('access_requests')
+            .select('id,user_id,status')
+            .eq('id', u.id)
+            .single();
+          if (recoveredRequest?.status === 'rejected') {
+            const { data: recoveredProfile } = await supabaseClient
+              .from('profiles')
+              .select('id,status')
+              .eq('id', recoveredRequest.user_id)
+              .single();
+            if (recoveredProfile?.status === 'rejected') {
+              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
+              closeRejectReasonModal();
+              await fetchAdminIAMData(false);
+              pendingUsers = pendingUsers.filter(item => String(item.id) !== String(u.id));
+              render();
+              showToast(`Solicitação de ${u.name} já estava recusada no backend. Painel sincronizado.`);
+              return;
+            }
+          }
+        } catch (recoveryError) {
+          console.error('Falha na recuperação pós-recusa:', recoveryError);
+        }
+
         showToast('Erro ao recusar: ' + (err?.message || 'falha no Supabase'));
         await fetchAdminIAMData(false);
         render();
