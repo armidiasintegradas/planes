@@ -11025,13 +11025,22 @@
                 </div>
                 <p class="text-[10.5px] text-slate-600 mt-1.5 leading-snug">${detail}</p>
                 <p class="text-[11px] font-black text-slate-900 mt-1">${primary.label}</p>
-                <button
-                  type="button"
-                  onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
-                  class="mt-2.5 w-full min-h-[40px] px-3 py-2 rounded-xl bg-slate-950 text-white text-[10.5px] font-black ios-press-action"
-                >
-                  ${primary.action} →
-                </button>
+                <div class="mt-2.5 grid grid-cols-[1fr_auto] gap-2">
+                  <button
+                    type="button"
+                    onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
+                    class="min-h-[40px] px-3 py-2 rounded-xl bg-slate-950 text-white text-[10.5px] font-black ios-press-action"
+                  >
+                    ${primary.action} →
+                  </button>
+                  <button
+                    type="button"
+                    onclick="deferProactiveIntelligenceBrief()"
+                    class="min-h-[40px] px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-[10px] font-black ios-press-action"
+                  >
+                    Depois
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -11053,13 +11062,22 @@
                 <p class="text-xs text-slate-600 mt-1">${detail}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
-              class="px-4 py-2.5 rounded-[12px] bg-slate-950 hover:bg-slate-900 text-white text-xs font-black transition shrink-0"
-            >
-              ${primary.action} →
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onclick="deferProactiveIntelligenceBrief()"
+                class="px-3 py-2.5 rounded-[12px] border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-black transition"
+              >
+                Ver depois
+              </button>
+              <button
+                type="button"
+                onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
+                class="px-4 py-2.5 rounded-[12px] bg-slate-950 hover:bg-slate-900 text-white text-xs font-black transition"
+              >
+                ${primary.action} →
+              </button>
+            </div>
           </div>
         </section>
       `;
