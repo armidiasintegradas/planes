@@ -5545,6 +5545,105 @@
     }
     initPresenceHeartbeat();
 
+    function getPlanesUserFirstName() {
+      const raw = currentUser && (currentUser.name || currentUser.full_name || currentUser.email)
+        ? String(currentUser.name || currentUser.full_name || currentUser.email)
+        : 'Usuário';
+      const clean = raw.includes('@') ? raw.split('@')[0] : raw.trim();
+      const first = clean.split(/\s+/).filter(Boolean)[0] || 'Usuário';
+      return first.charAt(0).toUpperCase() + first.slice(1);
+    }
+
+    function getLocalHabitStore() {
+      try {
+        const raw = localStorage.getItem('planes_intelligence_habits');
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && typeof parsed === 'object' ? parsed : {
+          moduleCounts: {},
+          topicCounts: {},
+          modeCounts: {},
+          totalInteractions: 0,
+          lastActiveHour: null
+        };
+      } catch (e) {
+        return { moduleCounts: {}, topicCounts: {}, modeCounts: {}, totalInteractions: 0, lastActiveHour: null };
+      }
+    }
+
+    function inferIntelligenceTopic(text) {
+      const p = String(text || '').toLowerCase();
+      if (p.includes('supr') || p.includes('fornecedor') || p.includes('material')) return 'suprimentos';
+      if (p.includes('pac') || p.includes('avanço') || p.includes('avanco') || p.includes('curva')) return 'pac';
+      if (p.includes('valid') || p.includes('medição') || p.includes('medicao')) return 'validacoes';
+      if (p.includes('risco') || p.includes('atras') || p.includes('restri') || p.includes('lookahead')) return 'riscos';
+      if (p.includes('tarefa') || p.includes('pendência') || p.includes('pendencia')) return 'tarefas';
+      if (p.includes('reuni') || p.includes('diretoria') || p.includes('resumo')) return 'executivo';
+      return 'geral';
+    }
+
+    async function trackUserHabit(eventType, details = {}) {
+      const store = getLocalHabitStore();
+      const moduleName = details.module || '';
+      const topic = details.topic || '';
+      const mode = details.mode || 'touch';
+
+      if (moduleName) store.moduleCounts[moduleName] = (store.moduleCounts[moduleName] || 0) + 1;
+      if (topic) store.topicCounts[topic] = (store.topicCounts[topic] || 0) + 1;
+      if (mode) store.modeCounts[mode] = (store.modeCounts[mode] || 0) + 1;
+      store.totalInteractions = (store.totalInteractions || 0) + 1;
+      store.lastActiveHour = new Date().getHours();
+
+      try {
+        localStorage.setItem('planes_intelligence_habits', JSON.stringify(store));
+      } catch (e) {}
+
+      if (!supabaseClient || !currentUser || !currentUser.id) return;
+
+      try {
+        await supabaseClient.from('user_behavior_events').insert({
+          user_id: currentUser.id,
+          event_type: eventType,
+          module: moduleName || null,
+          topic: topic || null,
+          interaction_mode: mode || null,
+          metadata: details.metadata || {}
+        });
+
+        const topMode = Object.entries(store.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || mode || 'touch';
+        await supabaseClient.from('user_intelligence_profiles').upsert({
+          user_id: currentUser.id,
+          module_counts: store.moduleCounts || {},
+          topic_counts: store.topicCounts || {},
+          preferred_mode: topMode,
+          last_active_hour: store.lastActiveHour,
+          total_interactions: store.totalInteractions || 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      } catch (err) {
+        console.warn('Planes Intelligence: hábito salvo apenas localmente.', err);
+      }
+    }
+
+    function getIntelligenceHabitProfile() {
+      const store = getLocalHabitStore();
+      const topModule = Object.entries(store.moduleCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || null;
+      const topTopic = Object.entries(store.topicCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || null;
+      const preferredMode = Object.entries(store.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || 'touch';
+      return { ...store, topModule, topTopic, preferredMode };
+    }
+
+    function personalizeIntelligenceAnswer(answer) {
+      const firstName = getPlanesUserFirstName();
+      const clean = String(answer || '').trim();
+      return clean.startsWith('Oi, ' + firstName) ? clean : 'Oi, ' + firstName + '.\n' + clean;
+    }
+
+    function selectMobileModule(navName) {
+      isMoreSheetOpen = false;
+      isProjectSwitcherOpen = false;
+      setNavWithHistory(navName);
+    }
+
     // HISTÓRICO DE NAVEGAÇÃO MULTINÍVEL PARA O BOTÃO VOLTAR
     let navHistory = [];
 
@@ -5554,6 +5653,11 @@
         if (navHistory.length > 30) navHistory.shift();
       }
       activeNav = navName;
+      isMoreSheetOpen = false;
+      isProjectSwitcherOpen = false;
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('module_open', { module: navName, mode: 'touch' });
+      }
 
       // Sincronização automática para visualização mobile
       if (navName === 'Visão Geral') {
@@ -7155,6 +7259,9 @@
 
       const lower = clean.toLowerCase();
       let responseText = '';
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('voice_command', { topic: inferIntelligenceTopic(clean), module: activeNav || '', mode: 'voice' });
+      }
 
       assistantLog.unshift({ text: clean, sender: 'user', time: 'Agora' });
 
@@ -7931,23 +8038,24 @@
     }
 
     function summarizeIntelligenceForVoice(promptText, answer) {
+      const firstName = getPlanesUserFirstName();
       const p = String(promptText || '').toLowerCase();
       if (p.includes('atras') || p.includes('frentes')) {
-        return 'Identifiquei atenção no Bloco de Apartamentos. A prioridade é liberar a equipe de instalações antes de consumir o buffer.';
+        return 'Oi, ' + firstName + '. Identifiquei atenção no Bloco de Apartamentos. A prioridade é liberar a equipe de instalações antes de consumir o buffer.';
       }
       if (p.includes('restrição') || p.includes('impacto') || p.includes('lookahead')) {
-        return 'A restrição de maior impacto está na cobertura da Arena. Recomendo tratar a liberação técnica como prioridade imediata.';
+        return 'Oi, ' + firstName + '. A restrição de maior impacto está na cobertura da Arena. Recomendo tratar a liberação técnica como prioridade imediata.';
       }
       if (p.includes('pac') || p.includes('abaixo')) {
-        return 'O PAC está abaixo da meta principalmente por clima, logística e remanejamento de mão de obra. Há plano de recuperação sugerido.';
+        return 'Oi, ' + firstName + '. O PAC está abaixo da meta principalmente por clima, logística e remanejamento de mão de obra. Há plano de recuperação sugerido.';
       }
       if (p.includes('suprimentos') || p.includes('fornecedores')) {
-        return 'Os suprimentos críticos estão majoritariamente no prazo e não há ruptura relevante indicada neste momento.';
+        return 'Oi, ' + firstName + '. Os suprimentos críticos estão majoritariamente no prazo e não há ruptura relevante indicada neste momento.';
       }
       if (p.includes('reunião') || p.includes('pauta') || p.includes('decid')) {
-        return 'Preparei as decisões críticas para a reunião. Revise as prioridades exibidas no cockpit.';
+        return 'Oi, ' + firstName + '. Preparei as decisões críticas para a reunião. Revise as prioridades exibidas no cockpit.';
       }
-      return 'Análise concluída. O cockpit foi atualizado com risco, prioridade e próxima ação recomendada.';
+      return 'Oi, ' + firstName + '. Análise concluída. O cockpit foi atualizado com risco, prioridade e próxima ação recomendada.';
     }
 
     async function askPlanesIntelligence(predefinedPrompt) {
@@ -7963,11 +8071,14 @@
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       });
 
+      const intelligenceTopic = inferIntelligenceTopic(promptText);
+      trackUserHabit('intelligence_query', { topic: intelligenceTopic, module: 'Planes Intelligence', mode: 'text' });
       addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence: "' + promptText.slice(0, 80) + '"');
       render();
 
       await refreshIntelligenceOperationalData();
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
+      analysis.answer = personalizeIntelligenceAnswer(analysis.answer);
       lastIntelligenceAnalysis = analysis;
 
       intelligenceChatHistory.push({
@@ -8882,7 +8993,7 @@
             <div class="grid grid-cols-2 gap-2.5">
               ${menuItems.map(item => `
                 <div
-                  onclick="setNavWithHistory('${item.name}'); toggleMobileMoreSheet();"
+                  onclick="selectMobileModule('${item.name}')"
                   class="p-3 bg-slate-50 hover:bg-slate-100 rounded-[16px] border border-slate-200 cursor-pointer ios-press-action space-y-1 shadow-2xs"
                 >
                   <div class="w-8 h-8 rounded-[10px] bg-slate-950 text-white flex items-center justify-center font-black">
@@ -8919,7 +9030,7 @@
               <div class="flex items-center gap-2">
                 <button
                   type="button"
-                  onclick="goToProjects(); toggleMobileMoreSheet();"
+                  onclick="isMoreSheetOpen=false; goToProjects();"
                   class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[12px] text-xs font-bold"
                 >
                   Trocar Obra
@@ -9612,6 +9723,7 @@
                   ${isListening ? '● Ouvindo' : '● Online'}
                 </span>
               </div>
+              <span class="text-[12px] font-black text-slate-700 block mt-1">Oi, ${getPlanesUserFirstName()}</span>
               <h2 class="text-lg font-black text-slate-950 leading-tight mt-0.5">Planes Intelligence</h2>
               <p class="text-[11px] text-slate-500 mt-1">Copiloto operacional · voz, diagnóstico e ação</p>
               <div class="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono">
