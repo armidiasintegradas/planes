@@ -6416,6 +6416,198 @@
       };
     }
 
+    function getIntelligenceFollowUpState() {
+      const context = projectIntelligenceContext || getLocalProjectIntelligenceContext();
+      const actions = Array.isArray(context.recentActions) ? context.recentActions : [];
+      const pending = new Map();
+      const decisions = [];
+
+      actions.forEach(item => {
+        if (!item || !item.type) return;
+        const metadata = item.metadata && typeof item.metadata === 'object' ? item.metadata : {};
+        const actionKey = String(metadata.action || metadata.label || item.topic || item.module || item.type);
+
+        if (item.type === 'intelligence_deferred') {
+          pending.set(actionKey, {
+            key: actionKey,
+            action: metadata.action || 'Abrir Planes Intelligence',
+            label: metadata.label || 'Acompanhamento pendente',
+            text: metadata.text || '',
+            changeType: metadata.changeType || item.topic || 'geral',
+            at: item.at || null
+          });
+          decisions.push({
+            kind: 'deferred',
+            label: 'Adiado para acompanhar',
+            detail: metadata.label || metadata.action || 'Prioridade do Intelligence',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'intelligence_followup_resumed') {
+          pending.delete(actionKey);
+          decisions.push({
+            kind: 'resumed',
+            label: 'Acompanhamento retomado',
+            detail: metadata.label || metadata.action || 'Prioridade do Intelligence',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'operational_action' && metadata.source === 'proactive_recommendation') {
+          pending.delete(String(metadata.action || actionKey));
+          decisions.push({
+            kind: 'action',
+            label: 'Ação executada',
+            detail: metadata.action || item.module || 'Ação recomendada',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'intelligence_acknowledged') {
+          const source = String(metadata.source || '');
+          if (source.startsWith('priority_action:')) {
+            pending.delete(source.replace('priority_action:', ''));
+          }
+          decisions.push({
+            kind: 'acknowledged',
+            label: source === 'analyze_changes' ? 'Mudanças analisadas' : 'Prioridade revisada',
+            detail: source.startsWith('priority_action:') ? source.replace('priority_action:', '') : 'Planes Intelligence',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'intelligence_query') {
+          decisions.push({
+            kind: 'query',
+            label: 'Consulta ao Intelligence',
+            detail: item.topic || 'Análise operacional',
+            at: item.at || null
+          });
+        }
+      });
+
+      return {
+        pending: Array.from(pending.values()).slice(-4).reverse(),
+        decisions: decisions.slice(-5).reverse()
+      };
+    }
+
+    function formatIntelligenceMemoryTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    async function deferProactiveIntelligenceBrief() {
+      const brief = getRoleScopedProactiveBrief();
+      const primary = brief.primaryAction || brief.changes?.[0] || null;
+      if (!primary) {
+        showToast('Nenhuma prioridade disponível para acompanhar.');
+        return;
+      }
+
+      await trackUserHabit('intelligence_deferred', {
+        module: 'Planes Intelligence',
+        topic: primary.type || 'prioridade',
+        mode: 'touch',
+        metadata: {
+          action: primary.action || 'Abrir Planes Intelligence',
+          label: primary.label || primary.text || 'Prioridade do Intelligence',
+          changeType: primary.type || 'geral',
+          text: primary.text || ''
+        }
+      });
+
+      await acknowledgeProactiveIntelligenceBrief('deferred:' + (primary.action || 'Planes Intelligence'));
+      showToast('Salvei esta prioridade em Para acompanhar.');
+      render();
+    }
+
+    async function resumeIntelligenceFollowUp(action, label) {
+      await trackUserHabit('intelligence_followup_resumed', {
+        module: 'Planes Intelligence',
+        topic: 'acompanhamento',
+        mode: 'touch',
+        metadata: {
+          action: action || 'Abrir Planes Intelligence',
+          label: label || action || 'Prioridade do Intelligence'
+        }
+      });
+      openIntelligenceAction(action || 'Abrir Planes Intelligence');
+    }
+
+    function renderIntelligenceMemoryFeed(compact = false) {
+      const state = getIntelligenceFollowUpState();
+      if (!state.pending.length && !state.decisions.length) return '';
+
+      const pendingHtml = state.pending.length ? `
+        <div class="${compact ? 'space-y-2' : 'space-y-2.5'}">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[10px] font-black uppercase tracking-wider text-amber-700">Para acompanhar</p>
+            <span class="text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">${state.pending.length}</span>
+          </div>
+          ${state.pending.map(item => `
+            <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-2.5">
+              <p class="text-[11px] font-black text-slate-900">${item.label}</p>
+              ${item.text ? `<p class="text-[10px] text-slate-600 mt-0.5 leading-snug">${item.text}</p>` : ''}
+              <div class="mt-2 flex items-center justify-between gap-2">
+                <span class="text-[9px] text-slate-500 font-mono">${formatIntelligenceMemoryTime(item.at)}</span>
+                <button
+                  type="button"
+                  onclick="resumeIntelligenceFollowUp('${String(item.action).replace(/'/g, "\\'")}', '${String(item.label).replace(/'/g, "\\'")}')"
+                  class="px-2.5 py-1.5 rounded-lg bg-slate-950 text-white text-[9.5px] font-black ios-press-action"
+                >
+                  Retomar →
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const decisionsHtml = state.decisions.length ? `
+        <div class="${state.pending.length ? 'mt-3 pt-3 border-t border-slate-200' : ''}">
+          <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Decisões recentes</p>
+          <div class="space-y-1.5">
+            ${state.decisions.slice(0, compact ? 3 : 5).map(item => `
+              <div class="flex items-start justify-between gap-3 text-[10px]">
+                <div class="min-w-0">
+                  <p class="font-black text-slate-800">${item.label}</p>
+                  <p class="text-slate-500 truncate">${item.detail}</p>
+                </div>
+                <span class="text-[8.5px] text-slate-400 font-mono shrink-0">${formatIntelligenceMemoryTime(item.at)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
+      return `
+        <section class="${compact ? 'rounded-[18px] p-3.5' : 'rounded-[20px] p-4'} bg-white border border-slate-200 shadow-2xs">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">↺</div>
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Memória de decisões</p>
+              <p class="text-[11px] font-black text-slate-900">Seu histórico nesta obra</p>
+            </div>
+          </div>
+          ${pendingHtml}
+          ${decisionsHtml}
+        </section>
+      `;
+    }
+
     function personalizeIntelligenceAnswer(answer) {
       const firstName = getPlanesUserFirstName();
       const clean = String(answer || '').trim();
@@ -10993,13 +11185,20 @@
                   ` : `
                     <p class="mt-2.5 text-[10px] text-emerald-700 font-bold">As mudanças detectadas são favoráveis. Nenhuma intervenção prioritária agora.</p>
                   `}
-                  <button type="button" onclick="analyzeProactiveIntelligenceChanges()" class="mt-2.5 text-[10px] font-black text-violet-800 underline underline-offset-2">
-                    Analisar mudanças
-                  </button>
+                  <div class="mt-2.5 flex items-center gap-3 flex-wrap">
+                    <button type="button" onclick="analyzeProactiveIntelligenceChanges()" class="text-[10px] font-black text-violet-800 underline underline-offset-2">
+                      Analisar mudanças
+                    </button>
+                    <button type="button" onclick="deferProactiveIntelligenceBrief()" class="text-[10px] font-black text-amber-700 underline underline-offset-2">
+                      Ver depois
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
           ` : ''}
+
+          ${renderIntelligenceMemoryFeed(true)}
 
           ${habits.topModule || habits.topTopic ? `
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -13450,8 +13649,9 @@
                           <span class="text-xs text-slate-400 font-mono">Modelo Analítico Conectado</span>
                         </div>
                         <h2 class="text-xl sm:text-3xl font-black text-white tracking-tight mt-1">
-                          Copiloto de Engenharia & Diagnóstico Preditivo
+                          Oi, ${getPlanesUserFirstName()}
                         </h2>
+                        <p class="text-sm sm:text-base font-black text-[#d4ff00] mt-0.5">Copiloto de Engenharia & Diagnóstico Preditivo</p>
                         <p class="text-xs text-slate-300 font-medium max-w-2xl mt-1 leading-relaxed">
                           Inteligência aplicada aos dados da Linha de Balanço 16.03, Lookahead R4, Curva S, PAC e Validações para predição de gargalos e planos de ação.
                         </p>
@@ -13464,6 +13664,8 @@
                       <span class="text-[11px] text-emerald-400 font-mono">✓ 100% dos Indicadores Sincronizados</span>
                     </div>
                   </div>
+
+                  ${renderIntelligenceMemoryFeed(false)}
 
                   <!-- Grid Principal: Perguntas Rápidas & Chat Analítico -->
                   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
