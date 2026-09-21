@@ -5727,6 +5727,117 @@
     }
 
     let projectIntelligenceContext = null;
+    let proactiveIntelligenceBrief = null;
+
+    function buildCurrentOperationalSnapshot() {
+      const project = selectedProject || {};
+      const pendingValidations = Array.isArray(validations) ? validations.filter(v => String(v.status || '').toLowerCase() === 'pendente' || !v.status) : [];
+      const delayedSupplies = Array.isArray(suppliesList) ? suppliesList.filter(s => String(s.status || '').toLowerCase().includes('atras')) : [];
+      const openTasks = Array.isArray(tasksList) ? tasksList.filter(t => !t.done) : [];
+      return {
+        progress: Number.parseFloat(project.progress ?? physicalProgress) || 0,
+        targetProgress: Number.parseFloat(project.targetProgress) || 0,
+        pac: Number.parseFloat(pacScore) || 0,
+        financialSpent: Number.parseFloat(financialSpent) || 0,
+        pendingValidations: pendingValidations.length,
+        delayedSupplies: delayedSupplies.length,
+        openTasks: openTasks.length,
+        capturedAt: new Date().toISOString()
+      };
+    }
+
+    function compareOperationalSnapshots(previous, current) {
+      if (!previous || !Object.keys(previous).length) return [];
+      const changes = [];
+      const progressDiff = Number(current.progress || 0) - Number(previous.progress || 0);
+      const pacDiff = Number(current.pac || 0) - Number(previous.pac || 0);
+      const validationsDiff = Number(current.pendingValidations || 0) - Number(previous.pendingValidations || 0);
+      const suppliesDiff = Number(current.delayedSupplies || 0) - Number(previous.delayedSupplies || 0);
+      const tasksDiff = Number(current.openTasks || 0) - Number(previous.openTasks || 0);
+
+      if (Math.abs(progressDiff) >= 0.5) {
+        changes.push({
+          type: 'progress',
+          severity: progressDiff < 0 ? 'attention' : 'positive',
+          text: `Avanço físico ${progressDiff > 0 ? 'subiu' : 'caiu'} ${Math.abs(progressDiff).toFixed(1).replace('.', ',')} p.p.`
+        });
+      }
+      if (Math.abs(pacDiff) >= 2) {
+        changes.push({
+          type: 'pac',
+          severity: pacDiff < 0 ? 'attention' : 'positive',
+          text: `PAC ${pacDiff > 0 ? 'melhorou' : 'recuou'} ${Math.abs(pacDiff).toFixed(0)} pontos`
+        });
+      }
+      if (validationsDiff !== 0) {
+        changes.push({
+          type: 'validations',
+          severity: validationsDiff > 0 ? 'attention' : 'positive',
+          text: `${Math.abs(validationsDiff)} validação(ões) pendente(s) ${validationsDiff > 0 ? 'a mais' : 'a menos'}`
+        });
+      }
+      if (suppliesDiff !== 0) {
+        changes.push({
+          type: 'supplies',
+          severity: suppliesDiff > 0 ? 'critical' : 'positive',
+          text: `${Math.abs(suppliesDiff)} suprimento(s) atrasado(s) ${suppliesDiff > 0 ? 'a mais' : 'a menos'}`
+        });
+      }
+      if (tasksDiff !== 0) {
+        changes.push({
+          type: 'tasks',
+          severity: tasksDiff > 0 ? 'attention' : 'positive',
+          text: `${Math.abs(tasksDiff)} tarefa(s) aberta(s) ${tasksDiff > 0 ? 'a mais' : 'a menos'}`
+        });
+      }
+      return changes.slice(0, 5);
+    }
+
+    async function refreshProactiveIntelligenceBrief() {
+      if (!supabaseClient || !currentUser || !currentUser.id) return null;
+      const projectId = await getOperationalProjectId();
+      if (!projectId) return null;
+
+      const current = buildCurrentOperationalSnapshot();
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_project_intelligence_context')
+          .select('last_snapshot,last_seen_at')
+          .eq('user_id', currentUser.id)
+          .eq('project_id', projectId)
+          .maybeSingle();
+
+        if (error) {
+          console.warn('Planes Intelligence: snapshot anterior indisponível.', error);
+          return null;
+        }
+
+        const previous = data?.last_snapshot || {};
+        const changes = compareOperationalSnapshots(previous, current);
+        proactiveIntelligenceBrief = changes.length
+          ? {
+              changes,
+              previousSeenAt: data?.last_seen_at || null,
+              generatedAt: new Date().toISOString()
+            }
+          : null;
+
+        await supabaseClient
+          .from('user_project_intelligence_context')
+          .upsert({
+            user_id: currentUser.id,
+            project_id: projectId,
+            last_snapshot: current,
+            last_seen_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,project_id' });
+
+        return proactiveIntelligenceBrief;
+      } catch (err) {
+        console.warn('Planes Intelligence: resumo proativo não pôde ser atualizado.', err);
+        return null;
+      }
+    }
 
     function getProjectContextStorageKey() {
       const userKey = currentUser && currentUser.id ? currentUser.id : 'anonymous';
@@ -5799,7 +5910,9 @@
           lastTopic: data.last_topic || local.lastTopic || null,
           preferredMode: data.preferred_mode || local.preferredMode || 'touch',
           totalInteractions: Math.max(Number(data.total_interactions || 0), Number(local.totalInteractions || 0)),
-          lastInteractionAt: data.last_interaction_at || local.lastInteractionAt || null
+          lastInteractionAt: data.last_interaction_at || local.lastInteractionAt || null,
+          lastSnapshot: data.last_snapshot || local.lastSnapshot || {},
+          lastSeenAt: data.last_seen_at || local.lastSeenAt || null
         };
         saveLocalProjectIntelligenceContext(merged);
         return merged;
@@ -5865,6 +5978,8 @@
             preferred_mode: context.preferredMode,
             total_interactions: context.totalInteractions || 0,
             last_interaction_at: context.lastInteractionAt,
+            last_snapshot: context.lastSnapshot || {},
+            last_seen_at: context.lastSeenAt || null,
             updated_at: new Date().toISOString()
           }, { onConflict: 'user_id,project_id' });
 
@@ -6749,7 +6864,8 @@
       Promise.all([
         refreshIntelligenceOperationalData(),
         hydrateUserProjectIntelligenceContext()
-      ]).then(() => {
+      ]).then(async () => {
+        await refreshProactiveIntelligenceBrief();
         if (activeNav === 'Planes Intelligence' || activeNav === 'Visão Geral') render();
       });
     }
@@ -10409,6 +10525,7 @@
       const projectMemoryLabel = habits.lastModule || habits.lastTopic
         ? 'Memória desta obra: ' + [habits.lastModule, habits.lastTopic].filter(Boolean).join(' · ')
         : 'Construindo memória operacional desta obra';
+      const proactiveChanges = proactiveIntelligenceBrief?.changes || [];
       const toneMap = {
         emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         amber: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -10445,6 +10562,29 @@
               ← Início
             </button>
           </div>
+
+          ${proactiveChanges.length ? `
+            <section class="rounded-[18px] border border-violet-200 bg-violet-50/70 p-3.5 shadow-2xs">
+              <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-violet-700 text-white flex items-center justify-center font-black shrink-0">✦</div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[10px] font-black uppercase tracking-wider text-violet-700">Desde sua última visita</p>
+                  <p class="text-sm font-black text-slate-950 mt-0.5">${proactiveChanges.length} mudança(s) importante(s) nesta obra</p>
+                  <div class="mt-2 space-y-1.5">
+                    ${proactiveChanges.map(change => `
+                      <div class="text-[11px] leading-snug text-slate-700 flex items-start gap-1.5">
+                        <span class="mt-0.5">${change.severity === 'critical' ? '●' : change.severity === 'attention' ? '▲' : '✓'}</span>
+                        <span>${change.text}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <button type="button" onclick="askPlanesIntelligence('O que mudou nesta obra desde minha última visita?')" class="mt-2.5 text-[10px] font-black text-violet-800 underline underline-offset-2">
+                    Analisar mudanças
+                  </button>
+                </div>
+              </div>
+            </section>
+          ` : ''}
 
           ${habits.topModule || habits.topTopic ? `
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
