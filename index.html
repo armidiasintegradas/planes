@@ -115,6 +115,36 @@
         z-index: 1200 !important;
         isolation: isolate;
       }
+
+      #toast {
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 5.75rem) !important;
+        transform: translateX(-50%);
+        width: min(26rem, calc(100vw - 1.5rem));
+        max-width: calc(100vw - 1.5rem) !important;
+        border-radius: 16px !important;
+        padding: 0.8rem 0.95rem !important;
+        z-index: 1300 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        overflow-wrap: anywhere;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      #toast {
+        left: auto !important;
+        right: 1.5rem !important;
+        top: auto !important;
+        bottom: 1.5rem !important;
+        transform: none !important;
+        width: auto;
+        max-width: 26rem !important;
+        border-radius: 12px !important;
+        padding: 0.7rem 1rem !important;
+      }
     }
     .ios-blur-tabbar {
       padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 16px));
@@ -1617,7 +1647,7 @@
       </div>
     </div>
 
-    <div id="toast" class="hidden fixed top-5 right-5 z-50 bg-slate-950 text-white border border-slate-700 px-4 py-2.5 rounded-[10px] shadow-2xl flex items-center gap-2.5 text-xs font-semibold max-w-sm">
+    <div id="toast" class="hidden fixed bg-slate-950 text-white border border-slate-700 shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
     <span class="w-2 h-2 rounded-full bg-[#d4ff00] shrink-0 animate-pulse"></span>
     <span id="toast-msg" class="leading-snug">Mensagem</span>
   </div>
@@ -2927,11 +2957,21 @@
       }
     }
 
+    let toastHideTimer = null;
+
     function showToast(msg) {
       const t = document.getElementById('toast');
-      document.getElementById('toast-msg').innerText = msg;
+      const msgEl = document.getElementById('toast-msg');
+      if (!t || !msgEl) return;
+
+      msgEl.innerText = msg;
       t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3500);
+
+      if (toastHideTimer) clearTimeout(toastHideTimer);
+      toastHideTimer = setTimeout(() => {
+        t.classList.add('hidden');
+        toastHideTimer = null;
+      }, 3500);
     }
 
     function toggleMobileMenu() {
