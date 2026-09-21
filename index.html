@@ -9091,6 +9091,8 @@
             </button>
           </div>
 
+          ${renderOverviewIntelligencePriorityCard(true)}
+
           <!-- 2. PAINEL DE INDICADORES EXECUTIVOS (BENTO GRID RESPONSIVO) -->
           <div class="space-y-2.5">
             <div class="flex items-center justify-between text-[10.5px] font-bold text-slate-500 uppercase tracking-wider font-mono">
@@ -10519,6 +10521,73 @@
       }
 
       return { risk, riskTone, priority, action, signal };
+    }
+
+    function renderOverviewIntelligencePriorityCard(isMobile = false) {
+      const primary = proactiveIntelligenceBrief?.primaryAction || null;
+      const changes = proactiveIntelligenceBrief?.changes || [];
+      if (!primary || !changes.length) return '';
+
+      const riskLabel = primary.severity === 'critical' ? 'Crítico' : primary.severity === 'attention' ? 'Atenção' : 'Controlado';
+      const riskClass = primary.severity === 'critical'
+        ? 'bg-rose-100 text-rose-800 border-rose-200'
+        : primary.severity === 'attention'
+          ? 'bg-amber-100 text-amber-800 border-amber-200'
+          : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      const detail = changes[0]?.text || primary.label;
+
+      if (isMobile) {
+        return `
+          <section class="rounded-[18px] border border-violet-200 bg-white p-3.5 shadow-2xs">
+            <div class="flex items-start gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-violet-700 text-white flex items-center justify-center shrink-0 font-black">✦</div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <div>
+                    <p class="text-[9px] font-black uppercase tracking-wider text-violet-700">Planes Intelligence</p>
+                    <p class="text-xs font-black text-slate-950 mt-0.5">Prioridade agora</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full border text-[9px] font-black ${riskClass}">${riskLabel}</span>
+                </div>
+                <p class="text-[10.5px] text-slate-600 mt-1.5 leading-snug">${detail}</p>
+                <p class="text-[11px] font-black text-slate-900 mt-1">${primary.label}</p>
+                <button
+                  type="button"
+                  onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
+                  class="mt-2.5 w-full min-h-[40px] px-3 py-2 rounded-xl bg-slate-950 text-white text-[10.5px] font-black ios-press-action"
+                >
+                  ${primary.action} →
+                </button>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      return `
+        <section class="rounded-[20px] border border-violet-200 bg-white shadow-xs p-4 xl:p-5">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="w-11 h-11 rounded-[14px] bg-violet-700 text-white flex items-center justify-center shrink-0 font-black text-lg">✦</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[10px] font-black uppercase tracking-widest text-violet-700 font-mono">PLANES INTELLIGENCE</span>
+                  <span class="px-2 py-0.5 rounded-full border text-[10px] font-black ${riskClass}">${riskLabel}</span>
+                </div>
+                <h3 class="text-sm sm:text-base font-black text-slate-950 mt-1">Prioridade agora: ${primary.label}</h3>
+                <p class="text-xs text-slate-600 mt-1">${detail}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
+              class="px-4 py-2.5 rounded-[12px] bg-slate-950 hover:bg-slate-900 text-white text-xs font-black transition shrink-0"
+            >
+              ${primary.action} →
+            </button>
+          </div>
+        </section>
+      `;
     }
 
     function openIntelligenceAction(action) {
@@ -12163,6 +12232,8 @@
               ${activeNav === 'Visão Geral' ? `
                 <div class="space-y-6 animate-card-fade">
                   
+                  ${renderOverviewIntelligencePriorityCard(false)}
+
                   <!-- BLOCO 1: PAINEL MASTER DE DECISÃO DA DIRETORIA ("A OBRA VAI TERMINAR NO PRAZO E NO CUSTO?") -->
                   <div class="bg-slate-950 text-white rounded-[24px] border border-slate-800/90 p-6 xl:p-8 shadow-xl space-y-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
