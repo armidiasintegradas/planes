@@ -8404,6 +8404,23 @@
       }) || null;
     }
 
+    function findVoiceTask(query) {
+      const q = normalizeVoiceLookup(query);
+      const list = Array.isArray(tasksList) ? tasksList : [];
+      if (!q) return null;
+
+      if (/^(primeira|primeiro|1|um|uma)$/.test(q)) return list[0] || null;
+      if (/^(segunda|segundo|2|dois|duas)$/.test(q)) return list[1] || null;
+      if (/^(terceira|terceiro|3|tres)$/.test(q)) return list[2] || null;
+
+      return list.find(task => {
+        const haystack = [task.id, task.title, task.resp, task.deadline, task.done ? 'concluida' : 'pendente']
+          .map(normalizeVoiceLookup)
+          .join(' ');
+        return haystack.includes(q) || q.includes(normalizeVoiceLookup(task.title));
+      }) || null;
+    }
+
     function getVoiceMutationAuthorization(kind) {
       const audience = getIntelligenceAudience();
       const effectiveRole = normalizeIntelligenceRole(getEffectiveIntelligenceRole());
@@ -8424,19 +8441,25 @@
       }
 
       const policies = {
-        engineering: ['create_task', 'approve_validation', 'update_pac', 'update_supply_status'],
-        executive: ['create_task', 'update_pac'],
-        supplies: ['create_task', 'update_supply_status'],
-        field: ['create_task', 'approve_validation'],
-        client: []
+        engineering: ['create_task', 'edit_task', 'toggle_task', 'approve_validation', 'reject_validation', 'update_pac', 'create_supply', 'edit_supply', 'update_supply_status', 'create_followup'],
+        executive: ['create_task', 'edit_task', 'toggle_task', 'update_pac', 'create_followup'],
+        supplies: ['create_task', 'edit_task', 'toggle_task', 'create_supply', 'edit_supply', 'update_supply_status', 'create_followup'],
+        field: ['create_task', 'edit_task', 'toggle_task', 'approve_validation', 'reject_validation', 'create_followup'],
+        client: ['create_followup']
       };
 
       const allowed = (policies[audience] || []).includes(kind);
       const labels = {
         create_task: 'criar tarefas',
+        edit_task: 'editar tarefas',
+        toggle_task: 'concluir ou reabrir tarefas',
         approve_validation: 'aprovar validações',
+        reject_validation: 'rejeitar validações',
         update_pac: 'alterar PAC ou avanço físico',
-        update_supply_status: 'alterar status de suprimentos'
+        create_supply: 'criar suprimentos',
+        edit_supply: 'editar suprimentos',
+        update_supply_status: 'alterar status de suprimentos',
+        create_followup: 'criar acompanhamentos pessoais'
       };
 
       return {
@@ -8453,7 +8476,7 @@
       return getVoiceMutationAuthorization(kind).allowed;
     }
     function getVoiceMutationCapabilities() {
-      return ['create_task', 'approve_validation', 'update_pac', 'update_supply_status']
+      return ['create_task', 'edit_task', 'toggle_task', 'approve_validation', 'reject_validation', 'update_pac', 'create_supply', 'edit_supply', 'update_supply_status', 'create_followup']
         .filter(kind => getVoiceMutationAuthorization(kind).allowed);
     }
 
@@ -8605,6 +8628,122 @@
         }
       }
 
+      if (pending.kind === 'edit_task') {
+        const task = findVoiceTask(pending.payload.query) || pending.payload.task;
+        if (!task) {
+          result = { ok: false, error: 'task_not_found' };
+        } else {
+          const previous = { ...task };
+          if (pending.payload.title) task.title = pending.payload.title;
+          if (pending.payload.responsible) task.resp = pending.payload.responsible;
+          if (pending.payload.deadline) task.deadline = pending.payload.deadline;
+          render();
+          const ok = await persistTaskRecord(task);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, task: task.title, responsible: task.resp, deadline: task.deadline };
+          } else {
+            Object.assign(task, previous);
+            result = { ok: false, error: 'task_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'toggle_task') {
+        const task = findVoiceTask(pending.payload.query) || pending.payload.task;
+        if (!task) {
+          result = { ok: false, error: 'task_not_found' };
+        } else {
+          const previousDone = !!task.done;
+          task.done = pending.payload.done === true;
+          render();
+          const ok = await persistTaskRecord(task);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, task: task.title, done: task.done };
+          } else {
+            task.done = previousDone;
+            result = { ok: false, error: 'task_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'reject_validation') {
+        const validation = findVoiceValidation(pending.payload.query) || pending.payload.validation;
+        if (!validation) {
+          result = { ok: false, error: 'validation_not_found' };
+        } else {
+          const ok = await persistValidationStatus(validation, 'Rejeitado', pending.payload.reason || '');
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, rejected: validation.item, reason: pending.payload.reason || '' };
+          } else {
+            result = { ok: false, error: 'validation_reject_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'create_supply') {
+        const supply = {
+          id: Date.now(),
+          name: pending.payload.name,
+          supplier: pending.payload.supplier || '',
+          qtd: pending.payload.quantity || '',
+          date: pending.payload.delivery || '',
+          sector: pending.payload.sector || '',
+          status: pending.payload.status || 'Programado'
+        };
+        suppliesList.unshift(supply);
+        render();
+        const ok = await persistSupplyRecord(supply);
+        if (ok) {
+          await refreshIntelligenceOperationalData();
+          result = { ok: true, supply: supply.name, status: supply.status };
+        } else {
+          suppliesList = suppliesList.filter(item => item !== supply);
+          result = { ok: false, error: 'supply_create_failed' };
+        }
+      }
+
+      if (pending.kind === 'edit_supply') {
+        const supply = findVoiceSupply(pending.payload.query) || pending.payload.supply;
+        if (!supply) {
+          result = { ok: false, error: 'supply_not_found' };
+        } else {
+          const previous = { ...supply };
+          if (pending.payload.name) supply.name = pending.payload.name;
+          if (pending.payload.supplier) supply.supplier = pending.payload.supplier;
+          if (pending.payload.quantity) supply.qtd = pending.payload.quantity;
+          if (pending.payload.delivery) supply.date = pending.payload.delivery;
+          if (pending.payload.sector) supply.sector = pending.payload.sector;
+          if (pending.payload.status) supply.status = pending.payload.status;
+          render();
+          const ok = await persistSupplyRecord(supply);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, supply: supply.name, status: supply.status };
+          } else {
+            Object.assign(supply, previous);
+            result = { ok: false, error: 'supply_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'create_followup') {
+        const label = String(pending.payload.label || 'Acompanhamento').trim();
+        const text = String(pending.payload.text || '').trim();
+        const action = String(pending.payload.action || 'Abrir Planes Intelligence').trim();
+        const tracked = await trackUserHabit('intelligence_deferred', {
+          module: 'Planes Intelligence',
+          topic: 'acompanhamento',
+          mode: 'voice',
+          metadata: { action, label, text, source: 'voice_personal_followup' }
+        });
+        result = tracked === false
+          ? { ok: false, error: 'followup_persist_failed' }
+          : { ok: true, followup: label, text };
+      }
+
       if (result.ok) {
         if (typeof trackUserHabit === 'function') {
           trackUserHabit('voice_confirmed_mutation', {
@@ -8741,6 +8880,75 @@
             { query, status, supply },
             'Alterar o status de "' + supply.name + '" de ' + supply.status + ' para ' + status + '.'
           );
+        }
+        case 'prepare_edit_task': {
+          const query = String(args?.query || '').trim();
+          const task = findVoiceTask(query);
+          if (!task) return { ok: false, error: 'task_not_found' };
+          const payload = {
+            query,
+            task,
+            title: String(args?.title || '').trim() || null,
+            responsible: String(args?.responsible || '').trim() || null,
+            deadline: String(args?.deadline || '').trim() || null
+          };
+          if (!payload.title && !payload.responsible && !payload.deadline) return { ok: false, error: 'task_changes_required' };
+          return prepareRealtimeVoiceMutation('edit_task', payload, 'Editar a tarefa "' + task.title + '".');
+        }
+        case 'prepare_toggle_task': {
+          const query = String(args?.query || '').trim();
+          const task = findVoiceTask(query);
+          if (!task) return { ok: false, error: 'task_not_found' };
+          const done = args?.done === true;
+          return prepareRealtimeVoiceMutation('toggle_task', { query, task, done }, (done ? 'Concluir' : 'Reabrir') + ' a tarefa "' + task.title + '".');
+        }
+        case 'prepare_reject_validation': {
+          const query = String(args?.query || '').trim();
+          const reason = String(args?.reason || '').trim();
+          const validation = findVoiceValidation(query);
+          if (!validation) return { ok: false, error: 'validation_not_found' };
+          if (!reason) return { ok: false, error: 'rejection_reason_required' };
+          return prepareRealtimeVoiceMutation('reject_validation', { query, validation, reason }, 'Rejeitar a validação "' + validation.item + '" pelo motivo: ' + reason + '.');
+        }
+        case 'prepare_create_supply': {
+          const name = String(args?.name || '').trim();
+          if (!name) return { ok: false, error: 'supply_name_required' };
+          const status = String(args?.status || 'Programado').trim();
+          if (!['Programado','Em Transporte','No Canteiro','Atrasado'].includes(status)) return { ok: false, error: 'invalid_supply_status' };
+          const payload = {
+            name,
+            supplier: String(args?.supplier || '').trim(),
+            quantity: String(args?.quantity || '').trim(),
+            delivery: String(args?.delivery || '').trim(),
+            sector: String(args?.sector || '').trim(),
+            status
+          };
+          return prepareRealtimeVoiceMutation('create_supply', payload, 'Criar o suprimento "' + name + '" com status ' + status + '.');
+        }
+        case 'prepare_edit_supply': {
+          const query = String(args?.query || '').trim();
+          const supply = findVoiceSupply(query);
+          if (!supply) return { ok: false, error: 'supply_not_found' };
+          const payload = {
+            query,
+            supply,
+            name: String(args?.name || '').trim() || null,
+            supplier: String(args?.supplier || '').trim() || null,
+            quantity: String(args?.quantity || '').trim() || null,
+            delivery: String(args?.delivery || '').trim() || null,
+            sector: String(args?.sector || '').trim() || null,
+            status: String(args?.status || '').trim() || null
+          };
+          if (payload.status && !['Programado','Em Transporte','No Canteiro','Atrasado'].includes(payload.status)) return { ok: false, error: 'invalid_supply_status' };
+          if (!payload.name && !payload.supplier && !payload.quantity && !payload.delivery && !payload.sector && !payload.status) return { ok: false, error: 'supply_changes_required' };
+          return prepareRealtimeVoiceMutation('edit_supply', payload, 'Editar o suprimento "' + supply.name + '".');
+        }
+        case 'prepare_create_followup': {
+          const label = String(args?.label || '').trim();
+          const text = String(args?.text || '').trim();
+          const action = String(args?.action || 'Abrir Planes Intelligence').trim();
+          if (!label) return { ok: false, error: 'followup_label_required' };
+          return prepareRealtimeVoiceMutation('create_followup', { label, text, action }, 'Salvar em Para acompanhar: "' + label + '".');
         }
         case 'confirm_pending_action':
           return await executePendingRealtimeVoiceMutation(args?.confirmed === true);
@@ -9851,12 +10059,13 @@
       return true;
     }
 
-    async function persistValidationStatus(validation, status) {
+    async function persistValidationStatus(validation, status, rejectionReason = '') {
       if (!supabaseClient || !validation) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
       if (isUuidLike(validation.id)) {
-        const { error } = await supabaseClient.from('project_validations').update({ status }).eq('id', validation.id);
+        const payload = { status, rejection_reason: status === 'Rejeitado' ? String(rejectionReason || '').trim() : null };
+        const { error } = await supabaseClient.from('project_validations').update(payload).eq('id', validation.id);
         if (error) {
           console.warn('Falha ao atualizar validação:', error);
           return false;
@@ -9871,7 +10080,8 @@
           quantity_text: validation.qtd || '',
           recorded_at_text: validation.data || '',
           gps: validation.gps || '',
-          status
+          status,
+          rejection_reason: status === 'Rejeitado' ? String(rejectionReason || '').trim() : null
         }).select('id').single();
         if (error) return false;
         if (data?.id) validation.id = data.id;
