@@ -2612,6 +2612,7 @@
     // Configuração dos Canais Supabase Realtime & Presence
     function setupRealtimeSubscriptions() {
       if (!supabaseClient) return;
+      if (currentUser) hydrateUserIntelligenceProfile();
 
       // 1. Canal de Presença Realtime (ONLINE AGORA)
       if (presenceChannel) presenceChannel.unsubscribe();
@@ -5924,6 +5925,44 @@
       } catch (err) {
         console.warn('Planes Intelligence: hábito salvo apenas localmente.', err);
       }
+    }
+
+    async function hydrateUserIntelligenceProfile() {
+      if (!supabaseClient || !currentUser || !currentUser.id) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_intelligence_profiles')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        if (error || !data) return;
+        const local = getLocalHabitStore();
+        const merged = {
+          moduleCounts: { ...(data.module_counts || {}), ...(local.moduleCounts || {}) },
+          topicCounts: { ...(data.topic_counts || {}), ...(local.topicCounts || {}) },
+          modeCounts: local.modeCounts || {},
+          totalInteractions: Math.max(Number(data.total_interactions || 0), Number(local.totalInteractions || 0)),
+          lastActiveHour: local.lastActiveHour ?? data.last_active_hour ?? null
+        };
+        if (data.preferred_mode) {
+          merged.modeCounts[data.preferred_mode] = Math.max(merged.modeCounts[data.preferred_mode] || 0, 1);
+        }
+        localStorage.setItem('planes_intelligence_habits', JSON.stringify(merged));
+      } catch (err) {
+        console.warn('Planes Intelligence: perfil de hábitos mantido localmente.', err);
+      }
+    }
+
+    function getHabitSuggestedPrompt(topic) {
+      const map = {
+        suprimentos: 'Como estão os suprimentos e qual item exige atenção agora?',
+        pac: 'Como está o PAC e o desvio de avanço em relação à meta?',
+        validacoes: 'Quais validações pendentes merecem prioridade agora?',
+        riscos: 'Qual é o principal risco da obra neste momento?',
+        tarefas: 'Quais tarefas abertas devo priorizar hoje?',
+        executivo: 'Prepare um resumo executivo da obra para a próxima decisão.'
+      };
+      return map[topic] || 'Qual é a principal prioridade da obra agora?';
     }
 
     function getIntelligenceHabitProfile() {
@@ -10214,6 +10253,8 @@
         : [{ sender: 'ai', text: 'Olá! Sou o Planes Intelligence. Como posso ajudar?', time: 'Agora' }]
       ).slice(-12);
       const cockpit = getIntelligenceCockpitSnapshot();
+      const habits = getIntelligenceHabitProfile();
+      const habitPrompt = getHabitSuggestedPrompt(habits.topTopic);
       const toneMap = {
         emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         amber: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -10249,6 +10290,21 @@
               ← Início
             </button>
           </div>
+
+          ${habits.topModule || habits.topTopic ? `
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              ${habits.topModule && habits.topModule !== 'Planes Intelligence' ? `
+                <button type="button" onclick="selectMobileModule('${habits.topModule.replace(/'/g, "\\'")}')" class="shrink-0 px-3 py-1.5 rounded-full bg-violet-50 border border-violet-200 text-violet-800 text-[10px] font-black ios-press-action">
+                  ↗ Atalho frequente: ${habits.topModule}
+                </button>
+              ` : ''}
+              ${habits.topTopic ? `
+                <button type="button" onclick="askPlanesIntelligence('${habitPrompt.replace(/'/g, "\\'")}')" class="shrink-0 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[10px] font-black ios-press-action">
+                  ✦ Continuar tema: ${habits.topTopic}
+                </button>
+              ` : ''}
+            </div>
+          ` : ''}
 
           <section class="intelligence-cockpit-grid grid grid-cols-2 gap-2.5">
             <div class="bg-white rounded-[18px] border border-slate-200 p-3 shadow-2xs">
