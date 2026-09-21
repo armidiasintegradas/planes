@@ -8404,17 +8404,53 @@
       }) || null;
     }
 
-    function canUseVoiceMutations() {
-      return getIntelligenceAudience() !== 'client';
+    function getVoiceMutationAuthorization(kind) {
+      const audience = getIntelligenceAudience();
+      const effectiveRole = normalizeIntelligenceRole(getEffectiveIntelligenceRole());
+      const isAdmin = effectiveRole.includes('admin') || effectiveRole.includes('super_admin');
+
+      if (isAdmin) {
+        return { allowed: true, audience: 'admin' };
+      }
+
+      const policies = {
+        engineering: ['create_task', 'approve_validation', 'update_pac', 'update_supply_status'],
+        executive: ['create_task', 'update_pac'],
+        supplies: ['create_task', 'update_supply_status'],
+        field: ['create_task', 'approve_validation'],
+        client: []
+      };
+
+      const allowed = (policies[audience] || []).includes(kind);
+      const labels = {
+        create_task: 'criar tarefas',
+        approve_validation: 'aprovar validações',
+        update_pac: 'alterar PAC ou avanço físico',
+        update_supply_status: 'alterar status de suprimentos'
+      };
+
+      return {
+        allowed,
+        audience,
+        error: allowed ? null : 'voice_mutation_not_authorized',
+        message: allowed
+          ? null
+          : 'Seu perfil não tem permissão para ' + (labels[kind] || 'executar esta alteração') + ' pelo Planes Intelligence.'
+      };
+    }
+
+    function canUseVoiceMutations(kind) {
+      return getVoiceMutationAuthorization(kind).allowed;
     }
 
     function prepareRealtimeVoiceMutation(kind, payload, summary) {
-      if (!canUseVoiceMutations()) {
+      const authorization = getVoiceMutationAuthorization(kind);
+      if (!authorization.allowed) {
         realtimeVoicePendingMutation = null;
         return {
           ok: false,
-          error: 'not_authorized_for_operational_changes',
-          message: 'Este perfil não pode alterar dados operacionais.'
+          error: authorization.error || 'not_authorized_for_operational_changes',
+          message: authorization.message || 'Este perfil não pode alterar estes dados operacionais.'
         };
       }
       realtimeVoicePendingMutation = {
@@ -8464,6 +8500,16 @@
       if (!confirmed) {
         realtimeVoicePendingMutation = null;
         return { ok: true, cancelled: true, message: 'Ação cancelada.' };
+      }
+
+      const authorization = getVoiceMutationAuthorization(pending.kind);
+      if (!authorization.allowed) {
+        realtimeVoicePendingMutation = null;
+        return {
+          ok: false,
+          error: authorization.error || 'not_authorized_for_operational_changes',
+          message: authorization.message || 'Seu perfil não pode executar esta alteração.'
+        };
       }
 
       let result = { ok: false, error: 'unsupported_pending_action' };
