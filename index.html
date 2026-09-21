@@ -5822,6 +5822,118 @@
       return actionable[0] || null;
     }
 
+    function normalizeIntelligenceRole(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function getEffectiveIntelligenceRole() {
+      const isAdminUser = !!(
+        currentUser &&
+        (
+          normalizeIntelligenceRole(currentUser.level).includes('admin') ||
+          String(currentUser.email || '').toLowerCase() === 'armidiasintegradas@gmail.com'
+        )
+      );
+
+      if (isAdminUser && accessLevel) return accessLevel;
+      return currentUser
+        ? (currentUser.level || currentUser.role || accessLevel || 'Engenharia')
+        : (accessLevel || 'Engenharia');
+    }
+
+    function getIntelligenceAudience() {
+      const role = normalizeIntelligenceRole(getEffectiveIntelligenceRole());
+
+      if (
+        role.includes('cliente') ||
+        role.includes('investidor') ||
+        role.includes('visualizador')
+      ) return 'client';
+
+      if (
+        role.includes('suprimento') ||
+        role.includes('compra')
+      ) return 'supplies';
+
+      if (
+        role.includes('diretor') ||
+        role.includes('diretoria') ||
+        role.includes('gerencia') ||
+        role.includes('gerente') ||
+        role.includes('financeiro')
+      ) return 'executive';
+
+      if (
+        role.includes('campo') ||
+        role.includes('canteiro') ||
+        role.includes('colaborador') ||
+        role.includes('coordenador de obra')
+      ) return 'field';
+
+      return 'engineering';
+    }
+
+    function scopeProactiveChangeForAudience(change, audience) {
+      if (!change) return null;
+
+      if (audience === 'client') return null;
+
+      if (audience === 'supplies') {
+        return change.type === 'supplies' ? change : null;
+      }
+
+      if (audience === 'field') {
+        return ['progress', 'validations', 'tasks'].includes(change.type) ? change : null;
+      }
+
+      if (audience === 'executive') {
+        if (!['progress', 'pac', 'supplies', 'validations', 'tasks'].includes(change.type)) return null;
+
+        if (change.type === 'progress' || change.type === 'pac') return change;
+
+        const executiveLabels = {
+          supplies: 'Avaliar impacto executivo de suprimentos',
+          validations: 'Avaliar impacto executivo das validações',
+          tasks: 'Avaliar impacto executivo das pendências'
+        };
+
+        return {
+          ...change,
+          action: 'Abrir Planes Intelligence',
+          target: 'Planes Intelligence',
+          label: executiveLabels[change.type] || 'Avaliar impacto executivo',
+          weight: Math.max(Number(change.weight || 0), 25),
+          score: Math.max(Number(change.score || 0), 80)
+        };
+      }
+
+      return change;
+    }
+
+    function getRoleScopedProactiveBrief() {
+      const audience = getIntelligenceAudience();
+      const rawChanges = proactiveIntelligenceBrief?.changes || [];
+      const changes = rawChanges
+        .map(change => scopeProactiveChangeForAudience(change, audience))
+        .filter(Boolean)
+        .sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+
+      const primaryAction = getPrimaryProactiveAction(changes);
+
+      return {
+        audience,
+        changes,
+        primaryAction,
+        live: proactiveIntelligenceBrief?.live === true,
+        generatedAt: proactiveIntelligenceBrief?.generatedAt || null,
+        previousSeenAt: proactiveIntelligenceBrief?.previousSeenAt || null
+      };
+    }
+
     async function refreshProactiveIntelligenceBrief(options = {}) {
       const commitSnapshot = options.commitSnapshot !== false;
       if (!supabaseClient || !currentUser || !currentUser.id) return null;
@@ -10579,9 +10691,10 @@
     }
 
     function renderOverviewIntelligencePriorityCard(isMobile = false) {
-      const primary = proactiveIntelligenceBrief?.primaryAction || null;
-      const changes = proactiveIntelligenceBrief?.changes || [];
-      if (!primary || !changes.length) return '';
+      const scopedBrief = getRoleScopedProactiveBrief();
+      const primary = scopedBrief.primaryAction || null;
+      const changes = scopedBrief.changes || [];
+      if (scopedBrief.audience === 'client' || !primary || !changes.length) return '';
 
       const riskLabel = primary.severity === 'critical' ? 'Crítico' : primary.severity === 'attention' ? 'Atenção' : 'Controlado';
       const riskClass = primary.severity === 'critical'
@@ -10590,7 +10703,7 @@
           ? 'bg-amber-100 text-amber-800 border-amber-200'
           : 'bg-emerald-100 text-emerald-800 border-emerald-200';
       const detail = changes[0]?.text || primary.label;
-      const isLivePriority = proactiveIntelligenceBrief?.live === true;
+      const isLivePriority = scopedBrief.live === true;
 
       if (isMobile) {
         return `
@@ -10651,6 +10764,10 @@
     }
 
     function openIntelligenceAction(action) {
+      if (getIntelligenceAudience() === 'client') {
+        showToast('Este perfil não recebe alertas operacionais internos.');
+        return;
+      }
       const map = {
         'Abrir Lookahead R4': 'Médio Prazo (R4)',
         'Ver validações': 'Fila de Validações',
@@ -10694,8 +10811,10 @@
       const projectMemoryLabel = habits.lastModule || habits.lastTopic
         ? 'Memória desta obra: ' + [habits.lastModule, habits.lastTopic].filter(Boolean).join(' · ')
         : 'Construindo memória operacional desta obra';
-      const proactiveChanges = proactiveIntelligenceBrief?.changes || [];
-      const proactivePrimaryAction = proactiveIntelligenceBrief?.primaryAction || null;
+      const intelligenceAudience = getIntelligenceAudience();
+      const roleScopedBrief = getRoleScopedProactiveBrief();
+      const proactiveChanges = roleScopedBrief.changes || [];
+      const proactivePrimaryAction = roleScopedBrief.primaryAction || null;
       const toneMap = {
         emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         amber: 'bg-amber-50 text-amber-800 border-amber-200',
