@@ -471,7 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r6" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r7" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -2397,7 +2397,9 @@
         if (profError) throw profError;
 
         const profileMap = new Map((profs || []).map(p => [p.id, p]));
-        registeredUsers = (profs || []).map(p => ({
+        registeredUsers = (profs || [])
+          .filter(p => p.status === 'approved' || p.status === 'suspended')
+          .map(p => ({
           id: p.id,
           auth_user_id: p.id,
           name: p.full_name || p.email || 'Usuário',
@@ -6643,32 +6645,15 @@
       }
     }
 
-    function refreshUsersTable(manual = true) {
+    async function refreshUsersTable(manual = true) {
       try {
-        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
-        
-        // Recarrega e purga qualquer item excluído
-        const savedUsers = localStorage.getItem('planes_registered_users');
-        if (savedUsers) {
-          let parsed = JSON.parse(savedUsers);
-          if (Array.isArray(parsed)) {
-            registeredUsers = parsed.filter(u => {
-              const e = (u.email || '').toLowerCase();
-              const id = String(u.id || '').toLowerCase();
-              return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves';
-            });
-          }
+        await fetchAdminIAMData(false);
+        if (manual) {
+          showToast(`✓ Painel sincronizado com o Supabase (${registeredUsers.length} perfis ativos)`);
         }
-
-        if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
-          registeredUsers.unshift(defaultRegisteredUsers[0]);
-        }
-
-        saveUsersStorage();
-      } catch (e) {}
-
-      if (manual) {
-        showToast(`✓ Painel de usuários atualizado (${registeredUsers.length} perfis ativos)`);
+      } catch (e) {
+        console.error('Falha ao atualizar usuários:', e);
+        if (manual) showToast('Falha ao atualizar usuários a partir do Supabase.');
       }
       render();
     }
