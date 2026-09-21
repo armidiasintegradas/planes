@@ -76,10 +76,190 @@ function blockApp() {
   document.documentElement.classList.add('planes-auth-blocked');
 }
 
-function allowApp() {
+function allowApp(profile = null) {
   document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
   document.getElementById(ROOT_ID)?.remove();
   window.dispatchEvent(new CustomEvent('planes-auth-approved'));
+  if (profile && ['super_admin', 'admin'].includes(profile.role)) {
+    void mountAdminAccessConsole(profile);
+  }
+}
+
+async function mountAdminAccessConsole(profile) {
+  const existing = document.getElementById('planes-admin-access-launcher');
+  if (existing) existing.remove();
+
+  const launcher = document.createElement('button');
+  launcher.id = 'planes-admin-access-launcher';
+  launcher.type = 'button';
+  launcher.setAttribute('aria-label', 'Abrir solicitações de acesso');
+  launcher.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:2147483646;border:0;border-radius:999px;background:#111827;color:#fff;padding:12px 16px;font:700 13px Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 12px 30px rgba(15,23,42,.24);cursor:pointer';
+  launcher.textContent = 'Acessos';
+
+  async function refreshCount() {
+    const { count } = await supabase
+      .from('access_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    launcher.textContent = count ? `Acessos · ${count}` : 'Acessos';
+  }
+
+  launcher.addEventListener('click', () => void openAdminAccessConsole(profile, refreshCount));
+  document.body.appendChild(launcher);
+  await refreshCount();
+}
+
+async function openAdminAccessConsole(profile, refreshCount) {
+  document.getElementById('planes-admin-access-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'planes-admin-access-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.48);display:grid;place-items:center;padding:16px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827';
+  overlay.innerHTML = `
+    <section style="width:min(96vw,860px);max-height:92dvh;overflow:auto;background:#f8fafc;border-radius:24px;box-shadow:0 30px 80px rgba(15,23,42,.35);border:1px solid #e2e8f0">
+      <header style="position:sticky;top:0;background:#fff;padding:20px 22px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:16px;align-items:center;z-index:2">
+        <div>
+          <div style="font-size:11px;font-weight:900;letter-spacing:.14em">PLANES OS · ADMIN</div>
+          <h2 style="margin:6px 0 0;font-size:24px;letter-spacing:-.03em">Solicitações de acesso</h2>
+        </div>
+        <button type="button" data-admin-close style="border:1px solid #dbe2ea;background:#fff;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer">Fechar</button>
+      </header>
+      <div data-admin-message style="display:none;margin:16px 22px 0;padding:12px 14px;border:1px solid #e2e8f0;background:#fff;border-radius:12px;font-size:13px"></div>
+      <div data-admin-list style="padding:18px 22px 24px;display:grid;gap:12px">
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px;color:#64748b">Carregando solicitações…</div>
+      </div>
+    </section>`;
+
+  overlay.querySelector('[data-admin-close]')?.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (event) => { if (event.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+
+  const list = overlay.querySelector('[data-admin-list]');
+  const message = overlay.querySelector('[data-admin-message]');
+
+  function showMessage(text, ok = true) {
+    if (!message) return;
+    message.style.display = 'block';
+    message.style.borderColor = ok ? '#bbf7d0' : '#fecaca';
+    message.style.background = ok ? '#f0fdf4' : '#fff1f2';
+    message.style.color = ok ? '#166534' : '#991b1b';
+    message.textContent = text;
+  }
+
+  async function loadRows() {
+    const { data: requests, error: requestError } = await supabase
+      .from('access_requests')
+      .select('id,user_id,status,requested_at,reviewed_at,rejection_reason,admin_notes')
+      .order('requested_at', { ascending: false });
+    if (requestError) {
+      list.innerHTML = '<div style="background:#fff;border:1px solid #fecaca;border-radius:18px;padding:18px;color:#991b1b">Falha ao carregar solicitações.</div>';
+      return;
+    }
+
+    const userIds = [...new Set((requests || []).map((item) => item.user_id))];
+    let profiles = [];
+    if (userIds.length) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id,full_name,email,status,role')
+        .in('id', userIds);
+      if (!error) profiles = data || [];
+    }
+
+    const profileMap = new Map(profiles.map((item) => [item.id, item]));
+    if (!requests?.length) {
+      list.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px;color:#64748b">Nenhuma solicitação registrada.</div>';
+      await refreshCount();
+      return;
+    }
+
+    list.innerHTML = requests.map((request) => {
+      const user = profileMap.get(request.user_id) || {};
+      const pending = request.status === 'pending';
+      return `
+        <article data-request-id="${escapeHtml(request.id)}" style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px">
+          <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div>
+              <strong style="font-size:16px">${escapeHtml(user.full_name || user.email || request.user_id)}</strong>
+              <div style="font-size:13px;color:#64748b;margin-top:4px">${escapeHtml(user.email || '')}</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:5px">${new Date(request.requested_at).toLocaleString('pt-BR')}</div>
+            </div>
+            <span style="padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900;background:${pending ? '#fff7d6' : '#eef2f7'};color:${pending ? '#8a6400' : '#475569'}">${escapeHtml(request.status.toUpperCase())}</span>
+          </div>
+          ${pending ? `
+            <div style="display:grid;grid-template-columns:minmax(180px,260px) 1fr;gap:10px;margin-top:16px;align-items:center">
+              <select data-role style="height:42px;border:1px solid #dbe2ea;border-radius:11px;padding:0 10px;background:#fff;font:inherit">
+                ${profile.role === 'super_admin' ? '<option value="super_admin">Super administrador</option>' : ''}
+                <option value="admin">Administrador</option>
+                <option value="gestor">Gestor</option>
+                <option value="engenharia">Engenharia</option>
+                <option value="campo">Campo</option>
+                <option value="financeiro">Financeiro</option>
+                <option value="cliente" selected>Cliente</option>
+              </select>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" data-approve style="border:0;background:#111827;color:#fff;border-radius:11px;padding:11px 14px;font-weight:800;cursor:pointer">Aprovar</button>
+                <button type="button" data-reject style="border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:11px;padding:11px 14px;font-weight:800;cursor:pointer">Rejeitar</button>
+              </div>
+            </div>
+          ` : ''}
+        </article>`;
+    }).join('');
+
+    for (const card of list.querySelectorAll('[data-request-id]')) {
+      const requestId = card.getAttribute('data-request-id');
+      const approve = card.querySelector('[data-approve]');
+      const reject = card.querySelector('[data-reject]');
+      const roleSelect = card.querySelector('[data-role]');
+
+      approve?.addEventListener('click', async () => {
+        approve.disabled = true;
+        const { data, error } = await supabase.functions.invoke('admin-review-access', {
+          body: {
+            requestId,
+            decision: 'approve',
+            role: roleSelect?.value || 'cliente',
+            projectIds: [],
+            workIds: [],
+          },
+        });
+        if (error || !data?.ok) {
+          showMessage(data?.error || error?.message || 'Não foi possível aprovar o acesso.', false);
+          approve.disabled = false;
+          return;
+        }
+        showMessage('Acesso aprovado com sucesso.');
+        await loadRows();
+      });
+
+      reject?.addEventListener('click', async () => {
+        const reason = window.prompt('Motivo da rejeição:')?.trim();
+        if (!reason) return;
+        reject.disabled = true;
+        const { data, error } = await supabase.functions.invoke('admin-review-access', {
+          body: {
+            requestId,
+            decision: 'reject',
+            role: null,
+            projectIds: [],
+            workIds: [],
+            rejectionReason: reason,
+          },
+        });
+        if (error || !data?.ok) {
+          showMessage(data?.error || error?.message || 'Não foi possível rejeitar a solicitação.', false);
+          reject.disabled = false;
+          return;
+        }
+        showMessage('Solicitação rejeitada.');
+        await loadRows();
+      });
+    }
+
+    await refreshCount();
+  }
+
+  await loadRows();
 }
 
 function renderShell(body) {
@@ -257,12 +437,12 @@ function renderPasskeyOffer(user, profile) {
       return;
     }
     localStorage.removeItem(PASSKEY_DISMISS_KEY);
-    allowApp();
+    allowApp(profile);
   });
 
   node.querySelector('[data-passkey-later]')?.addEventListener('click', () => {
     localStorage.setItem(PASSKEY_DISMISS_KEY, '1');
-    allowApp();
+    allowApp(profile);
   });
 }
 
@@ -312,7 +492,7 @@ async function evaluateSession(session) {
         return;
       }
     }
-    allowApp();
+    allowApp(profile);
     return;
   }
   if (profile.status === 'pending') {
