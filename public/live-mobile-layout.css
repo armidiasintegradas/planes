@@ -66,3 +66,96 @@ table td [class~="rounded-full"][class*="green"] > * {
     overflow-wrap: anywhere !important;
   }
 }
+
+
+/* =========================================================
+   PLANES INTELLIGENCE — MOBILE + TABLET EXPERIENCE
+   ========================================================= */
+.planes-intelligence-mobile {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.planes-intelligence-mobile > div:last-child {
+  position: sticky;
+  bottom: calc(4.8rem + env(safe-area-inset-bottom, 0px));
+  z-index: 25;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.planes-intelligence-mobile input {
+  min-width: 0;
+}
+
+.planes-intelligence-mobile .overflow-x-auto {
+  scrollbar-width: none;
+}
+
+.planes-intelligence-mobile .overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .planes-intelligence-mobile {
+    max-width: 880px;
+    padding: 1.5rem !important;
+    gap: 1.15rem !important;
+  }
+
+  .planes-intelligence-mobile > div:first-child {
+    padding: 1rem 1.1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.25rem;
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 10px 30px -20px rgba(15,23,42,.28);
+  }
+
+  .planes-intelligence-mobile .space-y-3 {
+    max-width: 760px;
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .planes-intelligence-mobile .max-w-\[85\%\] {
+    max-width: 72% !important;
+    font-size: .82rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .planes-intelligence-mobile > div:last-child {
+    max-width: 760px;
+    width: 100%;
+    margin-inline: auto;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    padding: .65rem .75rem !important;
+    border-radius: 1.25rem !important;
+    box-shadow: 0 18px 45px -22px rgba(15,23,42,.35) !important;
+  }
+
+  .planes-intelligence-mobile > div:last-child input {
+    font-size: .86rem !important;
+    padding-block: .7rem !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .planes-intelligence-mobile {
+    padding-left: .85rem !important;
+    padding-right: .85rem !important;
+  }
+
+  .planes-intelligence-mobile .max-w-\[85\%\] {
+    max-width: 90% !important;
+  }
+
+  .planes-intelligence-mobile > div:last-child {
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 1.15rem !important;
+  }
+
+  .planes-intelligence-status {
+    letter-spacing: .04em !important;
+  }
+}
