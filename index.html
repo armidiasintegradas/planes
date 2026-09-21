@@ -55,8 +55,32 @@
     }
     @media (max-width: 1023px) {
       .ios-blur-header {
-        padding-top: max(3.4rem, calc(env(safe-area-inset-top, 24px) + 0.6rem)) !important;
-        padding-bottom: 0.65rem !important;
+        padding-top: max(0.7rem, calc(env(safe-area-inset-top, 0px) + 0.7rem)) !important;
+        padding-bottom: 0.7rem !important;
+        background: #ffffff !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        isolation: isolate;
+        overflow: hidden;
+        contain: paint;
+        transform: translateZ(0);
+        z-index: 1000 !important;
+      }
+      .planes-mobile-shell {
+        position: relative;
+        isolation: isolate;
+        overflow-x: clip;
+      }
+      .planes-mobile-main {
+        position: relative;
+        z-index: 0;
+        isolation: isolate;
+        background: #f2f5f8;
+        min-height: calc(100dvh - 7rem);
+      }
+      .planes-mobile-main > * {
+        position: relative;
+        z-index: 0;
       }
     }
     .ios-blur-tabbar {
@@ -10531,7 +10555,7 @@
       const pTitle = selectedProject ? selectedProject.title : 'Selecionar Obra';
       return `
         <!-- MOBILE TOP APP BAR (56–64px + Safe Area, Frosted Glass, Brand & Project Switcher) -->
-        <header class="w-full ios-blur-header border-b border-slate-200/90 px-3.5 flex items-center justify-between shadow-2xs sticky top-0 z-40">
+        <header class="w-full ios-blur-header border-b border-slate-200 px-3.5 flex items-center justify-between shadow-2xs sticky top-0">
           <div class="flex items-center gap-2.5 min-w-0">
             <!-- [P] Official App Icon (Optimized PWA Icon) -->
             <button
@@ -13734,10 +13758,10 @@
         <!-- ========================================== -->
         <!-- 1. MOBILE WEB APP SHELL (DEVICE < 1024px) -->
         <!-- ========================================== -->
-        <div class="block lg:hidden w-full min-h-screen pb-24 bg-slate-100/60 font-sans">
+        <div class="planes-mobile-shell block lg:hidden w-full min-h-screen pb-24 bg-slate-100/60 font-sans">
           ${renderMobileTopBar(selectedProject)}
           
-          <main class="w-full">
+          <main class="planes-mobile-main w-full">
             ${(() => {
               if (mobileCurrentTab === 'inicio') {
                 return renderMobileInicioView(selectedProject);
