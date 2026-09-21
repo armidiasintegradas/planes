@@ -7281,9 +7281,42 @@
     // --- CHATGPT FAST CONVERSATIONAL ENGINE ---
     // Resposta de voz desativada a pedido do usuário - Apenas confirmação visual na tela
     function speakText(text) {
-      // Sem áudio falado: Confirmação 100% visual na tela
-      isSpeaking = false;
-      render();
+      if (!text || !('speechSynthesis' in window)) {
+        isSpeaking = false;
+        return;
+      }
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(
+          String(text)
+            .replace(/\*\*/g, '')
+            .replace(/[•✓]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+        );
+        utterance.lang = 'pt-BR';
+        utterance.rate = 0.98;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        if (bestPtVoice) utterance.voice = bestPtVoice;
+        utterance.onstart = () => {
+          isSpeaking = true;
+          render();
+        };
+        utterance.onend = () => {
+          isSpeaking = false;
+          render();
+        };
+        utterance.onerror = () => {
+          isSpeaking = false;
+          render();
+        };
+        isSpeaking = true;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('Speech synthesis indisponível:', e);
+        isSpeaking = false;
+      }
     }
 
     function stopSpeaking() {
@@ -7326,6 +7359,7 @@
           voiceRecognition.onstart = () => {
             isListening = true;
             liveTranscript = 'Ouvindo...';
+            showToast('🎤 Ouvindo seu comando…');
             render();
           };
 
@@ -7352,6 +7386,14 @@
           voiceRecognition.onerror = (e) => {
             console.warn('SpeechRec status:', e);
             isListening = false;
+            const code = e && e.error ? e.error : '';
+            if (code === 'not-allowed' || code === 'service-not-allowed') {
+              showToast('Microfone bloqueado. Autorize o acesso ao microfone nas permissões do navegador.');
+            } else if (code === 'no-speech') {
+              showToast('Não ouvi nenhum comando. Toque no microfone e tente novamente.');
+            } else if (code !== 'aborted') {
+              showToast('Não foi possível usar o reconhecimento de voz neste navegador.');
+            }
             render();
           };
 
@@ -7395,6 +7437,50 @@
       let responseText = '';
 
       assistantLog.unshift({ text: clean, sender: 'user', time: 'Agora' });
+
+      const navigationCommands = [
+        { terms: ['visão geral', 'inicio', 'início', 'dashboard'], target: 'Visão Geral' },
+        { terms: ['linha de balanço', 'linha'], target: 'Linha de Balanço' },
+        { terms: ['médio prazo', 'medio prazo', 'lookahead'], target: 'Médio Prazo (R4)' },
+        { terms: ['canteiro', '1-touch', 'campo'], target: 'Canteiro 1-Touch' },
+        { terms: ['validações', 'validacoes'], target: 'Fila de Validações' },
+        { terms: ['curva s', 'pac'], target: 'Curva S & PAC' },
+        { terms: ['suprimentos', 'compras'], target: 'Suprimentos' },
+        { terms: ['relatórios', 'relatorios'], target: 'Relatórios & Capa' },
+        { terms: ['galeria', 'fotos'], target: 'Galeria do Cliente' },
+        { terms: ['intelligence', 'copiloto', 'ia'], target: 'Planes Intelligence' }
+      ];
+
+      if (lower.startsWith('abrir ') || lower.startsWith('ir para ') || lower.startsWith('mostrar ')) {
+        const destination = navigationCommands.find(item => item.terms.some(term => lower.includes(term)));
+        if (destination) {
+          activeNav = destination.target;
+          mobileCurrentTab = 'modulo';
+          responseText = 'Abrindo ' + destination.target + '.';
+          assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
+          liveTranscript = '';
+          showToast(responseText);
+          speakText(responseText);
+          render();
+          return;
+        }
+      }
+
+      if (
+        lower.includes('analisar') ||
+        lower.includes('diagnóstico') ||
+        lower.includes('diagnostico') ||
+        lower.includes('prever') ||
+        lower.includes('risco de atraso') ||
+        lower.includes('qual o risco')
+      ) {
+        activeNav = 'Planes Intelligence';
+        mobileCurrentTab = 'modulo';
+        showToast('Planes Intelligence está analisando sua pergunta…');
+        speakText('Vou analisar os dados da obra.');
+        askPlanesIntelligence(clean);
+        return;
+      }
 
       if (lower.includes('agendar') || lower.includes('agenda') || lower.includes('marcar') || lower.includes('reunião') || lower.includes('concretagem') || lower.includes('vistoria')) {
         const titleClean = clean.replace(/^(agendar|marcar|adicionar evento|coloque na agenda|agenda)\s*/i, '');
@@ -7452,8 +7538,8 @@
 
       assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
       liveTranscript = '';
-      // Resposta por voz removida: apenas confirmação em tela
       showToast(responseText);
+      speakText(responseText);
       render();
     }
 
@@ -9539,14 +9625,13 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
     }
 
     function renderMobileIntelligenceView() {
-      const messages = [
-        { sender: 'assistant', text: 'Olá! Sou o Copiloto de Inteligência Lean da Planes OS. Analisei o Diário de Obra de hoje e o ritmo da Linha de Balanço. O avanço físico está em 61.8% (+1.8% adiantado). Em que posso ajudar?' },
-        { sender: 'user', text: 'Quais frentes de trabalho têm restrição ativa para os próximos 15 dias?' },
-        { sender: 'assistant', text: 'Identifiquei 2 restrições críticas:\n1. Área da Piscina: fornecimento de manta impermeabilizante (aguardando liberação de compra).\n2. Armadura Torre 3: ensaio tecnológico dos laudos de fck 30.\nRecomendo antecipar a liberação de suprimentos.' }
-      ];
+      const messages = (Array.isArray(intelligenceChatHistory) && intelligenceChatHistory.length
+        ? intelligenceChatHistory
+        : [{ sender: 'ai', text: 'Olá! Sou o Planes Intelligence. Como posso ajudar?', time: 'Agora' }]
+      ).slice(-12);
 
-      return `
-        <div class="p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
+      return 
+        <div class="planes-intelligence-mobile p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
           <!-- Header -->
           <div class="flex items-center justify-between">
             <div>
@@ -9566,21 +9651,21 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
             <button
               type="button"
-              onclick="showToast('🤖 IA: Analisando frentes de trabalho em risco...')"
+              onclick="askPlanesIntelligence('Quais frentes podem atrasar a entrega?')"
               class="px-3 py-1.5 bg-slate-900 text-white rounded-full text-[11px] font-bold shrink-0 ios-press-action cursor-pointer shadow-2xs"
             >
               ⚡ Frentes em Risco
             </button>
             <button
               type="button"
-              onclick="showToast('🤖 IA: Simulando recuperação do Takt da Arena...')"
+              onclick="askPlanesIntelligence('Quais ações recomenda para recuperar atrasos e proteger o Takt?')"
               class="px-3 py-1.5 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action cursor-pointer"
             >
               📈 Recuperar Atrasos
             </button>
             <button
               type="button"
-              onclick="showToast('🤖 IA: Gerando minuta executiva do relatório A4...')"
+              onclick="askPlanesIntelligence('Gere um resumo executivo da situação atual da obra para a diretoria.')"
               class="px-3 py-1.5 bg-white border border-slate-200 text-slate-800 rounded-full text-[11px] font-bold shrink-0 ios-press-action cursor-pointer"
             >
               📄 Resumo Executivo
@@ -9611,21 +9696,25 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
           <!-- Input Bar Fixa Inferior -->
           <div class="p-2 bg-white rounded-[18px] border border-slate-200 shadow-lg flex items-center gap-2">
             <input
+              id="intelligence-custom-input"
               type="text"
               placeholder="Pergunte ao Copiloto sobre a obra..."
+              onkeydown="if(event.key === 'Enter'){ event.preventDefault(); askPlanesIntelligence(); }"
               class="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              autocomplete="off"
             />
             <button
               type="button"
-              onclick="showToast('🎤 Gravando áudio do diário de obra...')"
+              onclick="toggleVoiceAssistant()"
               class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center ios-press-action shrink-0"
-              title="Gravar Áudio"
+              title="Comando de voz"
+              aria-label="Ativar comando de voz"
             >
-              🎙️
+              ${isListening ? '⏹️' : '🎙️'}
             </button>
             <button
               type="button"
-              onclick="showToast('🤖 IA: Processando pergunta...')"
+              onclick="askPlanesIntelligence()"
               class="w-9 h-9 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-bold text-xs ios-press-action shrink-0"
               title="Enviar"
             >
