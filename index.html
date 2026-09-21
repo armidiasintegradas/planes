@@ -2700,6 +2700,7 @@
     let realtimeVoiceStream = null;
     let realtimeVoiceAudioEl = null;
     let realtimeVoiceSessionStartedAt = null;
+    let realtimeVoiceHandledCalls = new Set();
 
     function getRealtimeVoiceStatusLabel() {
       const labels = {
@@ -8245,6 +8246,7 @@
       realtimeVoiceStream = null;
       realtimeVoiceAudioEl = null;
       realtimeVoiceSessionStartedAt = null;
+      realtimeVoiceHandledCalls = new Set();
       realtimeVoiceState = 'idle';
       isListening = false;
       isSpeaking = false;
@@ -8267,6 +8269,7 @@
         response: {
           input: [],
           output_modalities: ['audio'],
+          tool_choice: 'none',
           instructions: 'Diga exatamente esta frase em português brasileiro, com tom natural, simpático e breve: "' + phrase + '"'
         }
       });
@@ -8284,6 +8287,172 @@
       return sent;
     }
 
+    function getVoiceProjectSnapshot() {
+      const project = selectedProject || projectsList?.[0] || {};
+      const analysis = buildPlanesIntelligenceAnalysis('resumo executivo da obra');
+      return {
+        project: project.title || 'Projeto ativo',
+        location: project.location || null,
+        risk: analysis.risk,
+        priority: analysis.priority,
+        metrics: analysis.metrics
+      };
+    }
+
+    function getVoicePrioritySnapshot() {
+      const brief = getRoleScopedProactiveBrief();
+      return {
+        changes: (brief.changes || []).slice(0, 5).map(change => ({
+          type: change.type,
+          severity: change.severity,
+          text: change.text,
+          score: change.score
+        })),
+        primaryAction: brief.primaryAction || null
+      };
+    }
+
+    function getVoiceFollowUpSnapshot() {
+      const memory = getIntelligenceFollowUpState();
+      return {
+        pending: (memory.pending || []).slice(0, 5).map(item => ({
+          action: item.action,
+          label: item.label,
+          text: item.text,
+          at: item.at
+        })),
+        decisions: (memory.decisions || []).slice(0, 5)
+      };
+    }
+
+    function navigatePlanesFromVoice(module) {
+      const map = {
+        overview: 'Visão Geral',
+        balance_line: 'Linha de Balanço',
+        lookahead: 'Médio Prazo (R4)',
+        field: 'Canteiro 1-Touch',
+        validations: 'Fila de Validações',
+        pac: 'Curva S & PAC',
+        supplies: 'Suprimentos',
+        intelligence: 'Planes Intelligence',
+        reports: 'Relatórios & Capa',
+        gallery: 'Galeria do Cliente'
+      };
+      const target = map[module];
+      if (!target) return { ok: false, error: 'module_not_supported' };
+
+      activeNav = target;
+      if (window.innerWidth < 1024) {
+        mobileCurrentTab = target === 'Visão Geral' ? 'inicio' : target === 'Canteiro 1-Touch' ? 'campo' : 'modulo';
+      }
+      isMoreSheetOpen = false;
+      isProjectSwitcherOpen = false;
+      render();
+      showToast('Abrindo ' + target + '.');
+
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('voice_navigation', {
+          module: target,
+          topic: inferIntelligenceTopic(target),
+          mode: 'voice',
+          metadata: { module }
+        });
+      }
+      return { ok: true, opened: target };
+    }
+
+    async function executePlanesRealtimeTool(name, args = {}) {
+      switch (name) {
+        case 'get_project_overview': {
+          const analysis = buildPlanesIntelligenceAnalysis('resumo executivo da obra');
+          return {
+            answer: analysis.answer,
+            snapshot: getVoiceProjectSnapshot()
+          };
+        }
+        case 'get_pac_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('pac avanço progresso curva');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_supplies_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('suprimentos fornecedores entregas materiais');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_validations_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('validações medições fila');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_tasks_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('tarefas pendências prioridades');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_intelligence_priorities':
+          return getVoicePrioritySnapshot();
+        case 'get_followups':
+          return getVoiceFollowUpSnapshot();
+        case 'open_module':
+          return navigatePlanesFromVoice(String(args?.module || ''));
+        default:
+          return { ok: false, error: 'tool_not_implemented', name };
+      }
+    }
+
+    async function handleRealtimeVoiceFunctionCall(item) {
+      const callId = String(item?.call_id || '');
+      if (!callId || realtimeVoiceHandledCalls.has(callId)) return;
+      realtimeVoiceHandledCalls.add(callId);
+
+      let args = {};
+      try {
+        args = item?.arguments ? JSON.parse(item.arguments) : {};
+      } catch (e) {
+        args = {};
+      }
+
+      let result;
+      try {
+        result = await executePlanesRealtimeTool(String(item?.name || ''), args);
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('voice_tool_call', {
+            module: 'Planes Intelligence',
+            topic: String(item?.name || 'tool'),
+            mode: 'voice',
+            metadata: { tool: item?.name || '', ok: result?.ok !== false }
+          });
+        }
+      } catch (err) {
+        console.warn('Planes Realtime tool failure:', item?.name, err);
+        result = {
+          ok: false,
+          error: 'tool_execution_failed',
+          message: String(err?.message || err)
+        };
+      }
+
+      sendRealtimeVoiceEvent({
+        type: 'conversation.item.create',
+        item: {
+          type: 'function_call_output',
+          call_id: callId,
+          output: JSON.stringify(result)
+        }
+      });
+
+      sendRealtimeVoiceEvent({ type: 'response.create' });
+    }
+
     function handleRealtimeVoiceServerEvent(raw) {
       try {
         const event = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -8297,6 +8466,22 @@
           return;
         }
 
+        if (
+          type === 'response.output_item.done' &&
+          event?.item?.type === 'function_call'
+        ) {
+          handleRealtimeVoiceFunctionCall(event.item);
+          return;
+        }
+
+        if (
+          type === 'response.function_call_arguments.done' &&
+          event?.item?.type === 'function_call'
+        ) {
+          handleRealtimeVoiceFunctionCall(event.item);
+          return;
+        }
+
         if (type === 'response.created' || type.includes('response.output_audio')) {
           realtimeVoiceState = 'speaking';
           isListening = false;
@@ -8306,10 +8491,17 @@
         }
 
         if (type === 'response.done') {
-          realtimeVoiceState = 'listening';
-          isListening = true;
-          isSpeaking = false;
-          render();
+          const functionCalls = Array.isArray(event?.response?.output)
+            ? event.response.output.filter(item => item?.type === 'function_call')
+            : [];
+          functionCalls.forEach(item => handleRealtimeVoiceFunctionCall(item));
+
+          if (!functionCalls.length) {
+            realtimeVoiceState = 'listening';
+            isListening = true;
+            isSpeaking = false;
+            render();
+          }
           return;
         }
 
