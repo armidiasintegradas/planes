@@ -471,7 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
-<meta name="planes-iam-live-fix" content="2026-09-21-r4" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r5" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -3536,13 +3536,33 @@
           throw new Error(data?.error || error?.message || 'A aprovação não foi concluída.');
         }
 
+        const { data: confirmedRequest, error: confirmReqError } = await supabaseClient
+          .from('access_requests')
+          .select('id,user_id,status,reviewed_at,reviewed_by')
+          .eq('id', u.id)
+          .single();
+        if (confirmReqError || !confirmedRequest || confirmedRequest.status !== 'approved') {
+          throw new Error('O backend não confirmou a solicitação como aprovada.');
+        }
+
+        const { data: confirmedProfile, error: confirmProfileError } = await supabaseClient
+          .from('profiles')
+          .select('id,status,role,approved_at,approved_by')
+          .eq('id', confirmedRequest.user_id)
+          .single();
+        if (confirmProfileError || !confirmedProfile || confirmedProfile.status !== 'approved' || confirmedProfile.role !== productionRole) {
+          throw new Error('O backend não confirmou o perfil aprovado com o papel selecionado.');
+        }
+
         closeConfigAccessModal();
-        showToast(`✓ Acesso de ${u.name} aprovado como ${productionRole}.`);
         await fetchAdminIAMData(false);
         render();
+        showToast(`✓ Acesso de ${u.name} aprovado e confirmado pelo backend como ${productionRole}.`);
       } catch (err) {
         console.error('Falha ao aprovar acesso:', err);
         showToast('Erro ao aprovar: ' + (err?.message || 'falha no Supabase'));
+        await fetchAdminIAMData(false);
+        render();
       }
     }
 
@@ -3601,13 +3621,33 @@
           throw new Error(data?.error || error?.message || 'A recusa não foi concluída.');
         }
 
+        const { data: confirmedRequest, error: confirmReqError } = await supabaseClient
+          .from('access_requests')
+          .select('id,user_id,status,reviewed_at,reviewed_by,rejection_reason')
+          .eq('id', u.id)
+          .single();
+        if (confirmReqError || !confirmedRequest || confirmedRequest.status !== 'rejected') {
+          throw new Error('O backend não confirmou a solicitação como recusada.');
+        }
+
+        const { data: confirmedProfile, error: confirmProfileError } = await supabaseClient
+          .from('profiles')
+          .select('id,status,role')
+          .eq('id', confirmedRequest.user_id)
+          .single();
+        if (confirmProfileError || !confirmedProfile || confirmedProfile.status !== 'rejected') {
+          throw new Error('O backend não confirmou o perfil como recusado.');
+        }
+
         closeRejectReasonModal();
-        showToast(`Solicitação de ${u.name} recusada com sucesso.`);
         await fetchAdminIAMData(false);
         render();
+        showToast(`Solicitação de ${u.name} recusada e confirmada pelo backend.`);
       } catch (err) {
         console.error('Falha ao recusar solicitação:', err);
         showToast('Erro ao recusar: ' + (err?.message || 'falha no Supabase'));
+        await fetchAdminIAMData(false);
+        render();
       }
     }
 
