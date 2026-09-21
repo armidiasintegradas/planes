@@ -471,6 +471,7 @@
 <script type="module" src="./auth-gate-live.js?v=fe6b7f71079a"></script>
 <script type="module" src="./email-lifecycle-kick-live.js?v=fe6b7f71079a"></script>
 <!-- PLANES_AUTH_GATE_END -->
+<meta name="planes-iam-live-fix" content="2026-09-21-r2" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -2302,16 +2303,16 @@
     // PLANES OS — SUPABASE BACKEND CLIENT, REALTIME & PRESENCE ENGINE
     // =========================================================================
     window.PLANES_CONFIG = window.PLANES_CONFIG || {
-      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://odknhfcvuvjphxndtsqj.supabase.co',
-      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ka25oZmN2dXZqcGh4bmR0c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDM4NzQsImV4cCI6MjAyNTA3OTg3NH0.demo-placeholder'
+      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://xfgcbxppsbwmxwsuajou.supabase.co',
+      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS'
     };
 
     function isSupabaseConfigured() {
       const url = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseUrl ? window.PLANES_CONFIG.supabaseUrl : '';
       const key = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseAnonKey ? window.PLANES_CONFIG.supabaseAnonKey : '';
       if (!url || !key) return false;
-      if (key.indexOf('demo-placeholder') !== -1 || url.indexOf('odknhfcvuvjphxndtsqj') !== -1) return false;
-      if (!url.startsWith('https://') || !key.startsWith('ey')) return false;
+      if (!url.startsWith('https://')) return false;
+      if (!(key.startsWith('ey') || key.startsWith('sb_publishable_'))) return false;
       return true;
     }
 
@@ -2375,80 +2376,75 @@
     // Busca real de dados IAM no Supabase (Perfis, Solicitações e Notificações)
     async function fetchAdminIAMData(manual = false) {
       if (!supabaseClient) {
-        if (manual) showToast('✓ Sincronização concluída (Modo Local).');
+        initSupabaseClient();
+      }
+      if (!supabaseClient) {
+        if (manual) showToast('Não foi possível conectar ao Supabase de produção.');
         return;
       }
 
       try {
-        // 1. Busca perfis aprovados e ativos
         const { data: profs, error: profError } = await supabaseClient
-            .from('profiles')
-          .select('*')
-          .eq('is_active', true)
+          .from('profiles')
+          .select('id,full_name,email,avatar_url,status,role,created_at,approved_at')
           .order('created_at', { ascending: false });
+        if (profError) throw profError;
 
-        if (!profError && Array.isArray(profs)) {
-          registeredUsers = profs.map(p => ({
-            id: p.id,
-            auth_user_id: p.auth_user_id,
-            name: p.name,
-            email: p.email,
-            role: p.role_id,
-            level: p.role_id,
-            status: p.status === 'approved' ? 'Aprovado' : (p.status === 'suspended' ? 'Suspenso' : 'Pendente'),
-            avatar: p.avatar_url || (p.name ? p.name.slice(0, 2).toUpperCase() : 'US'),
-            company: p.company || 'Planes ENG',
-            department: p.department || 'Geral',
-            phone: p.phone,
-            created_at: p.created_at
-          }));
-        }
+        const profileMap = new Map((profs || []).map(p => [p.id, p]));
+        registeredUsers = (profs || []).map(p => ({
+          id: p.id,
+          auth_user_id: p.id,
+          name: p.full_name || p.email || 'Usuário',
+          email: p.email,
+          role: p.role || '',
+          role_id: p.role || '',
+          level: p.role || '',
+          status: p.status === 'approved' ? 'Aprovado' : (p.status === 'suspended' ? 'Suspenso' : (p.status === 'rejected' ? 'Rejeitado' : 'Pendente')),
+          avatar: p.avatar_url || ((p.full_name || p.email || 'US').slice(0, 2).toUpperCase()),
+          company: 'Planes OS',
+          department: 'Geral',
+          created_at: p.created_at
+        }));
 
-        // 2. Busca solicitações de acesso pendentes
         const { data: reqs, error: reqError } = await supabaseClient
-            .from('access_requests')
-          .select('*, profiles(*)')
+          .from('access_requests')
+          .select('id,user_id,status,requested_at,reviewed_at,rejection_reason,admin_notes')
           .eq('status', 'pending')
-          .order('created_at', { ascending: false });
+          .order('requested_at', { ascending: false });
+        if (reqError) throw reqError;
 
-        if (!reqError && Array.isArray(reqs)) {
-          pendingUsers = reqs.map(r => {
-            const pr = r.profiles || {};
-            return {
-              id: r.id,
-              userId: r.user_id,
-              name: pr.name || r.name || 'Novo Colaborador',
-              email: pr.email || r.email,
-              requestedLevel: r.requested_role || 'Engenharia',
-              role: r.requested_role || 'Engenharia',
-              provider: r.provider || 'Google',
-              status: 'Pendente',
-              company: pr.company || 'Planes ENG',
-              sector: pr.department || 'Geral',
-              phone: pr.phone,
-              reason: r.reason,
-              created_at: r.created_at,
-              requestDate: new Date(r.created_at).toLocaleDateString('pt-BR')
-            };
-          });
-        }
+        pendingUsers = (reqs || []).map(r => {
+          const pr = profileMap.get(r.user_id) || {};
+          return {
+            id: r.id,
+            userId: r.user_id,
+            name: pr.full_name || pr.email || 'Novo Colaborador',
+            email: pr.email || '',
+            requestedLevel: pr.role || 'Engenharia',
+            role: pr.role || 'Engenharia',
+            provider: 'Google',
+            status: 'Pendente',
+            company: 'Planes OS',
+            sector: 'Geral',
+            phone: '',
+            cpf: '',
+            rg: '',
+            created_at: r.requested_at,
+            date: new Date(r.requested_at).toLocaleString('pt-BR'),
+            requestDate: new Date(r.requested_at).toLocaleDateString('pt-BR')
+          };
+        });
 
-        // 3. Busca notificações administrativas não lidas
-        const { data: notifs, error: notifError } = await supabaseClient
-            .from('admin_notifications')
-          .select('*')
-          .is('read_at', null)
-          .order('created_at', { ascending: false });
-
-        if (!notifError && Array.isArray(notifs)) {
-          adminNotificationsList = notifs;
-          unreadAdminNotificationsCount = notifs.length;
-        }
+        // Remove cadastros fantasmas deixados pelo antigo modo LocalStorage.
+        try {
+          localStorage.removeItem('planes_pending_users');
+          localStorage.removeItem('planes_registered_users');
+        } catch (e) {}
 
         lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         if (manual) {
-          showToast(`✓ Dados sincronizados com o Supabase! (${registeredUsers.length} perfis ativos, ${pendingUsers.length} pendentes).`);
+          showToast(`✓ Supabase sincronizado: ${registeredUsers.length} perfis, ${pendingUsers.length} solicitações pendentes.`);
         }
 
         if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
@@ -2456,6 +2452,7 @@
         }
       } catch (err) {
         console.error('Erro na sincronização IAM do Supabase:', err);
+        if (manual) showToast('Falha ao sincronizar o IAM com o Supabase de produção.');
       }
     }
 
@@ -3492,90 +3489,55 @@
     }
 
     async function finalizeUserApproval(u, roleObj) {
-      // Coleta projetos selecionados
-      const allowedProjects = Array.from(document.querySelectorAll('input[name="config-allowed-project"]:checked')).map(cb => cb.value);
-      const allowedWorks = Array.from(document.querySelectorAll('input[name="config-allowed-work"]:checked')).map(cb => cb.value);
+      const roleMap = {
+        SUPER_ADMIN: 'super_admin',
+        ADMIN: 'admin',
+        DIRETORIA: 'gestor',
+        GERENCIA: 'gestor',
+        GERENTE: 'gestor',
+        ENGENHARIA: 'engenharia',
+        COORDENADOR_OBRA: 'campo',
+        CAMPO: 'campo',
+        FINANCEIRO: 'financeiro',
+        SUPRIMENTOS: 'gestor',
+        COMERCIAL: 'gestor',
+        RH: 'gestor',
+        COLABORADOR: 'campo',
+        CONSULTOR: 'cliente',
+        CLIENTE: 'cliente',
+        VISUALIZADOR: 'cliente'
+      };
+      const productionRole = roleMap[roleObj.id] || 'cliente';
 
-      // Coleta overrides
-      const overrides = {};
-      const permissionsArray = [];
-      if (document.getElementById('override-export-reports')?.checked) {
-        overrides['reports.export'] = 'allow';
-        permissionsArray.push({ permission_id: 'reports.export', override_type: 'allow' });
-      }
-      if (document.getElementById('override-financial-view')?.checked) {
-        overrides['financial.view'] = 'allow';
-        permissionsArray.push({ permission_id: 'financial.view', override_type: 'allow' });
-      }
-      if (document.getElementById('override-users-view')?.checked) {
-        overrides['users.view'] = 'allow';
-        permissionsArray.push({ permission_id: 'users.view', override_type: 'allow' });
-      }
-      if (document.getElementById('override-supplies-edit')?.checked) {
-        overrides['suppliers.edit'] = 'allow';
-        permissionsArray.push({ permission_id: 'suppliers.edit', override_type: 'allow' });
+      if (!supabaseClient) initSupabaseClient();
+      if (!supabaseClient || !u?.id) {
+        showToast('Não foi possível acessar o Supabase de produção.');
+        return;
       }
 
-      // 1. Supabase RPC Transacional
-      if (supabaseClient && u.id) {
-        showToast('Gravando aprovação no Supabase...');
-        try {
-          const { data, error } = await supabaseClient.rpc('approve_access_request', {
-            p_request_id: u.id,
-            p_role_id: roleObj.id,
-            p_projects: allowedProjects,
-            p_works: allowedWorks,
-            p_permissions: permissionsArray
-          });
-
-          if (error) {
-            console.error('Erro na stored procedure:', error);
-            showToast('Erro no banco: ' + error.message);
-          } else {
-            // Dispara Edge Function para envio de email real via Resend
-            try {
-              supabaseClient.functions.invoke('send-iam-email', {
-                body: {
-                  type: 'APPROVAL',
-                  to: u.email,
-                  name: u.name,
-                  roleName: roleObj.name,
-                  projects: allowedProjects
-                }
-              }).then(res => {
-                if (res.data && res.data.success) {
-                  showToast('✓ E-mail de liberação enviado via Resend!');
-                }
-              });
-            } catch (e) {}
+      showToast('Gravando aprovação no Supabase...');
+      try {
+        const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
+          body: {
+            requestId: u.id,
+            decision: 'approve',
+            role: productionRole,
+            projectIds: [],
+            workIds: []
           }
-        } catch (err) {
-          console.error('Falha ao acionar Supabase RPC:', err);
+        });
+        if (error || !data?.ok) {
+          throw new Error(data?.error || error?.message || 'A aprovação não foi concluída.');
         }
+
+        closeConfigAccessModal();
+        showToast(`✓ Acesso de ${u.name} aprovado como ${productionRole}.`);
+        await fetchAdminIAMData(false);
+        render();
+      } catch (err) {
+        console.error('Falha ao aprovar acesso:', err);
+        showToast('Erro ao aprovar: ' + (err?.message || 'falha no Supabase'));
       }
-
-      // 2. Atualização de estado local
-      const pIdx = pendingUsers.findIndex(x => String(x.id) === String(u.id));
-      if (pIdx !== -1) pendingUsers.splice(pIdx, 1);
-
-      u.status = 'Aprovado';
-      u.role_id = roleObj.id;
-      u.level = roleObj.name;
-      u.role = roleObj.name;
-      u.allowed_projects = allowedProjects.length > 0 ? allowedProjects : ['*'];
-      u.allowed_works = allowedWorks.length > 0 ? allowedWorks : ['*'];
-      u.user_permissions = overrides;
-      u.approvedAt = new Date().toISOString();
-      u.approvedBy = currentUser ? currentUser.name : 'Administrador Geral';
-
-      registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
-      registeredUsers.push(u);
-
-      closeConfigAccessModal();
-      showEmailPreviewModal(u, roleObj.name);
-      showToast(`✓ Acesso de ${u.name} APROVADO como "${roleObj.name}"!`);
-      if (supabaseClient) fetchAdminIAMData();
-      render();
     }
 
     // 11. Rejeição e Suspensão com Justificativa
@@ -3603,36 +3565,43 @@
 
     async function confirmRejectWithReason() {
       if (!currentRejectUserId) return;
-      const reason = document.getElementById('reject-reason-text')?.value.trim() || 'Solicitação não autorizada pela administração da Planes ENG.';
-      const idx = pendingUsers.findIndex(u => String(u.id) === String(currentRejectUserId) || (u.email && u.email.toLowerCase() === String(currentRejectUserId).toLowerCase()));
-      
-      if (idx !== -1) {
-        const u = pendingUsers.splice(idx, 1)[0];
-        u.status = 'Rejeitado';
-        u.rejection_reason = reason;
-        u.rejected_at = new Date().toISOString();
-        u.rejected_by = currentUser ? currentUser.name : 'Administrador';
+      const reason = document.getElementById('reject-reason-text')?.value.trim() || 'Solicitação não autorizada pela administração do Planes OS.';
+      const u = pendingUsers.find(x => String(x.id) === String(currentRejectUserId));
+      if (!u) {
+        closeRejectReasonModal();
+        await fetchAdminIAMData(false);
+        render();
+        return;
+      }
 
-        if (supabaseClient && u.id) {
-          try {
-            await supabaseClient.rpc('reject_access_request', {
-              p_request_id: u.id,
-              p_reason: reason
-            });
-            // Envia e-mail de recusa via Resend
-            supabaseClient.functions.invoke('send-iam-email', {
-              body: { type: 'REJECTION', to: u.email, name: u.name, reason: reason }
-            }).catch(() => {});
-          } catch (e) {}
+      if (!supabaseClient) initSupabaseClient();
+      if (!supabaseClient) {
+        showToast('Não foi possível acessar o Supabase de produção.');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
+          body: {
+            requestId: u.id,
+            decision: 'reject',
+            role: null,
+            projectIds: [],
+            workIds: [],
+            rejectionReason: reason
+          }
+        });
+        if (error || !data?.ok) {
+          throw new Error(data?.error || error?.message || 'A recusa não foi concluída.');
         }
-        
-        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id));
-        registeredUsers.push(u);
 
         closeRejectReasonModal();
-        showToast(`Solicitação de ${u.name} NÃO AUTORIZADA.`);
-        if (supabaseClient) fetchAdminIAMData();
+        showToast(`Solicitação de ${u.name} recusada com sucesso.`);
+        await fetchAdminIAMData(false);
         render();
+      } catch (err) {
+        console.error('Falha ao recusar solicitação:', err);
+        showToast('Erro ao recusar: ' + (err?.message || 'falha no Supabase'));
       }
     }
 
