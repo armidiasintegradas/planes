@@ -5914,12 +5914,61 @@
       return change;
     }
 
+    function personalizeProactiveChangeForHabits(change) {
+      if (!change) return null;
+
+      const habits = getIntelligenceHabitProfile();
+      const topTopic = normalizeIntelligenceRole(habits.topTopic);
+      const lastTopic = normalizeIntelligenceRole(habits.lastTopic);
+      const topModule = normalizeIntelligenceRole(habits.topModule);
+      const lastModule = normalizeIntelligenceRole(habits.lastModule);
+
+      const affinities = {
+        supplies: {
+          topics: ['suprimentos'],
+          modules: ['suprimentos']
+        },
+        validations: {
+          topics: ['validacoes'],
+          modules: ['fila de validacoes', 'validacoes']
+        },
+        tasks: {
+          topics: ['tarefas'],
+          modules: ['planes intelligence']
+        },
+        pac: {
+          topics: ['pac', 'riscos', 'executivo'],
+          modules: ['curva s & pac', 'visao geral', 'planes intelligence']
+        },
+        progress: {
+          topics: ['pac', 'riscos', 'executivo'],
+          modules: ['visao geral', 'curva s & pac', 'linha de balanco']
+        }
+      };
+
+      const affinity = affinities[change.type] || { topics: [], modules: [] };
+      let habitBoost = 0;
+
+      if (affinity.topics.includes(topTopic)) habitBoost += 18;
+      if (affinity.topics.includes(lastTopic)) habitBoost += 8;
+      if (affinity.modules.includes(topModule)) habitBoost += 14;
+      if (affinity.modules.includes(lastModule)) habitBoost += 6;
+
+      return {
+        ...change,
+        baseScore: Number(change.score || 0),
+        habitBoost,
+        score: Number(change.score || 0) + habitBoost
+      };
+    }
+
     function getRoleScopedProactiveBrief() {
       const audience = getIntelligenceAudience();
       const rawChanges = proactiveIntelligenceBrief?.changes || [];
       const changes = rawChanges
         .map(change => scopeProactiveChangeForAudience(change, audience))
         .filter(Boolean)
+        .map(change => personalizeProactiveChangeForHabits(change))
         .sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
 
       const primaryAction = getPrimaryProactiveAction(changes);
