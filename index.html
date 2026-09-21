@@ -2034,6 +2034,16 @@
     };
 
     
+    function getAvatarMarkup(avatar, name = '', classes = '') {
+      const value = String(avatar || '').trim();
+      const isUrl = /^https?:\/\//i.test(value);
+      if (isUrl) {
+        return `<img src="${value.replace(/"/g, '&quot;')}" alt="${(name || 'Avatar').replace(/"/g, '&quot;')}" class="w-full h-full object-cover rounded-[inherit] block" referrerpolicy="no-referrer" onerror="this.style.display='none';this.parentElement.textContent='${((name || 'US').split(/\s+/).map(p=>p[0]).join('').slice(0,2)||'US').toUpperCase()}'" />`;
+      }
+      const initials = (value || (name || 'US').split(/\s+/).map(p => p[0]).join('').slice(0, 2) || 'US').toUpperCase().slice(0, 3);
+      return initials;
+    }
+
     // VER / OCULTAR SENHA NO LOGIN
     function toggleShowPassword(inputId, btn) {
       const input = document.getElementById(inputId);
@@ -7989,7 +7999,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
               class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-black text-xs cursor-pointer ios-press-action shadow-2xs border border-white/20"
               title="Meu Perfil"
             >
-              ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+              ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
             </div>
           </div>
         </header>
@@ -10605,7 +10615,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                 <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
                   <div onclick="openEditProfileModal()" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition group" title="Editar Meu Perfil">
                     <div class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-extrabold text-xs group-hover:scale-105 transition">
-                      ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+                      ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
                     </div>
                     <div class="text-left hidden md:block">
                       <strong class="text-xs font-bold text-slate-900 block leading-tight group-hover:text-blue-950">${currentUser ? currentUser.name : 'Alex Ribeiro'}</strong>
@@ -10889,7 +10899,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                 <!-- User Profile & Quick Edit -->
                 <div class="flex items-center pl-2 xl:pl-3 border-l border-slate-200">
                   <div onclick="openEditProfileModal()" class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-extrabold text-xs cursor-pointer hover:ring-2 hover:ring-[#d4ff00] transition" title="Editar Meu Perfil">
-                    ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+                    ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
                   </div>
                 </div>
               </div>
@@ -10933,7 +10943,7 @@ Com base nos dados ativos do empreendimento **${selectedProject ? selectedProjec
                   <div class="p-3 bg-slate-50 hover:bg-slate-100/90 rounded-[16px] border border-slate-200 flex items-center justify-between gap-2 shadow-2xs transition group">
                     <div onclick="openEditProfileModal()" class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" title="Clique para Editar seu Perfil">
                       <div class="w-8 h-8 rounded-[10px] bg-[#0b2535] text-white font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:scale-105 transition">
-                        ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+                        ${getAvatarMarkup(currentUser?.avatar, currentUser?.name || 'Alex Ribeiro')}
                       </div>
                       <div class="truncate">
                         <strong class="text-xs font-bold text-slate-950 block leading-tight truncate group-hover:text-blue-950">${currentUser ? currentUser.name : 'Alex Ribeiro'}</strong>
@@ -13959,7 +13969,7 @@ ${activeNav === 'Equipe & Contatos' ? `
                               <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2.5">
                                   <div class="w-8 h-8 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-bold text-xs shrink-0">
-                                    ${u.avatar || 'US'}
+                                    ${getAvatarMarkup(u.avatar, u.name || u.email || 'Usuário')}
                                   </div>
                                   <div>
                                     <strong class="text-sm font-black text-slate-950 block">${u.name}</strong>
