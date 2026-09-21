@@ -461,7 +461,7 @@
 
 <!-- PLANES_AUTH_GATE_DISABLED: OAuth handled by canonical legacy SPA Supabase client -->
 
-<meta name="planes-iam-live-fix" content="2026-09-21-r12" />
+<meta name="planes-iam-live-fix" content="2026-09-21-r13" />
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -6758,73 +6758,79 @@
       }
     }
 
-    function deleteUser(userId) {
+    async function deleteUser(userId) {
       if (!userId) return;
       const strId = String(userId).toLowerCase();
-      const u = registeredUsers.find(x => String(x.id).toLowerCase() === strId || (x.email && x.email.toLowerCase() === strId) || (x.name && x.name.toLowerCase() === strId));
-      
+      const u = registeredUsers.find(x =>
+        String(x.id).toLowerCase() === strId ||
+        (x.email && x.email.toLowerCase() === strId) ||
+        (x.name && x.name.toLowerCase() === strId)
+      );
+
       if (!u) {
         showToast('Usuário não encontrado na base.');
         return;
       }
 
-      if (u.email && u.email.toLowerCase() === 'armidiasintegradas@gmail.com') {
+      if ((u.email || '').toLowerCase() === 'armidiasintegradas@gmail.com') {
         showToast('O Administrador Master não pode ser excluído.');
         return;
       }
 
-      if (confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email}) da base de dados?`)) {
+      if (!confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email})? Esta ação remove também o login e não pode ser desfeita.`)) {
+        return;
+      }
+
+      if (!supabaseClient) initSupabaseClient();
+      if (!supabaseClient) {
+        showToast('Não foi possível conectar ao Supabase de produção.');
+        return;
+      }
+
+      showToast(`Excluindo ${u.name} do Supabase...`);
+
+      try {
+        const { data, error } = await supabaseClient.functions.invoke('admin-delete-user', {
+          body: { userId: u.id }
+        });
+
+        if (error || !data?.ok) {
+          throw new Error(data?.error || error?.message || 'A exclusão não foi concluída.');
+        }
+
         const userEmail = (u.email || '').toLowerCase();
-        const userName = (u.name || '').toLowerCase();
         const userObjId = String(u.id || '').toLowerCase();
 
-        // 1. Grava na blacklist permanente de exclusão definitiva
+        registeredUsers = registeredUsers.filter(x =>
+          String(x.id || '').toLowerCase() !== userObjId &&
+          (x.email || '').toLowerCase() !== userEmail
+        );
+        pendingUsers = pendingUsers.filter(x =>
+          String(x.id || '').toLowerCase() !== userObjId &&
+          String(x.userId || '').toLowerCase() !== userObjId &&
+          (x.email || '').toLowerCase() !== userEmail
+        );
+        teamMembersList = teamMembersList.filter(x =>
+          String(x.id || '').toLowerCase() !== userObjId &&
+          (x.email || '').toLowerCase() !== userEmail
+        );
+
         try {
-          let blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
-          if (userEmail && !blacklist.includes(userEmail)) blacklist.push(userEmail);
-          if (userObjId && !blacklist.includes(userObjId)) blacklist.push(userObjId);
-          localStorage.setItem('planes_deleted_users_blacklist', JSON.stringify(blacklist));
-        } catch (e) {}
-
-        // 2. Remove de registeredUsers
-        registeredUsers = registeredUsers.filter(x => {
-          const xEmail = (x.email || '').toLowerCase();
-          const xId = String(x.id || '').toLowerCase();
-          const xName = (x.name || '').toLowerCase();
-          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
-        });
-
-        // 3. Remove de pendingUsers
-        pendingUsers = pendingUsers.filter(x => {
-          const xEmail = (x.email || '').toLowerCase();
-          const xId = String(x.id || '').toLowerCase();
-          return xEmail !== userEmail && xId !== userObjId;
-        });
-
-        // 4. Remove de teamMembersList
-        teamMembersList = teamMembersList.filter(x => {
-          const xEmail = (x.email || '').toLowerCase();
-          const xId = String(x.id || '').toLowerCase();
-          const xName = (x.name || '').toLowerCase();
-          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
-        });
-
-        // 5. Remove de online sessions
-        try {
+          localStorage.removeItem('planes_deleted_users_blacklist');
           const raw = localStorage.getItem('planes_online_sessions');
           if (raw) {
-            let sessions = JSON.parse(raw);
-            sessions = sessions.filter(s => (s.email || '').toLowerCase() !== userEmail);
+            const sessions = JSON.parse(raw).filter(s => (s.email || '').toLowerCase() !== userEmail);
             localStorage.setItem('planes_online_sessions', JSON.stringify(sessions));
           }
         } catch (e) {}
 
-        // Transmite exclusão para a nuvem para todos os dispositivos
-        broadcastCloudAction('USER_DELETE', { userEmail: userEmail, userId: userObjId, userName: u.name });
-
-        saveUsersStorage();
-        saveSessionState();
-        showToast(`✓ Usuário ${u.name} foi EXCLUÍDO PERMANENTEMENTE da base!`);
+        await fetchAdminIAMData(false);
+        render();
+        showToast(`✓ ${u.name} foi excluído do Supabase e não poderá mais entrar com essa conta até se cadastrar novamente.`);
+      } catch (err) {
+        console.error('Falha ao excluir usuário:', err);
+        showToast('Erro ao excluir usuário: ' + (err?.message || 'falha no Supabase'));
+        await fetchAdminIAMData(false);
         render();
       }
     }
