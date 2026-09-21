@@ -4974,24 +4974,67 @@
         status: 'Pendente'
       };
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
+      if (synced && isUuidLike(validationRecord.id)) newValidItem.id = validationRecord.id;
       showToast(synced ? '✓ Apontamento enviado e sincronizado para Validação.' : 'Apontamento salvo localmente; sincronização pendente.');
       setMobileTab('validar');
     }
 
-    function approveMobileValidation(id) {
+    async function approveMobileValidation(id) {
+      const item = Array.isArray(window.pendingValidationsList)
+        ? window.pendingValidationsList.find(entry => entry.id === id)
+        : null;
       if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(item => item.id !== id);
+        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
       }
-      showToast('✓ Medição de campo APROVADA pelo Responsável Técnico!');
       render();
+
+      if (!item) {
+        showToast('✓ Medição removida da fila local.');
+        return;
+      }
+
+      const validationRecord = {
+        id: item.id,
+        resp: item.author || item.resp || '',
+        cargo: item.cargo || 'Campo',
+        front: item.frente || item.front || '',
+        item: item.activity || item.item || 'Apontamento de campo',
+        qtd: item.volume || item.qtd || '',
+        data: item.time || item.data || 'Agora',
+        gps: item.gps || '',
+        status: 'Aprovado'
+      };
+      const ok = await persistValidationStatus(validationRecord, 'Aprovado');
+      showToast(ok ? '✓ Medição de campo APROVADA e sincronizada.' : 'Medição aprovada localmente; sincronização pendente.');
     }
 
-    function rejectMobileValidation(id) {
+    async function rejectMobileValidation(id) {
+      const item = Array.isArray(window.pendingValidationsList)
+        ? window.pendingValidationsList.find(entry => entry.id === id)
+        : null;
       if (Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(item => item.id !== id);
+        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
       }
-      showToast('⚠️ Medição devolvida para readequação no canteiro.');
       render();
+
+      if (!item) {
+        showToast('⚠️ Medição removida da fila local.');
+        return;
+      }
+
+      const validationRecord = {
+        id: item.id,
+        resp: item.author || item.resp || '',
+        cargo: item.cargo || 'Campo',
+        front: item.frente || item.front || '',
+        item: item.activity || item.item || 'Apontamento de campo',
+        qtd: item.volume || item.qtd || '',
+        data: item.time || item.data || 'Agora',
+        gps: item.gps || '',
+        status: 'Rejeitado'
+      };
+      const ok = await persistValidationStatus(validationRecord, 'Rejeitado');
+      showToast(ok ? '⚠️ Medição devolvida e sincronizada.' : 'Medição devolvida localmente; sincronização pendente.');
     }
 
 
@@ -6705,10 +6748,15 @@
       const proj = projectsList.find(p => p.id === projId);
       if (proj) {
         selectedProject = proj;
+        operationalProjectIdCache = null;
+        lastIntelligenceAnalysis = null;
         showToast(`✓ Explorando projeto: ${proj.title}`);
       }
       saveSessionState();
       render();
+      refreshIntelligenceOperationalData().then(() => {
+        if (activeNav === 'Planes Intelligence' || activeNav === 'Visão Geral') render();
+      });
     }
 
     function openNewProjectModal() {
@@ -6920,7 +6968,7 @@
       render();
     }
 
-    function applyExcelProjectUpdate() {
+    async function applyExcelProjectUpdate() {
       if (!excelDiffData) return;
 
       physicalProgress = 64.2;
@@ -6937,9 +6985,15 @@
       });
       projectVersions[1].status = 'Arquivado';
 
+      if (selectedProject) {
+        selectedProject.progress = physicalProgress;
+      }
       excelDiffData = null;
-      showToast('✓ Projeto atualizado com sucesso a partir da planilha! Avanço agora em 64.2%.');
       render();
+      const synced = await persistProjectMetrics();
+      showToast(synced
+        ? '✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.'
+        : 'Projeto atualizado localmente; sincronização operacional pendente.');
     }
 
     function cancelExcelDiff() {
@@ -8272,7 +8326,7 @@
           return false;
         }
       } else {
-        const { error } = await supabaseClient.from('project_validations').insert({
+        const { data, error } = await supabaseClient.from('project_validations').insert({
           project_id: projectId,
           responsible: validation.resp || '',
           role_title: validation.cargo || '',
@@ -8282,8 +8336,9 @@
           recorded_at_text: validation.data || '',
           gps: validation.gps || '',
           status
-        });
+        }).select('id').single();
         if (error) return false;
+        if (data?.id) validation.id = data.id;
       }
       trackUserHabit('operational_action', { module: 'Fila de Validações', topic: 'validacoes', mode: 'touch', metadata: { action: status } });
       return true;
@@ -9707,6 +9762,7 @@
       };
       render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
+      if (synced && isUuidLike(validationRecord.id)) newLog.id = validationRecord.id;
       showToast(synced
         ? `⚡ Apontamento de ${amount} ${unit} registrado e sincronizado.`
         : `Apontamento de ${amount} ${unit} salvo localmente; sincronização pendente.`);
@@ -10305,6 +10361,15 @@
     }
 
     function renderMobileIntelligenceView() {
+      const firstName = getPlanesUserFirstName();
+      if (
+        Array.isArray(intelligenceChatHistory) &&
+        intelligenceChatHistory[0] &&
+        intelligenceChatHistory[0].sender === 'ai' &&
+        !String(intelligenceChatHistory[0].text || '').startsWith('Oi, ' + firstName)
+      ) {
+        intelligenceChatHistory[0].text = 'Oi, ' + firstName + '. Sou o **Planes Intelligence**, seu copiloto de engenharia. Já estou acompanhando os dados da obra e seus padrões de uso para deixar nossa interação mais fluida.';
+      }
       const messages = (Array.isArray(intelligenceChatHistory) && intelligenceChatHistory.length
         ? intelligenceChatHistory
         : [{ sender: 'ai', text: 'Olá! Sou o Planes Intelligence. Como posso ajudar?', time: 'Agora' }]
@@ -12903,7 +12968,7 @@
                         </div>
                         <button
                           type="button"
-                          onclick="intelligenceChatHistory = [{ sender: 'ai', text: 'Histórico reiniciado. Como posso ajudar agora?', time: 'Agora' }]; render();"
+                          onclick="intelligenceChatHistory = [{ sender: 'ai', text: 'Oi, ' + getPlanesUserFirstName() + '. Histórico reiniciado. Como posso ajudar agora?', time: 'Agora' }]; render();"
                           class="text-xs text-slate-400 hover:text-slate-700 font-bold transition"
                         >
                           Limpar Histórico
