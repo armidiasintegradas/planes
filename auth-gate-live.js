@@ -12,7 +12,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'implicit',
+    flowType: 'pkce',
     experimental: { passkey: true },
   },
 });
@@ -76,58 +76,10 @@ function blockApp() {
   document.documentElement.classList.add('planes-auth-blocked');
 }
 
-let presenceChannel = null;
-
-async function ensurePresence(profile, user) {
-  try {
-    if (!profile || !user) return;
-    if (presenceChannel) {
-      await supabase.removeChannel(presenceChannel);
-      presenceChannel = null;
-    }
-    presenceChannel = supabase.channel('online-users', {
-      config: {
-        presence: {
-          key: profile.id || user.id || user.email
-        }
-      }
-    });
-    presenceChannel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await presenceChannel.track({
-          user_id: profile.id || user.id,
-          name: profile.full_name || profile.email || user.email || 'Usuário',
-          email: profile.email || user.email || '',
-          role: profile.role || 'cliente',
-          device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile Web' : 'Web Desktop',
-          module: 'Planes OS',
-          online_at: new Date().toISOString(),
-          last_seen: new Date().toISOString()
-        });
-      }
-    });
-  } catch (error) {
-    console.warn('Presence não pôde ser iniciada:', error?.message || error);
-  }
-}
-
-function allowApp(profile = null, user = null) {
+function allowApp(profile = null) {
   document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
   document.getElementById(ROOT_ID)?.remove();
-  window.dispatchEvent(new CustomEvent('planes-auth-approved', {
-    detail: {
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        app_metadata: user.app_metadata || {},
-        user_metadata: user.user_metadata || {}
-      } : null,
-      profile: profile || null
-    }
-  }));
-  if (profile && user) {
-    void ensurePresence(profile, user);
-  }
+  window.dispatchEvent(new CustomEvent('planes-auth-approved'));
   if (profile && ['super_admin', 'admin'].includes(profile.role)) {
     void mountAdminAccessConsole(profile);
   }
@@ -485,12 +437,12 @@ function renderPasskeyOffer(user, profile) {
       return;
     }
     localStorage.removeItem(PASSKEY_DISMISS_KEY);
-    allowApp(profile, user);
+    allowApp(profile);
   });
 
   node.querySelector('[data-passkey-later]')?.addEventListener('click', () => {
     localStorage.setItem(PASSKEY_DISMISS_KEY, '1');
-    allowApp(profile, user);
+    allowApp(profile);
   });
 }
 
@@ -540,7 +492,7 @@ async function evaluateSession(session) {
         return;
       }
     }
-    allowApp(profile, user);
+    allowApp(profile);
     return;
   }
   if (profile.status === 'pending') {
