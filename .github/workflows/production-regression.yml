@@ -74,6 +74,9 @@ jobs:
             fi
           done
 
+      - name: Validate authenticated runtime hydration in real browser
+        run: node tests/browser-auth-runtime-e2e.mjs
+
       - name: Run regression tests
         run: npm test
 
