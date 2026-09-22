@@ -68,13 +68,26 @@ async function main() {
   let cdp;
   try {
     const wsUrl = await waitForDebugger();
-    cdp = createCdp(wsUrl);
+    const runtimeExceptions = [];
+    const consoleErrors = [];
+    cdp = createCdp(wsUrl, (msg) => {
+      if (msg.method === 'Runtime.exceptionThrown') {
+        const ex = msg.params?.exceptionDetails || {};
+        runtimeExceptions.push({
+          text: ex.text || null,
+          url: ex.url || null,
+          lineNumber: ex.lineNumber,
+          columnNumber: ex.columnNumber,
+          description: ex.exception?.description || ex.exception?.value || null
+        });
+      }
+      if (msg.method === 'Runtime.consoleAPICalled' && msg.params?.type === 'error') {
+        consoleErrors.push((msg.params.args || []).map(a => a.value || a.description || '').join(' '));
+      }
+    });
     await cdp.ready;
     await cdp.call('Page.enable');
     await cdp.call('Runtime.enable');
-
-    const runtimeExceptions = [];
-    const originalOnMessage = cdp.onMessage;
     await cdp.call('Page.navigate', { url: 'https://armidiasintegradas.github.io/planes/' });
     await delay(7000);
 
@@ -125,7 +138,9 @@ async function main() {
           mainScriptPresent: !!mainScript,
           authRootPresent: !!document.getElementById('planes-auth-root'),
           bodyClass: document.body?.className || '',
-          htmlClass: document.documentElement?.className || ''
+          htmlClass: document.documentElement?.className || '',
+          runtimeExceptions: __RUNTIME_EXCEPTIONS__,
+          consoleErrors: __CONSOLE_ERRORS__
         };
       }
 
@@ -150,8 +165,12 @@ async function main() {
       };
     })()`;
 
+    const enrichedExpression = expression
+      .replace('__RUNTIME_EXCEPTIONS__', JSON.stringify(runtimeExceptions))
+      .replace('__CONSOLE_ERRORS__', JSON.stringify(consoleErrors));
+
     const result = await cdp.call('Runtime.evaluate', {
-      expression,
+      expression: enrichedExpression,
       awaitPromise: true,
       returnByValue: true
     });
