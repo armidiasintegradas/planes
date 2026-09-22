@@ -96,3 +96,18 @@ test('authenticated render repairs stale RBAC state instead of crashing', async 
   assert.match(html, /Array\.isArray\(rolePermissions\?\.\[accessLevel\]\)/);
   assert.match(html, /defaultRolePermissions\['Campo'\]/);
 });
+
+
+test('operational realtime state is initialized before subscriptions', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  const timerDecl = html.indexOf('let operationalRealtimeRefreshTimer = null;');
+  const firstSetup = html.indexOf('setupRealtimeSubscriptions();');
+
+  assert.ok(timerDecl >= 0, 'operational realtime timer declaration is missing');
+  assert.ok(firstSetup >= 0, 'initial setupRealtimeSubscriptions call is missing');
+  assert.ok(
+    timerDecl < firstSetup,
+    'operational realtime state must be initialized before setupRealtimeSubscriptions runs'
+  );
+});
