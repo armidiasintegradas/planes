@@ -76,12 +76,61 @@ function blockApp() {
   document.documentElement.classList.add('planes-auth-blocked');
 }
 
-function allowApp(profile = null) {
+function syncLegacyPlanesSession(user, profile) {
+  if (!user || !profile || profile.status !== 'approved') return false;
+
+  try {
+    const saved = localStorage.getItem('planes_active_session');
+    let existing = null;
+    try { existing = saved ? JSON.parse(saved) : null; } catch {}
+
+    const normalizedUser = {
+      id: profile.id || user.id,
+      auth_user_id: user.id,
+      name: profile.full_name || user.user_metadata?.full_name || user.user_metadata?.name || (profile.email || user.email || 'Usuário').split('@')[0],
+      email: profile.email || user.email || '',
+      role: profile.role || 'campo',
+      role_id: profile.role || 'campo',
+      level: profile.role || 'campo',
+      status: 'Aprovado',
+      avatar: profile.avatar_url || ((profile.full_name || user.user_metadata?.full_name || user.email || 'US').slice(0, 2).toUpperCase()),
+    };
+
+    const alreadyHydrated =
+      existing?.user?.id === normalizedUser.id &&
+      existing?.currentScreen &&
+      existing.currentScreen !== 'login';
+
+    localStorage.setItem('planes_active_session', JSON.stringify({
+      user: normalizedUser,
+      accessLevel: normalizedUser.level,
+      currentScreen: existing?.currentScreen && existing.currentScreen !== 'login' ? existing.currentScreen : 'projects',
+      activeNav: existing?.activeNav || 'Visão Geral',
+      selectedProjectId: existing?.selectedProjectId || null,
+    }));
+
+    return !alreadyHydrated;
+  } catch (error) {
+    console.warn('Planes auth bridge could not persist legacy session:', error);
+    return false;
+  }
+}
+
+function allowApp(profile = null, user = null) {
+  const shouldReloadLegacyApp = syncLegacyPlanesSession(user, profile);
+
   document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
   document.getElementById(ROOT_ID)?.remove();
-  window.dispatchEvent(new CustomEvent('planes-auth-approved'));
+  window.dispatchEvent(new CustomEvent('planes-auth-approved', {
+    detail: { user, profile }
+  }));
+
   if (profile && ['super_admin', 'admin'].includes(profile.role)) {
     void mountAdminAccessConsole(profile);
+  }
+
+  if (shouldReloadLegacyApp) {
+    window.setTimeout(() => window.location.reload(), 0);
   }
 }
 
@@ -437,12 +486,12 @@ function renderPasskeyOffer(user, profile) {
       return;
     }
     localStorage.removeItem(PASSKEY_DISMISS_KEY);
-    allowApp(profile);
+    allowApp(profile, user);
   });
 
   node.querySelector('[data-passkey-later]')?.addEventListener('click', () => {
     localStorage.setItem(PASSKEY_DISMISS_KEY, '1');
-    allowApp(profile);
+    allowApp(profile, user);
   });
 }
 
@@ -472,7 +521,7 @@ async function evaluateSession(session) {
   const user = session.user;
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id,email,status,role,approved_at')
+    .select('id,email,full_name,avatar_url,status,role,approved_at')
     .eq('id', user.id)
     .single();
 
@@ -492,7 +541,7 @@ async function evaluateSession(session) {
         return;
       }
     }
-    allowApp(profile);
+    allowApp(profile, user);
     return;
   }
   if (profile.status === 'pending') {
