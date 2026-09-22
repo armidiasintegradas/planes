@@ -99,104 +99,13 @@ function hydratePlanesFromSupabase(user, profile) {
     },
   };
 
+  // O runtime principal é a única fonte de verdade para aplicar identidade.
+  // Se ele ainda não terminou de carregar, o payload fica disponível em window
+  // e será consumido no fim do script principal.
   window.__PLANES_AUTH_BRIDGE_PAYLOAD__ = payload;
   window.dispatchEvent(new CustomEvent('planes-auth-payload-ready', {
     detail: payload
   }));
-
-  const script = document.createElement('script');
-  script.setAttribute('data-planes-auth-bridge', '1');
-  script.textContent = `
-    (() => {
-      let attempts = 0;
-      const applySupabaseIdentity = () => {
-        attempts += 1;
-        const bridge = window.__PLANES_AUTH_BRIDGE_PAYLOAD__;
-        if (!bridge || !bridge.user) return;
-
-        try {
-          if (typeof render !== 'function' || typeof currentUser === 'undefined' || typeof currentScreen === 'undefined') {
-            if (attempts < 1200) window.setTimeout(applySupabaseIdentity, 50);
-            return;
-          }
-
-          currentUser = bridge.user;
-          if (typeof accessLevel !== 'undefined') {
-            accessLevel = bridge.user.level || bridge.user.role || 'campo';
-          }
-
-          let savedUiState = null;
-          try {
-            const rawUiState = localStorage.getItem('planes_active_session');
-            savedUiState = rawUiState ? JSON.parse(rawUiState) : null;
-          } catch {}
-
-          if (savedUiState?.selectedProjectId && typeof selectedProjectId !== 'undefined') {
-            const desiredProjectId = savedUiState.selectedProjectId;
-            selectedProjectId = desiredProjectId;
-
-            const restoreDesiredProject = (attempt = 0) => {
-              try {
-                if (typeof projectsList === 'undefined' || !Array.isArray(projectsList) || typeof selectedProject === 'undefined') {
-                  if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
-                  return;
-                }
-
-                const restoredProject = projectsList.find((project) => project.id === desiredProjectId);
-                if (restoredProject) {
-                  selectedProjectId = desiredProjectId;
-                  selectedProject = restoredProject;
-                  if (typeof operationalProjectIdCache !== 'undefined') {
-                    operationalProjectIdCache = restoredProject.cloudId || null;
-                  }
-                  if (typeof render === 'function') render();
-                  return;
-                }
-
-                if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
-              } catch (error) {
-                if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
-              }
-            };
-
-            restoreDesiredProject();
-          }
-
-          if (savedUiState?.activeNav && typeof activeNav !== 'undefined') {
-            activeNav = savedUiState.activeNav;
-          }
-
-          if (currentScreen === 'login' || currentScreen === 'access_rejected' || currentScreen === 'access_suspended') {
-            const requestedScreen = savedUiState?.currentScreen;
-            currentScreen = requestedScreen === 'dashboard' || requestedScreen === 'projects'
-              ? requestedScreen
-              : 'projects';
-          }
-
-          if (typeof setupRealtimeSubscriptions === 'function') {
-            try { setupRealtimeSubscriptions(); } catch (error) { console.warn('Realtime hydrate warning:', error); }
-          }
-          if (typeof updateUserPresence === 'function') {
-            try { updateUserPresence(); } catch (error) {}
-          }
-          if (typeof broadcastPresenceHeartbeat === 'function') {
-            try { broadcastPresenceHeartbeat(); } catch (error) {}
-          }
-          if (typeof render === 'function') render();
-
-          window.dispatchEvent(new CustomEvent('planes-auth-legacy-hydrated', {
-            detail: bridge
-          }));
-        } catch (error) {
-          console.warn('Planes Supabase identity hydrate failed:', error);
-          if (attempts < 1200) window.setTimeout(applySupabaseIdentity, 50);
-        }
-      };
-      applySupabaseIdentity();
-    })();
-  `;
-  document.documentElement.appendChild(script);
-  script.remove();
 }
 
 function allowApp(profile = null, user = null) {
