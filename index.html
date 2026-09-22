@@ -7459,32 +7459,28 @@
         return;
       }
 
-      let badge = 'bg-blue-100 text-blue-900 border-blue-300';
-      if (status === 'No Canteiro') badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-      if (status === 'Em Transporte') badge = 'bg-amber-100 text-amber-900 border-amber-300';
-      if (status === 'Atrasado') badge = 'bg-rose-100 text-rose-900 border-rose-300';
-
       const newSupply = {
         id: Date.now(),
-        name, supplier, qtd, date: date || 'Programado', sector, status, badge
+        name,
+        supplier,
+        qtd,
+        date: date || 'Programado',
+        sector,
+        status
       };
-      suppliesList.unshift(newSupply);
-
-      closeAddSupplyModal();
-      render();
 
       const ok = await persistSupplyRecord(newSupply);
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Insumo "${name}" cadastrado e sincronizado.`);
+        showToast('Falha ao cadastrar o insumo no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) suppliesList = suppliesList.filter(item => item !== newSupply);
+      closeAddSupplyModal();
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao cadastrar o insumo no Supabase. O item provisório foi removido.');
+      showToast(`✓ Insumo "${name}" cadastrado e sincronizado.`);
     }
 
     function handleSupplyExcelUpload(event) {
@@ -7497,15 +7493,13 @@
           { id: Date.now()+2, name: 'Cabos Elétricos Cobre 4mm (Revisão Excel)', supplier: 'Prysmian Cabos', qtd: '1.200 Metros', date: 'Amanhã', sector: 'Arena Shows', status: 'Em Transporte', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
         ];
 
-        suppliesList.unshift(...imported);
-        render();
         const results = await Promise.all(imported.map(persistSupplyRecord));
         await refreshIntelligenceOperationalData();
         render();
 
         showToast(results.every(Boolean)
           ? `✓ 2 novos insumos importados e confirmados no Supabase a partir de "${file.name}".`
-          : 'A importação foi reconciliada: somente os registros confirmados no Supabase permaneceram.');
+          : 'Não foi possível sincronizar todos os insumos. Apenas registros confirmados no Supabase foram mantidos.');
       }, 700);
     }
 
@@ -7592,26 +7586,43 @@
       if (!file) return;
 
       showToast(`Comparando "${file.name}" com os dados atuais da obra...`);
-      setTimeout(() => {
+      setTimeout(async () => {
         const oldP = parseFloat(physicalProgress) || 61.8;
-        const newP = Math.min(100, (oldP + 2.4)).toFixed(1);
+        const oldTarget = selectedProject ? selectedProject.targetProgress : null;
+        const oldSpent = selectedProject ? selectedProject.spent : null;
+        const newP = Number(Math.min(100, oldP + 2.4).toFixed(1));
+        const newTarget = Number(Math.min(100, newP + 4.6).toFixed(1));
+
         physicalProgress = newP;
         if (selectedProject) {
           selectedProject.progress = newP;
-          selectedProject.targetProgress = Math.min(100, parseFloat(newP) + 4.6).toFixed(1);
+          selectedProject.targetProgress = newTarget;
           selectedProject.spent = 'R$ 15,3M';
         }
-        saveProjectsStorage();
+
+        const ok = await persistProjectMetrics();
+        if (!ok) {
+          physicalProgress = oldP;
+          if (selectedProject) {
+            selectedProject.progress = oldP;
+            selectedProject.targetProgress = oldTarget;
+            selectedProject.spent = oldSpent;
+          }
+          await refreshIntelligenceOperationalData();
+          render();
+          showToast('A planilha não foi aplicada porque o Supabase não confirmou a atualização.');
+          return;
+        }
 
         const newLog = {
           id: 'LOG-' + Date.now().toString().slice(-6),
           fileName: file.name,
-          author: 'Alex Ribeiro (Admin Master)',
+          author: currentUser?.name || 'Administrador',
           date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           prevProgress: oldP,
-          newProgress: parseFloat(newP),
-          progressDiff: '+2.4%',
-          prevSpent: 'R$ 14,8M',
+          newProgress: newP,
+          progressDiff: '+' + (newP - oldP).toFixed(1) + '%',
+          prevSpent: oldSpent || 'R$ 14,8M',
           newSpent: 'R$ 15,3M',
           forecastDiff: '-5 dias recuperados',
           status: 'Auditado & Aplicado',
@@ -7620,11 +7631,10 @@
 
         projectUpdateLogs.unshift(newLog);
         saveProjectLogsStorage();
-
+        saveProjectsStorage();
+        await refreshIntelligenceOperationalData();
         render();
-        persistProjectMetrics().then(ok => {
-          showToast(ok ? `✓ Planilha "${file.name}" aplicada e sincronizada. Novo avanço: ${newP}%.` : `Planilha aplicada localmente; sincronização pendente.`);
-        });
+        showToast(`✓ Planilha "${file.name}" aplicada e sincronizada. Novo avanço: ${newP}%.`);
       }, 900);
     }
 
@@ -7638,12 +7648,12 @@
           { id: Date.now()+1, name: 'Treliças Metálicas Modulares (Lote Extra)', supplier: 'Gerdau Aços', qtd: '18 Toneladas', date: 'Hoje', sector: 'Arena Shows', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { id: Date.now()+2, name: 'Pastilhas de Porcelana 20x20 Azul Cobalto', supplier: 'Portobello Shop', qtd: '450 m²', date: 'Amanhã', sector: 'Parque de Piscinas', status: 'Em Transporte', badge: 'bg-sky-100 text-sky-900 border-sky-300' }
         ];
-        suppliesList.unshift(...imported);
-        render();
         const results = await Promise.all(imported.map(persistSupplyRecord));
+        await refreshIntelligenceOperationalData();
+        render();
         showToast(results.every(Boolean)
           ? `✓ 2 novos insumos cadastrados e sincronizados a partir de "${file.name}".`
-          : `Insumos cadastrados localmente; parte da sincronização ficou pendente.`);
+          : `Não foi possível sincronizar todos os insumos. Apenas registros confirmados no Supabase foram mantidos.`);
       }, 700);
     }
 
@@ -8146,13 +8156,20 @@
       });
     }
 
-    function openProject(id) {
+    async function openProject(id) {
       const p = projectsList.find(x => x.id === id);
       if (p) {
         selectedProject = p;
+        operationalProjectIdCache = null;
+        projectIntelligenceContext = null;
         currentScreen = 'dashboard';
         showToast('Abrindo painel de ' + p.title + '...');
+        const refreshed = await refreshIntelligenceOperationalData();
+        if (supabaseClient) setupOperationalRealtime();
         render();
+        if (!refreshed && supabaseClient) {
+          showToast('Obra aberta. Dados operacionais aguardando sincronização.');
+        }
       }
     }
 
@@ -8290,44 +8307,45 @@
       }
     }
 
-    function submitFieldLog() {
+    async function submitFieldLog() {
       const front = document.getElementById('modal-front').value;
       const act = document.getElementById('modal-activity').value;
       const amt = document.getElementById('modal-amount').value;
       const unit = document.getElementById('modal-unit').value;
 
-      validations.unshift({
+      const validation = {
         id: Date.now(),
         resp: currentUser.name + ' (' + currentUser.level + ')',
         cargo: currentUser.role,
-        front: front,
+        front,
         item: act,
         qtd: amt + ' ' + unit,
         data: 'Agora mesmo',
         gps: 'Japaratinga - Coordenada GPS verificada',
         status: 'Pendente',
-        foto: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80',
-      });
+        foto: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80'
+      };
+
+      const ok = await persistValidationStatus(validation, 'Pendente');
+      if (!ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('Não foi possível enviar o apontamento. Verifique a conexão e tente novamente.');
+        return;
+      }
 
       closeLogModal();
-      showToast(amt + ' ' + unit + ' de ' + act + ' enviados para a Engenharia!');
+      await refreshIntelligenceOperationalData();
       render();
+      showToast(amt + ' ' + unit + ' de ' + act + ' enviados e sincronizados com a Engenharia.');
     }
 
-    function approveItem(id) {
-      const it = validations.find(v => v.id === id);
-      validations = validations.filter(v => v.id !== id);
-      physicalProgress = Number((physicalProgress + 0.6).toFixed(1));
-      financialSpent = Number((financialSpent + 0.15).toFixed(2));
-      showToast('✓ Medição de ' + (it ? it.item : 'item') + ' aprovada! Avanço: ' + physicalProgress + '%.');
-      render();
+    async function approveItem(id) {
+      return approveValidation(id);
     }
 
-    function rejectItem(id) {
-      const it = validations.find(v => v.id === id);
-      validations = validations.filter(v => v.id !== id);
-      showToast('Apontamento de ' + (it ? it.item : 'item') + ' devolvido para ajuste.');
-      render();
+    async function rejectItem(id) {
+      return rejectValidation(id);
     }
 
     // --- CHATGPT FAST CONVERSATIONAL ENGINE ---
