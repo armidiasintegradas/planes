@@ -4656,35 +4656,33 @@
         showToast('Solicitação não encontrada.');
         return;
       }
-
-      const finalRole = normalizeDatabaseRole(assignedLevel || u.requestedLevel || u.level || u.role);
-      if (!supabaseClient || navigator.onLine === false) {
-        showToast('Sem conexão com o Supabase. A aprovação não foi alterada.');
+      if (!supabaseClient || navigator.onLine === false || !currentUser?.id) {
+        showToast('Sem conexão/autorização para concluir esta aprovação.');
         return;
       }
 
-      const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
-        body: {
-          requestId: u.id,
-          decision: 'approve',
-          role: finalRole,
-          projectIds: [],
-          workIds: [],
-          adminNotes: 'Aprovado pelo painel administrativo do Planes OS.'
-        }
+      const finalRole = normalizeDatabaseRole(assignedLevel || u.requestedLevel || u.level || u.role);
+      const { data, error } = await supabaseClient.rpc('admin_review_access_request', {
+        p_actor_id: currentUser.id,
+        p_request_id: u.id,
+        p_decision: 'approve',
+        p_role: finalRole,
+        p_project_ids: [],
+        p_work_ids: [],
+        p_rejection_reason: null,
+        p_admin_notes: 'Aprovado pelo painel administrativo do Planes OS.'
       });
 
       if (error || !data?.ok) {
-        console.error('Falha ao aprovar acesso:', error || data);
-        showToast('Não foi possível concluir a aprovação.');
+        console.error('Falha ao aprovar solicitação via RPC:', error || data);
+        showToast('Não foi possível aprovar esta solicitação.');
         await fetchAdminIAMData();
         return;
       }
 
       await fetchAdminIAMData();
-      const userId = u.userId || u.auth_user_id;
-      const approved = registeredUsers.find(x => String(x.id) === String(userId)) || {
-        id: userId,
+      const approved = registeredUsers.find(x => String(x.id) === String(u.userId || u.auth_user_id)) || {
+        id: u.userId || u.auth_user_id,
         name: u.name,
         email: u.email,
         role: finalRole,
@@ -4692,7 +4690,7 @@
         status: 'Aprovado'
       };
       showEmailPreviewModal(approved, finalRole);
-      showToast(`✓ Acesso de ${approved.name || u.name} aprovado e sincronizado.`);
+      showToast(`✓ Acesso de ${approved.name || u.name} aprovado com perfil "${finalRole}".`);
       render();
     }
 
@@ -4706,24 +4704,32 @@
         showToast('Solicitação não encontrada.');
         return;
       }
-
-      if (!supabaseClient || navigator.onLine === false) {
-        showToast('Sem conexão com o Supabase. A solicitação não foi alterada.');
+      if (!supabaseClient || navigator.onLine === false || !currentUser?.id) {
+        showToast('Sem conexão/autorização para concluir esta rejeição.');
         return;
       }
 
-      const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
-        body: {
-          requestId: u.id,
-          decision: 'reject',
-          rejectionReason: 'Solicitação não aprovada pelo administrador.',
-          adminNotes: 'Rejeitado pelo painel administrativo do Planes OS.'
-        }
+      const reason = window.prompt('Motivo da rejeição:', 'Solicitação não aprovada pelo administrador.');
+      if (reason === null) return;
+      if (!String(reason).trim()) {
+        showToast('Informe o motivo da rejeição.');
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc('admin_review_access_request', {
+        p_actor_id: currentUser.id,
+        p_request_id: u.id,
+        p_decision: 'reject',
+        p_role: null,
+        p_project_ids: [],
+        p_work_ids: [],
+        p_rejection_reason: String(reason).trim(),
+        p_admin_notes: 'Revisado pelo painel administrativo do Planes OS.'
       });
 
       if (error || !data?.ok) {
-        console.error('Falha ao rejeitar acesso:', error || data);
-        showToast('Não foi possível concluir a rejeição.');
+        console.error('Falha ao rejeitar solicitação via RPC:', error || data);
+        showToast('Não foi possível rejeitar esta solicitação.');
         await fetchAdminIAMData();
         return;
       }
