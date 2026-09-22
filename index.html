@@ -18969,7 +18969,16 @@ ${activeNav === 'Equipe & Contatos' ? `
     }
 
     window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
-      if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;
+      if (!payload || !payload.user) return false;
+
+      const targetUserId = payload.user.auth_user_id || payload.user.id || null;
+      if (
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ &&
+        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId
+      ) {
+        window.__PLANES_AUTH_HYDRATED__ = true;
+        return true;
+      }
 
       try {
         const normalizedLevel = normalizeSupabaseAccessLevel(
@@ -19019,6 +19028,7 @@ ${activeNav === 'Equipe & Contatos' ? `
         }
 
         window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
+        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
         window.__PLANES_AUTH_HYDRATED__ = true;
 
         try { saveSessionState(); } catch (e) {}
