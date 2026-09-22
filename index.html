@@ -4368,6 +4368,24 @@
       }
     }
 
+    async function fetchProfileForAuthUser(userId, attempts = 4) {
+      if (!supabaseClient || !userId) return { data: null, error: new Error('profile_lookup_unavailable') };
+      let lastError = null;
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        if (!error && data) return { data, error: null };
+        lastError = error || new Error('profile_not_ready');
+        if (attempt < attempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300 + (attempt * 250)));
+        }
+      }
+      return { data: null, error: lastError };
+    }
+
     async function handleEmailLogin() {
       const emailInput = document.getElementById('login-email');
       const passInput = document.getElementById('login-pass');
@@ -4417,11 +4435,7 @@
 
           const authUser = authData.user;
           // Busca o perfil corporativo correspondente
-          const { data: profile, error: profError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
+          const { data: profile, error: profError } = await fetchProfileForAuthUser(authUser.id);
 
           if (profError || !profile) {
             console.warn('Perfil não encontrado no PostgreSQL, abrindo tela de aguardo.');
@@ -4463,8 +4477,8 @@
             role: profile.role,
             role_id: profile.role,
             level: profile.role,
-            company: profile.company || 'Planes ENG',
-            department: profile.department || 'Geral',
+            company: authUser.user_metadata?.company || 'Planes ENG',
+            department: authUser.user_metadata?.department || 'Geral',
             avatar: profile.avatar_url || (profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'US')
           };
           accessLevel = profile.role;
@@ -7945,19 +7959,23 @@
           const authUser = session.user;
           console.log('Sessão Supabase ativa detectada para:', authUser.email);
           
-          const { data: profile, error: profError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
+          const { data: profile, error: profError } = await fetchProfileForAuthUser(authUser.id);
 
-          if (!profError && profile) {
+          if (profError || !profile) {
+            console.warn('Perfil ainda indisponível após autenticação:', profError);
+            currentScreen = 'login';
+            render();
+            showToast('Login concluído, mas o perfil ainda está sincronizando. Tente entrar novamente.');
+            return;
+          }
+
+          if (profile) {
             if (profile.status === 'pending') {
               currentPendingModalUser = {
                 name: profile.full_name || authUser.email.split('@')[0],
                 email: profile.email,
                 provider: 'OAuth',
-                requestedLevel: profile.role,
+                requestedLevel: profile.role || authUser.user_metadata?.requested_role || 'engenharia',
                 date: new Date(profile.created_at).toLocaleDateString('pt-BR')
               };
               currentScreen = 'login';
@@ -7988,8 +8006,8 @@
                 role: profile.role,
                 role_id: profile.role,
                 level: profile.role,
-                company: profile.company || 'Planes ENG',
-                department: profile.department || 'Geral',
+                company: authUser.user_metadata?.company || 'Planes ENG',
+                department: authUser.user_metadata?.department || 'Geral',
                 avatar: profile.avatar_url || (profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'US')
               };
               accessLevel = profile.role;
@@ -7997,6 +8015,10 @@
               saveSessionState();
               setupRealtimeSubscriptions();
               kickPlanesTransactionalEmails(10);
+              try {
+                const cleanUrl = window.location.origin + window.location.pathname;
+                if (window.location.href !== cleanUrl) window.history.replaceState({}, document.title, cleanUrl);
+              } catch (e) {}
               render();
             }
           }
