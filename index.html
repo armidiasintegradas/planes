@@ -18953,8 +18953,98 @@ ${activeNav === 'Equipe & Contatos' ? `
       }
     }
 
+    function normalizeSupabaseAccessLevel(role) {
+      const key = String(role || '').trim().toLowerCase();
+      const map = {
+        super_admin: 'Admin',
+        admin: 'Admin',
+        gestor: 'Diretoria',
+        engenharia: 'Engenharia',
+        campo: 'Campo',
+        canteiro: 'Canteiro',
+        financeiro: 'Diretoria',
+        cliente: 'Cliente'
+      };
+      return map[key] || 'Campo';
+    }
+
+    function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
+      if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;
+
+      try {
+        const normalizedLevel = normalizeSupabaseAccessLevel(
+          payload.user.level || payload.user.role || payload.profile?.role
+        );
+
+        currentUser = {
+          ...payload.user,
+          level: normalizedLevel
+        };
+        accessLevel = normalizedLevel;
+
+        let savedUiState = null;
+        try {
+          const raw = localStorage.getItem('planes_active_session');
+          const parsed = raw ? JSON.parse(raw) : null;
+          savedUiState = parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (e) {}
+
+        activeNav = savedUiState?.activeNav || activeNav || 'Visão Geral';
+
+        const requestedScreen = savedUiState?.currentScreen;
+        currentScreen = requestedScreen === 'dashboard' || requestedScreen === 'projects'
+          ? requestedScreen
+          : 'projects';
+
+        if (savedUiState?.selectedProjectId) {
+          selectedProjectId = savedUiState.selectedProjectId;
+          const restoredProject = projectsList.find(project =>
+            project.id === selectedProjectId || project.cloudId === selectedProjectId
+          );
+          if (restoredProject) {
+            selectedProject = restoredProject;
+            selectedProjectId = restoredProject.id || selectedProjectId;
+            if (typeof operationalProjectIdCache !== 'undefined') {
+              operationalProjectIdCache = restoredProject.cloudId || null;
+            }
+          }
+        }
+
+        if (!selectedProject && Array.isArray(projectsList) && projectsList.length) {
+          selectedProject = projectsList[0];
+          selectedProjectId = selectedProject.id;
+          if (typeof operationalProjectIdCache !== 'undefined') {
+            operationalProjectIdCache = selectedProject.cloudId || null;
+          }
+        }
+
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
+        window.__PLANES_AUTH_HYDRATED__ = true;
+
+        try { saveSessionState(); } catch (e) {}
+        try { setupRealtimeSubscriptions(); } catch (e) {}
+        try { updateUserPresence(); } catch (e) {}
+        try { broadcastPresenceHeartbeat(); } catch (e) {}
+
+        render();
+
+        window.dispatchEvent(new CustomEvent('planes-auth-legacy-hydrated', {
+          detail: payload
+        }));
+
+        return true;
+      } catch (error) {
+        console.error('PLANES_INTERNAL_AUTH_APPLY_FAILED', error);
+        return false;
+      }
+    }
+
+    window.addEventListener('planes-auth-payload-ready', (event) => {
+      applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);
+    });
+
     restoreSessionState();
-    render();
+    if (!applySupabaseAuthPayload()) render();
   </script>
 
 <script id="planes-intelligence-v2-runtime">
