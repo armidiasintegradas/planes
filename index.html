@@ -4617,6 +4617,41 @@
       }
     }
 
+    async function fetchProfileForAuthUser(userId, attempts = 4) {
+      if (!supabaseClient || !userId) return { data: null, error: new Error('profile_lookup_unavailable') };
+      let lastError = null;
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        if (!error && data) return { data, error: null };
+        lastError = error || new Error('profile_not_ready');
+        if (attempt < attempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300 + (attempt * 250)));
+        }
+      }
+      return { data: null, error: lastError };
+    }
+
+    function mapProfileRoleToAccessLevel(role) {
+      const key = String(role || '').trim().toLowerCase();
+      const map = {
+        super_admin: 'Admin',
+        admin: 'Admin',
+        gestor: 'Diretoria',
+        diretoria: 'Diretoria',
+        engenharia: 'Engenharia',
+        campo: 'Campo',
+        canteiro: 'Canteiro',
+        cliente: 'Cliente',
+        financeiro: 'Engenharia',
+        suprimentos: 'Engenharia'
+      };
+      return map[key] || 'Campo';
+    }
+
     async function handleEmailLogin() {
       const emailInput = document.getElementById('login-email');
       const passInput = document.getElementById('login-pass');
@@ -4666,11 +4701,7 @@
 
           const authUser = authData.user;
           // Busca o perfil corporativo correspondente
-          const { data: profile, error: profError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('auth_user_id', authUser.id)
-            .single();
+          const { data: profile, error: profError } = await fetchProfileForAuthUser(authUser.id);
 
           if (profError || !profile) {
             console.warn('Perfil não encontrado no PostgreSQL, abrindo tela de aguardo.');
@@ -4681,10 +4712,10 @@
 
           if (profile.status === 'pending') {
             currentPendingModalUser = {
-              name: profile.name,
-              email: profile.email,
-              provider: profile.auth_provider || 'Email',
-              requestedLevel: profile.role_id,
+              name: profile.full_name || authUser.email.split('@')[0],
+              email: profile.email || authUser.email,
+              provider: 'Email',
+              requestedLevel: profile.role || authUser.user_metadata?.requested_role || 'engenharia',
               date: new Date(profile.created_at).toLocaleDateString('pt-BR')
             };
             showPendingStatusModal(currentPendingModalUser);
@@ -4704,19 +4735,21 @@
           }
 
           // Aprovado: carrega sessão
+          const resolvedAccessLevel = mapProfileRoleToAccessLevel(profile.role);
           currentUser = {
             id: profile.id,
-            auth_user_id: profile.auth_user_id,
-            name: profile.name,
-            email: profile.email,
-            role: profile.role_id,
-            role_id: profile.role_id,
-            level: profile.role_id,
-            company: profile.company || 'Planes ENG',
-            department: profile.department || 'Geral',
-            avatar: profile.avatar_url || (profile.name ? profile.name.slice(0, 2).toUpperCase() : 'US')
+            auth_user_id: profile.id,
+            name: profile.full_name || authUser.email.split('@')[0],
+            email: profile.email || authUser.email,
+            role: profile.role || 'campo',
+            role_id: profile.role || 'campo',
+            level: resolvedAccessLevel,
+            status: profile.status,
+            company: authUser.user_metadata?.company || 'Planes ENG',
+            department: authUser.user_metadata?.department || 'Geral',
+            avatar: profile.avatar_url || (profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'US')
           };
-          accessLevel = profile.role_id;
+          accessLevel = resolvedAccessLevel;
           currentScreen = 'projects';
           saveSessionState();
           setupRealtimeSubscriptions();
@@ -4725,16 +4758,6 @@
           return;
         } catch (err) {
           console.error('Erro na autenticação:', err);
-          const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
-          if (registered) {
-            currentUser = registered;
-            accessLevel = registered.level || registered.role || 'Campo';
-            currentScreen = 'projects';
-            showToast('✓ Bem-vindo(a), ' + registered.name + '! (Modo Offline)');
-            saveSessionState();
-            render();
-            return;
-          }
           showToast('Erro de conexão ao servidor de autenticação.');
           return;
         }
@@ -8292,19 +8315,23 @@
           const authUser = session.user;
           console.log('Sessão Supabase ativa detectada para:', authUser.email);
           
-          const { data: profile, error: profError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('auth_user_id', authUser.id)
-            .single();
+          const { data: profile, error: profError } = await fetchProfileForAuthUser(authUser.id);
 
-          if (!profError && profile) {
+          if (profError || !profile) {
+            console.warn('Perfil ainda indisponível após autenticação:', profError);
+            currentScreen = 'login';
+            render();
+            showToast('Login concluído, mas o perfil ainda está sincronizando. Tente entrar novamente.');
+            return;
+          }
+
+          if (profile) {
             if (profile.status === 'pending') {
               currentPendingModalUser = {
-                name: profile.name,
-                email: profile.email,
-                provider: profile.auth_provider || 'OAuth',
-                requestedLevel: profile.role_id,
+                name: profile.full_name || authUser.email.split('@')[0],
+                email: profile.email || authUser.email,
+                provider: 'OAuth',
+                requestedLevel: profile.role || authUser.user_metadata?.requested_role || 'engenharia',
                 date: new Date(profile.created_at).toLocaleDateString('pt-BR')
               };
               currentScreen = 'login';
@@ -8326,22 +8353,28 @@
             }
 
             if (profile.status === 'approved') {
+              const resolvedAccessLevel = mapProfileRoleToAccessLevel(profile.role);
               currentUser = {
                 id: profile.id,
-                auth_user_id: profile.auth_user_id,
-                name: profile.name,
-                email: profile.email,
-                role: profile.role_id,
-                role_id: profile.role_id,
-                level: profile.role_id,
-                company: profile.company || 'Planes ENG',
-                department: profile.department || 'Geral',
-                avatar: profile.avatar_url || (profile.name ? profile.name.slice(0, 2).toUpperCase() : 'US')
+                auth_user_id: profile.id,
+                name: profile.full_name || authUser.email.split('@')[0],
+                email: profile.email || authUser.email,
+                role: profile.role || 'campo',
+                role_id: profile.role || 'campo',
+                level: resolvedAccessLevel,
+                status: profile.status,
+                company: authUser.user_metadata?.company || 'Planes ENG',
+                department: authUser.user_metadata?.department || 'Geral',
+                avatar: profile.avatar_url || (profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'US')
               };
-              accessLevel = profile.role_id;
+              accessLevel = resolvedAccessLevel;
               currentScreen = 'projects';
               saveSessionState();
               setupRealtimeSubscriptions();
+              try {
+                const cleanUrl = window.location.origin + window.location.pathname;
+                if (window.location.href !== cleanUrl) window.history.replaceState({}, document.title, cleanUrl);
+              } catch (e) {}
               render();
             }
           }
@@ -8422,11 +8455,21 @@
       render();
     }
 
-    function doLogout() {
+    async function doLogout() {
+      try {
+        if (supabaseClient) {
+          const { error } = await supabaseClient.auth.signOut();
+          if (error) console.warn('Supabase signOut:', error);
+        }
+      } catch (e) {
+        console.warn('Falha ao encerrar sessão remota:', e);
+      }
+
       currentUser = null;
       currentScreen = 'login';
       try {
         localStorage.setItem('planes_active_session', 'logged_out');
+        localStorage.removeItem('planes_current_user');
       } catch (e) {}
       showToast('Sessão encerrada com segurança.');
       render();
