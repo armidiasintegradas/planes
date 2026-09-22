@@ -4735,27 +4735,8 @@
         }
       }
 
-      // Fallback local
-      const newPending = {
-        id: 'usr-' + Date.now(),
-        name,
-        email,
-        phone,
-        job_title: jobTitle,
-        company,
-        department,
-        city,
-        requestedLevel: reqRole,
-        role: reqRole,
-        reason,
-        provider: 'Email',
-        status: 'Pendente',
-        date: new Date().toLocaleDateString('pt-BR')
-      };
-      pendingUsers.unshift(newPending);
-      closeRegisterModal();
-      showPendingStatusModal(newPending);
-      showToast('✓ Cadastro enviado para análise do Administrador!');
+      showToast('Cadastro indisponível sem conexão com o serviço de autenticação.');
+      return;
     }
 
     function normalizeDatabaseRole(value) {
@@ -8226,11 +8207,21 @@
       render();
     }
 
-    function doLogout() {
+    async function doLogout() {
+      try {
+        if (supabaseClient) {
+          const { error } = await supabaseClient.auth.signOut();
+          if (error) console.warn('Supabase signOut:', error);
+        }
+      } catch (e) {
+        console.warn('Falha ao encerrar sessão remota:', e);
+      }
+
       currentUser = null;
       currentScreen = 'login';
       try {
         localStorage.setItem('planes_active_session', 'logged_out');
+        localStorage.removeItem('planes_current_user');
       } catch (e) {}
       showToast('Sessão encerrada com segurança.');
       render();
