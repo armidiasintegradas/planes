@@ -115,8 +115,8 @@ jobs:
               r"\s*\}",
               re.S,
           )
-          pwa_v13 = '''
-          // PWA v13: o Service Worker gerencia a expiração dos caches antigos.
+          pwa_v14 = '''
+          // PWA v14: o Service Worker gerencia a expiração dos caches antigos.
           // Não apagar caches manualmente aqui; isso causava conflito com o SW ativo no iOS.
           if ('serviceWorker' in navigator) {
             let planesSwReloaded = false;
@@ -128,14 +128,14 @@ jobs:
             });
 
             window.addEventListener('load', () => {
-              navigator.serviceWorker.register('./sw.js?v=13').then(reg => {
+              navigator.serviceWorker.register('./sw.js?v=14').then(reg => {
                 reg.update();
               }).catch(() => {});
             });
           }'''
 
-          html, pwa_replacements = legacy_pwa.subn('\n' + pwa_v13, html, count=1)
-          if pwa_replacements == 0 and "./sw.js?v=13" not in html:
+          html, pwa_replacements = legacy_pwa.subn('\n' + pwa_v14, html, count=1)
+          if pwa_replacements == 0 and "./sw.js?v=14" not in html:
               raise SystemExit('PWA bootstrap is not v13; refusing to publish')
 
           # Expose the native runtime hydrator so the auth gate can call it directly.
@@ -207,13 +207,13 @@ jobs:
           grep -q 'legacy-auth-sanitizer-live.js?v=' site/index.html
           grep -q 'auth-gate-live.js?v=' site/index.html
           ! grep -q 'auth-runtime-bridge-live.js' site/index.html
-          grep -q "sw.js?v=13" site/index.html
+          grep -q "sw.js?v=14" site/index.html
           grep -q 'controllerchange' site/index.html
           grep -q 'window.applySupabaseAuthPayload = function applySupabaseAuthPayload' site/index.html
           grep -q 'email-lifecycle-kick-live.js?v=' site/index.html
           grep -q 'data-planes-legacy-auth-disabled' site/legacy-auth-sanitizer-live.js
           grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
-          grep -q "planes-os-v13" site/sw.js
+          grep -q "planes-os-v14" site/sw.js
           grep -q 'signInWithOAuth' site/auth-gate-live.js
           grep -q "provider: 'google'" site/auth-gate-live.js
           grep -q 'signInWithPassword' site/auth-gate-live.js
