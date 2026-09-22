@@ -43,3 +43,17 @@ test('admin review RPC stays behind private hardened implementation', async () =
   assert.match(migration, /security invoker/i);
   assert.match(migration, /revoke all on function public\.admin_review_access_request[\s\S]*from public, anon/i);
 });
+
+
+test('voice session requires validated Supabase user and server-side role', async () => {
+  const source = await readFile(
+    new URL('../supabase/functions/planes-voice-session/index.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(source, /auth\.getUser\(\)/);
+  assert.match(source, /voice_access_not_approved/);
+  assert.match(source, /serverPolicies/);
+  assert.doesNotMatch(source, /function getJwtSub/);
+  assert.doesNotMatch(source, /Preferir autorização persistida no servidor\. O payload do navegador é apenas fallback/);
+});
