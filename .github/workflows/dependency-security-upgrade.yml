@@ -1,0 +1,57 @@
+name: PLANES Dependency Security Upgrade
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - dependency-upgrade.request
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+
+      - name: Install secured dependency set
+        run: |
+          npm install --save-exact react@19.3.0 react-dom@19.3.0 react-server-dom-webpack@19.3.0 vinext@1.0.0-beta.11
+          npm install --save-dev --save-exact @cloudflare/vite-plugin@1.57.3 vite@8.3.0 wrangler@4.125.0
+
+      - name: Run regression tests
+        run: npm test
+
+      - name: Run production build
+        run: npm run build
+
+      - name: Audit dependency tree
+        shell: bash
+        run: |
+          npm audit --json > audit.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+          const meta = audit.metadata?.vulnerabilities || {};
+          console.log('AUDIT_METADATA=' + JSON.stringify(meta));
+          if ((meta.critical || 0) > 0 || (meta.high || 0) > 0) process.exit(1);
+          NODE
+
+      - name: Commit secured dependency lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git diff --cached --quiet && exit 0
+          git commit -m "security: upgrade vulnerable build dependencies"
+          git push origin HEAD:main
