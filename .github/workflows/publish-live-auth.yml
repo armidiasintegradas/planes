@@ -140,6 +140,26 @@ jobs:
           if pwa_replacements == 0 and "./sw.js?v=13" not in html:
               raise SystemExit('PWA bootstrap is not v13; refusing to publish')
 
+          # Expose the native runtime hydrator so the auth gate can call it directly.
+          html = html.replace(
+              "function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
+              "window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
+              1,
+          )
+          html = html.replace(
+              "applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
+              "window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
+              1,
+          )
+          html = html.replace(
+              "if (!applySupabaseAuthPayload()) render();",
+              "if (!window.applySupabaseAuthPayload()) render();",
+              1,
+          )
+
+          if "window.applySupabaseAuthPayload = function applySupabaseAuthPayload" not in html:
+              raise SystemExit('native runtime hydrator was not exposed')
+
           runtime_start = '<!-- PLANES_AUTH_RUNTIME_BRIDGE_START -->'
           runtime_end = '<!-- PLANES_AUTH_RUNTIME_BRIDGE_END -->'
           runtime_existing = re.compile(re.escape(runtime_start) + r'.*?' + re.escape(runtime_end), re.S)
@@ -178,6 +198,7 @@ jobs:
           grep -q 'auth-runtime-bridge-live.js?v=' site/index.html
           grep -q "sw.js?v=13" site/index.html
           grep -q 'controllerchange' site/index.html
+          grep -q 'window.applySupabaseAuthPayload = function applySupabaseAuthPayload' site/index.html
           grep -q 'email-lifecycle-kick-live.js?v=' site/index.html
           grep -q 'data-planes-legacy-auth-disabled' site/legacy-auth-sanitizer-live.js
           grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
