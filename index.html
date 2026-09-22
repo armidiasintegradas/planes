@@ -2748,6 +2748,28 @@
       }
     });
 
+    async function refreshPlanesAfterResume() {
+      if (!supabaseClient || navigator.onLine === false || !currentUser) return;
+      try {
+        operationalProjectIdCache = null;
+        await refreshIntelligenceOperationalData();
+        await hydrateUserProjectIntelligenceContext();
+        if (!operationalRealtimeChannel) setupOperationalRealtime();
+        setOperationalRealtimeStatus('Ao vivo');
+        render();
+      } catch (e) {
+        scheduleOperationalReconnect();
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshPlanesAfterResume();
+    });
+
+    window.addEventListener('focus', () => {
+      refreshPlanesAfterResume();
+    });
+
     function broadcastPresenceHeartbeat() {
       if (presenceChannel && currentUser) {
         presenceChannel.track({
@@ -8599,10 +8621,21 @@
           message: authorization.message || 'Este perfil não pode alterar estes dados operacionais.'
         };
       }
+      if (!supabaseClient || navigator.onLine === false) {
+        realtimeVoicePendingMutation = null;
+        setOperationalRealtimeStatus('Offline');
+        return {
+          ok: false,
+          error: 'operational_backend_unavailable',
+          message: 'Estou sem conexão com o Planes agora. Não vou preparar uma alteração que ainda não pode ser confirmada no servidor.'
+        };
+      }
       realtimeVoicePendingMutation = {
         kind,
         payload,
         summary,
+        projectCode: selectedProject?.id || null,
+        screen: typeof activeNav !== 'undefined' ? activeNav : null,
         createdAt: new Date().toISOString()
       };
       return {
@@ -8646,6 +8679,27 @@
       if (!confirmed) {
         realtimeVoicePendingMutation = null;
         return { ok: true, cancelled: true, message: 'Ação cancelada.' };
+      }
+
+      const createdAt = pending.createdAt ? new Date(pending.createdAt).getTime() : 0;
+      const pendingAgeMs = createdAt ? (Date.now() - createdAt) : 0;
+      const currentProjectCode = selectedProject?.id || null;
+      if ((pendingAgeMs && pendingAgeMs > 5 * 60 * 1000) || (pending.projectCode && currentProjectCode && pending.projectCode !== currentProjectCode)) {
+        realtimeVoicePendingMutation = null;
+        return {
+          ok: false,
+          error: 'stale_pending_action',
+          message: 'Essa confirmação expirou ou pertence a outra obra. Peça a ação novamente para eu usar o contexto atual.'
+        };
+      }
+
+      if (!supabaseClient || navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return {
+          ok: false,
+          error: 'operational_backend_unavailable',
+          message: 'Sem conexão com o Planes. A alteração não foi executada.'
+        };
       }
 
       const authorization = getVoiceMutationAuthorization(pending.kind);
