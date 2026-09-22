@@ -29,3 +29,17 @@ test('production source keeps Supabase-first auth hardening', async () => {
   assert.match(html, /persistSession:\s*true/);
   assert.match(html, /detectSessionInUrl:\s*true/);
 });
+
+
+test('admin review RPC stays behind private hardened implementation', async () => {
+  const migration = await readFile(
+    new URL('../supabase/migrations/20260922190320_harden_admin_review_rpc_private_impl.sql', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(migration, /private\.admin_review_access_request_impl/);
+  assert.match(migration, /security definer/i);
+  assert.match(migration, /create or replace function public\.admin_review_access_request/);
+  assert.match(migration, /security invoker/i);
+  assert.match(migration, /revoke all on function public\.admin_review_access_request[\s\S]*from public, anon/i);
+});
