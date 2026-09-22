@@ -7535,22 +7535,12 @@
         const newP = Number(Math.min(100, oldP + 2.4).toFixed(1));
         const newTarget = Number(Math.min(100, newP + 4.6).toFixed(1));
 
-        // Valores candidatos ficam fora da UI até o Supabase confirmar.
-        physicalProgress = newP;
-        if (selectedProject) {
-          selectedProject.progress = newP;
-          selectedProject.targetProgress = newTarget;
-          selectedProject.spent = 'R$ 15,3M';
-        }
-
-        const ok = await persistProjectMetrics();
+        const ok = await persistProjectMetrics({
+          physical_progress: newP,
+          target_progress: newTarget,
+          financial_spent_m: 15.3
+        });
         if (!ok) {
-          physicalProgress = oldP;
-          if (selectedProject) {
-            selectedProject.progress = oldP;
-            selectedProject.targetProgress = oldTarget;
-            selectedProject.spent = oldSpent;
-          }
           await refreshIntelligenceOperationalData();
           render();
           showToast('A planilha não foi aplicada porque o Supabase não confirmou a atualização.');
@@ -8693,20 +8683,16 @@
             await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'validation_update_failed' };
           } else {
-            physicalProgress = nextProgress;
-            if (selectedProject) selectedProject.progress = nextProgress;
-            const metricsOk = await persistProjectMetrics();
+            const metricsOk = await persistProjectMetrics({ physical_progress: nextProgress });
             if (metricsOk) {
               await refreshIntelligenceOperationalData();
               result = {
                 ok: true,
                 approved: validation.item,
                 front: validation.front,
-                physical_progress: physicalProgress
+                physical_progress: nextProgress
               };
             } else {
-              physicalProgress = beforeProgress;
-              if (selectedProject) selectedProject.progress = beforeProjectProgress;
               await persistValidationStatus(validation, 'Pendente');
               await refreshIntelligenceOperationalData();
               result = { ok: false, error: 'metrics_update_failed' };
@@ -16227,21 +16213,21 @@
                         <div class="grid grid-cols-4 gap-2">
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 1).toFixed(1)); showToast('✓ +1% registrado no Parque de Piscinas'); render();"
+                            onclick="updateFieldProgress(1, 'Parque de Piscinas')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +1%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 3).toFixed(1)); showToast('✓ +3% registrado no Parque de Piscinas'); render();"
+                            onclick="updateFieldProgress(3, 'Parque de Piscinas')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +3%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 5).toFixed(1)); showToast('✓ +5% registrado no Parque de Piscinas'); render();"
+                            onclick="updateFieldProgress(5, 'Parque de Piscinas')"
                             class="py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer text-center"
                           >
                             +5%
