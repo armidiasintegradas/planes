@@ -55,8 +55,95 @@
     }
     @media (max-width: 1023px) {
       .ios-blur-header {
-        padding-top: max(3.4rem, calc(env(safe-area-inset-top, 24px) + 0.6rem)) !important;
-        padding-bottom: 0.65rem !important;
+        padding-top: max(0.7rem, calc(env(safe-area-inset-top, 0px) + 0.7rem)) !important;
+        padding-bottom: 0.7rem !important;
+        background: #ffffff !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        isolation: isolate;
+        overflow: hidden;
+        contain: paint;
+        transform: translateZ(0);
+        z-index: 1000 !important;
+      }
+      .planes-mobile-shell {
+        position: relative;
+        isolation: isolate;
+        overflow-x: clip;
+      }
+      .planes-mobile-main {
+        position: relative;
+        z-index: 0;
+        isolation: isolate;
+        background: #f2f5f8;
+        min-height: calc(100dvh - 7rem);
+      }
+      .planes-mobile-main > * {
+        position: relative;
+        z-index: 0;
+      }
+
+      /* Safe-area belongs to the app chrome, not to <body>.
+         Prevents the iOS/PWA top inset from being counted twice. */
+      body {
+        padding-top: 0 !important;
+      }
+
+      .ios-blur-tabbar {
+        background: #ffffff !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        isolation: isolate;
+        contain: paint;
+        z-index: 900 !important;
+      }
+
+      .planes-mobile-sheet-overlay {
+        z-index: 1100 !important;
+        isolation: isolate;
+        overscroll-behavior: contain;
+      }
+
+      .planes-mobile-sheet-panel {
+        background: #ffffff !important;
+        padding-bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 1rem)) !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      [id$="-modal"].fixed.inset-0 {
+        z-index: 1200 !important;
+        isolation: isolate;
+      }
+
+      #toast {
+        left: 50% !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 5.75rem) !important;
+        transform: translateX(-50%);
+        width: min(26rem, calc(100vw - 1.5rem));
+        max-width: calc(100vw - 1.5rem) !important;
+        border-radius: 16px !important;
+        padding: 0.8rem 0.95rem !important;
+        z-index: 1300 !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        overflow-wrap: anywhere;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      #toast {
+        left: auto !important;
+        right: 1.5rem !important;
+        top: auto !important;
+        bottom: 1.5rem !important;
+        transform: none !important;
+        width: auto;
+        max-width: 26rem !important;
+        border-radius: 12px !important;
+        padding: 0.7rem 1rem !important;
       }
     }
     .ios-blur-tabbar {
@@ -451,6 +538,30 @@
   }
   </script>
 
+
+<style id="planes-intelligence-v2-styles">
+  .planes-intel-v2-overlay{position:fixed;inset:0;z-index:1400;background:#fff;display:none;color:#0f172a;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .planes-intel-v2-overlay.open{display:grid}
+  .planes-intel-v2-shell{display:grid;grid-template-columns:1fr;min-width:0;height:100dvh;background:#fff}
+  .planes-intel-v2-left,.planes-intel-v2-right{display:none}
+  .planes-intel-v2-center{display:flex;flex-direction:column;min-width:0;height:100dvh;background:#fff}
+  .planes-intel-v2-header{min-height:72px;padding:max(12px,env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}
+  .planes-intel-v2-back,.planes-intel-v2-close{width:44px;height:44px;border:0;background:transparent;border-radius:12px;font-size:24px;color:#07152b;display:grid;place-items:center}
+  .planes-intel-v2-heading{flex:1;min-width:0}.planes-intel-v2-heading small{display:block;color:#667085;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.planes-intel-v2-heading strong{display:block;font-size:20px;color:#07152b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .planes-intel-v2-persona{display:flex;align-items:center;gap:10px;padding:14px 16px 4px}.planes-intel-v2-avatar{width:50px;height:50px;border-radius:50%;background:#eef2f6;display:grid;place-items:center;font-weight:900;color:#07152b;font-size:18px}.planes-intel-v2-persona small{display:block;color:#667085;margin-top:2px}.planes-intel-v2-online{width:9px;height:9px;border-radius:50%;background:#12b76a}
+  .planes-intel-v2-chips{display:flex;gap:8px;overflow:auto;padding:8px 16px 12px;scrollbar-width:none}.planes-intel-v2-chip{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#eef6fb;color:#344054;font-size:11px;font-weight:800}.planes-intel-v2-chip.learning{background:#ecfdf3;color:#067647}
+  .planes-intel-v2-chat{flex:1;overflow:auto;padding:4px 16px 12px;display:flex;flex-direction:column;gap:10px}.planes-intel-v2-msg{max-width:84%;padding:11px 13px;border-radius:16px;background:#f2f4f7;font-size:14px;line-height:1.45}.planes-intel-v2-msg.user{margin-left:auto;background:#07152b;color:#fff}.planes-intel-v2-msg b{display:block;font-size:12px;margin-bottom:3px}
+  .planes-intel-v2-suggestions{display:grid;gap:1px;margin:0 16px 10px;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;background:#e2e8f0}.planes-intel-v2-suggestions button{min-height:50px;border:0;background:#fff;display:grid;grid-template-columns:24px 1fr 20px;align-items:center;text-align:left;padding:0 14px;font-weight:800;color:#07152b}
+  .planes-intel-v2-composer{display:grid;grid-template-columns:42px 1fr 54px;gap:7px;align-items:center;padding:10px 14px max(10px,env(safe-area-inset-bottom));border-top:1px solid #e2e8f0;background:#fff}.planes-intel-v2-composer>button{height:48px;border-radius:14px;border:1px solid #e2e8f0;background:#fff}.planes-intel-v2-inputwrap{display:grid;grid-template-columns:1fr 46px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}.planes-intel-v2-inputwrap input{height:48px;border:0;outline:0;padding:0 12px;min-width:0}.planes-intel-v2-inputwrap button{border:0;background:#07152b;color:#d4ff00;font-weight:900}.planes-intel-v2-mic{width:54px!important;height:54px!important;border-radius:50%!important;background:#07152b!important;color:#d4ff00!important;font-size:20px;border:5px solid #eef2f6!important}
+  .planes-intel-v2-switch{display:none;gap:6px}.planes-intel-v2-switch button{min-height:40px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;padding:0 12px;font-size:12px;font-weight:800}.planes-intel-v2-switch button.active{background:#07152b;color:#fff;border-color:#07152b}
+  @media(min-width:700px){
+    .planes-intel-v2-shell{grid-template-columns:180px minmax(360px,1fr) 300px}
+    .planes-intel-v2-left{display:flex;flex-direction:column;border-right:1px solid #e2e8f0;padding:22px 14px;background:#fbfcfd}.planes-intel-v2-brand{width:42px;height:42px;border-radius:12px;background:#07152b;color:#d4ff00;display:grid;place-items:center;font-size:24px;font-weight:900;margin-bottom:24px}.planes-intel-v2-nav{display:grid;gap:8px}.planes-intel-v2-nav button{min-height:46px;border:0;background:transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:0 12px;text-align:left;font-weight:800;color:#07152b}.planes-intel-v2-user{margin-top:auto;display:flex;align-items:center;gap:9px;border-top:1px solid #e2e8f0;padding-top:14px}.planes-intel-v2-user i{width:36px;height:36px;border-radius:50%;background:#07152b;color:#fff;display:grid;place-items:center;font-style:normal}.planes-intel-v2-user small{display:block;color:#667085}
+    .planes-intel-v2-back{display:none}.planes-intel-v2-header{padding:14px 18px;min-height:80px}.planes-intel-v2-heading strong{font-size:24px}.planes-intel-v2-switch{display:flex}.planes-intel-v2-persona{display:none}.planes-intel-v2-chips{padding:10px 24px 14px}.planes-intel-v2-chat{padding:10px 28px 16px}.planes-intel-v2-msg{max-width:72%}.planes-intel-v2-suggestions{grid-template-columns:repeat(3,1fr);gap:8px;background:transparent;border:0;margin:0 24px 14px}.planes-intel-v2-suggestions button{border:1px solid #e2e8f0;border-radius:14px;min-height:58px}.planes-intel-v2-composer{padding:12px 18px 16px}
+    .planes-intel-v2-right{display:flex;flex-direction:column;gap:14px;border-left:1px solid #e2e8f0;padding:18px 14px;background:#f8fafc;overflow:auto}.planes-intel-v2-panel{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:14px}.planes-intel-v2-panel h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#667085;margin:0 0 12px}.planes-intel-v2-context{display:grid;gap:10px}.planes-intel-v2-context div{display:grid;gap:2px}.planes-intel-v2-context span{font-size:11px;color:#667085}.planes-intel-v2-note{margin-top:12px;padding:10px;border-radius:12px;background:#f2f4f7;font-size:12px;line-height:1.4;color:#344054}.planes-intel-v2-actions{display:grid}.planes-intel-v2-actions button{min-height:48px;border:0;border-bottom:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:700;color:#07152b}.planes-intel-v2-actions button:last-child{border-bottom:0}.planes-intel-v2-tip{margin-top:auto;border-radius:18px;padding:14px;background:#efffd9;border:1px solid #d6f5a2}.planes-intel-v2-tip p{font-size:12px;line-height:1.45;color:#344054;margin:8px 0}.planes-intel-v2-tip button{border:0;background:transparent;color:#07152b;font-weight:900;padding:6px 0}
+  }
+  @media(min-width:1024px){.planes-intel-v2-shell{grid-template-columns:190px minmax(480px,1fr) 320px}}
+</style>
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -1560,7 +1671,7 @@
       </div>
     </div>
 
-    <div id="toast" class="hidden fixed top-5 right-5 z-50 bg-slate-950 text-white border border-slate-700 px-4 py-2.5 rounded-[10px] shadow-2xl flex items-center gap-2.5 text-xs font-semibold max-w-sm">
+    <div id="toast" class="hidden fixed bg-slate-950 text-white border border-slate-700 shadow-2xl flex items-center gap-2.5 text-xs font-semibold">
     <span class="w-2 h-2 rounded-full bg-[#d4ff00] shrink-0 animate-pulse"></span>
     <span id="toast-msg" class="leading-snug">Mensagem</span>
   </div>
@@ -2516,7 +2627,10 @@
     // Configuração dos Canais Supabase Realtime & Presence
     function setupRealtimeSubscriptions() {
       if (!supabaseClient) return;
-      if (currentUser) hydrateUserIntelligenceProfile();
+      if (currentUser) {
+        hydrateUserIntelligenceProfile();
+        hydrateAssistantPersona();
+      }
 
       // 1. Canal de Presença Realtime (ONLINE AGORA)
       if (presenceChannel) presenceChannel.unsubscribe();
@@ -2690,6 +2804,32 @@
     ];
     let liveTranscript = '';
 
+    // --- PLANES INTELLIGENCE REALTIME VOICE (WebRTC) ---
+    let realtimeVoiceState = 'idle'; // idle | connecting | listening | speaking | reconnecting | error
+    let realtimeVoicePc = null;
+    let realtimeVoiceDc = null;
+    let realtimeVoiceStream = null;
+    let realtimeVoiceAudioEl = null;
+    let realtimeVoiceSessionStartedAt = null;
+    let realtimeVoiceHandledCalls = new Set();
+    let realtimeVoicePendingMutation = null;
+
+    function getRealtimeVoiceStatusLabel() {
+      const labels = {
+        idle: 'Online',
+        connecting: 'Conectando',
+        listening: 'Ouvindo',
+        speaking: 'Falando',
+        reconnecting: 'Reconectando',
+        error: 'Fallback local'
+      };
+      return labels[realtimeVoiceState] || 'Online';
+    }
+
+    function isRealtimeVoiceActive() {
+      return ['connecting', 'listening', 'speaking', 'reconnecting'].includes(realtimeVoiceState);
+    }
+
     
     // BANCO DE FOTOS HD DA GALERIA DO CLIENTE
     let galleryPhotos = [
@@ -2841,11 +2981,21 @@
       }
     }
 
+    let toastHideTimer = null;
+
     function showToast(msg) {
       const t = document.getElementById('toast');
-      document.getElementById('toast-msg').innerText = msg;
+      const msgEl = document.getElementById('toast-msg');
+      if (!t || !msgEl) return;
+
+      msgEl.innerText = msg;
       t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3500);
+
+      if (toastHideTimer) clearTimeout(toastHideTimer);
+      toastHideTimer = setTimeout(() => {
+        t.classList.add('hidden');
+        toastHideTimer = null;
+      }, 3500);
     }
 
     function toggleMobileMenu() {
@@ -5914,12 +6064,61 @@
       return change;
     }
 
+    function personalizeProactiveChangeForHabits(change) {
+      if (!change) return null;
+
+      const habits = getIntelligenceHabitProfile();
+      const topTopic = normalizeIntelligenceRole(habits.topTopic);
+      const lastTopic = normalizeIntelligenceRole(habits.lastTopic);
+      const topModule = normalizeIntelligenceRole(habits.topModule);
+      const lastModule = normalizeIntelligenceRole(habits.lastModule);
+
+      const affinities = {
+        supplies: {
+          topics: ['suprimentos'],
+          modules: ['suprimentos']
+        },
+        validations: {
+          topics: ['validacoes'],
+          modules: ['fila de validacoes', 'validacoes']
+        },
+        tasks: {
+          topics: ['tarefas'],
+          modules: ['planes intelligence']
+        },
+        pac: {
+          topics: ['pac', 'riscos', 'executivo'],
+          modules: ['curva s & pac', 'visao geral', 'planes intelligence']
+        },
+        progress: {
+          topics: ['pac', 'riscos', 'executivo'],
+          modules: ['visao geral', 'curva s & pac', 'linha de balanco']
+        }
+      };
+
+      const affinity = affinities[change.type] || { topics: [], modules: [] };
+      let habitBoost = 0;
+
+      if (affinity.topics.includes(topTopic)) habitBoost += 18;
+      if (affinity.topics.includes(lastTopic)) habitBoost += 8;
+      if (affinity.modules.includes(topModule)) habitBoost += 14;
+      if (affinity.modules.includes(lastModule)) habitBoost += 6;
+
+      return {
+        ...change,
+        baseScore: Number(change.score || 0),
+        habitBoost,
+        score: Number(change.score || 0) + habitBoost
+      };
+    }
+
     function getRoleScopedProactiveBrief() {
       const audience = getIntelligenceAudience();
       const rawChanges = proactiveIntelligenceBrief?.changes || [];
       const changes = rawChanges
         .map(change => scopeProactiveChangeForAudience(change, audience))
         .filter(Boolean)
+        .map(change => personalizeProactiveChangeForHabits(change))
         .sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
 
       const primaryAction = getPrimaryProactiveAction(changes);
@@ -5992,6 +6191,67 @@
         console.warn('Planes Intelligence: resumo proativo não pôde ser atualizado.', err);
         return null;
       }
+    }
+
+    async function acknowledgeProactiveIntelligenceBrief(source = 'user_action') {
+      if (!supabaseClient || !currentUser || !currentUser.id) {
+        proactiveIntelligenceBrief = null;
+        return false;
+      }
+
+      const projectId = await getOperationalProjectId();
+      if (!projectId) {
+        proactiveIntelligenceBrief = null;
+        return false;
+      }
+
+      const current = buildCurrentOperationalSnapshot();
+      const acknowledgedAt = new Date().toISOString();
+
+      proactiveIntelligenceBrief = null;
+
+      if (projectIntelligenceContext) {
+        projectIntelligenceContext.lastSnapshot = current;
+        projectIntelligenceContext.lastSeenAt = acknowledgedAt;
+        saveLocalProjectIntelligenceContext(projectIntelligenceContext);
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from('user_project_intelligence_context')
+          .upsert({
+            user_id: currentUser.id,
+            project_id: projectId,
+            last_snapshot: current,
+            last_seen_at: acknowledgedAt,
+            updated_at: acknowledgedAt
+          }, { onConflict: 'user_id,project_id' });
+
+        if (error) {
+          console.warn('Planes Intelligence: não foi possível confirmar a leitura da prioridade.', error);
+          return false;
+        }
+
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('intelligence_acknowledged', {
+            module: 'Planes Intelligence',
+            topic: 'prioridade',
+            mode: 'touch',
+            metadata: { source }
+          });
+        }
+
+        return true;
+      } catch (err) {
+        console.warn('Planes Intelligence: falha ao confirmar a leitura da prioridade.', err);
+        return false;
+      }
+    }
+
+    async function analyzeProactiveIntelligenceChanges() {
+      await askPlanesIntelligence('O que mudou nesta obra desde minha última visita?');
+      await acknowledgeProactiveIntelligenceBrief('analyze_changes');
+      render();
     }
 
     async function refreshOperationalRealtimeState() {
@@ -6182,6 +6442,7 @@
 
     function inferIntelligenceTopic(text) {
       const p = String(text || '').toLowerCase();
+      if (p.includes('depois') || p.includes('acompanhar') || p.includes('retomar') || p.includes('memória') || p.includes('memoria')) return 'memoria';
       if (p.includes('supr') || p.includes('fornecedor') || p.includes('material')) return 'suprimentos';
       if (p.includes('pac') || p.includes('avanço') || p.includes('avanco') || p.includes('curva')) return 'pac';
       if (p.includes('valid') || p.includes('medição') || p.includes('medicao')) return 'validacoes';
@@ -6207,10 +6468,10 @@
         localStorage.setItem('planes_intelligence_habits', JSON.stringify(store));
       } catch (e) {}
 
-      if (!supabaseClient || !currentUser || !currentUser.id) return;
+      if (!supabaseClient || !currentUser || !currentUser.id) return false;
 
       try {
-        await supabaseClient.from('user_behavior_events').insert({
+        const { error: behaviorError } = await supabaseClient.from('user_behavior_events').insert({
           user_id: currentUser.id,
           event_type: eventType,
           module: moduleName || null,
@@ -6218,9 +6479,10 @@
           interaction_mode: mode || null,
           metadata: details.metadata || {}
         });
+        if (behaviorError) throw behaviorError;
 
         const topMode = Object.entries(store.modeCounts || {}).sort((a,b) => b[1] - a[1])[0]?.[0] || mode || 'touch';
-        await supabaseClient.from('user_intelligence_profiles').upsert({
+        const { error: profileError } = await supabaseClient.from('user_intelligence_profiles').upsert({
           user_id: currentUser.id,
           module_counts: store.moduleCounts || {},
           topic_counts: store.topicCounts || {},
@@ -6229,10 +6491,14 @@
           total_interactions: store.totalInteractions || 0,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
+        if (profileError) throw profileError;
 
-        await persistUserProjectIntelligenceContext(eventType, details);
+        const contextPersisted = await persistUserProjectIntelligenceContext(eventType, details);
+        if (!contextPersisted) throw new Error('project_intelligence_context_not_persisted');
+        return true;
       } catch (err) {
         console.warn('Planes Intelligence: hábito salvo apenas localmente.', err);
+        return false;
       }
     }
 
@@ -6304,6 +6570,198 @@
         lastTopic: projectStore.lastTopic || null,
         recentActions: projectStore.recentActions || []
       };
+    }
+
+    function getIntelligenceFollowUpState() {
+      const context = projectIntelligenceContext || getLocalProjectIntelligenceContext();
+      const actions = Array.isArray(context.recentActions) ? context.recentActions : [];
+      const pending = new Map();
+      const decisions = [];
+
+      actions.forEach(item => {
+        if (!item || !item.type) return;
+        const metadata = item.metadata && typeof item.metadata === 'object' ? item.metadata : {};
+        const actionKey = String(metadata.action || metadata.label || item.topic || item.module || item.type);
+
+        if (item.type === 'intelligence_deferred') {
+          pending.set(actionKey, {
+            key: actionKey,
+            action: metadata.action || 'Abrir Planes Intelligence',
+            label: metadata.label || 'Acompanhamento pendente',
+            text: metadata.text || '',
+            changeType: metadata.changeType || item.topic || 'geral',
+            at: item.at || null
+          });
+          decisions.push({
+            kind: 'deferred',
+            label: 'Adiado para acompanhar',
+            detail: metadata.label || metadata.action || 'Prioridade do Intelligence',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'intelligence_followup_resumed') {
+          pending.delete(actionKey);
+          decisions.push({
+            kind: 'resumed',
+            label: 'Acompanhamento retomado',
+            detail: metadata.label || metadata.action || 'Prioridade do Intelligence',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'operational_action' && metadata.source === 'proactive_recommendation') {
+          pending.delete(String(metadata.action || actionKey));
+          decisions.push({
+            kind: 'action',
+            label: 'Ação executada',
+            detail: metadata.action || item.module || 'Ação recomendada',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'intelligence_acknowledged') {
+          const source = String(metadata.source || '');
+          if (source.startsWith('priority_action:')) {
+            pending.delete(source.replace('priority_action:', ''));
+          }
+          decisions.push({
+            kind: 'acknowledged',
+            label: source === 'analyze_changes' ? 'Mudanças analisadas' : 'Prioridade revisada',
+            detail: source.startsWith('priority_action:') ? source.replace('priority_action:', '') : 'Planes Intelligence',
+            at: item.at || null
+          });
+          return;
+        }
+
+        if (item.type === 'intelligence_query') {
+          decisions.push({
+            kind: 'query',
+            label: 'Consulta ao Intelligence',
+            detail: item.topic || 'Análise operacional',
+            at: item.at || null
+          });
+        }
+      });
+
+      return {
+        pending: Array.from(pending.values()).slice(-4).reverse(),
+        decisions: decisions.slice(-5).reverse()
+      };
+    }
+
+    function formatIntelligenceMemoryTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    async function deferProactiveIntelligenceBrief() {
+      const brief = getRoleScopedProactiveBrief();
+      const primary = brief.primaryAction || brief.changes?.[0] || null;
+      if (!primary) {
+        showToast('Nenhuma prioridade disponível para acompanhar.');
+        return;
+      }
+
+      await trackUserHabit('intelligence_deferred', {
+        module: 'Planes Intelligence',
+        topic: primary.type || 'prioridade',
+        mode: 'touch',
+        metadata: {
+          action: primary.action || 'Abrir Planes Intelligence',
+          label: primary.label || primary.text || 'Prioridade do Intelligence',
+          changeType: primary.type || 'geral',
+          text: primary.text || ''
+        }
+      });
+
+      await acknowledgeProactiveIntelligenceBrief('deferred:' + (primary.action || 'Planes Intelligence'));
+      showToast('Salvei esta prioridade em Para acompanhar.');
+      render();
+    }
+
+    async function resumeIntelligenceFollowUp(action, label) {
+      await trackUserHabit('intelligence_followup_resumed', {
+        module: 'Planes Intelligence',
+        topic: 'acompanhamento',
+        mode: 'touch',
+        metadata: {
+          action: action || 'Abrir Planes Intelligence',
+          label: label || action || 'Prioridade do Intelligence'
+        }
+      });
+      openIntelligenceAction(action || 'Abrir Planes Intelligence');
+    }
+
+    function renderIntelligenceMemoryFeed(compact = false) {
+      const state = getIntelligenceFollowUpState();
+      if (!state.pending.length && !state.decisions.length) return '';
+
+      const pendingHtml = state.pending.length ? `
+        <div class="${compact ? 'space-y-2' : 'space-y-2.5'}">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[10px] font-black uppercase tracking-wider text-amber-700">Para acompanhar</p>
+            <span class="text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">${state.pending.length}</span>
+          </div>
+          ${state.pending.map(item => `
+            <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-2.5">
+              <p class="text-[11px] font-black text-slate-900">${item.label}</p>
+              ${item.text ? `<p class="text-[10px] text-slate-600 mt-0.5 leading-snug">${item.text}</p>` : ''}
+              <div class="mt-2 flex items-center justify-between gap-2">
+                <span class="text-[9px] text-slate-500 font-mono">${formatIntelligenceMemoryTime(item.at)}</span>
+                <button
+                  type="button"
+                  onclick="resumeIntelligenceFollowUp('${String(item.action).replace(/'/g, "\\'")}', '${String(item.label).replace(/'/g, "\\'")}')"
+                  class="px-2.5 py-1.5 rounded-lg bg-slate-950 text-white text-[9.5px] font-black ios-press-action"
+                >
+                  Retomar →
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const decisionsHtml = state.decisions.length ? `
+        <div class="${state.pending.length ? 'mt-3 pt-3 border-t border-slate-200' : ''}">
+          <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Decisões recentes</p>
+          <div class="space-y-1.5">
+            ${state.decisions.slice(0, compact ? 3 : 5).map(item => `
+              <div class="flex items-start justify-between gap-3 text-[10px]">
+                <div class="min-w-0">
+                  <p class="font-black text-slate-800">${item.label}</p>
+                  <p class="text-slate-500 truncate">${item.detail}</p>
+                </div>
+                <span class="text-[8.5px] text-slate-400 font-mono shrink-0">${formatIntelligenceMemoryTime(item.at)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
+      return `
+        <section class="${compact ? 'rounded-[18px] p-3.5' : 'rounded-[20px] p-4'} bg-white border border-slate-200 shadow-2xs">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">↺</div>
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-wider text-slate-500">Memória de decisões</p>
+              <p class="text-[11px] font-black text-slate-900">Seu histórico nesta obra</p>
+            </div>
+          </div>
+          ${pendingHtml}
+          ${decisionsHtml}
+        </section>
+      `;
     }
 
     function personalizeIntelligenceAnswer(answer) {
@@ -7855,7 +8313,1076 @@
     }
 
     // --- CHATGPT FAST CONVERSATIONAL ENGINE ---
-    // Resposta de voz desativada a pedido do usuário - Apenas confirmação visual na tela
+    // O Web Speech API permanece apenas como fallback. A experiência principal usa WebRTC Realtime.
+
+    function sameLocalDay(value) {
+      if (!value) return false;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return false;
+      return d.toLocaleDateString('pt-BR') === new Date().toLocaleDateString('pt-BR');
+    }
+
+    function shouldSendDailyPersonaGreeting() {
+      return !!getAssistantPersona() && !sameLocalDay(currentUser?.assistant_last_daily_greeting_at);
+    }
+
+    async function markDailyPersonaGreetingUsed() {
+      if (!currentUser?.id) return;
+      const now = new Date().toISOString();
+      currentUser.assistant_last_daily_greeting_at = now;
+      saveSessionState();
+      if (!supabaseClient) return;
+      try {
+        await supabaseClient
+          .from('profiles')
+          .update({ assistant_last_daily_greeting_at: now, updated_at: now })
+          .eq('id', currentUser.id);
+      } catch (err) {
+        console.warn('Planes Voice: saudação diária registrada apenas localmente.', err);
+      }
+    }
+
+    function setRealtimeVoiceState(state) {
+      realtimeVoiceState = state;
+      isListening = state === 'listening';
+      isSpeaking = state === 'speaking';
+      render();
+    }
+
+    function cleanupRealtimeVoice() {
+      try {
+        if (realtimeVoiceDc && realtimeVoiceDc.readyState === 'open') {
+          realtimeVoiceDc.close();
+        }
+      } catch (e) {}
+      try {
+        if (realtimeVoicePc) realtimeVoicePc.close();
+      } catch (e) {}
+      try {
+        if (realtimeVoiceStream) realtimeVoiceStream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+      try {
+        if (realtimeVoiceAudioEl) {
+          realtimeVoiceAudioEl.pause();
+          realtimeVoiceAudioEl.srcObject = null;
+          realtimeVoiceAudioEl.remove();
+        }
+      } catch (e) {}
+      realtimeVoicePc = null;
+      realtimeVoiceDc = null;
+      realtimeVoiceStream = null;
+      realtimeVoiceAudioEl = null;
+      realtimeVoiceSessionStartedAt = null;
+      realtimeVoiceHandledCalls = new Set();
+      realtimeVoicePendingMutation = null;
+      realtimeVoiceState = 'idle';
+      isListening = false;
+      isSpeaking = false;
+    }
+
+    function sendRealtimeVoiceEvent(event) {
+      if (!realtimeVoiceDc || realtimeVoiceDc.readyState !== 'open') return false;
+      realtimeVoiceDc.send(JSON.stringify(event));
+      return true;
+    }
+
+    async function sendDailyPersonaGreeting() {
+      if (!shouldSendDailyPersonaGreeting()) return false;
+      const personaName = getAssistantPersonaLabel();
+      const firstName = getPlanesUserFirstName();
+      const phrase = `Oi, ${firstName}, tudo bem? Aqui é ${personaName === 'Castanha' ? 'o Castanha' : 'a Brita'}. Vamos trabalhar?`;
+
+      const sent = sendRealtimeVoiceEvent({
+        type: 'response.create',
+        response: {
+          input: [],
+          output_modalities: ['audio'],
+          tool_choice: 'none',
+          instructions: 'Diga exatamente esta frase em português brasileiro, com tom natural, simpático e breve: "' + phrase + '"'
+        }
+      });
+      if (sent) {
+        await markDailyPersonaGreetingUsed();
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('assistant_daily_greeting', {
+            module: 'Planes Intelligence',
+            topic: 'voz',
+            mode: 'voice',
+            metadata: { persona: getAssistantPersona() }
+          });
+        }
+      }
+      return sent;
+    }
+
+    function getVoiceProjectSnapshot() {
+      const project = selectedProject || projectsList?.[0] || {};
+      const analysis = buildPlanesIntelligenceAnalysis('resumo executivo da obra');
+      return {
+        project: project.title || 'Projeto ativo',
+        location: project.location || null,
+        risk: analysis.risk,
+        priority: analysis.priority,
+        metrics: analysis.metrics
+      };
+    }
+
+    function getVoicePrioritySnapshot() {
+      const brief = getRoleScopedProactiveBrief();
+      return {
+        changes: (brief.changes || []).slice(0, 5).map(change => ({
+          type: change.type,
+          severity: change.severity,
+          text: change.text,
+          score: change.score
+        })),
+        primaryAction: brief.primaryAction || null
+      };
+    }
+
+    function getVoiceFollowUpSnapshot() {
+      const memory = getIntelligenceFollowUpState();
+      return {
+        pending: (memory.pending || []).slice(0, 5).map(item => ({
+          action: item.action,
+          label: item.label,
+          text: item.text,
+          at: item.at
+        })),
+        decisions: (memory.decisions || []).slice(0, 5)
+      };
+    }
+
+    function navigatePlanesFromVoice(module) {
+      const map = {
+        overview: 'Visão Geral',
+        balance_line: 'Linha de Balanço',
+        lookahead: 'Médio Prazo (R4)',
+        field: 'Canteiro 1-Touch',
+        validations: 'Fila de Validações',
+        pac: 'Curva S & PAC',
+        supplies: 'Suprimentos',
+        intelligence: 'Planes Intelligence',
+        reports: 'Relatórios & Capa',
+        gallery: 'Galeria do Cliente'
+      };
+      const target = map[module];
+      if (!target) return { ok: false, error: 'module_not_supported' };
+
+      activeNav = target;
+      if (window.innerWidth < 1024) {
+        mobileCurrentTab = target === 'Visão Geral' ? 'inicio' : target === 'Canteiro 1-Touch' ? 'campo' : 'modulo';
+      }
+      isMoreSheetOpen = false;
+      isProjectSwitcherOpen = false;
+      render();
+      showToast('Abrindo ' + target + '.');
+
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('voice_navigation', {
+          module: target,
+          topic: inferIntelligenceTopic(target),
+          mode: 'voice',
+          metadata: { module }
+        });
+      }
+      return { ok: true, opened: target };
+    }
+
+    function normalizeVoiceLookup(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function findVoiceValidation(query) {
+      const q = normalizeVoiceLookup(query);
+      const list = Array.isArray(validations) ? validations : [];
+      if (!q) return null;
+
+      if (/^(primeira|primeiro|1|um|uma)$/.test(q)) return list[0] || null;
+      if (/^(segunda|segundo|2|dois|duas)$/.test(q)) return list[1] || null;
+      if (/^(terceira|terceiro|3|tres)$/.test(q)) return list[2] || null;
+
+      return list.find(v => {
+        const haystack = [v.id, v.item, v.front, v.resp, v.cargo, v.qtd]
+          .map(normalizeVoiceLookup)
+          .join(' ');
+        return haystack.includes(q) || q.includes(normalizeVoiceLookup(v.item));
+      }) || null;
+    }
+
+    function findVoiceSupply(query) {
+      const q = normalizeVoiceLookup(query);
+      const list = Array.isArray(suppliesList) ? suppliesList : [];
+      if (!q) return null;
+
+      if (/^(primeiro|primeira|1|um|uma)$/.test(q)) return list[0] || null;
+      if (/^(segundo|segunda|2|dois|duas)$/.test(q)) return list[1] || null;
+
+      return list.find(s => {
+        const haystack = [s.id, s.name, s.supplier, s.sector, s.status]
+          .map(normalizeVoiceLookup)
+          .join(' ');
+        return haystack.includes(q) || q.includes(normalizeVoiceLookup(s.name));
+      }) || null;
+    }
+
+    function findVoiceTask(query) {
+      const q = normalizeVoiceLookup(query);
+      const list = Array.isArray(tasksList) ? tasksList : [];
+      if (!q) return null;
+
+      if (/^(primeira|primeiro|1|um|uma)$/.test(q)) return list[0] || null;
+      if (/^(segunda|segundo|2|dois|duas)$/.test(q)) return list[1] || null;
+      if (/^(terceira|terceiro|3|tres)$/.test(q)) return list[2] || null;
+
+      return list.find(task => {
+        const haystack = [task.id, task.title, task.resp, task.deadline, task.done ? 'concluida' : 'pendente']
+          .map(normalizeVoiceLookup)
+          .join(' ');
+        return haystack.includes(q) || q.includes(normalizeVoiceLookup(task.title));
+      }) || null;
+    }
+
+    function getVoiceMutationAuthorization(kind) {
+      const audience = getIntelligenceAudience();
+      const effectiveRole = normalizeIntelligenceRole(getEffectiveIntelligenceRole());
+      const isAdmin = effectiveRole.includes('admin') || effectiveRole.includes('super_admin');
+      const isFinance = effectiveRole.includes('financeiro') || effectiveRole.includes('finance');
+
+      if (isAdmin) {
+        return { allowed: true, audience: 'admin' };
+      }
+
+      if (isFinance) {
+        if (kind === 'create_followup') {
+          return { allowed: true, audience: 'finance' };
+        }
+        return {
+          allowed: false,
+          audience: 'finance',
+          error: 'voice_mutation_not_authorized',
+          message: 'O perfil Financeiro pode consultar indicadores e salvar acompanhamentos pessoais no Planes Intelligence, mas não altera dados operacionais por voz.'
+        };
+      }
+
+      const policies = {
+        engineering: ['create_task', 'edit_task', 'toggle_task', 'approve_validation', 'reject_validation', 'update_pac', 'create_supply', 'edit_supply', 'update_supply_status', 'create_followup'],
+        executive: ['create_task', 'edit_task', 'toggle_task', 'update_pac', 'create_followup'],
+        supplies: ['create_task', 'edit_task', 'toggle_task', 'create_supply', 'edit_supply', 'update_supply_status', 'create_followup'],
+        field: ['create_task', 'edit_task', 'toggle_task', 'approve_validation', 'reject_validation', 'create_followup'],
+        client: ['create_followup']
+      };
+
+      const allowed = (policies[audience] || []).includes(kind);
+      const labels = {
+        create_task: 'criar tarefas',
+        edit_task: 'editar tarefas',
+        toggle_task: 'concluir ou reabrir tarefas',
+        approve_validation: 'aprovar validações',
+        reject_validation: 'rejeitar validações',
+        update_pac: 'alterar PAC ou avanço físico',
+        create_supply: 'criar suprimentos',
+        edit_supply: 'editar suprimentos',
+        update_supply_status: 'alterar status de suprimentos',
+        create_followup: 'criar acompanhamentos pessoais'
+      };
+
+      return {
+        allowed,
+        audience,
+        error: allowed ? null : 'voice_mutation_not_authorized',
+        message: allowed
+          ? null
+          : 'Seu perfil não tem permissão para ' + (labels[kind] || 'executar esta alteração') + ' pelo Planes Intelligence.'
+      };
+    }
+
+    function canUseVoiceMutations(kind) {
+      return getVoiceMutationAuthorization(kind).allowed;
+    }
+    function getVoiceMutationCapabilities() {
+      return ['create_task', 'edit_task', 'toggle_task', 'approve_validation', 'reject_validation', 'update_pac', 'create_supply', 'edit_supply', 'update_supply_status', 'create_followup']
+        .filter(kind => getVoiceMutationAuthorization(kind).allowed);
+    }
+
+
+    function prepareRealtimeVoiceMutation(kind, payload, summary) {
+      const authorization = getVoiceMutationAuthorization(kind);
+      if (!authorization.allowed) {
+        realtimeVoicePendingMutation = null;
+        return {
+          ok: false,
+          error: authorization.error || 'not_authorized_for_operational_changes',
+          message: authorization.message || 'Este perfil não pode alterar estes dados operacionais.'
+        };
+      }
+      realtimeVoicePendingMutation = {
+        kind,
+        payload,
+        summary,
+        createdAt: new Date().toISOString()
+      };
+      return {
+        ok: true,
+        requires_confirmation: true,
+        summary,
+        instruction: 'Peça confirmação explícita ao usuário antes de executar.'
+      };
+    }
+
+    async function confirmPendingVoiceMutationFromUI(confirmed) {
+      const summary = realtimeVoicePendingMutation?.summary || 'ação pendente';
+      const result = await executePendingRealtimeVoiceMutation(confirmed);
+
+      if (realtimeVoiceDc?.readyState === 'open') {
+        const message = confirmed
+          ? 'Confirmei pela interface a ação: ' + summary + '. Resultado do Planes: ' + JSON.stringify(result)
+          : 'Cancelei pela interface a ação: ' + summary + '.';
+        sendRealtimeVoiceEvent({
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'input_text', text: message }]
+          }
+        });
+        sendRealtimeVoiceEvent({ type: 'response.create' });
+      }
+
+      if (!confirmed) showToast('Ação por voz cancelada.');
+      render();
+      return result;
+    }
+
+    async function executePendingRealtimeVoiceMutation(confirmed) {
+      const pending = realtimeVoicePendingMutation;
+      if (!pending) {
+        return { ok: false, error: 'no_pending_action', message: 'Não existe ação pendente para confirmar.' };
+      }
+
+      if (!confirmed) {
+        realtimeVoicePendingMutation = null;
+        return { ok: true, cancelled: true, message: 'Ação cancelada.' };
+      }
+
+      const authorization = getVoiceMutationAuthorization(pending.kind);
+      if (!authorization.allowed) {
+        realtimeVoicePendingMutation = null;
+        return {
+          ok: false,
+          error: authorization.error || 'not_authorized_for_operational_changes',
+          message: authorization.message || 'Seu perfil não pode executar esta alteração.'
+        };
+      }
+
+      let result = { ok: false, error: 'unsupported_pending_action' };
+
+      if (pending.kind === 'create_task') {
+        const task = {
+          id: Date.now(),
+          title: pending.payload.title,
+          resp: pending.payload.responsible || currentUser?.name || 'Eng. de Planejamento',
+          deadline: pending.payload.deadline || 'Hoje',
+          done: false
+        };
+        tasksList.unshift(task);
+        render();
+        const ok = await persistTaskRecord(task);
+        if (ok) {
+          await refreshIntelligenceOperationalData();
+          result = { ok: true, created: task.title, responsible: task.resp, deadline: task.deadline };
+        } else {
+          const reconciled = await refreshIntelligenceOperationalData();
+          if (!reconciled) tasksList = tasksList.filter(item => item !== task);
+          result = { ok: false, error: 'task_persist_failed' };
+        }
+      }
+
+      if (pending.kind === 'approve_validation') {
+        const validation = findVoiceValidation(pending.payload.query) || pending.payload.validation;
+        if (!validation) {
+          result = { ok: false, error: 'validation_not_found' };
+        } else {
+          const previousProgress = physicalProgress;
+          const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+          physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
+          if (selectedProject) selectedProject.progress = physicalProgress;
+          render();
+
+          const [validationOk, metricsOk] = await Promise.all([
+            persistValidationStatus(validation, 'Aprovado'),
+            persistProjectMetrics()
+          ]);
+
+          if (validationOk && metricsOk) {
+            await refreshIntelligenceOperationalData();
+            result = {
+              ok: true,
+              approved: validation.item,
+              front: validation.front,
+              physical_progress: physicalProgress
+            };
+          } else {
+            physicalProgress = previousProgress;
+            if (selectedProject) selectedProject.progress = previousProjectProgress;
+            await refreshIntelligenceOperationalData();
+            result = {
+              ok: false,
+              error: validationOk ? 'metrics_update_failed' : 'validation_update_failed'
+            };
+          }
+        }
+      }
+
+      if (pending.kind === 'update_pac') {
+        const before = { pacScore, physicalProgress };
+        if (Number.isFinite(Number(pending.payload.pac_score))) {
+          pacScore = Math.max(0, Math.min(100, Number(pending.payload.pac_score)));
+        }
+        if (Number.isFinite(Number(pending.payload.physical_progress))) {
+          physicalProgress = Math.max(0, Math.min(100, Number(pending.payload.physical_progress)));
+          if (selectedProject) selectedProject.progress = physicalProgress;
+        }
+        render();
+        const ok = await persistProjectMetrics();
+        if (ok) {
+          await refreshIntelligenceOperationalData();
+          result = { ok: true, pac: pacScore, physical_progress: physicalProgress };
+        } else {
+          pacScore = before.pacScore;
+          physicalProgress = before.physicalProgress;
+          result = { ok: false, error: 'metrics_update_failed' };
+        }
+      }
+
+      if (pending.kind === 'update_supply_status') {
+        const supply = findVoiceSupply(pending.payload.query) || pending.payload.supply;
+        if (!supply) {
+          result = { ok: false, error: 'supply_not_found' };
+        } else {
+          const previousStatus = supply.status;
+          supply.status = pending.payload.status;
+          render();
+          const ok = await persistSupplyRecord(supply);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, supply: supply.name, status: pending.payload.status };
+          } else {
+            supply.status = previousStatus;
+            result = { ok: false, error: 'supply_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'edit_task') {
+        const task = findVoiceTask(pending.payload.query) || pending.payload.task;
+        if (!task) {
+          result = { ok: false, error: 'task_not_found' };
+        } else {
+          const previous = { ...task };
+          if (pending.payload.title) task.title = pending.payload.title;
+          if (pending.payload.responsible) task.resp = pending.payload.responsible;
+          if (pending.payload.deadline) task.deadline = pending.payload.deadline;
+          render();
+          const ok = await persistTaskRecord(task);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, task: task.title, responsible: task.resp, deadline: task.deadline };
+          } else {
+            Object.assign(task, previous);
+            result = { ok: false, error: 'task_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'toggle_task') {
+        const task = findVoiceTask(pending.payload.query) || pending.payload.task;
+        if (!task) {
+          result = { ok: false, error: 'task_not_found' };
+        } else {
+          const previousDone = !!task.done;
+          task.done = pending.payload.done === true;
+          render();
+          const ok = await persistTaskRecord(task);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, task: task.title, done: task.done };
+          } else {
+            task.done = previousDone;
+            result = { ok: false, error: 'task_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'reject_validation') {
+        const validation = findVoiceValidation(pending.payload.query) || pending.payload.validation;
+        if (!validation) {
+          result = { ok: false, error: 'validation_not_found' };
+        } else {
+          const ok = await persistValidationStatus(validation, 'Rejeitado', pending.payload.reason || '');
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, rejected: validation.item, reason: pending.payload.reason || '' };
+          } else {
+            result = { ok: false, error: 'validation_reject_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'create_supply') {
+        const supply = {
+          id: Date.now(),
+          name: pending.payload.name,
+          supplier: pending.payload.supplier || '',
+          qtd: pending.payload.quantity || '',
+          date: pending.payload.delivery || '',
+          sector: pending.payload.sector || '',
+          status: pending.payload.status || 'Programado'
+        };
+        suppliesList.unshift(supply);
+        render();
+        const ok = await persistSupplyRecord(supply);
+        if (ok) {
+          await refreshIntelligenceOperationalData();
+          result = { ok: true, supply: supply.name, status: supply.status };
+        } else {
+          suppliesList = suppliesList.filter(item => item !== supply);
+          result = { ok: false, error: 'supply_create_failed' };
+        }
+      }
+
+      if (pending.kind === 'edit_supply') {
+        const supply = findVoiceSupply(pending.payload.query) || pending.payload.supply;
+        if (!supply) {
+          result = { ok: false, error: 'supply_not_found' };
+        } else {
+          const previous = { ...supply };
+          if (pending.payload.name) supply.name = pending.payload.name;
+          if (pending.payload.supplier) supply.supplier = pending.payload.supplier;
+          if (pending.payload.quantity) supply.qtd = pending.payload.quantity;
+          if (pending.payload.delivery) supply.date = pending.payload.delivery;
+          if (pending.payload.sector) supply.sector = pending.payload.sector;
+          if (pending.payload.status) supply.status = pending.payload.status;
+          render();
+          const ok = await persistSupplyRecord(supply);
+          if (ok) {
+            await refreshIntelligenceOperationalData();
+            result = { ok: true, supply: supply.name, status: supply.status };
+          } else {
+            Object.assign(supply, previous);
+            result = { ok: false, error: 'supply_update_failed' };
+          }
+        }
+      }
+
+      if (pending.kind === 'create_followup') {
+        const label = String(pending.payload.label || 'Acompanhamento').trim();
+        const text = String(pending.payload.text || '').trim();
+        const action = String(pending.payload.action || 'Abrir Planes Intelligence').trim();
+        const tracked = await trackUserHabit('intelligence_deferred', {
+          module: 'Planes Intelligence',
+          topic: 'acompanhamento',
+          mode: 'voice',
+          metadata: { action, label, text, source: 'voice_personal_followup' }
+        });
+        result = tracked === false
+          ? { ok: false, error: 'followup_persist_failed' }
+          : { ok: true, followup: label, text };
+      }
+
+      if (result.ok) {
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('voice_confirmed_mutation', {
+            module: 'Planes Intelligence',
+            topic: pending.kind,
+            mode: 'voice',
+            metadata: { kind: pending.kind }
+          });
+        }
+        showToast('✓ Ação por voz confirmada e sincronizada.');
+        render();
+      }
+
+      realtimeVoicePendingMutation = null;
+      return result;
+    }
+
+    async function executePlanesRealtimeTool(name, args = {}) {
+      switch (name) {
+        case 'get_project_overview': {
+          const analysis = buildPlanesIntelligenceAnalysis('resumo executivo da obra');
+          return {
+            answer: analysis.answer,
+            snapshot: getVoiceProjectSnapshot()
+          };
+        }
+        case 'get_pac_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('pac avanço progresso curva');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_supplies_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('suprimentos fornecedores entregas materiais');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_validations_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('validações medições fila');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_tasks_status': {
+          const analysis = buildPlanesIntelligenceAnalysis('tarefas pendências prioridades');
+          return {
+            answer: analysis.answer,
+            metrics: analysis.metrics
+          };
+        }
+        case 'get_intelligence_priorities':
+          return getVoicePrioritySnapshot();
+        case 'get_followups':
+          return getVoiceFollowUpSnapshot();
+        case 'prepare_create_task': {
+          const title = String(args?.title || '').trim();
+          if (!title) return { ok: false, error: 'task_title_required' };
+          const responsible = String(args?.responsible || currentUser?.name || 'Eng. de Planejamento').trim();
+          const deadline = String(args?.deadline || 'Hoje').trim();
+          return prepareRealtimeVoiceMutation(
+            'create_task',
+            { title, responsible, deadline },
+            'Criar a tarefa "' + title + '" para ' + responsible + ', com prazo ' + deadline + '.'
+          );
+        }
+        case 'prepare_approve_validation': {
+          const query = String(args?.query || '').trim();
+          const validation = findVoiceValidation(query);
+          if (!validation) {
+            return {
+              ok: false,
+              error: 'validation_not_found',
+              available: (validations || []).slice(0, 5).map((v, index) => ({
+                position: index + 1,
+                item: v.item,
+                front: v.front,
+                responsible: v.resp
+              }))
+            };
+          }
+          return prepareRealtimeVoiceMutation(
+            'approve_validation',
+            { query, validation },
+            'Aprovar a validação "' + validation.item + '" da frente ' + validation.front + '.'
+          );
+        }
+        case 'prepare_update_pac': {
+          const hasPac = Number.isFinite(Number(args?.pac_score));
+          const hasProgress = Number.isFinite(Number(args?.physical_progress));
+          if (!hasPac && !hasProgress) return { ok: false, error: 'pac_or_progress_required' };
+          const payload = {
+            pac_score: hasPac ? Number(args.pac_score) : null,
+            physical_progress: hasProgress ? Number(args.physical_progress) : null
+          };
+          if (
+            (payload.pac_score !== null && (payload.pac_score < 0 || payload.pac_score > 100)) ||
+            (payload.physical_progress !== null && (payload.physical_progress < 0 || payload.physical_progress > 100))
+          ) {
+            return { ok: false, error: 'percentage_out_of_range' };
+          }
+          const parts = [];
+          if (payload.pac_score !== null) parts.push('PAC para ' + payload.pac_score + '%');
+          if (payload.physical_progress !== null) parts.push('avanço físico para ' + payload.physical_progress + '%');
+          return prepareRealtimeVoiceMutation(
+            'update_pac',
+            payload,
+            'Atualizar ' + parts.join(' e ') + '.'
+          );
+        }
+        case 'prepare_update_supply_status': {
+          const query = String(args?.query || '').trim();
+          const status = String(args?.status || '').trim();
+          const allowed = ['Programado','Em Transporte','No Canteiro','Atrasado'];
+          if (!allowed.includes(status)) return { ok: false, error: 'invalid_supply_status' };
+          const supply = findVoiceSupply(query);
+          if (!supply) {
+            return {
+              ok: false,
+              error: 'supply_not_found',
+              available: (suppliesList || []).slice(0, 5).map((s, index) => ({
+                position: index + 1,
+                name: s.name,
+                supplier: s.supplier,
+                status: s.status
+              }))
+            };
+          }
+          return prepareRealtimeVoiceMutation(
+            'update_supply_status',
+            { query, status, supply },
+            'Alterar o status de "' + supply.name + '" de ' + supply.status + ' para ' + status + '.'
+          );
+        }
+        case 'prepare_edit_task': {
+          const query = String(args?.query || '').trim();
+          const task = findVoiceTask(query);
+          if (!task) return { ok: false, error: 'task_not_found' };
+          const payload = {
+            query,
+            task,
+            title: String(args?.title || '').trim() || null,
+            responsible: String(args?.responsible || '').trim() || null,
+            deadline: String(args?.deadline || '').trim() || null
+          };
+          if (!payload.title && !payload.responsible && !payload.deadline) return { ok: false, error: 'task_changes_required' };
+          return prepareRealtimeVoiceMutation('edit_task', payload, 'Editar a tarefa "' + task.title + '".');
+        }
+        case 'prepare_toggle_task': {
+          const query = String(args?.query || '').trim();
+          const task = findVoiceTask(query);
+          if (!task) return { ok: false, error: 'task_not_found' };
+          const done = args?.done === true;
+          return prepareRealtimeVoiceMutation('toggle_task', { query, task, done }, (done ? 'Concluir' : 'Reabrir') + ' a tarefa "' + task.title + '".');
+        }
+        case 'prepare_reject_validation': {
+          const query = String(args?.query || '').trim();
+          const reason = String(args?.reason || '').trim();
+          const validation = findVoiceValidation(query);
+          if (!validation) return { ok: false, error: 'validation_not_found' };
+          if (!reason) return { ok: false, error: 'rejection_reason_required' };
+          return prepareRealtimeVoiceMutation('reject_validation', { query, validation, reason }, 'Rejeitar a validação "' + validation.item + '" pelo motivo: ' + reason + '.');
+        }
+        case 'prepare_create_supply': {
+          const name = String(args?.name || '').trim();
+          if (!name) return { ok: false, error: 'supply_name_required' };
+          const status = String(args?.status || 'Programado').trim();
+          if (!['Programado','Em Transporte','No Canteiro','Atrasado'].includes(status)) return { ok: false, error: 'invalid_supply_status' };
+          const payload = {
+            name,
+            supplier: String(args?.supplier || '').trim(),
+            quantity: String(args?.quantity || '').trim(),
+            delivery: String(args?.delivery || '').trim(),
+            sector: String(args?.sector || '').trim(),
+            status
+          };
+          return prepareRealtimeVoiceMutation('create_supply', payload, 'Criar o suprimento "' + name + '" com status ' + status + '.');
+        }
+        case 'prepare_edit_supply': {
+          const query = String(args?.query || '').trim();
+          const supply = findVoiceSupply(query);
+          if (!supply) return { ok: false, error: 'supply_not_found' };
+          const payload = {
+            query,
+            supply,
+            name: String(args?.name || '').trim() || null,
+            supplier: String(args?.supplier || '').trim() || null,
+            quantity: String(args?.quantity || '').trim() || null,
+            delivery: String(args?.delivery || '').trim() || null,
+            sector: String(args?.sector || '').trim() || null,
+            status: String(args?.status || '').trim() || null
+          };
+          if (payload.status && !['Programado','Em Transporte','No Canteiro','Atrasado'].includes(payload.status)) return { ok: false, error: 'invalid_supply_status' };
+          if (!payload.name && !payload.supplier && !payload.quantity && !payload.delivery && !payload.sector && !payload.status) return { ok: false, error: 'supply_changes_required' };
+          return prepareRealtimeVoiceMutation('edit_supply', payload, 'Editar o suprimento "' + supply.name + '".');
+        }
+        case 'prepare_create_followup': {
+          const label = String(args?.label || '').trim();
+          const text = String(args?.text || '').trim();
+          const action = String(args?.action || 'Abrir Planes Intelligence').trim();
+          if (!label) return { ok: false, error: 'followup_label_required' };
+          return prepareRealtimeVoiceMutation('create_followup', { label, text, action }, 'Salvar em Para acompanhar: "' + label + '".');
+        }
+        case 'confirm_pending_action':
+          return await executePendingRealtimeVoiceMutation(args?.confirmed === true);
+        case 'open_module':
+          return navigatePlanesFromVoice(String(args?.module || ''));
+        default:
+          return { ok: false, error: 'tool_not_implemented', name };
+      }
+    }
+
+    async function handleRealtimeVoiceFunctionCall(item) {
+      const callId = String(item?.call_id || '');
+      if (!callId || realtimeVoiceHandledCalls.has(callId)) return;
+      realtimeVoiceHandledCalls.add(callId);
+
+      let args = {};
+      try {
+        args = item?.arguments ? JSON.parse(item.arguments) : {};
+      } catch (e) {
+        args = {};
+      }
+
+      let result;
+      try {
+        result = await executePlanesRealtimeTool(String(item?.name || ''), args);
+        if (typeof trackUserHabit === 'function') {
+          trackUserHabit('voice_tool_call', {
+            module: 'Planes Intelligence',
+            topic: String(item?.name || 'tool'),
+            mode: 'voice',
+            metadata: { tool: item?.name || '', ok: result?.ok !== false }
+          });
+        }
+      } catch (err) {
+        console.warn('Planes Realtime tool failure:', item?.name, err);
+        result = {
+          ok: false,
+          error: 'tool_execution_failed',
+          message: String(err?.message || err)
+        };
+      }
+
+      sendRealtimeVoiceEvent({
+        type: 'conversation.item.create',
+        item: {
+          type: 'function_call_output',
+          call_id: callId,
+          output: JSON.stringify(result)
+        }
+      });
+
+      sendRealtimeVoiceEvent({ type: 'response.create' });
+    }
+
+    function handleRealtimeVoiceServerEvent(raw) {
+      try {
+        const event = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        const type = String(event?.type || '');
+
+        if (type === 'input_audio_buffer.speech_started') {
+          realtimeVoiceState = 'listening';
+          isListening = true;
+          isSpeaking = false;
+          render();
+          return;
+        }
+
+        if (
+          type === 'response.output_item.done' &&
+          event?.item?.type === 'function_call'
+        ) {
+          handleRealtimeVoiceFunctionCall(event.item);
+          return;
+        }
+
+        if (
+          type === 'response.function_call_arguments.done' &&
+          event?.item?.type === 'function_call'
+        ) {
+          handleRealtimeVoiceFunctionCall(event.item);
+          return;
+        }
+
+        if (type === 'response.created' || type.includes('response.output_audio')) {
+          realtimeVoiceState = 'speaking';
+          isListening = false;
+          isSpeaking = true;
+          render();
+          return;
+        }
+
+        if (type === 'response.done') {
+          const functionCalls = Array.isArray(event?.response?.output)
+            ? event.response.output.filter(item => item?.type === 'function_call')
+            : [];
+          functionCalls.forEach(item => handleRealtimeVoiceFunctionCall(item));
+
+          if (!functionCalls.length) {
+            realtimeVoiceState = 'listening';
+            isListening = true;
+            isSpeaking = false;
+            render();
+          }
+          return;
+        }
+
+        if (type === 'conversation.item.input_audio_transcription.completed') {
+          const transcript = String(event.transcript || '').trim();
+          if (transcript) {
+            liveTranscript = transcript;
+            if (typeof trackUserHabit === 'function') {
+              trackUserHabit('voice_command', {
+                module: activeNav || 'Planes Intelligence',
+                topic: inferIntelligenceTopic(transcript),
+                mode: 'voice'
+              });
+            }
+          }
+          return;
+        }
+
+        if (type === 'error') {
+          console.warn('Planes Realtime event error:', event);
+        }
+      } catch (err) {
+        console.warn('Planes Realtime: evento inválido.', err);
+      }
+    }
+
+    async function waitForIceGatheringComplete(pc) {
+      if (!pc || pc.iceGatheringState === 'complete') return;
+      await new Promise((resolve) => {
+        const timeout = setTimeout(resolve, 5000);
+        const onState = () => {
+          if (pc.iceGatheringState !== 'complete') return;
+          clearTimeout(timeout);
+          pc.removeEventListener('icegatheringstatechange', onState);
+          resolve();
+        };
+        pc.addEventListener('icegatheringstatechange', onState);
+      });
+    }
+
+    async function startRealtimeVoiceAssistant() {
+      if (!getAssistantPersona()) {
+        showToast('Escolha Brita ou Castanha antes de iniciar a conversa por voz.');
+        activeNav = 'Planes Intelligence';
+        render();
+        return false;
+      }
+
+      if (!supabaseClient || !navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === 'undefined') {
+        realtimeVoiceState = 'error';
+        showToast('Voz Realtime indisponível neste dispositivo. Usando reconhecimento local.');
+        startVoiceAssistant();
+        return false;
+      }
+
+      cleanupRealtimeVoice();
+      setRealtimeVoiceState('connecting');
+
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const accessToken = session?.access_token;
+        if (!accessToken) throw new Error('Sessão autenticada necessária para voz Realtime.');
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        realtimeVoiceStream = stream;
+
+        const pc = new RTCPeerConnection();
+        realtimeVoicePc = pc;
+
+        const audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        audioEl.playsInline = true;
+        audioEl.style.display = 'none';
+        document.body.appendChild(audioEl);
+        realtimeVoiceAudioEl = audioEl;
+
+        pc.ontrack = (event) => {
+          audioEl.srcObject = event.streams[0];
+          audioEl.play().catch(() => {});
+        };
+
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+        const dc = pc.createDataChannel('oai-events');
+        realtimeVoiceDc = dc;
+
+        dc.addEventListener('open', async () => {
+          realtimeVoiceSessionStartedAt = new Date().toISOString();
+          setRealtimeVoiceState('listening');
+          showToast(getAssistantPersonaLabel() + ' está ouvindo.');
+          await sendDailyPersonaGreeting();
+        });
+
+        dc.addEventListener('message', event => handleRealtimeVoiceServerEvent(event.data));
+        dc.addEventListener('close', () => {
+          if (realtimeVoiceState !== 'idle') {
+            realtimeVoiceState = 'reconnecting';
+            isListening = false;
+            isSpeaking = false;
+            render();
+          }
+        });
+
+        pc.addEventListener('connectionstatechange', () => {
+          if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+            realtimeVoiceState = 'reconnecting';
+            isListening = false;
+            isSpeaking = false;
+            render();
+          } else if (pc.connectionState === 'connected' && realtimeVoiceState === 'reconnecting') {
+            setRealtimeVoiceState('listening');
+          }
+        });
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await waitForIceGatheringComplete(pc);
+
+        const sdp = pc.localDescription?.sdp;
+        if (!sdp) throw new Error('Não foi possível gerar a sessão de áudio.');
+
+        const endpoint = String(window.PLANES_CONFIG?.supabaseUrl || '').replace(/\/$/, '') + '/functions/v1/planes-voice-session';
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + accessToken,
+            'apikey': window.PLANES_CONFIG.supabaseAnonKey
+          },
+          body: JSON.stringify({
+            sdp,
+            persona: getAssistantPersona(),
+            firstName: getPlanesUserFirstName(),
+            projectTitle: selectedProject?.title || projectsList?.[0]?.title || 'obra ativa',
+            effectiveRole: getEffectiveIntelligenceRole(),
+            audience: getIntelligenceAudience(),
+            voiceCapabilities: getVoiceMutationCapabilities()
+          })
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.sdp) {
+          const code = result?.error || 'realtime_unavailable';
+          if (code === 'openai_api_key_missing') {
+            throw new Error('OPENAI_API_KEY_NOT_CONFIGURED');
+          }
+          throw new Error(result?.message || result?.detail || 'Falha ao abrir sessão Realtime.');
+        }
+
+        await pc.setRemoteDescription({ type: 'answer', sdp: result.sdp });
+        return true;
+      } catch (err) {
+        console.warn('Planes Realtime Voice:', err);
+        cleanupRealtimeVoice();
+        realtimeVoiceState = 'error';
+        if (String(err?.message || err).includes('OPENAI_API_KEY_NOT_CONFIGURED')) {
+          showToast('Gateway Realtime pronto; falta configurar a chave OpenAI no Supabase. Usando voz local por enquanto.');
+        } else {
+          showToast('Não foi possível iniciar a voz Realtime. Usando modo local.');
+        }
+        startVoiceAssistant();
+        return false;
+      }
+    }
+
+    function stopRealtimeVoiceAssistant() {
+      try {
+        if (realtimeVoiceDc?.readyState === 'open') {
+          realtimeVoiceDc.send(JSON.stringify({ type: 'session.close' }));
+        }
+      } catch (e) {}
+      cleanupRealtimeVoice();
+      render();
+    }
+
     function speakText(text) {
       if (!text || !('speechSynthesis' in window)) {
         isSpeaking = false;
@@ -7906,15 +9433,18 @@
 
     function toggleVoiceAssistant() {
       unlockAudioContextOnce();
-      if (isSpeaking) {
+
+      if (isRealtimeVoiceActive()) {
+        stopRealtimeVoiceAssistant();
+        return;
+      }
+
+      if (isSpeaking && realtimeVoiceState === 'error') {
         stopSpeaking();
         return;
       }
-      if (isListening) {
-        stopVoiceAssistant();
-      } else {
-        startVoiceAssistant();
-      }
+
+      startRealtimeVoiceAssistant();
     }
 
     function startVoiceAssistant() {
@@ -7983,6 +9513,10 @@
     }
 
     function stopVoiceAssistant() {
+      if (isRealtimeVoiceActive()) {
+        stopRealtimeVoiceAssistant();
+        return;
+      }
       if (voiceRecognition) {
         try { voiceRecognition.stop(); } catch(e){}
       }
@@ -8016,6 +9550,31 @@
       }
 
       assistantLog.unshift({ text: clean, sender: 'user', time: 'Agora' });
+
+      if (realtimeVoicePendingMutation) {
+        if (/^(sim|confirmo|confirma|pode|pode fazer|pode executar|ok|certo)$/i.test(lower)) {
+          const result = await executePendingRealtimeVoiceMutation(true);
+          responseText = result?.ok
+            ? 'Confirmado. A alteração foi sincronizada no Planes.'
+            : 'Não consegui concluir a alteração. O estado confirmado foi preservado.';
+          assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
+          liveTranscript = '';
+          showToast(responseText);
+          speakText(responseText);
+          render();
+          return;
+        }
+        if (/^(não|nao|cancelar|cancela|deixa|deixa pra la|deixa para la)$/i.test(lower)) {
+          await executePendingRealtimeVoiceMutation(false);
+          responseText = 'Certo. Cancelei a alteração.';
+          assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
+          liveTranscript = '';
+          showToast(responseText);
+          speakText(responseText);
+          render();
+          return;
+        }
+      }
 
       const navigationCommands = [
         { terms: ['visão geral', 'inicio', 'início', 'dashboard'], target: 'Visão Geral' },
@@ -8094,24 +9653,18 @@
       } 
       else if (lower.includes('tarefa') || lower.includes('fazer') || lower.includes('anotar') || lower.includes('adicionar') || lower.includes('providenciar') || lower.includes('pendência')) {
         const taskClean = clean.replace(/^(adicionar tarefa|criar tarefa|tarefa|anotar|pendência)\s*/i, '');
-        const newTask = {
-          id: Date.now(),
-          title: taskClean.charAt(0).toUpperCase() + taskClean.slice(1),
-          resp: currentUser ? currentUser.name : 'Eng. de Planejamento',
-          deadline: 'Amanhã',
-          done: false
-        };
-        tasksList.unshift(newTask);
+        const title = taskClean.charAt(0).toUpperCase() + taskClean.slice(1);
+        const responsible = currentUser ? currentUser.name : 'Eng. de Planejamento';
+        const deadline = 'Amanhã';
+        const prepared = prepareRealtimeVoiceMutation(
+          'create_task',
+          { title, responsible, deadline },
+          'Criar a tarefa "' + title + '" para ' + responsible + ', com prazo ' + deadline + '.'
+        );
+        responseText = prepared.ok
+          ? 'Vou criar a tarefa ' + title + ' para ' + responsible + ', com prazo amanhã. Confirma?'
+          : (prepared.message || 'Este perfil não pode criar tarefas por voz.');
         render();
-        const taskSynced = await persistTaskRecord(newTask);
-        if (taskSynced) {
-          await refreshIntelligenceOperationalData();
-          responseText = `Tarefa adicionada e confirmada: ${newTask.title}.`;
-        } else {
-          const reconciled = await refreshIntelligenceOperationalData();
-          if (!reconciled) tasksList = tasksList.filter(task => task !== newTask);
-          responseText = 'Não foi possível criar a tarefa. O estado confirmado foi restaurado.';
-        }
       } 
       else if (lower.includes('avanço') || lower.includes('progresso') || lower.includes('status') || lower.includes('como está') || lower.includes('obra')) {
         responseText = `Obra em ${physicalProgress}% de avanço físico, PAC em ${pacScore}% e R$ ${financialSpent}M medidos.`;
@@ -8120,24 +9673,7 @@
         responseText = `Você tem ${calendarEvents.length} eventos no calendário e ${remindersList.filter(r => !r.done).length} lembretes pendentes.`;
       } 
       else {
-        const fallbackTask = {
-          id: Date.now(),
-          title: clean,
-          resp: currentUser ? currentUser.name : 'Eng. de Planejamento',
-          deadline: 'Hoje',
-          done: false
-        };
-        tasksList.unshift(fallbackTask);
-        render();
-        const fallbackSynced = await persistTaskRecord(fallbackTask);
-        if (fallbackSynced) {
-          await refreshIntelligenceOperationalData();
-          responseText = 'Comando executado e confirmado no Supabase.';
-        } else {
-          const reconciled = await refreshIntelligenceOperationalData();
-          if (!reconciled) tasksList = tasksList.filter(task => task !== fallbackTask);
-          responseText = 'O comando não pôde ser persistido. O estado confirmado foi restaurado.';
-        }
+        responseText = 'Entendi. Posso consultar a obra, abrir módulos ou preparar uma ação específica. Diga, por exemplo: abrir suprimentos, qual é o PAC ou criar tarefa.';
       }
 
       assistantLog.unshift({ text: responseText, sender: 'ai', time: 'Agora' });
@@ -8673,12 +10209,13 @@
       return true;
     }
 
-    async function persistValidationStatus(validation, status) {
+    async function persistValidationStatus(validation, status, rejectionReason = '') {
       if (!supabaseClient || !validation) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
       if (isUuidLike(validation.id)) {
-        const { error } = await supabaseClient.from('project_validations').update({ status }).eq('id', validation.id);
+        const payload = { status, rejection_reason: status === 'Rejeitado' ? String(rejectionReason || '').trim() : null };
+        const { error } = await supabaseClient.from('project_validations').update(payload).eq('id', validation.id);
         if (error) {
           console.warn('Falha ao atualizar validação:', error);
           return false;
@@ -8693,7 +10230,8 @@
           quantity_text: validation.qtd || '',
           recorded_at_text: validation.data || '',
           gps: validation.gps || '',
-          status
+          status,
+          rejection_reason: status === 'Rejeitado' ? String(rejectionReason || '').trim() : null
         }).select('id').single();
         if (error) return false;
         if (data?.id) validation.id = data.id;
@@ -8904,6 +10442,7 @@
       const plan = currentMonth ? Number(currentMonth.plan) : target;
       const real = currentMonth ? Number(currentMonth.real) : progress;
       const chartDeviation = real - plan;
+      const followUpMemory = getIntelligenceFollowUpState();
 
       let riskScore = 0;
       if (deviation < -5) riskScore += 3;
@@ -8937,7 +10476,28 @@
       let answer = '';
       let category = 'executive';
 
-      if (p.includes('suprimento') || p.includes('fornecedor') || p.includes('entrega') || p.includes('material')) {
+      if (
+        p.includes('deixei para depois') ||
+        p.includes('ver depois') ||
+        p.includes('para acompanhar') ||
+        p.includes('retomar') ||
+        p.includes('minha memória') ||
+        p.includes('minhas decisões')
+      ) {
+        category = 'memory';
+        const pendingRows = followUpMemory.pending.map((item, index) =>
+          (index + 1) + '. **' + item.label + '**' + (item.text ? ' — ' + item.text : '') + '.'
+        ).join('\n');
+        const decisionRows = followUpMemory.decisions.slice(0, 4).map(item =>
+          '• ' + item.label + ': **' + item.detail + '**.'
+        ).join('\n');
+
+        answer = '• **Sua memória operacional nesta obra:**\n' +
+          (followUpMemory.pending.length
+            ? '• Você deixou **' + followUpMemory.pending.length + '** item(ns) para acompanhar:\n' + pendingRows
+            : '• Você não tem itens marcados para acompanhar agora.') +
+          (decisionRows ? '\n\n**Decisões recentes:**\n' + decisionRows : '');
+      } else if (p.includes('suprimento') || p.includes('fornecedor') || p.includes('entrega') || p.includes('material')) {
         category = 'supply';
         const rows = (suppliesList || []).map(s => '• ' + s.name + ' — ' + s.status + ' — ' + s.qtd + ' — ' + s.sector).join('\n');
         answer = '• **Suprimentos — leitura atual do Planes:**\n' +
@@ -9020,6 +10580,12 @@
     function summarizeIntelligenceForVoice(promptText, answer) {
       const firstName = getPlanesUserFirstName();
       const p = String(promptText || '').toLowerCase();
+      if (p.includes('deixei para depois') || p.includes('ver depois') || p.includes('para acompanhar') || p.includes('retomar') || p.includes('minha memória')) {
+        const memory = getIntelligenceFollowUpState();
+        return memory.pending.length
+          ? 'Oi, ' + firstName + '. Você tem ' + memory.pending.length + ' item(ns) salvo(s) para acompanhar. Eles estão disponíveis na sua memória desta obra.'
+          : 'Oi, ' + firstName + '. Você não tem itens salvos para acompanhar nesta obra agora.';
+      }
       if (p.includes('atras') || p.includes('frentes')) {
         return 'Oi, ' + firstName + '. Identifiquei atenção no Bloco de Apartamentos. A prioridade é liberar a equipe de instalações antes de consumir o buffer.';
       }
@@ -9086,7 +10652,7 @@
       const pTitle = selectedProject ? selectedProject.title : 'Selecionar Obra';
       return `
         <!-- MOBILE TOP APP BAR (56–64px + Safe Area, Frosted Glass, Brand & Project Switcher) -->
-        <header class="w-full ios-blur-header border-b border-slate-200/90 px-3.5 flex items-center justify-between shadow-2xs sticky top-0 z-40">
+        <header class="w-full ios-blur-header border-b border-slate-200 px-3.5 flex items-center justify-between shadow-2xs sticky top-0">
           <div class="flex items-center gap-2.5 min-w-0">
             <!-- [P] Official App Icon (Optimized PWA Icon) -->
             <button
@@ -9115,7 +10681,7 @@
             <!-- Comando de Voz Global -->
             <button
               type="button"
-              onclick="toggleVoiceAssistant()"
+              onclick="handlePlanesIntelligenceEntry()"
               class="global-voice-trigger w-8 h-8 rounded-full ${isListening ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-950 text-[#d4ff00] border-slate-800'} border flex items-center justify-center ios-press-action cursor-pointer shadow-2xs"
               title="${isListening ? 'Parar comando de voz' : 'Comando de voz Planes'}"
               aria-label="${isListening ? 'Parar comando de voz' : 'Ativar comando de voz'}"
@@ -9892,8 +11458,8 @@
       if (!isProjectSwitcherOpen) return '';
       return `
         <!-- BOTTOM SHEET: PROJECT SWITCHER COM BUSCA E TROCA RÁPIDA -->
-        <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="toggleMobileProjectSwitcher()">
-          <div class="bg-white rounded-t-[28px] p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl animate-card-fade border-t border-slate-200" onclick="event.stopPropagation()">
+        <div class="planes-mobile-sheet-overlay fixed inset-0 bg-black/60 flex flex-col justify-end" onclick="toggleMobileProjectSwitcher()">
+          <div class="planes-mobile-sheet-panel bg-white rounded-t-[28px] p-5 space-y-4 max-h-[85dvh] overflow-y-auto shadow-2xl animate-card-fade border-t border-slate-200" onclick="event.stopPropagation()">
             
             <!-- Drag Indicator Bar -->
             <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto -mt-1 mb-1"></div>
@@ -9963,8 +11529,8 @@
 
       return `
         <!-- BOTTOM SHEET: MENU MAIS -->
-        <div id="mobile-more-sheet" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="toggleMobileMoreSheet()" role="dialog" aria-modal="true" aria-label="Mais módulos da obra">
-          <div class="bg-white rounded-t-[26px] p-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl animate-card-fade" onclick="event.stopPropagation()">
+        <div id="mobile-more-sheet" class="planes-mobile-sheet-overlay fixed inset-0 bg-black/60 flex flex-col justify-end" onclick="toggleMobileMoreSheet()" role="dialog" aria-modal="true" aria-label="Mais módulos da obra">
+          <div class="planes-mobile-sheet-panel bg-white rounded-t-[26px] p-5 space-y-4 max-h-[85dvh] overflow-y-auto shadow-2xl animate-card-fade" onclick="event.stopPropagation()">
             
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
               <strong class="text-sm font-black text-slate-950">Mais Módulos da Obra</strong>
@@ -10723,13 +12289,22 @@
                 </div>
                 <p class="text-[10.5px] text-slate-600 mt-1.5 leading-snug">${detail}</p>
                 <p class="text-[11px] font-black text-slate-900 mt-1">${primary.label}</p>
-                <button
-                  type="button"
-                  onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
-                  class="mt-2.5 w-full min-h-[40px] px-3 py-2 rounded-xl bg-slate-950 text-white text-[10.5px] font-black ios-press-action"
-                >
-                  ${primary.action} →
-                </button>
+                <div class="mt-2.5 grid grid-cols-[1fr_auto] gap-2">
+                  <button
+                    type="button"
+                    onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
+                    class="min-h-[40px] px-3 py-2 rounded-xl bg-slate-950 text-white text-[10.5px] font-black ios-press-action"
+                  >
+                    ${primary.action} →
+                  </button>
+                  <button
+                    type="button"
+                    onclick="deferProactiveIntelligenceBrief()"
+                    class="min-h-[40px] px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-[10px] font-black ios-press-action"
+                  >
+                    Depois
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -10751,13 +12326,22 @@
                 <p class="text-xs text-slate-600 mt-1">${detail}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
-              class="px-4 py-2.5 rounded-[12px] bg-slate-950 hover:bg-slate-900 text-white text-xs font-black transition shrink-0"
-            >
-              ${primary.action} →
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onclick="deferProactiveIntelligenceBrief()"
+                class="px-3 py-2.5 rounded-[12px] border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-black transition"
+              >
+                Ver depois
+              </button>
+              <button
+                type="button"
+                onclick="openIntelligenceAction('${primary.action.replace(/'/g, "\\'")}')"
+                class="px-4 py-2.5 rounded-[12px] bg-slate-950 hover:bg-slate-900 text-white text-xs font-black transition"
+              >
+                ${primary.action} →
+              </button>
+            </div>
           </div>
         </section>
       `;
@@ -10785,10 +12369,162 @@
           metadata: { source: 'proactive_recommendation', action }
         });
       }
+      acknowledgeProactiveIntelligenceBrief('priority_action:' + action);
       activeNav = target;
       mobileCurrentTab = 'modulo';
       showToast('Abrindo ' + target + '.');
       render();
+    }
+
+
+    const PLANES_PERSONA_AVATARS = {
+      brita: 'data:image/webp;base64,UklGRhwHAABXRUJQVlA4IBAHAABQIgCdASqAAIAAPpVGnEslo6KhpxSauLASiWMG+IUEJBxzqRFeQDcA9Iu3r52v0f72RII2NPnYasRnjyVwFZcaqCvyaj5VefkVsI6sfqdmbHBQpmyJrweukgmsJBEMqcuh7OUoDIhZkEBxIEaaLRx3ei0N2xOQLMQcWhXSBtxS4BjQDav7okT/4wZBxKhxi6lAItBIMeiYuRVz6xFpJGFj0uQVu+L7FqMDi1+MsTMrrCUgUOT3LdOHJLSZeq7ZVxefnWzYDdlQNudLFbMIlWFZ3isWXMSE+/c8+CIUj5gGPadfFt/pINjE3ROtaM+sv0uJYVr8vGCqA+BHZOYsf41aXwL1kzMKTnJcoGXV2ZkvtmqZPAGT2umBtN4AAP7isngGXvy60UnLumgKDQJcXWyOKbPLpOBvZEoxxOF78ooXrXMxLRr6iLPyMgkhAtW9tIyAdnfXM/Yl4/mpUG+xjp+ui/szGH38KnWVxjW4ldHzgVHelKI3Ho5+eMJPfh7QNV/LHeTlh4imlSTz7yvvxSk3bho6yXNpEEBjeJZIe3xokfJyQj/WAxrbPvAAXGBzJEpfjsovbHjZOG7x+hxlcl9Q3ML+2nU8IuOWGyKspJn36A8FQ9AkN+xlApfCe/0qHeizREoOpaliqKeqg1LZrwVggWTSHc5Qk2G3DzrC0WHgGSgSzaOnX5det5seMcWoVCuDkkc+bkm9DG98MXiO9gq+rE3cSUKnLusHB1FkHRiJ2GDL9Rv6lmPfKa9WHjRLFgI++mGoA0cVp5U1J0qMX+rjZd+1BXkMKYPTCha+U2KhAD/XSYh6ddzfszX+mNC2lyY7aor1Y5aH/Wjbt9mibnrYphrrUTBvnhqfaRWHCaIN9u55PIjPiJ4mpSP3vlHg8Rr4DO24sqKWpd9/7Ne0VTib5gjgYC5WDfWW2EpYW4OsiRwKQ19WB0gfdji+jHPreO0bLrIm/cqKSgTskOwgcq5B6dMj5CDAWtgcF7Zcg0dsdWHNwb8C6wHMgKaTToKIr8V/flgU2vkfQx8JmYSD6ULs07hS/D8f2I7sk8SpmX3jUWJ/9G6qaZ0y7RDzU3Aj0k+vGkCzeZRQyaxZ96H4XI7XwBSI/bNZk9SdSa1f4Q/UHtMGQFcLkJCOo4dpuburlPajnbcPt37KogEa1eZXxesmDe/a+i06HN3uCBi7BFMfS3vIeA4AIvo7ZhK0DS7Ce7+o2DA1QAhI40BKcUKLl0VQD6T7jJ0GjLu8JCRGuinfCdNMjw4iPTBfFsYkvNu4FuihblVjcEUsqM6nIGmzW83hBbtwRg4Fq4V7bYe+81Xy7/F927i+3Z+jNoLvN6p5f+ZiZqHr0/+XAZL9VBix7fJ5n2sM/wph4q2dZgzXLrs8lD5zzKptKZbg91J+ArfoimDxthZueaMKhvv66p32BCU+/r6rCApURv32IunXPBtQTIStFsI6/tuQcgTbHzei3q1MsPiJ1WUMQijDW9YNQeRjVtFTFCIO8sr+p5L+evY5m8EGrsWDVhRFWUU4XLyj1iJxXf2/lVP6BCMFMyGvRc3rmiYgfqNrbZyvlSXjBBvHXEzgFFPDzydDO83urtGeTX/jJNK49KvnB8icYv4suaeXWByrZBlBecBUUbXyduVgzSr0ylJoMoKUubTcjpaDIso7Zf3K8gCzTN/EvK3nj6g6n/XD/55R2D+COBPNuslOtgOFDf7MJxZMAxl06DKHt0ldbEhl6z7+cAYqidCWoKfZVMgy4bU1GzNmcSOKxeO9G1SZtgP85HCQrLc0ifoqu1Zgb9YxRY+2e4vfgI/H3rQeR2Eic9CSHCqLgoh2VEffLllPt8PGrS19ahZwMZSRXalpjvxbQ+NiIgExPOcma01H1p+ObBWBJB8qrGbLjw6x4TpTaz86GHlZAvqObX/5kUEGdZC7CQHk5/cjXmPYhZ4GxwjHd+BQsqgvySsb+M+S4p/MGkd3N+el+3Q1HadZE81Ej1HcsUiRUzAFEU6+07CRqz31wWpT9pHdrkRz10hhz02OovNhdcD2fKkvNXeGBV2X4RJn39F/7ToCoS0HHvWJLQKHK3mnvZ88b4P/8qHrMAfpw9XmQ7rXhiKXNEI51D5rD45Wona7GCcKpOSVLiuCpJ9vGPhzvH01er8TGWHKUAM2/azWTyMAoBKmFPY/jQBh9sglamO/6k3LYiVJphQY8aqRlJb9its/ji+44Vc64czIL446XNie1EyoDsnFvyJqsEtB/FNOQ9GTM1V1Ale9SdmYTy+VSYseLxErq1EySiVDIulyPF3qucSlKpC2cl8t91tW6tyid7hBHiVA7JP0D5aZHNMpw+fqDlgED0fKdNUlTeMLq2WEBQZM3gcvSadVe3+frbm9WGVCc2KBZmANab546ysCmhtTEuYamIAAAA==',
+      castanha: 'data:image/webp;base64,UklGRn4GAABXRUJQVlA4IHIGAACQHwCdASqAAIAAPpVEnEqlo6KuKBULKcASiUDfHPhZyTadrf7kUQ49uNd0K/r4JZsDEHTZzT/K1qGLZ3TjR+8MRmVNbP80DUTNTai2kftqb7tYWH45CHuqhO5xwlw351lFUvLqzDjO3r1j9asNb5W0re4Gv1zJ3oMKeooQxklnZJS7LUxynIoGB5MCsEksK1zfClKVaEOfOGkGws6z7ezj8rmAQ6zgOf4nhWxUjo4AhdaQr35cHysF+7MY1wuJ5DP+xG8b4oM2FwJEjn8DT066TQJaCRA8c+vyWewCG/5XAJQIA27APYXFk7Lks/f/xPwRtbyds2wiAW/+A31rUz6X8VN8TcAA/tAbkUY9FjkZcpvwvDapGXHWmh3iaAq4THyXYcKUXInhc507viywq5t/mWUAjizo1Z72Fq2z/CKTVzXXTn1alpOMnEaXhyLeEp3XPksOV2JYEVjeMawbnXqN0XvReD8Izr/1Z5byKFnV20Bnj3nkNw1/K24tsghpI23fyyT5cVfylsNnxeHAqbE9P1PwMP9qjc8tGUy3jt+xBNfP0ao/uxvnof5ZdBE53IQ3nz4gFrph1efEdLZJ/LqF7ofE39UL78TnO1QgTjI69A5L5NoVbpeTmEFBqRisVz5fSisXr4nFS4Ueii2FAD4U3plJtl7F6ARV2oscpyNcPS8CdXuzzFQHZAdSgiDs0NFe/aLojvvL3vlMksstVXnS95YvlLzKgmHxIs6wlYCDZI1gHIRlbZo03xgfiPwsG+21qthZfA/uq/J0d1DXrOWFvb1vamFYDbJ43Ug8cUo20v0JwXVZk/EDnX3vcltTiIk6ee3C5ilaB0SkRsBlQY8tC50dga3qGuEPHtdZGCRfWRvT7vUC7ngAHwWi0KM1yFCAk3eMOqT2m7XjtJ7oua1xhigmFBY9zL9JrDqKngUpgeyrKMSD1u0/+FjTkVPql4yhxjIfEPNgcM+nAUe6sZPBp4RSlqQdmztqQh49dSBv9gIXvX2E0oubx3DK5eUGIv+hzvUJwW7iKBzsKs/6xCkmMGiVrZdwtpAs14Y8IRkeQeXPdQmij567dNInt8EVzv+RLbzsIUAAMwRE/pUnVFIn7e4Tf4Uj61nT3x8XOvL9jNKT3Y5h+RGDd8lPcLT5fLig86JuvDM31bcaD3mQLwHTYHw37Rda6k/NVbodAxrSo8rJ9+puVLzS1A/bHo2PeXNeURVfPkHTwHCejqbqd/g2UROMV0Zwa4IiLnur6XgVvSf+QHAurD+bS6PuJBZ7REEFZmwHI7F1Nou0SJzk0cH7dYx+Z7vxJNqU92YtkHuwT+nLcbN4XvFcvtlo/Tzl70E948L9qTGdi43NZOkKFiomQm6DRjK6+J6JuxGalhXahOkIqiXFl8FUj0JZePav6uRcJaOEq5mHPkhKUBgNkXA+BIFg3ZBFCgKWwMj7deLkPeJ09fLhLAVe3J9D6fAttrzeA4Y6Rb6VX6SRgFBNhtHTVDj/dacnbmARx73k0nhdYHjg0unUgZH3c4KDgHKJkSh1KMYfPpK1EKOUwLQypQE8f43ot144JdZ0OjtwNpYNC4So8LWkovJHO7fL51fMeRx8k7mBOIK0oe2xMYuGif6Z/9+0qIkh7hIhyP13qaj7T6+JKOvRP8tvkuTaALwZxD+zP/nJpnXz4R0jzRdsr0/xJNRHieVtTG/gzYG4XrT9y2+y/j5kmU83TgVWwC1GjEWormLWsDXwfT03qKRvcySHhq17lRBwQHeTrQTb/Hhm1mQy7MAEh1oyqwYc/JF+Yl7VRbucLggPiTjcov8Jir/CB6UfSFXogX8zLS/0KTcciqPdOgWIp6aTk4rr4oADzfJobH0bmFlXTFGkjcAWK3xwdC4Cn1/U+8WPUUJtDkHKR8OVxzBmi6rtpD37YrTkEszSv93LbdJxyEj/HqaDZLynKfsWe9PErLgjrICpjRPaEoVCyP0Vx/WU17J9CDulb0PDsPUV6ZrrSIBL1gAxGc+zWyurzVPktd35vyDOT+yOUDkt369eSU8ERfwsZ3m/Q09tmFyrx7f3GTgpqvdRO8oyAPLWgjF8jg4cUlnybcZJQyVriC6bA0G9uR2EO7N87zZlnMXaALRXhVeeBL4M7xpW6BN5mfTIAoWLSRNx5CfIWaQGlPDCj1n10KZhGEp2VA2sN7rbNZ73JaNbsMmkuB2AAAA='
+    };
+
+    function getAssistantPersona() {
+      const value = String(currentUser?.assistant_persona || '').toLowerCase();
+      return value === 'brita' || value === 'castanha' ? value : null;
+    }
+
+    function getAssistantPersonaLabel(persona = getAssistantPersona()) {
+      return persona === 'brita' ? 'Brita' : persona === 'castanha' ? 'Castanha' : 'Planes Intelligence';
+    }
+
+    function getAssistantPersonaAvatar(persona = getAssistantPersona()) {
+      return PLANES_PERSONA_AVATARS[persona] || '';
+    }
+
+    async function hydrateAssistantPersona() {
+      if (!supabaseClient || !currentUser?.id) return null;
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('assistant_persona,assistant_voice_enabled,assistant_onboarding_completed_at,assistant_last_daily_greeting_at')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        if (error || !data) return null;
+        currentUser.assistant_persona = data.assistant_persona || null;
+        currentUser.assistant_voice_enabled = data.assistant_voice_enabled !== false;
+        currentUser.assistant_onboarding_completed_at = data.assistant_onboarding_completed_at || null;
+        currentUser.assistant_last_daily_greeting_at = data.assistant_last_daily_greeting_at || null;
+        saveSessionState();
+        if (activeNav === 'Planes Intelligence') render();
+        return data;
+      } catch (err) {
+        console.warn('Planes Intelligence: preferência de persona indisponível.', err);
+        return null;
+      }
+    }
+
+    async function chooseAssistantPersona(persona) {
+      if (!['brita','castanha'].includes(persona)) return;
+      const now = new Date().toISOString();
+      if (currentUser) {
+        currentUser.assistant_persona = persona;
+        currentUser.assistant_voice_enabled = true;
+        currentUser.assistant_onboarding_completed_at = currentUser.assistant_onboarding_completed_at || now;
+      }
+      saveSessionState();
+      render();
+
+      if (supabaseClient && currentUser?.id) {
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({
+            assistant_persona: persona,
+            assistant_voice_enabled: true,
+            assistant_onboarding_completed_at: currentUser.assistant_onboarding_completed_at || now,
+            updated_at: now
+          })
+          .eq('id', currentUser.id);
+        if (error) console.warn('Planes Intelligence: persona salva apenas localmente.', error);
+      }
+
+      showToast(getAssistantPersonaLabel(persona) + ' agora é seu assistente no Planes Intelligence.');
+      if (typeof trackUserHabit === 'function') {
+        trackUserHabit('assistant_persona_selected', {
+          module: 'Planes Intelligence',
+          topic: 'persona',
+          mode: 'touch',
+          metadata: { persona }
+        });
+      }
+    }
+
+    function renderAssistantPersonaOnboarding(compact = false) {
+      const card = (persona, subtitle) => `
+        <button type="button" onclick="chooseAssistantPersona('${persona}')" class="group text-left rounded-[20px] border border-slate-200 bg-white hover:border-violet-300 hover:shadow-md transition overflow-hidden">
+          <div class="${compact ? 'h-28' : 'h-44'} bg-slate-100 overflow-hidden">
+            <img src="${getAssistantPersonaAvatar(persona)}" alt="${getAssistantPersonaLabel(persona)}" class="w-full h-full object-cover object-top group-hover:scale-[1.02] transition duration-300" />
+          </div>
+          <div class="${compact ? 'p-3' : 'p-4'}">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
+                <p class="text-[10px] text-slate-500 mt-0.5">${subtitle}</p>
+              </div>
+              <span class="w-8 h-8 rounded-full bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black">P</span>
+            </div>
+            <p class="mt-2 text-[10px] font-black text-violet-700">Escolher ${getAssistantPersonaLabel(persona)} →</p>
+          </div>
+        </button>
+      `;
+
+      return `
+        <section class="${compact ? 'rounded-[22px] p-4' : 'rounded-[26px] p-6'} bg-slate-950 text-white border border-slate-800 shadow-xl">
+          <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#d4ff00]">Primeiro uso</p>
+          <h3 class="${compact ? 'text-xl' : 'text-2xl'} font-black mt-1">Quem vai trabalhar com você?</h3>
+          <p class="text-xs text-slate-300 mt-1.5 max-w-xl">Escolha a persona do seu Planes Intelligence. Você poderá trocar a qualquer momento aqui no assistente.</p>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            ${card('brita', 'Persona feminina · voz feminina')}
+            ${card('castanha', 'Persona masculina · voz masculina')}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderAssistantPersonaControl(compact = false) {
+      const persona = getAssistantPersona();
+      if (!persona) return '';
+      const pending = realtimeVoicePendingMutation;
+      return `
+        <section class="${compact ? 'rounded-[18px] p-3' : 'rounded-[20px] p-4'} bg-white border border-slate-200 shadow-2xs">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="relative shrink-0">
+                <img src="${getAssistantPersonaAvatar(persona)}" alt="${getAssistantPersonaLabel(persona)}" class="${compact ? 'w-11 h-11' : 'w-14 h-14'} rounded-2xl object-cover object-top border border-slate-200 bg-slate-100" />
+                ${isRealtimeVoiceActive() ? `
+                  <span class="absolute -right-1 -bottom-1 w-4 h-4 rounded-full border-2 border-white ${realtimeVoiceState === 'speaking' ? 'bg-violet-500 animate-pulse' : realtimeVoiceState === 'listening' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}"></span>
+                ` : ''}
+              </div>
+              <div class="min-w-0">
+                <p class="text-[9px] font-black uppercase tracking-wider text-violet-600">Seu assistente</p>
+                <p class="text-sm font-black text-slate-950">${getAssistantPersonaLabel(persona)}</p>
+                <p class="text-[10px] text-slate-500">Planes Intelligence · ${getRealtimeVoiceStatusLabel()} · memória desta obra</p>
+              </div>
+            </div>
+            <button type="button" onclick="currentUser.assistant_persona=null; render();" class="px-3 py-2 rounded-xl border border-slate-200 text-[10px] font-black text-slate-700 hover:bg-slate-50">Trocar</button>
+          </div>
+
+          ${pending ? `
+            <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <div class="flex items-start gap-2">
+                <span class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-[10px] font-black shrink-0">!</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[9px] font-black uppercase tracking-wider text-amber-700">Aguardando sua confirmação</p>
+                  <p class="text-[11px] font-bold text-slate-900 mt-0.5 leading-snug">${pending.summary}</p>
+                  <p class="text-[9px] text-slate-500 mt-1">Você pode responder por voz ou confirmar aqui.</p>
+                  <div class="mt-2 flex items-center gap-2">
+                    <button type="button" onclick="confirmPendingVoiceMutationFromUI(true)" class="px-3 py-1.5 rounded-lg bg-slate-950 text-white text-[9.5px] font-black">Confirmar</button>
+                    <button type="button" onclick="confirmPendingVoiceMutationFromUI(false)" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-[9.5px] font-black">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </section>
+      `;
     }
 
     function renderMobileIntelligenceView() {
@@ -10822,14 +12558,23 @@
       };
       const riskClass = toneMap[cockpit.riskTone] || toneMap.amber;
 
+      if (!getAssistantPersona()) {
+        return `
+          <div class="planes-intelligence-mobile p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
+            ${renderAssistantPersonaOnboarding(true)}
+          </div>
+        `;
+      }
+
       return `
         <div class="planes-intelligence-mobile p-3.5 space-y-4 animate-card-fade pb-28 font-sans">
+          ${renderAssistantPersonaControl(true)}
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 font-mono">IA DE ENGENHARIA</span>
                 <span class="planes-intelligence-status text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full border ${isListening ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}">
-                  ${isListening ? '● Ouvindo' : '● Online'}
+                  ● ${getRealtimeVoiceStatusLabel()}
                 </span>
               </div>
               <h2 class="text-xl font-black text-slate-950 leading-tight mt-1">Oi, ${getPlanesUserFirstName()}</h2>
@@ -10882,13 +12627,20 @@
                   ` : `
                     <p class="mt-2.5 text-[10px] text-emerald-700 font-bold">As mudanças detectadas são favoráveis. Nenhuma intervenção prioritária agora.</p>
                   `}
-                  <button type="button" onclick="askPlanesIntelligence('O que mudou nesta obra desde minha última visita?')" class="mt-2.5 text-[10px] font-black text-violet-800 underline underline-offset-2">
-                    Analisar mudanças
-                  </button>
+                  <div class="mt-2.5 flex items-center gap-3 flex-wrap">
+                    <button type="button" onclick="analyzeProactiveIntelligenceChanges()" class="text-[10px] font-black text-violet-800 underline underline-offset-2">
+                      Analisar mudanças
+                    </button>
+                    <button type="button" onclick="deferProactiveIntelligenceBrief()" class="text-[10px] font-black text-amber-700 underline underline-offset-2">
+                      Ver depois
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
           ` : ''}
+
+          ${renderIntelligenceMemoryFeed(true)}
 
           ${habits.topModule || habits.topTopic ? `
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -10947,9 +12699,15 @@
                 <div class="max-w-[88%] rounded-[20px] p-3.5 text-xs leading-relaxed shadow-2xs ${m.sender === 'user' ? 'bg-slate-950 text-white rounded-br-xs' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-xs'}">
                   ${(m.sender === 'assistant' || m.sender === 'ai') ? `
                     <div class="flex items-center justify-between gap-2 mb-2">
-                      <div class="flex items-center gap-1.5 text-[10px] font-bold text-purple-700 font-mono">
-                        <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
-                        <span>${isListening ? 'Ouvindo comando…' : 'Copiloto Planes AI'}</span>
+                      <div class="flex items-center gap-2 text-[10px] font-bold text-purple-700 font-mono">
+                        <img src="${getAssistantPersonaAvatar()}" alt="${getAssistantPersonaLabel()}" class="w-6 h-6 rounded-lg object-cover object-top border border-slate-200 bg-slate-100" />
+                        <div>
+                          <span class="block">${getAssistantPersonaLabel()}</span>
+                          <span class="flex items-center gap-1 text-[9px] text-slate-500">
+                            <span class="w-1.5 h-1.5 rounded-full ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}"></span>
+                            ${isListening ? 'Ouvindo comando…' : 'Planes Intelligence'}
+                          </span>
+                        </div>
                       </div>
                       <span class="text-[9px] text-slate-400 font-mono">${m.time || ''}</span>
                     </div>
@@ -10971,7 +12729,7 @@
             />
             <button
               type="button"
-              onclick="toggleVoiceAssistant()"
+              onclick="handlePlanesIntelligenceEntry()"
               class="w-10 h-10 rounded-full ${isListening ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'} flex items-center justify-center ios-press-action shrink-0"
               title="Comando de voz"
               aria-label="Ativar comando de voz"
@@ -12097,10 +13855,10 @@
         <!-- ========================================== -->
         <!-- 1. MOBILE WEB APP SHELL (DEVICE < 1024px) -->
         <!-- ========================================== -->
-        <div class="block lg:hidden w-full min-h-screen pb-24 bg-slate-100/60 font-sans">
+        <div class="planes-mobile-shell block lg:hidden w-full min-h-screen pb-24 bg-slate-100/60 font-sans">
           ${renderMobileTopBar(selectedProject)}
           
-          <main class="w-full">
+          <main class="planes-mobile-main w-full">
             ${(() => {
               if (mobileCurrentTab === 'inicio') {
                 return renderMobileInicioView(selectedProject);
@@ -13041,7 +14799,7 @@
                       <div class="flex items-center justify-center gap-3">
                         <button
                           type="button"
-                          onclick="toggleVoiceAssistant()"
+                          onclick="handlePlanesIntelligenceEntry()"
                           class="p-3.5 rounded-full shadow-lg transition-all transform active:scale-95 cursor-pointer touch-manipulation flex items-center gap-2 ${
                             isListening
                               ? 'bg-rose-600 text-white ring-8 ring-rose-100 animate-pulse'
@@ -13324,12 +15082,14 @@
               <!-- ========================================================= -->
               ${activeNav === 'Planes Intelligence' ? `
                 <div class="space-y-6 animate-card-fade">
+                  ${!getAssistantPersona() ? renderAssistantPersonaOnboarding(false) : `
+                  ${renderAssistantPersonaControl(false)}
                   
                   <!-- Top Banner do Copiloto -->
                   <div class="bg-slate-950 text-white rounded-[24px] border border-slate-800 p-6 xl:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div class="flex items-center gap-4">
-                      <div class="w-14 h-14 rounded-[18px] bg-[#d4ff00] text-slate-950 flex items-center justify-center shadow-lg shrink-0">
-                        ${getSvg('zap', 'w-7 h-7 text-slate-950')}
+                      <div class="w-14 h-14 rounded-[18px] overflow-hidden border border-white/15 bg-white/10 shadow-lg shrink-0">
+                        <img src="${getAssistantPersonaAvatar()}" alt="${getAssistantPersonaLabel()}" class="w-full h-full object-cover object-top" />
                       </div>
                       <div>
                         <div class="flex items-center gap-2">
@@ -13339,8 +15099,9 @@
                           <span class="text-xs text-slate-400 font-mono">Modelo Analítico Conectado</span>
                         </div>
                         <h2 class="text-xl sm:text-3xl font-black text-white tracking-tight mt-1">
-                          Copiloto de Engenharia & Diagnóstico Preditivo
+                          Oi, ${getPlanesUserFirstName()}
                         </h2>
+                        <p class="text-sm sm:text-base font-black text-[#d4ff00] mt-0.5">${getAssistantPersonaLabel()} · Copiloto de Engenharia & Diagnóstico Preditivo</p>
                         <p class="text-xs text-slate-300 font-medium max-w-2xl mt-1 leading-relaxed">
                           Inteligência aplicada aos dados da Linha de Balanço 16.03, Lookahead R4, Curva S, PAC e Validações para predição de gargalos e planos de ação.
                         </p>
@@ -13353,6 +15114,8 @@
                       <span class="text-[11px] text-emerald-400 font-mono">✓ 100% dos Indicadores Sincronizados</span>
                     </div>
                   </div>
+
+                  ${renderIntelligenceMemoryFeed(false)}
 
                   <!-- Grid Principal: Perguntas Rápidas & Chat Analítico -->
                   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -13457,8 +15220,8 @@
                         ${intelligenceChatHistory.map(msg => `
                           <div class="flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}">
                             ${msg.sender === 'ai' ? `
-                              <div class="w-9 h-9 rounded-xl bg-slate-950 text-[#d4ff00] flex items-center justify-center shrink-0 shadow-xs">
-                                ${getSvg('zap', 'w-4 h-4 text-[#d4ff00]')}
+                              <div class="w-9 h-9 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0 shadow-xs">
+                                <img src="${getAssistantPersonaAvatar()}" alt="${getAssistantPersonaLabel()}" class="w-full h-full object-cover object-top" />
                               </div>
                             ` : ''}
                             
@@ -13502,7 +15265,7 @@
                     </div>
 
                   </div>
-
+                  `}
                 </div>
               ` : ''}
 
@@ -16914,5 +18677,250 @@ ${activeNav === 'Equipe & Contatos' ? `
     restoreSessionState();
     render();
   </script>
+
+<script id="planes-intelligence-v2-runtime">
+(function(){
+  const FLAG_KEY='planes_intelligence_v2_enabled';
+  function queryFlag(){
+    try{
+      const p=new URLSearchParams(location.search);
+      if(p.get('intelligenceV2')==='1') localStorage.setItem(FLAG_KEY,'1');
+      if(p.get('intelligenceV2')==='0') localStorage.removeItem(FLAG_KEY);
+    }catch(e){}
+  }
+  queryFlag();
+
+  window.isPlanesIntelligenceV2Enabled=function(){
+    try{return localStorage.getItem(FLAG_KEY)==='1'}catch(e){return false}
+  };
+  window.setPlanesIntelligenceV2Enabled=function(enabled){
+    try{enabled?localStorage.setItem(FLAG_KEY,'1'):localStorage.removeItem(FLAG_KEY)}catch(e){}
+    return window.isPlanesIntelligenceV2Enabled();
+  };
+
+  window.handlePlanesIntelligenceEntry=function(){
+    if(window.isPlanesIntelligenceV2Enabled()) return window.openPlanesIntelligenceV2();
+    if(typeof toggleVoiceAssistant==='function') return toggleVoiceAssistant();
+  };
+
+  function firstName(){
+    try{return (typeof getPlanesUserFirstName==='function'&&getPlanesUserFirstName()) || (currentUser?.name||'Alex').split(' ')[0] || 'Alex'}catch(e){return 'Alex'}
+  }
+  function persona(){
+    try{return (typeof getAssistantPersona==='function'&&getAssistantPersona()) || 'brita'}catch(e){return 'brita'}
+  }
+  function personaLabel(){
+    try{return (typeof getAssistantPersonaLabel==='function'&&getAssistantPersonaLabel()) || (persona()==='castanha'?'Castanha':'Brita')}catch(e){return persona()==='castanha'?'Castanha':'Brita'}
+  }
+  function roleLabel(){
+    try{
+      const r=(typeof getEffectiveIntelligenceRole==='function'&&getEffectiveIntelligenceRole()) || currentUser?.role || 'engenharia';
+      const map={engenharia:'Engenharia',campo:'Campo',gestor:'Gestor',cliente:'Cliente',admin:'Admin',super_admin:'Admin'};
+      return map[String(r).toLowerCase()] || String(r);
+    }catch(e){return 'Engenharia'}
+  }
+  function screenLabel(){
+    try{
+      if(typeof mobileCurrentTab!=='undefined'){
+        const map={inicio:'Sua obra hoje',planejar:'Planejamento',campo:'Canteiro',mais:'Mais',modulo:'Módulo'};
+        if(map[mobileCurrentTab]) return map[mobileCurrentTab];
+      }
+      return typeof activeNav!=='undefined' && activeNav ? activeNav : 'Sua obra hoje';
+    }catch(e){return 'Sua obra hoje'}
+  }
+  function projectLabel(){
+    try{return selectedProject?.title || projectsList?.[0]?.title || 'Obra ativa'}catch(e){return 'Obra ativa'}
+  }
+  function communicationLabel(){
+    try{
+      const p=typeof intelligenceUserProfile!=='undefined'?intelligenceUserProfile:null;
+      if(p?.prefers_detail) return 'Mais contexto';
+      if(p?.prefers_short) return 'Resposta mais direta';
+    }catch(e){}
+    return 'Aprendendo seu jeito';
+  }
+
+  function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+  function ensureOverlay(){
+    let el=document.getElementById('planes-intelligence-v2-overlay');
+    if(el) return el;
+    el=document.createElement('div');
+    el.id='planes-intelligence-v2-overlay';
+    el.className='planes-intel-v2-overlay';
+    el.innerHTML=
+      '<div class="planes-intel-v2-shell">'+
+        '<aside class="planes-intel-v2-left">'+
+          '<div class="planes-intel-v2-brand">P</div>'+
+          '<div class="planes-intel-v2-nav">'+
+            '<button data-v2-nav="inicio">⌂ <span>Início</span></button>'+
+            '<button data-v2-nav="planejar">▦ <span>Planejar</span></button>'+
+            '<button data-v2-nav="campo">⚡ <span>Canteiro</span></button>'+
+            '<button data-v2-nav="mais">☰ <span>Mais</span></button>'+
+          '</div>'+
+          '<div class="planes-intel-v2-user"><i id="planes-v2-user-avatar">A</i><div><strong id="planes-v2-user-name"></strong><small id="planes-v2-user-role-left"></small></div></div>'+
+        '</aside>'+
+        '<section class="planes-intel-v2-center">'+
+          '<header class="planes-intel-v2-header">'+
+            '<button class="planes-intel-v2-back" data-v2-close>←</button>'+
+            '<div class="planes-intel-v2-heading"><small>Sua obra, em conversa</small><strong>Planes Intelligence</strong></div>'+
+            '<div class="planes-intel-v2-switch"><button data-v2-persona="brita">Brita</button><button data-v2-persona="castanha">Castanha</button></div>'+
+            '<button class="planes-intel-v2-close" data-v2-close>✕</button>'+
+          '</header>'+
+          '<div class="planes-intel-v2-persona"><div class="planes-intel-v2-avatar" id="planes-v2-persona-avatar">B</div><div><strong id="planes-v2-persona-name">Brita</strong><small id="planes-v2-persona-status">Sempre com você na obra</small></div><span class="planes-intel-v2-online" id="planes-v2-online-dot"></span></div>'+
+          '<div class="planes-intel-v2-chips"><span class="planes-intel-v2-chip" id="planes-v2-context-chip"></span><span class="planes-intel-v2-chip learning" id="planes-v2-learning-chip"></span></div>'+
+          '<div id="planes-v2-pending" style="display:none;margin:0 18px 10px;padding:12px 14px;border:1px solid #f7cf74;background:#fff8e8;border-radius:16px"><div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#9a6700">Confirmar ação</div><div id="planes-v2-pending-copy" style="margin-top:4px;font-size:12px;font-weight:800;line-height:1.35;color:#101828"></div><div style="display:flex;gap:8px;margin-top:10px"><button id="planes-v2-confirm" style="border:0;border-radius:10px;background:#0f172a;color:#fff;font-size:11px;font-weight:900;padding:9px 13px">Confirmar</button><button id="planes-v2-cancel" style="border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;font-size:11px;font-weight:900;padding:9px 13px">Cancelar</button></div></div>'+
+          '<div class="planes-intel-v2-chat" id="planes-v2-chat"></div>'+
+          '<div class="planes-intel-v2-suggestions"><button data-v2-ask="Validação">✓ <span>Validação</span> ›</button><button data-v2-ask="Aço da Arena">▣ <span>Aço da Arena</span> ›</button><button data-v2-ask="Me resume tudo">☷ <span>Me resume tudo</span> ›</button></div>'+
+          '<div class="planes-intel-v2-composer"><button aria-label="Anexar">＋</button><div class="planes-intel-v2-inputwrap"><input id="planes-v2-input" placeholder="Fala ou escreve do seu jeito..."><button id="planes-v2-send">➤</button></div><button class="planes-intel-v2-mic" id="planes-v2-mic" aria-label="Usar voz">🎙</button></div>'+
+        '</section>'+
+        '<aside class="planes-intel-v2-right">'+
+          '<div class="planes-intel-v2-panel"><h3>Contexto atual</h3><div class="planes-intel-v2-context"><div><span>Obra</span><strong id="planes-v2-project"></strong></div><div><span>Perfil</span><strong id="planes-v2-role"></strong></div><div><span>Tela</span><strong id="planes-v2-screen"></strong></div></div><div class="planes-intel-v2-note">● Estou vendo a mesma tela que você e posso ajudar com o que estiver aqui.</div></div>'+
+          '<div class="planes-intel-v2-panel"><h3>Ações rápidas</h3><div class="planes-intel-v2-actions"><button data-v2-action="validation">✓ Abrir validação <span>›</span></button><button data-v2-ask="Aço da Arena">▣ Ver suprimento <span>›</span></button><button data-v2-ask="Criar tarefa">＋ Criar tarefa <span>›</span></button><button data-v2-action="planning">▦ Ver planejamento <span>›</span></button><button data-v2-ask="Gerar relatório">▥ Gerar relatório <span>›</span></button></div></div>'+
+          '<div class="planes-intel-v2-tip"><strong id="planes-v2-tip-title">✦ Dica da Brita</strong><p id="planes-v2-tip-copy">Posso te levar direto para o ponto mais importante desta tela.</p><button data-v2-action="validation">Abrir agora →</button></div>'+
+        '</aside>'+
+      '</div>';
+    document.body.appendChild(el);
+
+    el.querySelectorAll('[data-v2-close]').forEach(b=>b.addEventListener('click',window.closePlanesIntelligenceV2));
+    el.querySelectorAll('[data-v2-ask]').forEach(b=>b.addEventListener('click',()=>submit(b.dataset.v2Ask)));
+    el.querySelectorAll('[data-v2-persona]').forEach(b=>b.addEventListener('click',()=>selectPersona(b.dataset.v2Persona)));
+    el.querySelectorAll('[data-v2-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.v2Nav)));
+    el.querySelectorAll('[data-v2-action]').forEach(b=>b.addEventListener('click',()=>quickAction(b.dataset.v2Action)));
+    el.querySelector('#planes-v2-send')?.addEventListener('click',()=>submit());
+    el.querySelector('#planes-v2-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
+    el.querySelector('#planes-v2-mic')?.addEventListener('click',()=>{if(typeof toggleVoiceAssistant==='function')toggleVoiceAssistant(); setTimeout(renderOverlay,80)});
+    el.querySelector('#planes-v2-confirm')?.addEventListener('click',async()=>{if(typeof confirmPendingVoiceMutationFromUI==='function') await confirmPendingVoiceMutationFromUI(true); renderOverlay()});
+    el.querySelector('#planes-v2-cancel')?.addEventListener('click',async()=>{if(typeof confirmPendingVoiceMutationFromUI==='function') await confirmPendingVoiceMutationFromUI(false); renderOverlay()});
+    return el;
+  }
+
+  async function selectPersona(p){
+    try{
+      if(typeof chooseAssistantPersona==='function') await chooseAssistantPersona(p);
+    }catch(e){}
+    setTimeout(renderOverlay,50);
+  }
+  function navigate(tab){
+    window.closePlanesIntelligenceV2();
+    try{
+      if(tab==='mais'&&typeof toggleMobileMoreSheet==='function') return toggleMobileMoreSheet();
+      if(typeof setMobileTab==='function') return setMobileTab(tab);
+    }catch(e){}
+  }
+  function quickAction(type){
+    window.closePlanesIntelligenceV2();
+    try{
+      if(type==='planning'){
+        if(typeof navigatePlanesFromVoice==='function') return navigatePlanesFromVoice('lookahead');
+        if(typeof setMobileTab==='function') return setMobileTab('planejar');
+      }
+      if(type==='validation'){
+        if(typeof navigatePlanesFromVoice==='function') return navigatePlanesFromVoice('validations');
+        if(typeof setMobileTab==='function') return setMobileTab('mais');
+      }
+    }catch(e){}
+  }
+
+  async function submit(forced){
+    const input=document.getElementById('planes-v2-input');
+    const send=document.getElementById('planes-v2-send');
+    const text=String(forced || input?.value || '').trim();
+    if(!text) return;
+    if(input&&!forced) input.value='';
+    if(input) input.disabled=true;
+    if(send){send.disabled=true;send.textContent='…'}
+    try{
+      if(typeof askPlanesIntelligence==='function'){
+        await askPlanesIntelligence(text);
+      }
+    }catch(e){
+      if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Tente novamente.');
+    }finally{
+      if(input) input.disabled=false;
+      if(send){send.disabled=false;send.textContent='➤'}
+    }
+    renderOverlay();
+    setTimeout(()=>document.getElementById('planes-v2-input')?.focus(),20);
+  }
+
+  function chatRows(){
+    let rows=[];
+    try{rows=Array.isArray(intelligenceChatHistory)?intelligenceChatHistory:[]}catch(e){}
+    if(!rows.length){
+      rows=[
+        {sender:'ai',text:'Oi, '+firstName()+'. Tô vendo a mesma tela que você. Pode falar comigo normalmente.'},
+        {sender:'ai',text:'Posso começar te mostrando o que merece atenção hoje.'}
+      ];
+    }
+    return rows.slice(-12);
+  }
+
+  function renderOverlay(){
+    const el=ensureOverlay();
+    const p=persona(), name=personaLabel(), role=roleLabel(), screen=screenLabel(), proj=projectLabel();
+    const set=(id,v)=>{const n=document.getElementById(id);if(n)n.textContent=v};
+    set('planes-v2-user-name',firstName());
+    set('planes-v2-user-role-left',role);
+    set('planes-v2-persona-name',name);
+    const avatar=document.getElementById('planes-v2-persona-avatar');
+    if(avatar){
+      let src='';
+      try{src=typeof getAssistantPersonaAvatar==='function'?getAssistantPersonaAvatar(p):''}catch(e){}
+      avatar.innerHTML=src?'<img src="'+src+'" alt="'+escapeHtml(name)+'" style="width:100%;height:100%;object-fit:cover;object-position:top;border-radius:inherit;display:block">':(p==='castanha'?'C':'B');
+    }
+    set('planes-v2-context-chip','● '+role+' · Vendo: '+screen);
+    set('planes-v2-learning-chip',communicationLabel());
+    set('planes-v2-project',proj);
+    set('planes-v2-role',role);
+    set('planes-v2-screen',screen);
+    set('planes-v2-tip-title','✦ Dica d'+(p==='brita'?'a ':'o ')+name);
+
+    let voiceState='idle';
+    try{voiceState=typeof realtimeVoiceState!=='undefined'?realtimeVoiceState:'idle'}catch(e){}
+    const statusMap={connecting:'Conectando voz…',listening:'Ouvindo você',speaking:'Falando com você',reconnecting:'Reconectando…',error:'Voz local disponível',idle:'Sempre com você na obra'};
+    set('planes-v2-persona-status',statusMap[voiceState]||statusMap.idle);
+    const dot=document.getElementById('planes-v2-online-dot');
+    if(dot){dot.style.background=voiceState==='listening'?'#12b76a':voiceState==='speaking'?'#7f56d9':voiceState==='connecting'||voiceState==='reconnecting'?'#f79009':'#84cc16'}
+    const mic=document.getElementById('planes-v2-mic');
+    if(mic){
+      const active=['connecting','listening','speaking','reconnecting'].includes(voiceState);
+      mic.style.background=active?'#0f172a':'';
+      mic.style.color=active?'#d4ff00':'';
+      mic.setAttribute('aria-label',active?'Encerrar voz':'Usar voz');
+    }
+
+    let pending=null;
+    try{pending=typeof realtimeVoicePendingMutation!=='undefined'?realtimeVoicePendingMutation:null}catch(e){}
+    const pendingBox=document.getElementById('planes-v2-pending');
+    if(pendingBox){
+      pendingBox.style.display=pending?'block':'none';
+      set('planes-v2-pending-copy',pending?.summary||'');
+    }
+
+    el.querySelectorAll('[data-v2-persona]').forEach(b=>b.classList.toggle('active',b.dataset.v2Persona===p));
+
+    const chat=document.getElementById('planes-v2-chat');
+    if(chat){
+      chat.innerHTML=chatRows().map(m=>'<div class="planes-intel-v2-msg '+(m.sender==='user'?'user':'')+'">'+(m.sender==='ai'?'<b>'+escapeHtml(name)+'</b>':'')+escapeHtml(m.text)+'</div>').join('');
+      chat.scrollTop=chat.scrollHeight;
+    }
+  }
+
+  window.openPlanesIntelligenceV2=function(){
+    const el=ensureOverlay();
+    renderOverlay();
+    el.classList.add('open');
+    document.documentElement.style.overflow='hidden';
+    try{if(typeof trackUserHabit==='function')trackUserHabit('intelligence_query',{module:'Planes Intelligence V2',topic:'open',mode:'ui'})}catch(e){}
+    return true;
+  };
+  window.closePlanesIntelligenceV2=function(){
+    const el=document.getElementById('planes-intelligence-v2-overlay');
+    if(el)el.classList.remove('open');
+    document.documentElement.style.overflow='';
+  };
+})();
+</script>
 </body>
 </html>
