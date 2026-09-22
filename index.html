@@ -542,7 +542,7 @@
 <style id="planes-intelligence-v2-styles">
   .planes-intel-v2-overlay{position:fixed;inset:0;z-index:1400;background:#fff;display:none;color:#0f172a;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   .planes-intel-v2-overlay.open{display:grid}
-  .planes-intel-v2-shell{display:grid;grid-template-columns:1fr;min-width:0;height:100dvh;min-height:0;background:#fff;overflow:hidden}
+  .planes-intel-v2-shell{position:relative;display:grid;grid-template-columns:1fr;min-width:0;height:100dvh;min-height:0;background:#fff;overflow:hidden}
   .planes-intel-v2-left,.planes-intel-v2-right{display:none}
   .planes-intel-v2-center{display:flex;flex-direction:column;min-width:0;min-height:0;height:100dvh;background:#fff;overflow:hidden}
   .planes-intel-v2-header{min-height:72px;padding:max(12px,env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}
@@ -4679,19 +4679,8 @@
         }
       }
 
-      // 2. Modo Offline / Fallback Local
-      const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
-      if (registered) {
-        currentUser = registered;
-        accessLevel = registered.level || registered.role || 'Campo';
-        currentScreen = 'projects';
-        showToast('✓ Bem-vindo(a), ' + registered.name + '!');
-        saveSessionState();
-        render();
-        return;
-      }
-
-      showToast('E-mail não cadastrado. Conecte o Supabase ou cadastre-se na plataforma.');
+      showToast('Login indisponível sem conexão com o serviço de autenticação.');
+      return;
     }
 
     async function handleRegisterSubmit() {
@@ -6922,6 +6911,13 @@
       isProjectSwitcherOpen = false;
       saveSessionState();
       render();
+      if (navName === 'Planes Intelligence') {
+        setTimeout(() => {
+          try {
+            if (typeof window.handlePlanesIntelligenceEntry === 'function') window.handlePlanesIntelligenceEntry();
+          } catch (e) {}
+        }, 0);
+      }
     }
 
     function navigateBack() {
@@ -19129,8 +19125,8 @@ ${activeNav === 'Equipe & Contatos' ? `
   };
 
   window.handlePlanesIntelligenceEntry=function(){
-    if(window.isPlanesIntelligenceV2Enabled()) return window.openPlanesIntelligenceV2();
-    if(typeof toggleVoiceAssistant==='function') return toggleVoiceAssistant();
+    try{localStorage.setItem(FLAG_KEY,'1')}catch(e){}
+    return window.openPlanesIntelligenceV2();
   };
 
   function firstName(){
@@ -19180,6 +19176,23 @@ ${activeNav === 'Equipe & Contatos' ? `
     el.className='planes-intel-v2-overlay';
     el.innerHTML=
       '<div class="planes-intel-v2-shell">'+
+        '<div id="planes-v2-onboarding" style="display:none;position:absolute;inset:0;z-index:30;background:rgba(15,23,42,.96);align-items:center;justify-content:center;padding:20px">'+
+          '<div style="width:min(620px,100%);background:#fff;border-radius:24px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.28)">'+
+            '<div style="font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#667085">Primeiro uso</div>'+
+            '<div style="font-size:24px;font-weight:950;color:#101828;margin-top:4px">Quem vai trabalhar com você?</div>'+
+            '<div style="font-size:13px;line-height:1.5;color:#667085;margin-top:6px">Escolha a persona do Planes Intelligence. Você pode trocar depois dentro do próprio assistente.</div>'+
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">'+
+              '<button data-v2-onboard-persona="brita" style="border:1px solid #d0d5dd;background:#fff;border-radius:18px;padding:14px;text-align:left;cursor:pointer">'+
+                '<img id="planes-v2-onboard-brita-img" alt="Brita" style="width:100%;aspect-ratio:1.2/1;object-fit:cover;object-position:top;border-radius:14px;background:#f2f4f7">'+
+                '<strong style="display:block;font-size:16px;color:#101828;margin-top:10px">Brita</strong><span style="font-size:12px;color:#667085">Persona feminina · voz feminina</span>'+
+              '</button>'+
+              '<button data-v2-onboard-persona="castanha" style="border:1px solid #d0d5dd;background:#fff;border-radius:18px;padding:14px;text-align:left;cursor:pointer">'+
+                '<img id="planes-v2-onboard-castanha-img" alt="Castanha" style="width:100%;aspect-ratio:1.2/1;object-fit:cover;object-position:top;border-radius:14px;background:#f2f4f7">'+
+                '<strong style="display:block;font-size:16px;color:#101828;margin-top:10px">Castanha</strong><span style="font-size:12px;color:#667085">Persona masculina · voz masculina</span>'+
+              '</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
         '<aside class="planes-intel-v2-left">'+
           '<div class="planes-intel-v2-brand">P</div>'+
           '<div class="planes-intel-v2-nav">'+
@@ -19215,14 +19228,31 @@ ${activeNav === 'Equipe & Contatos' ? `
     el.querySelectorAll('[data-v2-close]').forEach(b=>b.addEventListener('click',window.closePlanesIntelligenceV2));
     el.querySelectorAll('[data-v2-ask]').forEach(b=>b.addEventListener('click',()=>submit(b.dataset.v2Ask)));
     el.querySelectorAll('[data-v2-persona]').forEach(b=>b.addEventListener('click',()=>selectPersona(b.dataset.v2Persona)));
+    el.querySelectorAll('[data-v2-onboard-persona]').forEach(b=>b.addEventListener('click',()=>selectPersona(b.dataset.v2OnboardPersona)));
     el.querySelectorAll('[data-v2-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.v2Nav)));
     el.querySelectorAll('[data-v2-action]').forEach(b=>b.addEventListener('click',()=>quickAction(b.dataset.v2Action)));
     el.querySelector('#planes-v2-send')?.addEventListener('click',()=>submit());
     el.querySelector('#planes-v2-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
     el.querySelector('#planes-v2-mic')?.addEventListener('click',()=>{if(typeof toggleVoiceAssistant==='function')toggleVoiceAssistant(); setTimeout(renderOverlay,80)});
-    el.querySelector('#planes-v2-confirm')?.addEventListener('click',async()=>{if(typeof confirmPendingVoiceMutationFromUI==='function') await confirmPendingVoiceMutationFromUI(true); renderOverlay()});
-    el.querySelector('#planes-v2-cancel')?.addEventListener('click',async()=>{if(typeof confirmPendingVoiceMutationFromUI==='function') await confirmPendingVoiceMutationFromUI(false); renderOverlay()});
+    el.querySelector('#planes-v2-confirm')?.addEventListener('click',()=>confirmFromV2(true));
+    el.querySelector('#planes-v2-cancel')?.addEventListener('click',()=>confirmFromV2(false));
     return el;
+  }
+
+  async function confirmFromV2(confirmed){
+    let result=null;
+    try{
+      if(typeof confirmPendingVoiceMutationFromUI==='function') result=await confirmPendingVoiceMutationFromUI(confirmed);
+      const text=confirmed
+        ? (result?.ok?'Feito. A alteração foi sincronizada no Planes.':(result?.message||'Não consegui concluir essa alteração.'))
+        : 'Certo. Cancelei essa alteração.';
+      if(Array.isArray(intelligenceChatHistory)){
+        intelligenceChatHistory.push({sender:'ai',text,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
+      }
+    }catch(e){
+      if(typeof showToast==='function') showToast('Não consegui concluir essa confirmação.');
+    }
+    renderOverlay();
   }
 
   async function selectPersona(p){
@@ -19288,8 +19318,18 @@ ${activeNav === 'Equipe & Contatos' ? `
 
   function renderOverlay(){
     const el=ensureOverlay();
+    let chosenPersona=null;
+    try{chosenPersona=typeof getAssistantPersona==='function'?getAssistantPersona():null}catch(e){}
     const p=persona(), name=personaLabel(), role=roleLabel(), screen=screenLabel(), proj=projectLabel();
     const set=(id,v)=>{const n=document.getElementById(id);if(n)n.textContent=v};
+    const onboarding=document.getElementById('planes-v2-onboarding');
+    if(onboarding) onboarding.style.display=chosenPersona?'none':'flex';
+    try{
+      const bi=document.getElementById('planes-v2-onboard-brita-img');
+      const ci=document.getElementById('planes-v2-onboard-castanha-img');
+      if(bi&&typeof getAssistantPersonaAvatar==='function') bi.src=getAssistantPersonaAvatar('brita');
+      if(ci&&typeof getAssistantPersonaAvatar==='function') ci.src=getAssistantPersonaAvatar('castanha');
+    }catch(e){}
     set('planes-v2-user-name',firstName());
     set('planes-v2-user-role-left',role);
     set('planes-v2-persona-name',name);
