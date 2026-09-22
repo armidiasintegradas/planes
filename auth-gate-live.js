@@ -228,6 +228,46 @@ function allowApp(profile = null, user = null) {
     window.addEventListener('load', retryOnWindowLoad, { once: true });
   }
 
+  const standaloneMode =
+    window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+    window.navigator.standalone === true;
+
+  window.setTimeout(async () => {
+    if (released || !standaloneMode) return;
+
+    const recoveryKey = 'planes_pwa_auth_recovery_v1';
+    if (sessionStorage.getItem(recoveryKey) === '1') return;
+    sessionStorage.setItem(recoveryKey, '1');
+
+    const node = root();
+    node.innerHTML = `
+      <section class="planes-auth-card">
+        <div class="planes-auth-brand">PLANES OS</div>
+        <div class="planes-auth-subtitle">Ambiente seguro de gestão operacional</div>
+        <h1>Atualizando seu acesso</h1>
+        <p>Detectamos uma sessão antiga do aplicativo instalado.</p>
+        <div class="planes-auth-message planes-auth-good">Vamos renovar apenas o acesso deste dispositivo e abrir a tela de login automaticamente.</div>
+      </section>`;
+
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      console.warn('PWA local auth recovery signOut warning:', error);
+    }
+
+    try {
+      localStorage.removeItem('planes_active_session');
+      localStorage.removeItem('planes_current_user');
+      localStorage.removeItem('planes_projects_list');
+      delete window.__PLANES_AUTH_BRIDGE_PAYLOAD__;
+      delete window.__PLANES_AUTH_HYDRATED__;
+    } catch {}
+
+    const next = new URL(window.location.href);
+    next.searchParams.set('pwa_reauth', Date.now().toString());
+    window.location.replace(next.toString());
+  }, 12000);
+
   window.setTimeout(() => {
     if (released) return;
     const node = root();
