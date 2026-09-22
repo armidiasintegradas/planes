@@ -521,7 +521,7 @@
   if ('caches' in window) {
     caches.keys().then(keys => {
       keys.forEach(k => {
-        if (k !== 'planes-os-v10') caches.delete(k);
+        if (k !== 'planes-os-v11') caches.delete(k);
       });
     });
   }
@@ -531,7 +531,7 @@
       navigator.serviceWorker.getRegistrations().then(regs => {
         for (let r of regs) r.update();
       });
-      navigator.serviceWorker.register('./sw.js?v=10').then(reg => {
+      navigator.serviceWorker.register('./sw.js?v=11').then(reg => {
         reg.update();
       }).catch(() => {});
     });
