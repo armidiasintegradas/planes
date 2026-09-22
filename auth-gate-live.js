@@ -121,8 +121,30 @@ function hydratePlanesFromSupabase(user, profile) {
           if (typeof accessLevel !== 'undefined') {
             accessLevel = bridge.user.level || bridge.user.role || 'campo';
           }
+
+          let savedUiState = null;
+          try {
+            const rawUiState = localStorage.getItem('planes_active_session');
+            savedUiState = rawUiState ? JSON.parse(rawUiState) : null;
+          } catch {}
+
+          if (savedUiState?.selectedProjectId && typeof selectedProjectId !== 'undefined') {
+            selectedProjectId = savedUiState.selectedProjectId;
+            if (typeof projectsList !== 'undefined' && Array.isArray(projectsList) && typeof selectedProject !== 'undefined') {
+              const restoredProject = projectsList.find((project) => project.id === selectedProjectId);
+              if (restoredProject) selectedProject = restoredProject;
+            }
+          }
+
+          if (savedUiState?.activeNav && typeof activeNav !== 'undefined') {
+            activeNav = savedUiState.activeNav;
+          }
+
           if (currentScreen === 'login' || currentScreen === 'access_rejected' || currentScreen === 'access_suspended') {
-            currentScreen = 'projects';
+            const requestedScreen = savedUiState?.currentScreen;
+            currentScreen = requestedScreen === 'dashboard' || requestedScreen === 'projects'
+              ? requestedScreen
+              : 'projects';
           }
 
           if (typeof setupRealtimeSubscriptions === 'function') {
