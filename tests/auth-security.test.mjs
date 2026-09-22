@@ -98,18 +98,18 @@ test('production Pages adapter supports the three-login contract', async () => {
   assert.doesNotMatch(source, /provider\s*:\s*['"]apple['"]/);
 });
 
-test('live publisher tracks main and patches gh-pages idempotently', async () => {
+test('live publisher validates main and copies only live auth artifacts', async () => {
   const source = await readFile(new URL('../.github/workflows/publish-live-auth.yml', import.meta.url), 'utf8');
   assert.match(source, /contents\s*:\s*write/);
-  assert.match(source, /branches:\s*\n\s*- main/);
+  assert.match(source, /branches:\s*\[main\]/);
   assert.match(source, /ref:\s*main/);
-  assert.doesNotMatch(source, /feat\/planes-iam-real/);
   assert.match(source, /ref:\s*gh-pages/);
-  assert.match(source, /public\/auth-gate-live\.js/);
-  assert.match(source, /PLANES_AUTH_GATE_START/);
-  assert.match(source, /PLANES_AUTH_GATE_END/);
-  assert.match(source, /index\.html/);
-  assert.match(source, /auth-gate-live\.js/);
+  assert.match(source, /npm test/);
+  assert.match(source, /npm run build/);
+  assert.match(source, /cp source\/public\/auth-gate-live\.js site\/auth-gate-live\.js/);
+  assert.match(source, /cp source\/sw\.js site\/sw\.js/);
+  assert.doesNotMatch(source, /PLANES_AUTH_GATE_START/);
+  assert.doesNotMatch(source, /python3 - <<'PY'/);
   assert.match(source, /git push/);
 });
 
