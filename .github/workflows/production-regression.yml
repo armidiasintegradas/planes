@@ -36,6 +36,7 @@ jobs:
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
           grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
           grep -q "restoreDesiredProject" /tmp/planes-auth-gate.js
+          cmp --silent public/auth-gate-live.js /tmp/planes-auth-gate.js
 
       - name: Headless browser login gate across viewports
         shell: bash
