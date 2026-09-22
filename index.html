@@ -18792,10 +18792,9 @@ ${activeNav === 'Equipe & Contatos' ? `
     return el;
   }
 
-  function selectPersona(p){
+  async function selectPersona(p){
     try{
-      if(typeof selectAssistantPersona==='function') selectAssistantPersona(p);
-      else if(typeof setAssistantPersona==='function') setAssistantPersona(p);
+      if(typeof chooseAssistantPersona==='function') await chooseAssistantPersona(p);
     }catch(e){}
     setTimeout(renderOverlay,50);
   }
@@ -18809,10 +18808,13 @@ ${activeNav === 'Equipe & Contatos' ? `
   function quickAction(type){
     window.closePlanesIntelligenceV2();
     try{
-      if(type==='planning'&&typeof setMobileTab==='function') return setMobileTab('planejar');
+      if(type==='planning'){
+        if(typeof navigatePlanesFromVoice==='function') return navigatePlanesFromVoice('lookahead');
+        if(typeof setMobileTab==='function') return setMobileTab('planejar');
+      }
       if(type==='validation'){
-        if(typeof openValidationModule==='function') return openValidationModule();
-        if(typeof setMobileTab==='function'){setMobileTab('mais');setTimeout(()=>typeof openMobileModule==='function'&&openMobileModule('validations'),0)}
+        if(typeof navigatePlanesFromVoice==='function') return navigatePlanesFromVoice('validations');
+        if(typeof setMobileTab==='function') return setMobileTab('mais');
       }
     }catch(e){}
   }
