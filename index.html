@@ -8053,7 +8053,9 @@
 
     if (typeof window !== 'undefined') {
       window.addEventListener('load', () => {
-        if (supabaseClient) {
+        const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;
+
+        if (supabaseClient && !externalAuthOwnsSession) {
           checkActiveSupabaseSession();
           supabaseClient.auth.onAuthStateChange((event, session) => {
             console.log('Supabase Auth state change:', event);
@@ -8065,13 +8067,18 @@
               render();
             }
           });
+        } else if (supabaseClient && externalAuthOwnsSession) {
+          console.log('✓ Autenticação controlada exclusivamente pelo gate ao vivo.');
         }
+
         try {
           const params = new URLSearchParams(window.location.search);
-          if (params.get('test') === 'google') {
-            handleSocialLogin('Google');
-          } else if (params.get('test') === 'apple') {
-            handleSocialLogin('Apple');
+          if (!externalAuthOwnsSession) {
+            if (params.get('test') === 'google') {
+              handleSocialLogin('Google');
+            } else if (params.get('test') === 'apple') {
+              handleSocialLogin('Apple');
+            }
           }
         } catch (e) {}
       });
