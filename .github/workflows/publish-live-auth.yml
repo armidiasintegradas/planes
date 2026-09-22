@@ -180,6 +180,16 @@ jobs:
           if "window.window.applySupabaseAuthPayload" in html:
               raise SystemExit('invalid double-window runtime hydrator reference')
 
+          # The auth gate is the only component allowed to process OAuth return URLs.
+          html = html.replace(
+              "persistSession: true,\n              autoRefreshToken: true,\n              detectSessionInUrl: true",
+              "persistSession: true,\n              autoRefreshToken: true,\n              detectSessionInUrl: false",
+              1,
+          )
+
+          if "detectSessionInUrl: true" in html:
+              raise SystemExit('runtime OAuth URL detection is still enabled')
+
           # Keep the runtime hydrator idempotent for repeated auth events.
           old_guard = "if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;"
           new_guard = "if (!payload || !payload.user) return false;\n\n      const targetUserId = payload.user.auth_user_id || payload.user.id || null;\n      if (\n        window.__PLANES_AUTH_INTERNAL_APPLIED__ &&\n        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId\n      ) {\n        window.__PLANES_AUTH_HYDRATED__ = true;\n        return true;\n      }"
