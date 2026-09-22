@@ -5,9 +5,9 @@ import { readFile } from 'node:fs/promises';
 test('service worker keeps auth and HTML network-first', async () => {
   const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
 
-  assert.match(sw, /const CACHE_NAME = 'planes-os-v13'/);
+  assert.match(sw, /const CACHE_NAME = 'planes-os-v14'/);
   assert.match(sw, /auth-gate-live\.js/);
-  assert.match(sw, /auth-runtime-bridge-live\.js/);
+  assert.doesNotMatch(sw, /auth-runtime-bridge-live\.js/);
   assert.match(sw, /cache:\s*'no-store'/);
   assert.match(sw, /event\.request\.mode === 'navigate'/);
 });
@@ -57,4 +57,21 @@ test('voice session requires validated Supabase user and server-side role', asyn
   assert.match(source, /serverPolicies/);
   assert.doesNotMatch(source, /function getJwtSub/);
   assert.doesNotMatch(source, /Preferir autorização persistida no servidor\. O payload do navegador é apenas fallback/);
+});
+
+
+test('single-source auth runtime is preserved', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const gate = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
+
+  assert.match(html, /window\.applySupabaseAuthPayload = function applySupabaseAuthPayload/);
+  assert.match(html, /__PLANES_AUTH_INTERNAL_APPLIED__/);
+  assert.doesNotMatch(html, /auth-runtime-bridge-live\.js/);
+
+  assert.match(gate, /IS_STANDALONE_IOS \? 'implicit' : 'pkce'/);
+  assert.match(gate, /supabase\.auth\.setSession/);
+  assert.match(gate, /hash\.get\('access_token'\)/);
+  assert.match(gate, /Authorization: \`Bearer \$\{accessToken\}\`/);
+  assert.match(gate, /window\.applySupabaseAuthPayload/);
+  assert.doesNotMatch(gate, /planes_pwa_auth_recovery_v1/);
 });
