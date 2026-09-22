@@ -66,6 +66,7 @@ test('single-source auth runtime is preserved', async () => {
 
   assert.match(html, /window\.applySupabaseAuthPayload = function applySupabaseAuthPayload/);
   assert.match(html, /__PLANES_AUTH_INTERNAL_APPLIED__/);
+  assert.match(html, /__PLANES_AUTH_APPLIED_USER_ID__/);
   assert.doesNotMatch(html, /auth-runtime-bridge-live\.js/);
 
   assert.match(gate, /IS_STANDALONE_IOS \? 'implicit' : 'pkce'/);
