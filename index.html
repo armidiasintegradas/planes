@@ -517,21 +517,19 @@
   <script>
   window.__BUILD_TIMESTAMP__ = 1790080320;
   
-  // Limpa imediatamente caches antigos da thread principal
-  if ('caches' in window) {
-    caches.keys().then(keys => {
-      keys.forEach(k => {
-        if (k !== 'planes-os-v11') caches.delete(k);
-      });
-    });
-  }
-
+  // PWA v13: o Service Worker gerencia a expiração dos caches antigos.
+  // Não apagar caches manualmente aqui; isso causava conflito com o SW ativo no iOS.
   if ('serviceWorker' in navigator) {
+    let planesSwReloaded = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (planesSwReloaded) return;
+      planesSwReloaded = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', () => {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (let r of regs) r.update();
-      });
-      navigator.serviceWorker.register('./sw.js?v=11').then(reg => {
+      navigator.serviceWorker.register('./sw.js?v=13').then(reg => {
         reg.update();
       }).catch(() => {});
     });
