@@ -4780,10 +4780,24 @@
       };
     }
 
+    function canUseRbacSimulator() {
+      if (!currentUser) return false;
+      const role = typeof normalizeRbacRole === 'function'
+        ? normalizeRbacRole(currentUser.role_id || currentUser.level || currentUser.role || '')
+        : String(currentUser.role_id || currentUser.level || currentUser.role || '').toUpperCase();
+      return role === 'SUPER_ADMIN' || role === 'ADMIN';
+    }
+
     function toggleRbacDropdown(e) {
       if (e) {
         e.stopPropagation();
         e.preventDefault();
+      }
+      if (!canUseRbacSimulator()) {
+        isRbacDropdownOpen = false;
+        showToast('A simulação de perfis é restrita a administradores.');
+        render();
+        return;
       }
       isRbacDropdownOpen = !isRbacDropdownOpen;
       render();
@@ -4801,9 +4815,15 @@
         e.stopPropagation();
         e.preventDefault();
       }
+      if (!canUseRbacSimulator()) {
+        isRbacDropdownOpen = false;
+        showToast('A simulação de perfis é restrita a administradores.');
+        render();
+        return;
+      }
       accessLevel = lvl;
       isRbacDropdownOpen = false;
-      showToast('✓ Visão de teste alterada para: ' + lvl);
+      showToast('✓ Visão administrativa de teste alterada para: ' + lvl);
       saveSessionState();
       render();
     }
