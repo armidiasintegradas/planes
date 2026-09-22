@@ -2621,7 +2621,8 @@
             auth: {
               persistSession: true,
               autoRefreshToken: true,
-              detectSessionInUrl: true
+              detectSessionInUrl: true,
+              flowType: 'pkce'
             }
           });
           console.log('✓ Supabase Client inicializado para:', url);
@@ -3247,16 +3248,9 @@
     }
 
     
-    function handleLogout() {
-      if (confirm('Deseja realmente encerrar a sessão e sair do sistema?')) {
-        currentUser = null;
-        currentScreen = 'login';
-        try {
-          localStorage.removeItem('planes_active_session');
-        } catch (e) {}
-        showToast('✓ Sessão encerrada com sucesso!');
-        render();
-      }
+    async function handleLogout() {
+      if (!confirm('Deseja realmente encerrar a sessão e sair do sistema?')) return;
+      await doLogout();
     }
 
     function toggleReminderActive(id) {
@@ -4192,6 +4186,11 @@
     // GOOGLE OAUTH & SSO LOGIN
     // =========================================================
     function openGoogleAuthModal() {
+      const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!localDev) {
+        showToast('Login Google deve ser concluído pelo OAuth oficial.');
+        return;
+      }
       const modal = document.getElementById('google-auth-modal');
       if (modal) {
         modal.classList.remove('hidden');
@@ -4212,6 +4211,11 @@
     }
 
     function handleGoogleSelect(email, name, avatar) {
+      const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!localDev) {
+        showToast('Autenticação Google simulada está desativada em produção.');
+        return;
+      }
       email = (email || '').trim().toLowerCase();
       name = name || email.split('@')[0];
       avatar = avatar || name.slice(0, 2).toUpperCase();
@@ -4321,6 +4325,11 @@
     // APPLE ID LOGIN
     // =========================================================
     function openAppleAuthModal() {
+      const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!localDev) {
+        showToast('Login Apple deve ser concluído pelo OAuth oficial.');
+        return;
+      }
       const modal = document.getElementById('apple-auth-modal');
       if (modal) {
         modal.classList.remove('hidden');
@@ -4341,6 +4350,11 @@
     }
 
     function handleAppleSelect(email, name) {
+      const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!localDev) {
+        showToast('Autenticação Apple simulada está desativada em produção.');
+        return;
+      }
       email = (email || '').trim().toLowerCase();
       name = name || email.split('@')[0];
 
@@ -8193,16 +8207,18 @@
               }
             });
             if (error) {
-              console.warn('Google OAuth indisponível no backend, abrindo autenticação direta:', error);
-              openGoogleAuthModal();
+              console.warn('Google OAuth indisponível no backend:', error);
+              showToast('Não foi possível iniciar o login Google. Tente novamente em instantes.');
             }
           } catch (e) {
-            console.warn('Erro ao redirecionar para o Google OAuth, abrindo autenticação direta:', e);
-            openGoogleAuthModal();
+            console.warn('Erro ao redirecionar para o Google OAuth:', e);
+            showToast('Não foi possível iniciar o login Google. Tente novamente em instantes.');
           }
           return;
         }
-        openGoogleAuthModal();
+        const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (localDev) openGoogleAuthModal();
+        else showToast('Login Google indisponível sem o serviço de autenticação.');
       } else if (provider === 'Apple') {
         if (supabaseClient && isSupabaseConfigured()) {
           showToast('Iniciando Sign in with Apple oficial...');
@@ -8215,16 +8231,18 @@
               }
             });
             if (error) {
-              console.warn('Apple OAuth indisponível no backend, abrindo autenticação direta:', error);
-              openAppleAuthModal();
+              console.warn('Apple OAuth indisponível no backend:', error);
+              showToast('Não foi possível iniciar o login Apple. Tente novamente em instantes.');
             }
           } catch (e) {
-            console.warn('Erro ao conectar com Apple ID OAuth, abrindo autenticação direta:', e);
-            openAppleAuthModal();
+            console.warn('Erro ao conectar com Apple ID OAuth:', e);
+            showToast('Não foi possível iniciar o login Apple. Tente novamente em instantes.');
           }
           return;
         }
-        openAppleAuthModal();
+        const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (localDev) openAppleAuthModal();
+        else showToast('Login Apple indisponível sem o serviço de autenticação.');
       } else {
         showToast('Método de autenticação: ' + provider);
       }
