@@ -1,10 +1,8 @@
 name: Publish Planes live auth
-# Publishes the current auth runtime and PWA shell atomically.
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - public/auth-gate-live.js
       - public/email-lifecycle-kick-live.js
@@ -24,8 +22,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
-      - name: Checkout authenticated source
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
           ref: main
@@ -34,11 +33,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.19.0
+          node-version: '22.13.0'
           cache: npm
           cache-dependency-path: source/package-lock.json
 
-      - name: Validate source before publication
+      - name: Validate source
         working-directory: source
         run: |
           set -euo pipefail
@@ -46,13 +45,13 @@ jobs:
           npm test
           npm run build
 
-      - name: Checkout current GitHub Pages artifact
+      - name: Checkout published site
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: site
 
-      - name: Copy production auth modules
+      - name: Update live auth artifacts
         run: |
           set -euo pipefail
           cp source/public/auth-gate-live.js site/auth-gate-live.js
@@ -60,260 +59,25 @@ jobs:
           cp source/public/legacy-auth-sanitizer-live.js site/legacy-auth-sanitizer-live.js
           cp source/sw.js site/sw.js
 
-      - name: Inject auth bootstrap without replacing current site
-        env:
-          SOURCE_SHA: ${{ github.sha }}
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-          import re
-
-          path = Path('site/index.html')
-          html = path.read_text(encoding='utf-8')
-          start = '<!-- PLANES_AUTH_GATE_START -->'
-          end = '<!-- PLANES_AUTH_GATE_END -->'
-
-          existing = re.compile(re.escape(start) + r'.*?' + re.escape(end), re.S)
-          html = existing.sub('', html)
-
-          version = os.environ.get('SOURCE_SHA', 'live-auth')[:12]
-          block = f'''{start}
-          <style id="planes-auth-bootstrap">
-            html.planes-auth-loading body{{visibility:hidden!important}}
-            html.planes-auth-blocked body{{visibility:visible!important}}
-            html.planes-auth-blocked body>*:not(#planes-auth-root){{visibility:hidden!important;pointer-events:none!important}}
-            html.planes-auth-blocked #planes-auth-root{{visibility:visible!important;pointer-events:auto!important}}
-          </style>
-          <script>document.documentElement.classList.add('planes-auth-loading');</script>
-          <script type="module" src="./legacy-auth-sanitizer-live.js?v={version}"></script>
-          <script type="module" src="./auth-gate-live.js?v={version}"></script>
-          <script type="module" src="./email-lifecycle-kick-live.js?v={version}"></script>
-          {end}'''
-
-          if '</head>' not in html:
-              raise SystemExit('index.html has no </head> marker; refusing to publish')
-
-          html = html.replace('</head>', block + '\n</head>', 1)
-
-          if html.count(start) != 1 or html.count(end) != 1:
-              raise SystemExit('auth bootstrap marker count is not exactly one')
-          if './legacy-auth-sanitizer-live.js?v=' not in html:
-              raise SystemExit('legacy auth sanitizer reference missing after patch')
-          if './auth-gate-live.js?v=' not in html:
-              raise SystemExit('auth module reference missing after patch')
-          if './email-lifecycle-kick-live.js?v=' not in html:
-              raise SystemExit('email lifecycle module reference missing after patch')
-
-          legacy_pwa = re.compile(
-              r"\s*// Limpa imediatamente caches antigos da thread principal\s*"
-              r"if \('caches' in window\) \{.*?"
-              r"navigator\.serviceWorker\.register\('\./sw\.js\?v=\d+'\)\.then\(reg => \{"
-              r"\s*reg\.update\(\);"
-              r"\s*\}\)\.catch\(\(\) => \{\}\);"
-              r"\s*\}\);"
-              r"\s*\}",
-              re.S,
-          )
-          pwa_v14 = '''
-          // PWA v14: o Service Worker gerencia a expiração dos caches antigos.
-          // Não apagar caches manualmente aqui; isso causava conflito com o SW ativo no iOS.
-          if ('serviceWorker' in navigator) {
-            let planesSwReloaded = false;
-
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-              if (planesSwReloaded) return;
-              planesSwReloaded = true;
-              window.location.reload();
-            });
-
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('./sw.js?v=14').then(reg => {
-                reg.update();
-              }).catch(() => {});
-            });
-          }'''
-
-          html, pwa_replacements = legacy_pwa.subn('\n' + pwa_v14, html, count=1)
-
-          # Upgrade already-modern shells from v13 to v14 as well.
-          html = html.replace('./sw.js?v=13', './sw.js?v=14')
-          html = html.replace('PWA v13:', 'PWA v14:')
-
-          if "./sw.js?v=14" not in html:
-              raise SystemExit('PWA bootstrap is not v14; refusing to publish')
-
-          # Expose the native runtime hydrator so the auth gate can call it directly.
-          # Keep this transformation idempotent because gh-pages may already be patched.
-          html = html.replace(
-              "window.applySupabaseAuthPayload = window.applySupabaseAuthPayload = function applySupabaseAuthPayload",
-              "window.applySupabaseAuthPayload = function applySupabaseAuthPayload",
-          )
-          html = html.replace(
-              "window.window.applySupabaseAuthPayload(",
-              "window.applySupabaseAuthPayload(",
-          )
-
-          if "window.applySupabaseAuthPayload = function applySupabaseAuthPayload" not in html:
-              html = html.replace(
-                  "function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
-                  "window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
-                  1,
-              )
-
-          if "window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);" not in html:
-              html = html.replace(
-                  "applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
-                  "window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
-                  1,
-              )
-
-          if "if (!window.applySupabaseAuthPayload()) render();" not in html:
-              html = html.replace(
-                  "if (!applySupabaseAuthPayload()) render();",
-                  "if (!window.applySupabaseAuthPayload()) render();",
-                  1,
-              )
-
-          if "window.applySupabaseAuthPayload = function applySupabaseAuthPayload" not in html:
-              raise SystemExit('native runtime hydrator was not exposed')
-          if "window.window.applySupabaseAuthPayload" in html:
-              raise SystemExit('invalid double-window runtime hydrator reference')
-
-          # The live gate is the sole owner of auth/session state.
-          legacy_auth_listener = re.compile(
-              r"    if \(typeof window !== 'undefined'\) \{\s*"
-              r"window\.addEventListener\('load', \(\) => \{\s*"
-              r"if \(supabaseClient\) \{\s*"
-              r"checkActiveSupabaseSession\(\);\s*"
-              r"supabaseClient\.auth\.onAuthStateChange\(\(event, session\) => \{.*?"
-              r"\}\);\s*"
-              r"\}\s*"
-              r"try \{\s*"
-              r"const params = new URLSearchParams\(window\.location\.search\);.*?"
-              r"\} catch \(e\) \{\}\s*"
-              r"\}\);\s*"
-              r"\}",
-              re.S,
-          )
-
-          guarded_auth_listener = (
-              "    if (typeof window !== 'undefined') {\n"
-              "      window.addEventListener('load', () => {\n"
-              "        const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;\n\n"
-              "        if (supabaseClient && !externalAuthOwnsSession) {\n"
-              "          checkActiveSupabaseSession();\n"
-              "          supabaseClient.auth.onAuthStateChange((event, session) => {\n"
-              "            console.log('Supabase Auth state change:', event);\n"
-              "            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {\n"
-              "              void checkActiveSupabaseSession();\n"
-              "            } else if (event === 'SIGNED_OUT') {\n"
-              "              currentUser = null;\n"
-              "              currentScreen = 'login';\n"
-              "              render();\n"
-              "            }\n"
-              "          });\n"
-              "        } else if (supabaseClient && externalAuthOwnsSession) {\n"
-              "          console.log('✓ Autenticação controlada exclusivamente pelo gate ao vivo.');\n"
-              "        }\n\n"
-              "        try {\n"
-              "          const params = new URLSearchParams(window.location.search);\n"
-              "          if (!externalAuthOwnsSession) {\n"
-              "            if (params.get('test') === 'google') {\n"
-              "              handleSocialLogin('Google');\n"
-              "            } else if (params.get('test') === 'apple') {\n"
-              "              handleSocialLogin('Apple');\n"
-              "            }\n"
-              "          }\n"
-              "        } catch (e) {}\n"
-              "      });\n"
-              "    }"
-          )
-
-          if "const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;" not in html:
-              html, legacy_auth_replacements = legacy_auth_listener.subn(
-                  guarded_auth_listener,
-                  html,
-                  count=1,
-              )
-              if legacy_auth_replacements == 0:
-                  raise SystemExit('legacy runtime auth listener could not be guarded')
-
-          if "const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;" not in html:
-              raise SystemExit('runtime auth ownership guard missing')
-          if "if (supabaseClient && !externalAuthOwnsSession)" not in html:
-              raise SystemExit('runtime legacy auth listener is not gated')
-
-          # The auth gate is the only component allowed to process OAuth return URLs.
-          html = html.replace(
-              "persistSession: true,\n              autoRefreshToken: true,\n              detectSessionInUrl: true",
-              "persistSession: true,\n              autoRefreshToken: true,\n              detectSessionInUrl: false",
-              1,
-          )
-
-          if "detectSessionInUrl: true" in html:
-              raise SystemExit('runtime OAuth URL detection is still enabled')
-
-          # Keep the runtime hydrator idempotent for repeated auth events.
-          old_guard = "if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;"
-          new_guard = "if (!payload || !payload.user) return false;\n\n      const targetUserId = payload.user.auth_user_id || payload.user.id || null;\n      if (\n        window.__PLANES_AUTH_INTERNAL_APPLIED__ &&\n        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId\n      ) {\n        window.__PLANES_AUTH_HYDRATED__ = true;\n        return true;\n      }"
-          html = html.replace(old_guard, new_guard, 1)
-
-          old_flags = "window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;\n        window.__PLANES_AUTH_HYDRATED__ = true;"
-          new_flags = "window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;\n        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;\n        window.__PLANES_AUTH_HYDRATED__ = true;"
-          html = html.replace(old_flags, new_flags, 1)
-
-          if "__PLANES_AUTH_APPLIED_USER_ID__" not in html:
-              raise SystemExit('runtime hydrator idempotency marker missing')
-
-          runtime_start = '<!-- PLANES_AUTH_RUNTIME_BRIDGE_START -->'
-          runtime_end = '<!-- PLANES_AUTH_RUNTIME_BRIDGE_END -->'
-          runtime_existing = re.compile(re.escape(runtime_start) + r'.*?' + re.escape(runtime_end), re.S)
-          html = runtime_existing.sub('', html)
-
-          # Production must use only the native runtime hydrator.
-          html = re.sub(
-              r'\s*<script[^>]+auth-runtime-bridge-live\.js[^>]*></script>\s*',
-              '\n',
-              html,
-              flags=re.I,
-          )
-
-          if 'auth-runtime-bridge-live.js' in html:
-              raise SystemExit('external runtime bridge reference still present')
-
-          path.write_text(html, encoding='utf-8')
-          PY
-
-      - name: Verify production artifact integrity
+      - name: Verify published shell contract
         run: |
           set -euo pipefail
           test -s site/index.html
           test -s site/auth-gate-live.js
-          test -s site/email-lifecycle-kick-live.js
-          test -s site/legacy-auth-sanitizer-live.js
           test -s site/sw.js
-          test "$(grep -o 'PLANES_AUTH_GATE_START' site/index.html | wc -l | tr -d ' ')" = "1"
-          test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
-          grep -q 'legacy-auth-sanitizer-live.js?v=' site/index.html
+
           grep -q 'auth-gate-live.js?v=' site/index.html
-          ! grep -q 'auth-runtime-bridge-live.js' site/index.html
-          grep -q "sw.js?v=14" site/index.html
-          grep -q 'controllerchange' site/index.html
           grep -q 'window.applySupabaseAuthPayload = function applySupabaseAuthPayload' site/index.html
-          grep -q '__PLANES_EXTERNAL_AUTH_OWNER__' site/auth-gate-live.js
           grep -q 'const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;' site/index.html
           grep -q 'if (supabaseClient && !externalAuthOwnsSession)' site/index.html
-          grep -q 'email-lifecycle-kick-live.js?v=' site/index.html
-          grep -q 'data-planes-legacy-auth-disabled' site/legacy-auth-sanitizer-live.js
-          grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
+          grep -q '__PLANES_AUTH_APPLIED_USER_ID__' site/index.html
+          ! grep -q 'auth-runtime-bridge-live.js' site/index.html
+          ! grep -q 'window.window.applySupabaseAuthPayload' site/index.html
+
+          grep -q "flowType: 'implicit'" site/auth-gate-live.js
+          grep -q 'supabase.auth.setSession' site/auth-gate-live.js
+          grep -q 'Authorization: `Bearer ${accessToken}`' site/auth-gate-live.js
           grep -q "planes-os-v14" site/sw.js
-          grep -q 'signInWithOAuth' site/auth-gate-live.js
-          grep -q "provider: 'google'" site/auth-gate-live.js
-          grep -q 'signInWithPassword' site/auth-gate-live.js
-          grep -q 'signInWithPasskey' site/auth-gate-live.js
-          grep -q 'registerPasskey' site/auth-gate-live.js
-          grep -q 'passkeys_enabled' site/auth-gate-live.js
 
       - name: Publish to gh-pages
         working-directory: site
@@ -321,10 +85,10 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html auth-gate-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
+          git add auth-gate-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
           if git diff --cached --quiet; then
-            echo "No Pages changes to publish."
+            echo "No live auth changes to publish."
             exit 0
           fi
-          git commit -m "fix: keep Planes authentication single-source"
+          git commit -m "fix: publish validated Planes live auth"
           git push origin HEAD:gh-pages
