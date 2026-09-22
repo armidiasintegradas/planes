@@ -2179,56 +2179,54 @@
       if (valIndex === -1) return;
 
       const item = validations[valIndex];
-      const previousProgress = physicalProgress;
+      const previousProgress = Number(physicalProgress) || 0;
       const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+      const nextProgress = Math.min(100, Number((previousProgress + 0.8).toFixed(1)));
 
-      validations.splice(valIndex, 1);
-      physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
-      if (selectedProject) selectedProject.progress = physicalProgress;
-      render();
-
-      const [validationOk, metricsOk] = await Promise.all([
-        persistValidationStatus(item, 'Aprovado'),
-        persistProjectMetrics()
-      ]);
-
-      if (validationOk && metricsOk) {
+      // Supabase-first: nada muda visualmente até o backend confirmar.
+      const validationOk = await persistValidationStatus(item, 'Aprovado');
+      if (!validationOk) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
+        showToast('Não foi possível aprovar esta medição no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) {
-        validations.splice(Math.min(valIndex, validations.length), 0, item);
+      physicalProgress = nextProgress;
+      if (selectedProject) selectedProject.progress = nextProgress;
+      const metricsOk = await persistProjectMetrics();
+
+      if (!metricsOk) {
         physicalProgress = previousProgress;
         if (selectedProject) selectedProject.progress = previousProjectProgress;
+        await persistValidationStatus(item, 'Pendente');
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('A aprovação não foi concluída. O estado confirmado foi restaurado.');
+        return;
       }
+
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Não foi possível concluir a aprovação no Supabase. A tela foi reconciliada com o último estado confirmado.');
+      showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
     }
 
     async function rejectValidation(id) {
-      const valIndex = validations.findIndex(v => v.id === id);
-      if (valIndex === -1) return;
+      const item = validations.find(v => v.id === id);
+      if (!item) return;
 
-      const item = validations[valIndex];
-      validations.splice(valIndex, 1);
-      render();
-
+      // Supabase-first: só remove da fila depois da confirmação remota.
       const ok = await persistValidationStatus(item, 'Rejeitado');
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✕ Medição de "${item.item}" devolvida e sincronizada.`);
+        showToast('Não foi possível devolver esta medição no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) validations.splice(Math.min(valIndex, validations.length), 0, item);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Não foi possível devolver a medição no Supabase. O estado confirmado foi restaurado.');
+      showToast(`✕ Medição de "${item.item}" devolvida e sincronizada.`);
     }
 
     // AÇÕES DE SUPRIMENTOS
@@ -2236,23 +2234,19 @@
       const sup = suppliesList.find(s => s.id === id);
       if (!sup) return;
 
-      const previous = { ...sup };
-      sup.status = 'No Canteiro';
-      sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-      render();
+      const remoteCandidate = { ...sup, status: 'No Canteiro' };
+      const ok = await persistSupplyRecord(remoteCandidate);
 
-      const ok = await persistSupplyRecord(sup);
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Recebimento de "${sup.name}" confirmado e sincronizado.`);
+        showToast('Falha ao confirmar recebimento no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) Object.assign(sup, previous);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao confirmar recebimento. A tela voltou ao último estado confirmado no Supabase.');
+      showToast(`✓ Recebimento de "${sup.name}" confirmado e sincronizado.`);
     }
 
 // Ações de aprovação consolidadas na seção de autenticação
@@ -2263,7 +2257,6 @@
       const sup = suppliesList.find(s => s.id === editingSupplyId);
       if (!sup) return;
 
-      const previous = { ...sup };
       const name = document.getElementById('edit-sup-name').value.trim();
       const supplier = document.getElementById('edit-sup-supplier').value.trim();
       const qtd = document.getElementById('edit-sup-qtd').value.trim();
@@ -2276,56 +2269,45 @@
         return;
       }
 
-      sup.name = name;
-      sup.supplier = supplier;
-      sup.qtd = qtd;
-      sup.date = date || 'Programado';
-      sup.sector = sector;
-      sup.status = status;
+      const remoteCandidate = {
+        ...sup,
+        name,
+        supplier,
+        qtd,
+        date: date || 'Programado',
+        sector,
+        status
+      };
 
-      let badge = 'bg-blue-100 text-blue-900 border-blue-300';
-      if (status === 'No Canteiro') badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-      if (status === 'Em Transporte') badge = 'bg-amber-100 text-amber-900 border-amber-300';
-      if (status === 'Atrasado') badge = 'bg-rose-100 text-rose-900 border-rose-300';
-      sup.badge = badge;
-
-      closeEditSupplyModal();
-      render();
-
-      const ok = await persistSupplyRecord(sup);
-      if (ok) {
+      const ok = await persistSupplyRecord(remoteCandidate);
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Insumo "${name}" atualizado e sincronizado.`);
+        showToast('Falha ao atualizar o insumo no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) Object.assign(sup, previous);
+      closeEditSupplyModal();
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao atualizar o insumo. A alteração local foi revertida para o último estado confirmado.');
+      showToast(`✓ Insumo "${name}" atualizado e sincronizado.`);
     }
 
     async function deleteSupply(supId) {
-      const idx = suppliesList.findIndex(s => s.id === supId);
-      if (idx === -1) return;
-
-      const item = suppliesList[idx];
-      suppliesList.splice(idx, 1);
-      render();
+      const item = suppliesList.find(s => s.id === supId);
+      if (!item) return;
 
       const ok = await deleteSupplyRecordRemote(item.id);
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Insumo "${item.name}" excluído e sincronizado.`);
+        showToast('Falha ao excluir o insumo no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) suppliesList.splice(Math.min(idx, suppliesList.length), 0, item);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao excluir o insumo. O registro confirmado foi restaurado.');
+      showToast(`✓ Insumo "${item.name}" excluído e sincronizado.`);
     }
 
     let currentScreen = 'login';
@@ -8689,15 +8671,12 @@
           deadline: pending.payload.deadline || 'Hoje',
           done: false
         };
-        tasksList.unshift(task);
-        render();
         const ok = await persistTaskRecord(task);
         if (ok) {
           await refreshIntelligenceOperationalData();
           result = { ok: true, created: task.title, responsible: task.resp, deadline: task.deadline };
         } else {
-          const reconciled = await refreshIntelligenceOperationalData();
-          if (!reconciled) tasksList = tasksList.filter(item => item !== task);
+          await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'task_persist_failed' };
         }
       }
@@ -8707,47 +8686,50 @@
         if (!validation) {
           result = { ok: false, error: 'validation_not_found' };
         } else {
-          const previousProgress = physicalProgress;
-          const previousProjectProgress = selectedProject ? selectedProject.progress : null;
-          physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
-          if (selectedProject) selectedProject.progress = physicalProgress;
-          render();
+          const beforeProgress = Number(physicalProgress) || 0;
+          const beforeProjectProgress = selectedProject ? selectedProject.progress : null;
+          const nextProgress = Math.min(100, Number((beforeProgress + 0.8).toFixed(1)));
 
-          const [validationOk, metricsOk] = await Promise.all([
-            persistValidationStatus(validation, 'Aprovado'),
-            persistProjectMetrics()
-          ]);
-
-          if (validationOk && metricsOk) {
+          const validationOk = await persistValidationStatus(validation, 'Aprovado');
+          if (!validationOk) {
             await refreshIntelligenceOperationalData();
-            result = {
-              ok: true,
-              approved: validation.item,
-              front: validation.front,
-              physical_progress: physicalProgress
-            };
+            result = { ok: false, error: 'validation_update_failed' };
           } else {
-            physicalProgress = previousProgress;
-            if (selectedProject) selectedProject.progress = previousProjectProgress;
-            await refreshIntelligenceOperationalData();
-            result = {
-              ok: false,
-              error: validationOk ? 'metrics_update_failed' : 'validation_update_failed'
-            };
+            physicalProgress = nextProgress;
+            if (selectedProject) selectedProject.progress = nextProgress;
+            const metricsOk = await persistProjectMetrics();
+            if (metricsOk) {
+              await refreshIntelligenceOperationalData();
+              result = {
+                ok: true,
+                approved: validation.item,
+                front: validation.front,
+                physical_progress: physicalProgress
+              };
+            } else {
+              physicalProgress = beforeProgress;
+              if (selectedProject) selectedProject.progress = beforeProjectProgress;
+              await persistValidationStatus(validation, 'Pendente');
+              await refreshIntelligenceOperationalData();
+              result = { ok: false, error: 'metrics_update_failed' };
+            }
           }
         }
       }
 
       if (pending.kind === 'update_pac') {
-        const before = { pacScore, physicalProgress };
-        if (Number.isFinite(Number(pending.payload.pac_score))) {
-          pacScore = Math.max(0, Math.min(100, Number(pending.payload.pac_score)));
-        }
-        if (Number.isFinite(Number(pending.payload.physical_progress))) {
-          physicalProgress = Math.max(0, Math.min(100, Number(pending.payload.physical_progress)));
-          if (selectedProject) selectedProject.progress = physicalProgress;
-        }
-        render();
+        const before = { pacScore, physicalProgress, projectProgress: selectedProject ? selectedProject.progress : null };
+        const candidatePac = Number.isFinite(Number(pending.payload.pac_score))
+          ? Math.max(0, Math.min(100, Number(pending.payload.pac_score)))
+          : pacScore;
+        const candidateProgress = Number.isFinite(Number(pending.payload.physical_progress))
+          ? Math.max(0, Math.min(100, Number(pending.payload.physical_progress)))
+          : physicalProgress;
+
+        pacScore = candidatePac;
+        physicalProgress = candidateProgress;
+        if (selectedProject) selectedProject.progress = candidateProgress;
+
         const ok = await persistProjectMetrics();
         if (ok) {
           await refreshIntelligenceOperationalData();
@@ -8755,6 +8737,8 @@
         } else {
           pacScore = before.pacScore;
           physicalProgress = before.physicalProgress;
+          if (selectedProject) selectedProject.progress = before.projectProgress;
+          await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'metrics_update_failed' };
         }
       }
@@ -8764,15 +8748,13 @@
         if (!supply) {
           result = { ok: false, error: 'supply_not_found' };
         } else {
-          const previousStatus = supply.status;
-          supply.status = pending.payload.status;
-          render();
-          const ok = await persistSupplyRecord(supply);
+          const candidate = { ...supply, status: pending.payload.status };
+          const ok = await persistSupplyRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
             result = { ok: true, supply: supply.name, status: pending.payload.status };
           } else {
-            supply.status = previousStatus;
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'supply_update_failed' };
           }
         }
@@ -8783,17 +8765,18 @@
         if (!task) {
           result = { ok: false, error: 'task_not_found' };
         } else {
-          const previous = { ...task };
-          if (pending.payload.title) task.title = pending.payload.title;
-          if (pending.payload.responsible) task.resp = pending.payload.responsible;
-          if (pending.payload.deadline) task.deadline = pending.payload.deadline;
-          render();
-          const ok = await persistTaskRecord(task);
+          const candidate = {
+            ...task,
+            title: pending.payload.title || task.title,
+            resp: pending.payload.responsible || task.resp,
+            deadline: pending.payload.deadline || task.deadline
+          };
+          const ok = await persistTaskRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, task: task.title, responsible: task.resp, deadline: task.deadline };
+            result = { ok: true, task: candidate.title, responsible: candidate.resp, deadline: candidate.deadline };
           } else {
-            Object.assign(task, previous);
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'task_update_failed' };
           }
         }
@@ -8804,15 +8787,13 @@
         if (!task) {
           result = { ok: false, error: 'task_not_found' };
         } else {
-          const previousDone = !!task.done;
-          task.done = pending.payload.done === true;
-          render();
-          const ok = await persistTaskRecord(task);
+          const candidate = { ...task, done: pending.payload.done === true };
+          const ok = await persistTaskRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, task: task.title, done: task.done };
+            result = { ok: true, task: candidate.title, done: candidate.done };
           } else {
-            task.done = previousDone;
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'task_update_failed' };
           }
         }
@@ -8843,14 +8824,12 @@
           sector: pending.payload.sector || '',
           status: pending.payload.status || 'Programado'
         };
-        suppliesList.unshift(supply);
-        render();
         const ok = await persistSupplyRecord(supply);
         if (ok) {
           await refreshIntelligenceOperationalData();
           result = { ok: true, supply: supply.name, status: supply.status };
         } else {
-          suppliesList = suppliesList.filter(item => item !== supply);
+          await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'supply_create_failed' };
         }
       }
@@ -8860,20 +8839,21 @@
         if (!supply) {
           result = { ok: false, error: 'supply_not_found' };
         } else {
-          const previous = { ...supply };
-          if (pending.payload.name) supply.name = pending.payload.name;
-          if (pending.payload.supplier) supply.supplier = pending.payload.supplier;
-          if (pending.payload.quantity) supply.qtd = pending.payload.quantity;
-          if (pending.payload.delivery) supply.date = pending.payload.delivery;
-          if (pending.payload.sector) supply.sector = pending.payload.sector;
-          if (pending.payload.status) supply.status = pending.payload.status;
-          render();
-          const ok = await persistSupplyRecord(supply);
+          const candidate = {
+            ...supply,
+            name: pending.payload.name || supply.name,
+            supplier: pending.payload.supplier || supply.supplier,
+            qtd: pending.payload.quantity || supply.qtd,
+            date: pending.payload.delivery || supply.date,
+            sector: pending.payload.sector || supply.sector,
+            status: pending.payload.status || supply.status
+          };
+          const ok = await persistSupplyRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, supply: supply.name, status: supply.status };
+            result = { ok: true, supply: candidate.name, status: candidate.status };
           } else {
-            Object.assign(supply, previous);
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'supply_update_failed' };
           }
         }
@@ -10266,6 +10246,16 @@
       return true;
     }
 
+    async function syncOperationalMutationAfterCommit(message) {
+      const refreshed = await refreshIntelligenceOperationalData();
+      if (refreshed) {
+        await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
+      }
+      render();
+      if (message) showToast(message);
+      return refreshed;
+    }
+
     function setupOperationalRealtime() {
       if (!supabaseClient) return;
 
@@ -10686,6 +10676,60 @@
       return 'Oi, ' + firstName + '. Análise concluída. O cockpit foi atualizado com risco, prioridade e próxima ação recomendada.';
     }
 
+    async function tryPrepareContextualTextMutation(rawPromptText) {
+      const raw = String(rawPromptText || '').trim();
+      const p = raw.toLowerCase();
+      const live = getPlanesLiveScreenContext();
+      let prepared = null;
+
+      if (/\b(cria|criar|crie)\b/.test(p) && p.includes('tarefa')) {
+        const match = raw.match(/(?:cria|criar|crie)\s+(?:uma\s+)?tarefa(?:\s+(?:para|de|:))?\s*(.*)$/i);
+        const title = String(match?.[1] || '').trim();
+        if (title) {
+          prepared = await executePlanesRealtimeTool('prepare_create_task', {
+            title,
+            responsible: currentUser?.name || '',
+            deadline: 'Hoje'
+          });
+        }
+      }
+
+      if (!prepared && live.module === 'Fila de Validações' && /\b(aprov|aprova|aprovar|confirma|confirmar)\w*/i.test(p)) {
+        const target = findVoiceValidation(raw) || (validations || [])[0];
+        if (target) {
+          prepared = await executePlanesRealtimeTool('prepare_approve_validation', { query: target.item || raw });
+        }
+      }
+
+      if (!prepared && live.module === 'Suprimentos' &&
+          /\b(receb|canteiro|status|atualiza|alter|confirma)\w*/i.test(p) &&
+          /\b(recebid|canteiro)\w*/i.test(p)) {
+        const target = findVoiceSupply(raw) || (suppliesList || [])[0];
+        if (target) {
+          prepared = await executePlanesRealtimeTool('prepare_update_supply_status', {
+            query: target.name || raw,
+            status: 'No Canteiro'
+          });
+        }
+      }
+
+      if (!prepared && /\b(conclui|concluir|finaliza|finalizar)\w*/i.test(p) && p.includes('tarefa')) {
+        const target = findVoiceTask(raw) || (tasksList || []).find(t => !t.done);
+        if (target) {
+          prepared = await executePlanesRealtimeTool('prepare_toggle_task', {
+            query: target.title || raw,
+            done: true
+          });
+        }
+      }
+
+      if (!prepared || prepared.ok === false) return prepared;
+      return {
+        ...prepared,
+        message: 'Entendi. Posso executar essa alteração agora. Revise abaixo e confirme antes de eu gravar no sistema.'
+      };
+    }
+
     async function askPlanesIntelligence(predefinedPrompt) {
       const inputElem = document.getElementById('intelligence-custom-input');
       const rawPromptText = predefinedPrompt || (inputElem ? inputElem.value : '');
@@ -10714,6 +10758,17 @@
       });
       addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence [' + liveScreenContext.module + ']: "' + rawPromptText.slice(0, 80) + '"');
       render();
+
+      const preparedMutation = await tryPrepareContextualTextMutation(rawPromptText);
+      if (preparedMutation && preparedMutation.ok !== false && preparedMutation.requires_confirmation) {
+        intelligenceChatHistory.push({
+          sender: 'ai',
+          text: preparedMutation.message || ('Posso executar: ' + (preparedMutation.summary || 'alteração solicitada') + '. Confirme antes de eu gravar.'),
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        });
+        render();
+        return;
+      }
 
       await refreshIntelligenceOperationalData();
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
@@ -19016,7 +19071,7 @@ ${activeNav === 'Equipe & Contatos' ? `
     renderOverlay();
     el.classList.add('open');
     document.documentElement.style.overflow='hidden';
-    try{if(typeof trackUserHabit==='function')trackUserHabit('intelligence_query',{module:'Planes Intelligence V2',topic:'open',mode:'ui'})}catch(e){}
+    try{if(typeof trackUserHabit==='function')trackUserHabit('intelligence_query',{module:'Planes Intelligence V2',topic:'open',mode:'touch'})}catch(e){}
     return true;
   };
   window.closePlanesIntelligenceV2=function(){
