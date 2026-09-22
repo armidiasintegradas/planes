@@ -799,6 +799,26 @@ async function evaluateCurrentSession() {
   await evaluateSession(session);
 }
 
+async function waitForDocumentBody() {
+  if (document.body) return;
+
+  await new Promise((resolve) => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', resolve, { once: true });
+      return;
+    }
+
+    const check = () => {
+      if (document.body) {
+        resolve();
+        return;
+      }
+      window.setTimeout(check, 0);
+    };
+    check();
+  });
+}
+
 async function completeOAuthCallbackIfPresent() {
   const url = new URL(window.location.href);
   const code = url.searchParams.get('code');
@@ -857,6 +877,7 @@ async function completeOAuthCallbackIfPresent() {
 }
 
 async function boot() {
+  await waitForDocumentBody();
   const oauth = await completeOAuthCallbackIfPresent();
   await loadCapabilities();
   installSecureLogoutBridge();
