@@ -4696,64 +4696,162 @@
       showToast('✓ Cadastro enviado para análise do Administrador!');
     }
 
-    function approvePendingUser(id, assignedLevel) {
-      const idx = pendingUsers.findIndex(u => String(u.id) === String(id) || (u.email && u.email.toLowerCase() === String(id).toLowerCase()));
-      if (idx !== -1) {
-        const u = pendingUsers.splice(idx, 1)[0];
-        const finalLevel = assignedLevel || u.requestedLevel || u.level || 'Campo';
-        u.status = 'Aprovado';
-        u.level = finalLevel;
-        u.role = finalLevel;
-        u.approvedAt = new Date().toISOString();
-
-        // Evita duplicatas em registeredUsers
-        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
-        registeredUsers.push(u);
-
-        // Adiciona ao Quadro de Pessoal
-        const existingTm = teamMembersList.find(x => (x.email || '').toLowerCase() === (u.email || '').toLowerCase());
-        if (!existingTm) {
-          teamMembersList.push({
-            id: u.id,
-            name: u.name,
-            role: finalLevel,
-            company: u.company || 'Planes ENG',
-            sector: u.sector || 'Geral',
-            cpf: u.cpf,
-            rg: u.rg,
-            phone: u.phone,
-            whatsapp: u.whatsapp,
-            status: 'No Canteiro',
-            avatar: u.avatar || 'US',
-            color: 'bg-slate-900 text-white'
-          });
-        } else {
-          existingTm.role = finalLevel;
-        }
-
-        saveUsersStorage();
-
-        // Transmite aprovação para a nuvem
-        broadcastCloudAction('USER_APPROVED', { user: u });
-
-        showEmailPreviewModal(u, finalLevel);
-        showToast(`✓ Acesso de ${u.name} APROVADO com perfil "${finalLevel}"! E-mail de liberação enviado.`);
-        render();
-      }
+    function normalizeDatabaseRole(value) {
+      const key = String(value || '').trim().toLowerCase();
+      const map = {
+        'super admin': 'super_admin',
+        'super_admin': 'super_admin',
+        'admin': 'admin',
+        'admin master': 'admin',
+        'diretoria': 'gestor',
+        'gestor': 'gestor',
+        'gerência': 'gestor',
+        'gerencia': 'gestor',
+        'engenharia': 'engenharia',
+        'campo': 'campo',
+        'canteiro': 'campo',
+        'financeiro': 'financeiro',
+        'cliente': 'cliente'
+      };
+      return map[key] || 'campo';
     }
 
-    function rejectPendingUser(id) {
-      const idx = pendingUsers.findIndex(u => String(u.id) === String(id) || (u.email && u.email.toLowerCase() === String(id).toLowerCase()));
-      if (idx !== -1) {
-        const u = pendingUsers.splice(idx, 1)[0];
-        saveUsersStorage();
-
-        // Transmite recusa para a nuvem
-        broadcastCloudAction('USER_REJECTED', { userId: u.id, userEmail: u.email });
-
-        showToast(`✕ Cadastro de ${u.name} recusado.`);
-        render();
+    async function approvePendingUser(id, assignedLevel) {
+      const u = pendingUsers.find(user =>
+        String(user.id) === String(id) ||
+        String(user.userId || user.auth_user_id || '') === String(id) ||
+        (user.email && user.email.toLowerCase() === String(id).toLowerCase())
+      );
+      if (!u) {
+        showToast('Solicitação não encontrada.');
+        return;
       }
+
+      const finalRole = normalizeDatabaseRole(assignedLevel || u.requestedLevel || u.level || u.role);
+      if (!supabaseClient || navigator.onLine === false) {
+        showToast('Sem conexão com o Supabase. A aprovação não foi alterada.');
+        return;
+      }
+
+      const requestId = u.id;
+      const userId = u.userId || u.auth_user_id;
+      if (!requestId || !userId) {
+        showToast('Solicitação sem vínculo de usuário. Atualize o painel e tente novamente.');
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const { error: requestError } = await supabaseClient
+        .from('access_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: now,
+          reviewed_by: currentUser?.id || null,
+          rejection_reason: null
+        })
+        .eq('id', requestId);
+
+      if (requestError) {
+        console.error('Falha ao aprovar solicitação:', requestError);
+        showToast('Não foi possível aprovar esta solicitação.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({
+          status: 'approved',
+          role: finalRole,
+          approved_at: now,
+          approved_by: currentUser?.id || null,
+          updated_at: now
+        })
+        .eq('id', userId);
+
+      if (profileError) {
+        console.error('Falha ao atualizar perfil aprovado:', profileError);
+        await supabaseClient
+          .from('access_requests')
+          .update({ status: 'pending', reviewed_at: null, reviewed_by: null })
+          .eq('id', requestId);
+        showToast('A aprovação não foi concluída. O estado anterior foi restaurado.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      await fetchAdminIAMData();
+      const approved = registeredUsers.find(x => String(x.id) === String(userId)) || {
+        id: userId,
+        name: u.name,
+        email: u.email,
+        role: finalRole,
+        level: finalRole,
+        status: 'Aprovado'
+      };
+      showEmailPreviewModal(approved, finalRole);
+      showToast(`✓ Acesso de ${approved.name || u.name} aprovado com perfil "${finalRole}".`);
+      render();
+    }
+
+    async function rejectPendingUser(id) {
+      const u = pendingUsers.find(user =>
+        String(user.id) === String(id) ||
+        String(user.userId || user.auth_user_id || '') === String(id) ||
+        (user.email && user.email.toLowerCase() === String(id).toLowerCase())
+      );
+      if (!u) {
+        showToast('Solicitação não encontrada.');
+        return;
+      }
+
+      if (!supabaseClient || navigator.onLine === false) {
+        showToast('Sem conexão com o Supabase. A solicitação não foi alterada.');
+        return;
+      }
+
+      const requestId = u.id;
+      const userId = u.userId || u.auth_user_id;
+      const now = new Date().toISOString();
+
+      const { error: requestError } = await supabaseClient
+        .from('access_requests')
+        .update({
+          status: 'rejected',
+          reviewed_at: now,
+          reviewed_by: currentUser?.id || null
+        })
+        .eq('id', requestId);
+
+      if (requestError) {
+        console.error('Falha ao rejeitar solicitação:', requestError);
+        showToast('Não foi possível rejeitar esta solicitação.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({
+          status: 'rejected',
+          updated_at: now
+        })
+        .eq('id', userId);
+
+      if (profileError) {
+        console.error('Falha ao atualizar perfil rejeitado:', profileError);
+        await supabaseClient
+          .from('access_requests')
+          .update({ status: 'pending', reviewed_at: null, reviewed_by: null })
+          .eq('id', requestId);
+        showToast('A rejeição não foi concluída. O estado anterior foi restaurado.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      await fetchAdminIAMData();
+      showToast(`✕ Cadastro de ${u.name || u.email} rejeitado e sincronizado.`);
+      render();
     }
 
     function openRegisterModal() {
