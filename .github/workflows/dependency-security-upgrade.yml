@@ -62,6 +62,7 @@ jobs:
           const audit = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
           const meta = audit.metadata?.vulnerabilities || {};
           console.log('AUDIT_METADATA=' + JSON.stringify(meta));
+          console.log('AUDIT_VULNERABILITIES=' + JSON.stringify(audit.vulnerabilities || {}));
           if ((meta.critical || 0) > 0 || (meta.high || 0) > 0) process.exit(1);
           NODE
 
