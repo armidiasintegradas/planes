@@ -153,6 +153,7 @@ h1,h2,h3,p{margin:0}h1{font-size:22px;line-height:1.1}h2{font-size:18px}.sub{fon
     <button class="menu-tile">⛓ Sienge<small>Integrações e pedidos</small></button>
     <button class="menu-tile">⚙ Gestão<small>Acessos e configurações</small></button>
     <button class="menu-tile" onclick="openSheet('accessibilitySheet')">Aa Acessibilidade<small>Texto, contraste e movimento</small></button>
+    <button class="menu-tile" onclick="resetPrototypeLearning()">↺ Reiniciar aprendizado<small>Simula um primeiro acesso neste protótipo</small></button>
   </div></div>
   <button class="primary" style="width:100%;margin-top:16px" onclick="closeSheet('moreSheet');openSheet('intelligenceSheet')">🎙 Falar com Intelligence</button>
 </div></div><div class="drawer" id="intelligenceSheet" onclick="closeSheet('intelligenceSheet')"><div class="sheet" onclick="event.stopPropagation()"><div class="handle"></div><div class="row"><div><div class="eyebrow">Planes Intelligence</div><h2 id="personaTitle">Brita</h2><span class="context-chip" id="intelligenceContext">● Vendo: Sua obra hoje</span><span class="learning-chip" id="communicationStyleChip">Aprendendo seu jeito</span><div class="persona-switch" aria-label="Trocar assistente"><button class="persona-btn active" data-persona="brita" onclick="setPersona('brita')">Brita</button><button class="persona-btn" data-persona="castanha" onclick="setPersona('castanha')">Castanha</button></div></div><button class="iconbtn" onclick="closeSheet('intelligenceSheet')">✕</button></div><div class="chat" id="intelligenceChat" style="margin-top:14px"><div class="msg ai">Oi, Alex. Tô vendo a mesma tela que você. Pode falar comigo normalmente.</div><div class="msg user">O que tá pegando nessa obra hoje?</div><div class="msg ai">Tem duas coisas que merecem atenção: uma validação parada desde ontem e o aço da Arena em atraso. Quer começar por qual?</div></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="quickAsk('Validação')">Validação</button><button class="ghost" onclick="quickAsk('Aço da Arena')">Aço da Arena</button><button class="ghost" onclick="quickAsk('Me resume tudo')">Me resume tudo</button><button class="ghost" onclick="simulateEndDay()">Encerrar por hoje</button></div><div class="composer"><input id="intelligenceInput" placeholder="Fala ou escreve do seu jeito..." onkeydown="if(event.key==='Enter'){sendPrototypeMessage()}"><button aria-label="Enviar mensagem" onclick="sendPrototypeMessage()">➤</button></div><p class="conversation-note" id="conversationNote">Brita vai ajustando o tamanho e o jeito das respostas conforme você conversa.</p></div></div>
@@ -226,12 +227,14 @@ function handlePrototypeSave(onlineMessage,offlineMessage){
 }
 function toggleAccessibility(type,btn){
   prototypeAccessibility[type]=!prototypeAccessibility[type];
+  savePrototypeState();
   if(btn)btn.classList.toggle('on',prototypeAccessibility[type]);
   document.body.classList.toggle('large-text',prototypeAccessibility.largeText);
   document.body.classList.toggle('high-contrast',prototypeAccessibility.contrast);
   document.body.classList.toggle('reduced-motion',prototypeAccessibility.motion);
   showPrototypeToast(type==='largeText'?'Preferência de texto atualizada':type==='contrast'?'Contraste atualizado':'Movimento reduzido atualizado');
 }
+let prototypeOnboardingComplete=false;
 let onboardingPersona='brita';
 function selectOnboardingPersona(persona,el){
   if(!personaConfig[persona])return;
@@ -240,6 +243,8 @@ function selectOnboardingPersona(persona,el){
 }
 function finishOnboarding(){
   setPersona(onboardingPersona,{silent:true});
+  prototypeOnboardingComplete=true;
+  savePrototypeState();
   document.getElementById('firstUseOnboarding')?.classList.remove('open');
   const name=personaConfig[onboardingPersona].name;
   appendChatMessage('ai',name+' por aqui. Pode falar comigo do seu jeito. Eu vou pegando o ritmo com você.');
@@ -259,6 +264,8 @@ const personaConfig={
 function setPersona(persona,options={}){
   if(!personaConfig[persona])return;
   activePersona=persona;
+  onboardingPersona=persona;
+  savePrototypeState();
   document.querySelectorAll('.persona-btn').forEach(b=>b.classList.toggle('active',b.dataset.persona===persona));
   const name=personaConfig[persona].name;
   const title=document.getElementById('personaTitle');
@@ -378,13 +385,85 @@ function requestValidationRejection(){
     onConfirm:()=>showPrototypeToast('Validação devolvida para correção')
   });
 }
-const communicationProfile={
+let communicationProfile={
   mode:'balanced',
   interactions:0,
   prefersShort:false,
   prefersDetail:false,
   lastIntent:null
 };
+
+const PLANES_V2_STORAGE_KEY='planes_v2_prototype_user_state_v1';
+
+function getPrototypeState(){
+  try{
+    const raw=localStorage.getItem(PLANES_V2_STORAGE_KEY);
+    return raw?JSON.parse(raw):null;
+  }catch(e){return null;}
+}
+
+function savePrototypeState(){
+  try{
+    localStorage.setItem(PLANES_V2_STORAGE_KEY,JSON.stringify({
+      onboardingComplete:prototypeOnboardingComplete,
+      persona:activePersona,
+      role:prototypeRole,
+      communicationProfile,
+      accessibility:prototypeAccessibility
+    }));
+  }catch(e){}
+}
+
+function restorePrototypeState(){
+  const saved=getPrototypeState();
+  if(!saved)return;
+
+  prototypeOnboardingComplete=!!saved.onboardingComplete;
+
+  if(saved.communicationProfile&&typeof saved.communicationProfile==='object'){
+    communicationProfile={
+      ...communicationProfile,
+      ...saved.communicationProfile
+    };
+  }
+
+  if(saved.accessibility&&typeof saved.accessibility==='object'){
+    prototypeAccessibility={
+      ...prototypeAccessibility,
+      ...saved.accessibility
+    };
+    document.body.classList.toggle('large-text',!!prototypeAccessibility.largeText);
+    document.body.classList.toggle('high-contrast',!!prototypeAccessibility.contrast);
+    document.body.classList.toggle('reduced-motion',!!prototypeAccessibility.motion);
+  }
+
+  if(saved.persona&&personaConfig[saved.persona]){
+    activePersona=saved.persona;
+    onboardingPersona=saved.persona;
+    setPersona(saved.persona,{silent:true});
+  }
+
+  if(saved.role&&prototypeProfiles[saved.role]){
+    prototypeRole=saved.role;
+    const roleBtn=document.querySelector('[data-role="'+saved.role+'"]');
+    setPrototypeRole(saved.role,roleBtn);
+  }
+
+  if(prototypeOnboardingComplete){
+    document.getElementById('firstUseOnboarding')?.classList.remove('open');
+  }
+}
+
+function resetPrototypeLearning(){
+  try{localStorage.removeItem(PLANES_V2_STORAGE_KEY)}catch(e){}
+  prototypeOnboardingComplete=false;
+  activePersona='brita';
+  onboardingPersona='brita';
+  prototypeRole='engenharia';
+  communicationProfile={mode:'balanced',interactions:0,prefersShort:false,prefersDetail:false,lastIntent:null};
+  showPrototypeToast('Preferências do protótipo redefinidas.');
+  setTimeout(()=>location.reload(),450);
+}
 function detectCommunicationPreference(text){
   const t=(text||'').toLowerCase();
   communicationProfile.interactions++;
@@ -394,6 +473,7 @@ function detectCommunicationPreference(text){
   else if(communicationProfile.interactions>=3 && text.trim().length>90){communicationProfile.mode='detailed';}
   else if(!communicationProfile.prefersShort&&!communicationProfile.prefersDetail){communicationProfile.mode='balanced';}
   updateCommunicationStyleChip();
+  savePrototypeState();
 }
 function updateCommunicationStyleChip(){
   const chip=document.getElementById('communicationStyleChip');
@@ -502,6 +582,7 @@ const prototypeProfiles={
 let prototypeRole='engenharia';
 function setPrototypeRole(role,el){
   prototypeRole=role;
+  savePrototypeState();
   document.querySelectorAll('.rolechip').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
   const p=prototypeProfiles[role]||prototypeProfiles.engenharia;
   document.getElementById('roleNote').textContent=p.note;
@@ -565,6 +646,7 @@ function simulateEndDay(){
   };
   appendChatMessage('ai',endings[prototypeRole]||endings.engenharia);
 }
+restorePrototypeState();
 updateDailyRitual();
 updateCommunicationStyleChip();
 updateConnectionUI();
