@@ -8671,15 +8671,12 @@
           deadline: pending.payload.deadline || 'Hoje',
           done: false
         };
-        tasksList.unshift(task);
-        render();
         const ok = await persistTaskRecord(task);
         if (ok) {
           await refreshIntelligenceOperationalData();
           result = { ok: true, created: task.title, responsible: task.resp, deadline: task.deadline };
         } else {
-          const reconciled = await refreshIntelligenceOperationalData();
-          if (!reconciled) tasksList = tasksList.filter(item => item !== task);
+          await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'task_persist_failed' };
         }
       }
@@ -8689,47 +8686,50 @@
         if (!validation) {
           result = { ok: false, error: 'validation_not_found' };
         } else {
-          const previousProgress = physicalProgress;
-          const previousProjectProgress = selectedProject ? selectedProject.progress : null;
-          physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
-          if (selectedProject) selectedProject.progress = physicalProgress;
-          render();
+          const beforeProgress = Number(physicalProgress) || 0;
+          const beforeProjectProgress = selectedProject ? selectedProject.progress : null;
+          const nextProgress = Math.min(100, Number((beforeProgress + 0.8).toFixed(1)));
 
-          const [validationOk, metricsOk] = await Promise.all([
-            persistValidationStatus(validation, 'Aprovado'),
-            persistProjectMetrics()
-          ]);
-
-          if (validationOk && metricsOk) {
+          const validationOk = await persistValidationStatus(validation, 'Aprovado');
+          if (!validationOk) {
             await refreshIntelligenceOperationalData();
-            result = {
-              ok: true,
-              approved: validation.item,
-              front: validation.front,
-              physical_progress: physicalProgress
-            };
+            result = { ok: false, error: 'validation_update_failed' };
           } else {
-            physicalProgress = previousProgress;
-            if (selectedProject) selectedProject.progress = previousProjectProgress;
-            await refreshIntelligenceOperationalData();
-            result = {
-              ok: false,
-              error: validationOk ? 'metrics_update_failed' : 'validation_update_failed'
-            };
+            physicalProgress = nextProgress;
+            if (selectedProject) selectedProject.progress = nextProgress;
+            const metricsOk = await persistProjectMetrics();
+            if (metricsOk) {
+              await refreshIntelligenceOperationalData();
+              result = {
+                ok: true,
+                approved: validation.item,
+                front: validation.front,
+                physical_progress: physicalProgress
+              };
+            } else {
+              physicalProgress = beforeProgress;
+              if (selectedProject) selectedProject.progress = beforeProjectProgress;
+              await persistValidationStatus(validation, 'Pendente');
+              await refreshIntelligenceOperationalData();
+              result = { ok: false, error: 'metrics_update_failed' };
+            }
           }
         }
       }
 
       if (pending.kind === 'update_pac') {
-        const before = { pacScore, physicalProgress };
-        if (Number.isFinite(Number(pending.payload.pac_score))) {
-          pacScore = Math.max(0, Math.min(100, Number(pending.payload.pac_score)));
-        }
-        if (Number.isFinite(Number(pending.payload.physical_progress))) {
-          physicalProgress = Math.max(0, Math.min(100, Number(pending.payload.physical_progress)));
-          if (selectedProject) selectedProject.progress = physicalProgress;
-        }
-        render();
+        const before = { pacScore, physicalProgress, projectProgress: selectedProject ? selectedProject.progress : null };
+        const candidatePac = Number.isFinite(Number(pending.payload.pac_score))
+          ? Math.max(0, Math.min(100, Number(pending.payload.pac_score)))
+          : pacScore;
+        const candidateProgress = Number.isFinite(Number(pending.payload.physical_progress))
+          ? Math.max(0, Math.min(100, Number(pending.payload.physical_progress)))
+          : physicalProgress;
+
+        pacScore = candidatePac;
+        physicalProgress = candidateProgress;
+        if (selectedProject) selectedProject.progress = candidateProgress;
+
         const ok = await persistProjectMetrics();
         if (ok) {
           await refreshIntelligenceOperationalData();
@@ -8737,6 +8737,8 @@
         } else {
           pacScore = before.pacScore;
           physicalProgress = before.physicalProgress;
+          if (selectedProject) selectedProject.progress = before.projectProgress;
+          await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'metrics_update_failed' };
         }
       }
@@ -8746,15 +8748,13 @@
         if (!supply) {
           result = { ok: false, error: 'supply_not_found' };
         } else {
-          const previousStatus = supply.status;
-          supply.status = pending.payload.status;
-          render();
-          const ok = await persistSupplyRecord(supply);
+          const candidate = { ...supply, status: pending.payload.status };
+          const ok = await persistSupplyRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
             result = { ok: true, supply: supply.name, status: pending.payload.status };
           } else {
-            supply.status = previousStatus;
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'supply_update_failed' };
           }
         }
@@ -8765,17 +8765,18 @@
         if (!task) {
           result = { ok: false, error: 'task_not_found' };
         } else {
-          const previous = { ...task };
-          if (pending.payload.title) task.title = pending.payload.title;
-          if (pending.payload.responsible) task.resp = pending.payload.responsible;
-          if (pending.payload.deadline) task.deadline = pending.payload.deadline;
-          render();
-          const ok = await persistTaskRecord(task);
+          const candidate = {
+            ...task,
+            title: pending.payload.title || task.title,
+            resp: pending.payload.responsible || task.resp,
+            deadline: pending.payload.deadline || task.deadline
+          };
+          const ok = await persistTaskRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, task: task.title, responsible: task.resp, deadline: task.deadline };
+            result = { ok: true, task: candidate.title, responsible: candidate.resp, deadline: candidate.deadline };
           } else {
-            Object.assign(task, previous);
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'task_update_failed' };
           }
         }
@@ -8786,15 +8787,13 @@
         if (!task) {
           result = { ok: false, error: 'task_not_found' };
         } else {
-          const previousDone = !!task.done;
-          task.done = pending.payload.done === true;
-          render();
-          const ok = await persistTaskRecord(task);
+          const candidate = { ...task, done: pending.payload.done === true };
+          const ok = await persistTaskRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, task: task.title, done: task.done };
+            result = { ok: true, task: candidate.title, done: candidate.done };
           } else {
-            task.done = previousDone;
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'task_update_failed' };
           }
         }
@@ -8825,14 +8824,12 @@
           sector: pending.payload.sector || '',
           status: pending.payload.status || 'Programado'
         };
-        suppliesList.unshift(supply);
-        render();
         const ok = await persistSupplyRecord(supply);
         if (ok) {
           await refreshIntelligenceOperationalData();
           result = { ok: true, supply: supply.name, status: supply.status };
         } else {
-          suppliesList = suppliesList.filter(item => item !== supply);
+          await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'supply_create_failed' };
         }
       }
@@ -8842,20 +8839,21 @@
         if (!supply) {
           result = { ok: false, error: 'supply_not_found' };
         } else {
-          const previous = { ...supply };
-          if (pending.payload.name) supply.name = pending.payload.name;
-          if (pending.payload.supplier) supply.supplier = pending.payload.supplier;
-          if (pending.payload.quantity) supply.qtd = pending.payload.quantity;
-          if (pending.payload.delivery) supply.date = pending.payload.delivery;
-          if (pending.payload.sector) supply.sector = pending.payload.sector;
-          if (pending.payload.status) supply.status = pending.payload.status;
-          render();
-          const ok = await persistSupplyRecord(supply);
+          const candidate = {
+            ...supply,
+            name: pending.payload.name || supply.name,
+            supplier: pending.payload.supplier || supply.supplier,
+            qtd: pending.payload.quantity || supply.qtd,
+            date: pending.payload.delivery || supply.date,
+            sector: pending.payload.sector || supply.sector,
+            status: pending.payload.status || supply.status
+          };
+          const ok = await persistSupplyRecord(candidate);
           if (ok) {
             await refreshIntelligenceOperationalData();
-            result = { ok: true, supply: supply.name, status: supply.status };
+            result = { ok: true, supply: candidate.name, status: candidate.status };
           } else {
-            Object.assign(supply, previous);
+            await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'supply_update_failed' };
           }
         }
