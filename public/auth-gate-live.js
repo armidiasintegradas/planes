@@ -11,7 +11,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
     flowType: 'pkce',
     experimental: { passkey: true },
   },
@@ -796,10 +796,75 @@ async function evaluateCurrentSession() {
   await evaluateSession(session);
 }
 
+async function completeOAuthCallbackIfPresent() {
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get('code');
+  const oauthError = url.searchParams.get('error');
+  const oauthErrorDescription = url.searchParams.get('error_description');
+
+  if (oauthError) {
+    const node = renderShell(`
+      <h1>Não foi possível concluir o login Google</h1>
+      <p class="planes-auth-muted">O Google retornou uma falha de autenticação.</p>
+      <div class="planes-auth-status planes-auth-bad">${escapeHtml(oauthErrorDescription || oauthError)}</div>
+      <button class="planes-auth-btn secondary" data-return-login style="margin-top:14px">Voltar para o login</button>
+    `);
+    node.querySelector('[data-return-login]')?.addEventListener('click', () => {
+      url.search = '';
+      window.location.replace(url.toString());
+    });
+    blockApp();
+    return { handled: true, session: null, failed: true };
+  }
+
+  if (!code) return { handled: false, session: null, failed: false };
+
+  blockApp();
+  const node = renderShell(`
+    <h1>Concluindo seu acesso</h1>
+    <p class="planes-auth-muted">Sua conta Google foi validada. Estamos criando sua sessão segura no Planes OS.</p>
+    <div class="planes-auth-status planes-auth-good">Isso deve levar apenas alguns segundos.</div>
+  `);
+
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error || !data?.session) {
+    node.innerHTML = `
+      <section class="planes-auth-card">
+        <div class="planes-auth-brand">PLANES OS</div>
+        <div class="planes-auth-subtitle">Ambiente seguro de gestão operacional</div>
+        <h1>Não foi possível concluir a sessão</h1>
+        <p class="planes-auth-muted">O Google autenticou sua conta, mas o retorno seguro não foi concluído.</p>
+        <div class="planes-auth-status planes-auth-bad">${escapeHtml(error?.message || 'Sessão não criada.')}</div>
+        <button class="planes-auth-btn secondary" data-retry-google style="margin-top:14px">Tentar Google novamente</button>
+      </section>`;
+    node.querySelector('[data-retry-google]')?.addEventListener('click', () => {
+      url.search = '';
+      window.location.replace(url.toString());
+    });
+    return { handled: true, session: null, failed: true };
+  }
+
+  for (const key of ['code','state','error','error_description','error_code']) {
+    url.searchParams.delete(key);
+  }
+  window.history.replaceState({}, document.title, url.toString());
+
+  return { handled: true, session: data.session, failed: false };
+}
+
 async function boot() {
+  const oauth = await completeOAuthCallbackIfPresent();
   await loadCapabilities();
   installSecureLogoutBridge();
-  await evaluateCurrentSession();
+
+  if (oauth.failed) return;
+
+  if (oauth.session) {
+    await evaluateSession(oauth.session);
+  } else {
+    await evaluateCurrentSession();
+  }
 
   supabase.auth.onAuthStateChange((event, nextSession) => {
     window.setTimeout(() => {
