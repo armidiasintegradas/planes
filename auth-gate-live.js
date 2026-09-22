@@ -20,6 +20,10 @@ const supabase = createClient ? createClient(SUPABASE_URL, SUPABASE_KEY, {
   },
 }) : null;
 
+if (supabase) {
+  window.__PLANES_SUPABASE_CLIENT__ = supabase;
+}
+
 let profileChannel = null;
 let capabilities = { email: true, google: false, passkeys: false };
 let authBootFinished = false;
