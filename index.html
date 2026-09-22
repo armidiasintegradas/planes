@@ -6774,6 +6774,9 @@
     let navHistory = [];
 
     function setNavWithHistory(navName) {
+      try {
+        if (typeof window.closePlanesIntelligenceV2 === 'function') window.closePlanesIntelligenceV2();
+      } catch (e) {}
       isMoreSheetOpen = false;
       isProjectSwitcherOpen = false;
       const residualMoreSheet = document.getElementById('mobile-more-sheet');
@@ -9664,23 +9667,22 @@
     }
 
     async function toggleTaskDone(id) {
-      const before = tasksList.map(t => ({ ...t }));
-      tasksList = tasksList.map(t => t.id === id ? { ...t, done: !t.done } : t);
       const task = tasksList.find(t => t.id === id);
-      render();
       if (!task) return;
 
-      const ok = await persistTaskRecord(task);
-      if (ok) {
+      const candidate = { ...task, done: !task.done };
+      const ok = await persistTaskRecord(candidate);
+
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
+        showToast('Falha ao atualizar a tarefa no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) tasksList = before;
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao atualizar a tarefa. O estado confirmado foi restaurado.');
+      showToast(candidate.done ? '✓ Tarefa concluída e sincronizada.' : '↺ Tarefa reaberta e sincronizada.');
     }
 
     function removeReminder(id) {
@@ -18928,7 +18930,7 @@ ${activeNav === 'Equipe & Contatos' ? `
         '</section>'+
         '<aside class="planes-intel-v2-right">'+
           '<div class="planes-intel-v2-panel"><h3>Contexto atual</h3><div class="planes-intel-v2-context"><div><span>Obra</span><strong id="planes-v2-project"></strong></div><div><span>Perfil</span><strong id="planes-v2-role"></strong></div><div><span>Tela</span><strong id="planes-v2-screen"></strong></div></div><div class="planes-intel-v2-note">● Estou vendo a mesma tela que você e posso ajudar com o que estiver aqui.</div></div>'+
-          '<div class="planes-intel-v2-panel"><h3>Ações rápidas</h3><div class="planes-intel-v2-actions"><button data-v2-action="validation">✓ Abrir validação <span>›</span></button><button data-v2-ask="Aço da Arena">▣ Ver suprimento <span>›</span></button><button data-v2-ask="Criar tarefa">＋ Criar tarefa <span>›</span></button><button data-v2-action="planning">▦ Ver planejamento <span>›</span></button><button data-v2-ask="Gerar relatório">▥ Gerar relatório <span>›</span></button></div></div>'+
+          '<div class="planes-intel-v2-panel"><h3>Ações rápidas</h3><div class="planes-intel-v2-actions"><button data-v2-action="validation">✓ Abrir validação <span>›</span></button><button data-v2-ask="Aço da Arena">▣ Ver suprimento <span>›</span></button><button data-v2-action="create-task">＋ Criar tarefa <span>›</span></button><button data-v2-action="planning">▦ Ver planejamento <span>›</span></button><button data-v2-action="report">▥ Gerar relatório <span>›</span></button></div></div>'+
           '<div class="planes-intel-v2-tip"><strong id="planes-v2-tip-title">✦ Dica da Brita</strong><p id="planes-v2-tip-copy">Posso te levar direto para o ponto mais importante desta tela.</p><button data-v2-action="validation">Abrir agora →</button></div>'+
         '</aside>'+
       '</div>';
@@ -18961,8 +18963,23 @@ ${activeNav === 'Equipe & Contatos' ? `
     }catch(e){}
   }
   function quickAction(type){
-    window.closePlanesIntelligenceV2();
     try{
+      if(type==='create-task'){
+        const input=document.getElementById('planes-v2-input');
+        if(input){
+          input.value='Criar tarefa: ';
+          input.focus();
+          input.setSelectionRange(input.value.length,input.value.length);
+        }
+        return;
+      }
+      if(type==='report'){
+        window.closePlanesIntelligenceV2();
+        if(typeof navigatePlanesFromVoice==='function') return navigatePlanesFromVoice('reports');
+        if(typeof setNavWithHistory==='function') return setNavWithHistory('Relatórios & Capa');
+        return;
+      }
+      window.closePlanesIntelligenceV2();
       if(type==='planning'){
         if(typeof navigatePlanesFromVoice==='function') return navigatePlanesFromVoice('lookahead');
         if(typeof setMobileTab==='function') return setMobileTab('planejar');
