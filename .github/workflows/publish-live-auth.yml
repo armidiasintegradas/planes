@@ -1,4 +1,5 @@
 name: Publish Planes live auth
+# Publishes the current auth runtime and PWA shell atomically.
 
 on:
   push:
