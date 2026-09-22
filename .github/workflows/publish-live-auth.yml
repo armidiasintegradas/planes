@@ -135,8 +135,13 @@ jobs:
           }'''
 
           html, pwa_replacements = legacy_pwa.subn('\n' + pwa_v14, html, count=1)
-          if pwa_replacements == 0 and "./sw.js?v=14" not in html:
-              raise SystemExit('PWA bootstrap is not v13; refusing to publish')
+
+          # Upgrade already-modern shells from v13 to v14 as well.
+          html = html.replace('./sw.js?v=13', './sw.js?v=14')
+          html = html.replace('PWA v13:', 'PWA v14:')
+
+          if "./sw.js?v=14" not in html:
+              raise SystemExit('PWA bootstrap is not v14; refusing to publish')
 
           # Expose the native runtime hydrator so the auth gate can call it directly.
           # Keep this transformation idempotent because gh-pages may already be patched.
