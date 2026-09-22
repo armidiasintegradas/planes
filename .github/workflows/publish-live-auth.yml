@@ -176,25 +176,13 @@ jobs:
               raise SystemExit('invalid double-window runtime hydrator reference')
 
           # Keep the runtime hydrator idempotent for repeated auth events.
-          html = html.replace(
-              "if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;",
-              """if (!payload || !payload.user) return false;
+          old_guard = "if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;"
+          new_guard = "if (!payload || !payload.user) return false;\n\n      const targetUserId = payload.user.auth_user_id || payload.user.id || null;\n      if (\n        window.__PLANES_AUTH_INTERNAL_APPLIED__ &&\n        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId\n      ) {\n        window.__PLANES_AUTH_HYDRATED__ = true;\n        return true;\n      }"
+          html = html.replace(old_guard, new_guard, 1)
 
-      const targetUserId = payload.user.auth_user_id || payload.user.id || null;
-      if (
-        window.__PLANES_AUTH_INTERNAL_APPLIED__ &&
-        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId
-      ) {
-        window.__PLANES_AUTH_HYDRATED__ = true;
-        return true;
-      }""",
-              1,
-          )
-          html = html.replace(
-              "window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;\n        window.__PLANES_AUTH_HYDRATED__ = true;",
-              "window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;\n        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;\n        window.__PLANES_AUTH_HYDRATED__ = true;",
-              1,
-          )
+          old_flags = "window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;\n        window.__PLANES_AUTH_HYDRATED__ = true;"
+          new_flags = "window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;\n        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;\n        window.__PLANES_AUTH_HYDRATED__ = true;"
+          html = html.replace(old_flags, new_flags, 1)
 
           if "__PLANES_AUTH_APPLIED_USER_ID__" not in html:
               raise SystemExit('runtime hydrator idempotency marker missing')
