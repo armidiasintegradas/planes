@@ -5842,10 +5842,10 @@
       if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
     }
 
-    function handleSaveProfile() {
+    async function handleSaveProfile() {
       if (!currentUser) return;
       const name = (document.getElementById('edit-profile-name') ? document.getElementById('edit-profile-name').value : '').trim();
-      const email = (document.getElementById('edit-profile-email') ? document.getElementById('edit-profile-email').value : '').trim();
+      const email = (document.getElementById('edit-profile-email') ? document.getElementById('edit-profile-email').value : '').trim().toLowerCase();
       const phone = (document.getElementById('edit-profile-phone') ? document.getElementById('edit-profile-phone').value : '').trim();
       const cpf = (document.getElementById('edit-profile-cpf') ? document.getElementById('edit-profile-cpf').value : '').trim();
       const rg = (document.getElementById('edit-profile-rg') ? document.getElementById('edit-profile-rg').value : '').trim();
@@ -5860,12 +5860,10 @@
         showToast('Informe o seu nome completo (mínimo 3 letras).');
         return;
       }
-
       if (!email || !validateEmail(email)) {
         showToast('Informe um e-mail corporativo válido.');
         return;
       }
-
       if (newPass) {
         if (newPass.length < 6) {
           showToast('A nova senha deve ter no mínimo 6 dígitos.');
@@ -5877,10 +5875,86 @@
         }
       }
 
-      const oldEmail = currentUser.email;
+      const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const oldEmail = String(currentUser.email || '').toLowerCase();
       const cleanPhone = phone.replace(/\D/g, '');
-      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + (cleanPhone || '81973332227');
+      const cleanWhatsapp = cleanPhone.startsWith('55') ? cleanPhone : '55' + (cleanPhone || '');
 
+      if (!localDev) {
+        if (!supabaseClient || navigator.onLine === false) {
+          showToast('Sem conexão com o Supabase. O perfil não foi alterado.');
+          return;
+        }
+
+        let authUser = null;
+        const authChanges = {};
+        if (newPass) authChanges.password = newPass;
+        if (email !== oldEmail) authChanges.email = email;
+
+        if (Object.keys(authChanges).length) {
+          const { data: authData, error: authError } = await supabaseClient.auth.updateUser(authChanges);
+          if (authError) {
+            console.warn('Falha ao atualizar credenciais:', authError);
+            showToast('Não foi possível atualizar e-mail/senha. Nenhuma credencial local foi alterada.');
+            return;
+          }
+          authUser = authData?.user || null;
+        }
+
+        const authEmailConfirmed = !authChanges.email || String(authUser?.email || oldEmail).toLowerCase() === email;
+        const profilePayload = {
+          full_name: name,
+          phone: maskPhone(phone),
+          cpf: cpf ? maskCpf(cpf) : null,
+          rg: rg ? maskRg(rg) : null,
+          birth_date: birthDate || null,
+          company,
+          sector,
+          updated_at: new Date().toISOString()
+        };
+        if (authEmailConfirmed) profilePayload.email = email;
+
+        const { data: profile, error: profileError } = await supabaseClient
+          .from('profiles')
+          .update(profilePayload)
+          .eq('id', currentUser.id)
+          .select('id,full_name,email,avatar_url,status,role,phone,cpf,rg,birth_date,company,department,sector,updated_at')
+          .single();
+
+        if (profileError || !profile) {
+          console.warn('Falha ao persistir perfil:', profileError);
+          showToast('Não foi possível salvar os dados do perfil no Supabase.');
+          return;
+        }
+
+        currentUser.name = profile.full_name || name;
+        currentUser.email = profile.email || authUser?.email || oldEmail;
+        currentUser.phone = profile.phone || maskPhone(phone);
+        currentUser.whatsapp = cleanWhatsapp;
+        currentUser.cpf = profile.cpf || '';
+        currentUser.rg = profile.rg || '';
+        currentUser.birthDate = profile.birth_date || '';
+        currentUser.company = profile.company || company;
+        currentUser.sector = profile.sector || profile.department || sector;
+        currentUser.avatar = avatar;
+
+        await fetchAdminIAMData(false);
+        saveSessionState();
+        updateUserPresence();
+        closeEditProfileModal();
+        render();
+
+        if (authChanges.email && !authEmailConfirmed) {
+          showToast('✓ Perfil salvo. Confirme o novo e-mail pelo link enviado para concluir a alteração.');
+        } else if (newPass) {
+          showToast('✓ Perfil e senha atualizados com segurança.');
+        } else {
+          showToast(`✓ Perfil de ${name} atualizado e sincronizado.`);
+        }
+        return;
+      }
+
+      // Ambiente local de desenvolvimento: mantém edição local para testes.
       currentUser.name = name;
       currentUser.email = email;
       currentUser.phone = maskPhone(phone);
@@ -5891,43 +5965,17 @@
       currentUser.company = company;
       currentUser.sector = sector;
       currentUser.avatar = avatar;
-      if (newPass) currentUser.pass = newPass;
 
-      // Atualiza na base de usuários cadastrados
-      const regUser = registeredUsers.find(u => u.email.toLowerCase() === oldEmail.toLowerCase() || (u.id && u.id === currentUser.id));
-      if (regUser) {
-        regUser.name = name;
-        regUser.email = email;
-        regUser.phone = currentUser.phone;
-        regUser.whatsapp = cleanWhatsapp;
-        regUser.cpf = currentUser.cpf;
-        regUser.rg = currentUser.rg;
-        regUser.birthDate = birthDate;
-        regUser.company = company;
-        regUser.sector = sector;
-        regUser.avatar = avatar;
-        if (newPass) regUser.pass = newPass;
-      }
-
-      // Atualiza no Quadro de Pessoal
-      const tm = teamMembersList.find(x => x.email === oldEmail || (x.id && x.id === currentUser.id) || x.name === currentUser.name);
-      if (tm) {
-        tm.name = name;
-        tm.email = email;
-        tm.phone = currentUser.phone;
-        tm.whatsapp = cleanWhatsapp;
-        tm.cpf = currentUser.cpf;
-        tm.rg = currentUser.rg;
-        tm.company = company;
-        tm.sector = sector;
-        tm.avatar = avatar;
-      }
+      const regUser = registeredUsers.find(u => String(u.email || '').toLowerCase() === oldEmail || (u.id && u.id === currentUser.id));
+      if (regUser) Object.assign(regUser, {
+        name, email, phone: currentUser.phone, whatsapp: cleanWhatsapp,
+        cpf: currentUser.cpf, rg: currentUser.rg, birthDate, company, sector, avatar
+      });
 
       saveUsersStorage();
       saveSessionState();
-      updateUserPresence();
       closeEditProfileModal();
-      showToast(`✓ Perfil de ${name} atualizado com sucesso!`);
+      showToast(`✓ Perfil de ${name} atualizado no ambiente local.`);
       render();
     }
 
