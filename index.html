@@ -2522,80 +2522,79 @@
     // Busca real de dados IAM no Supabase (Perfis, Solicitações e Notificações)
     async function fetchAdminIAMData(manual = false) {
       if (!supabaseClient) {
-        if (manual) showToast('✓ Sincronização concluída (Modo Local).');
+        if (manual) showToast('Sincronização indisponível: Supabase não conectado.');
         return;
       }
 
       try {
-        // 1. Busca perfis aprovados e ativos
-        const { data: profs, error: profError } = await supabaseClient
+        const [profilesRes, requestsRes, notificationsRes] = await Promise.all([
+          supabaseClient
             .from('profiles')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+            .select('id, full_name, email, avatar_url, status, role, created_at, updated_at')
+            .order('created_at', { ascending: false }),
+          supabaseClient
+            .from('access_requests')
+            .select('id, user_id, status, requested_at, reviewed_at, rejection_reason, admin_notes')
+            .order('requested_at', { ascending: false }),
+          currentUser?.id
+            ? supabaseClient
+                .from('notifications')
+                .select('id, user_id, kind, title, body, metadata, read_at, created_at')
+                .eq('user_id', currentUser.id)
+                .is('read_at', null)
+                .order('created_at', { ascending: false })
+            : Promise.resolve({ data: [], error: null })
+        ]);
 
-        if (!profError && Array.isArray(profs)) {
-          registeredUsers = profs.map(p => ({
+        if (profilesRes.error) console.warn('Falha ao carregar profiles:', profilesRes.error);
+        if (requestsRes.error) console.warn('Falha ao carregar access_requests:', requestsRes.error);
+        if (notificationsRes.error) console.warn('Falha ao carregar notifications:', notificationsRes.error);
+
+        const profiles = Array.isArray(profilesRes.data) ? profilesRes.data : [];
+        const profileMap = new Map(profiles.map(p => [String(p.id), p]));
+
+        registeredUsers = profiles
+          .filter(p => p.status === 'approved' || p.status === 'suspended')
+          .map(p => ({
             id: p.id,
-            auth_user_id: p.auth_user_id,
-            name: p.name,
+            auth_user_id: p.id,
+            name: p.full_name || (p.email ? p.email.split('@')[0] : 'Usuário'),
             email: p.email,
-            role: p.role_id,
-            level: p.role_id,
-            status: p.status === 'approved' ? 'Aprovado' : (p.status === 'suspended' ? 'Suspenso' : 'Pendente'),
-            avatar: p.avatar_url || (p.name ? p.name.slice(0, 2).toUpperCase() : 'US'),
-            company: p.company || 'Planes ENG',
-            department: p.department || 'Geral',
-            phone: p.phone,
+            role: p.role || 'campo',
+            role_id: p.role || 'campo',
+            level: p.role || 'campo',
+            status: p.status === 'approved' ? 'Aprovado' : 'Suspenso',
+            avatar: p.avatar_url || ((p.full_name || p.email || 'US').slice(0, 2).toUpperCase()),
             created_at: p.created_at
           }));
-        }
 
-        // 2. Busca solicitações de acesso pendentes
-        const { data: reqs, error: reqError } = await supabaseClient
-            .from('access_requests')
-          .select('*, profiles(*)')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false });
-
-        if (!reqError && Array.isArray(reqs)) {
-          pendingUsers = reqs.map(r => {
-            const pr = r.profiles || {};
+        const requests = Array.isArray(requestsRes.data) ? requestsRes.data : [];
+        pendingUsers = requests
+          .filter(r => r.status === 'pending')
+          .map(r => {
+            const pr = profileMap.get(String(r.user_id)) || {};
             return {
               id: r.id,
               userId: r.user_id,
-              name: pr.name || r.name || 'Novo Colaborador',
-              email: pr.email || r.email,
-              requestedLevel: r.requested_role || 'Engenharia',
-              role: r.requested_role || 'Engenharia',
-              provider: r.provider || 'Google',
+              auth_user_id: r.user_id,
+              name: pr.full_name || (pr.email ? pr.email.split('@')[0] : 'Novo Colaborador'),
+              email: pr.email || '',
+              requestedLevel: pr.role || 'engenharia',
+              role: pr.role || 'engenharia',
+              provider: 'Supabase Auth',
               status: 'Pendente',
-              company: pr.company || 'Planes ENG',
-              sector: pr.department || 'Geral',
-              phone: pr.phone,
-              reason: r.reason,
-              created_at: r.created_at,
-              requestDate: new Date(r.created_at).toLocaleDateString('pt-BR')
+              reason: r.admin_notes || '',
+              created_at: r.requested_at,
+              requestDate: r.requested_at ? new Date(r.requested_at).toLocaleDateString('pt-BR') : ''
             };
           });
-        }
 
-        // 3. Busca notificações administrativas não lidas
-        const { data: notifs, error: notifError } = await supabaseClient
-            .from('admin_notifications')
-          .select('*')
-          .is('read_at', null)
-          .order('created_at', { ascending: false });
-
-        if (!notifError && Array.isArray(notifs)) {
-          adminNotificationsList = notifs;
-          unreadAdminNotificationsCount = notifs.length;
-        }
-
+        adminNotificationsList = Array.isArray(notificationsRes.data) ? notificationsRes.data : [];
+        unreadAdminNotificationsCount = adminNotificationsList.length;
         lastPendingSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         if (manual) {
-          showToast(`✓ Dados sincronizados com o Supabase! (${registeredUsers.length} perfis ativos, ${pendingUsers.length} pendentes).`);
+          showToast(`✓ Supabase sincronizado: ${registeredUsers.length} usuários e ${pendingUsers.length} solicitações pendentes.`);
         }
 
         if (currentScreen === 'projects' && (activeNav === 'Gestão de Usuários (Admin)' || activeNav === 'Gestão de Usuários')) {
@@ -2603,6 +2602,7 @@
         }
       } catch (err) {
         console.error('Erro na sincronização IAM do Supabase:', err);
+        if (manual) showToast('Não foi possível sincronizar o painel de usuários.');
       }
     }
 
@@ -2659,11 +2659,12 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
           console.log('Realtime [profiles]:', payload);
           // Se for o usuário conectado aguardando liberação na tela pending:
-          if (currentUser && payload.new && (payload.new.id === currentUser.id || payload.new.auth_user_id === currentUser.auth_user_id)) {
+          if (currentUser && payload.new && payload.new.id === currentUser.id) {
             if (payload.new.status === 'approved') {
               currentUser.status = 'Aprovado';
-              currentUser.role_id = payload.new.role_id;
-              currentUser.level = payload.new.role_id;
+              currentUser.role_id = payload.new.role;
+              currentUser.role = payload.new.role;
+              currentUser.level = payload.new.role;
               showToast('🎉 Seu acesso ao Planes OS foi LIBERADO pelo Administrador!');
               currentScreen = 'projects';
               saveSessionState();
@@ -2681,8 +2682,10 @@
           }
           fetchAdminIAMData();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_notifications' }, (payload) => {
-          fetchAdminIAMData();
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+          if (!currentUser || payload?.new?.user_id === currentUser.id || payload?.old?.user_id === currentUser.id) {
+            fetchAdminIAMData();
+          }
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
@@ -4499,7 +4502,7 @@
           const { data: profile, error: profError } = await supabaseClient
             .from('profiles')
             .select('*')
-            .eq('auth_user_id', authUser.id)
+            .eq('id', authUser.id)
             .single();
 
           if (profError || !profile) {
@@ -4511,10 +4514,10 @@
 
           if (profile.status === 'pending') {
             currentPendingModalUser = {
-              name: profile.name,
+              name: profile.full_name || authUser.email.split('@')[0],
               email: profile.email,
-              provider: profile.auth_provider || 'Email',
-              requestedLevel: profile.role_id,
+              provider: 'Email',
+              requestedLevel: profile.role,
               date: new Date(profile.created_at).toLocaleDateString('pt-BR')
             };
             showPendingStatusModal(currentPendingModalUser);
@@ -4537,16 +4540,16 @@
           currentUser = {
             id: profile.id,
             auth_user_id: profile.auth_user_id,
-            name: profile.name,
+            name: profile.full_name || authUser.email.split('@')[0],
             email: profile.email,
-            role: profile.role_id,
-            role_id: profile.role_id,
-            level: profile.role_id,
+            role: profile.role,
+            role_id: profile.role,
+            level: profile.role,
             company: profile.company || 'Planes ENG',
             department: profile.department || 'Geral',
-            avatar: profile.avatar_url || (profile.name ? profile.name.slice(0, 2).toUpperCase() : 'US')
+            avatar: profile.avatar_url || (profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'US')
           };
-          accessLevel = profile.role_id;
+          accessLevel = profile.role;
           currentScreen = 'projects';
           saveSessionState();
           setupRealtimeSubscriptions();
@@ -8026,16 +8029,16 @@
           const { data: profile, error: profError } = await supabaseClient
             .from('profiles')
             .select('*')
-            .eq('auth_user_id', authUser.id)
+            .eq('id', authUser.id)
             .single();
 
           if (!profError && profile) {
             if (profile.status === 'pending') {
               currentPendingModalUser = {
-                name: profile.name,
+                name: profile.full_name || authUser.email.split('@')[0],
                 email: profile.email,
-                provider: profile.auth_provider || 'OAuth',
-                requestedLevel: profile.role_id,
+                provider: 'OAuth',
+                requestedLevel: profile.role,
                 date: new Date(profile.created_at).toLocaleDateString('pt-BR')
               };
               currentScreen = 'login';
@@ -8060,16 +8063,16 @@
               currentUser = {
                 id: profile.id,
                 auth_user_id: profile.auth_user_id,
-                name: profile.name,
+                name: profile.full_name || authUser.email.split('@')[0],
                 email: profile.email,
-                role: profile.role_id,
-                role_id: profile.role_id,
-                level: profile.role_id,
+                role: profile.role,
+                role_id: profile.role,
+                level: profile.role,
                 company: profile.company || 'Planes ENG',
                 department: profile.department || 'Geral',
-                avatar: profile.avatar_url || (profile.name ? profile.name.slice(0, 2).toUpperCase() : 'US')
+                avatar: profile.avatar_url || (profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'US')
               };
-              accessLevel = profile.role_id;
+              accessLevel = profile.role;
               currentScreen = 'projects';
               saveSessionState();
               setupRealtimeSubscriptions();
