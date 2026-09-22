@@ -7709,6 +7709,19 @@
       physicalProgress = 64.2;
       pacScore = 82;
       financialSpent = 15.45;
+      if (selectedProject) selectedProject.progress = physicalProgress;
+
+      const synced = await persistProjectMetrics();
+      if (!synced) {
+        physicalProgress = previousProgress;
+        pacScore = previousPacScore;
+        financialSpent = previousFinancialSpent;
+        if (selectedProject) selectedProject.progress = previousProjectProgress;
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('Falha ao sincronizar a atualização do Excel. Nada foi aplicado localmente.');
+        return;
+      }
 
       projectVersions.unshift({
         version: 'v16.04',
@@ -7720,28 +7733,10 @@
       });
       if (projectVersions[1]) projectVersions[1].status = 'Arquivado';
 
-      if (selectedProject) selectedProject.progress = physicalProgress;
-
-      const synced = await persistProjectMetrics();
-      if (synced) {
-        excelDiffData = null;
-        await refreshIntelligenceOperationalData();
-        render();
-        showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
-        return;
-      }
-
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) {
-        physicalProgress = previousProgress;
-        pacScore = previousPacScore;
-        financialSpent = previousFinancialSpent;
-        if (selectedProject) selectedProject.progress = previousProjectProgress;
-        projectVersions.shift();
-        if (projectVersions[0]) projectVersions[0].status = 'Versão Atual em Produção';
-      }
+      excelDiffData = null;
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao sincronizar a atualização do Excel. A tela voltou ao último estado confirmado.');
+      showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
     }
 
     function cancelExcelDiff() {
@@ -9678,6 +9673,34 @@
       showToast(responseText);
       speakText(responseText);
       render();
+    }
+
+    async function updateFieldProgress(delta, label, complete = false) {
+      const beforeProgress = Number.parseFloat(physicalProgress) || 0;
+      const beforeProjectProgress = selectedProject ? selectedProject.progress : null;
+      const nextProgress = complete
+        ? 100
+        : Math.min(100, Number((beforeProgress + Number(delta || 0)).toFixed(1)));
+
+      physicalProgress = nextProgress;
+      if (selectedProject) selectedProject.progress = nextProgress;
+
+      const ok = await persistProjectMetrics();
+      if (!ok) {
+        physicalProgress = beforeProgress;
+        if (selectedProject) selectedProject.progress = beforeProjectProgress;
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('Não foi possível registrar o avanço no Supabase.');
+        return false;
+      }
+
+      await refreshIntelligenceOperationalData();
+      render();
+      showToast(complete
+        ? '✓ ' + label + ' marcada como concluída e sincronizada.'
+        : '✓ +' + Number(delta || 0) + '% registrado em ' + label + ' e sincronizado.');
+      return true;
     }
 
     async function toggleTaskDone(id) {
@@ -16043,28 +16066,28 @@
                         <div class="grid grid-cols-4 gap-2">
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 1).toFixed(1)); showToast('✓ +1% registrado na Arena de Shows'); render();"
+                            onclick="updateFieldProgress(1, 'Arena de Shows')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +1%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 3).toFixed(1)); showToast('✓ +3% registrado na Arena de Shows'); render();"
+                            onclick="updateFieldProgress(3, 'Arena de Shows')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +3%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 5).toFixed(1)); showToast('✓ +5% registrado na Arena de Shows'); render();"
+                            onclick="updateFieldProgress(5, 'Arena de Shows')"
                             class="py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer text-center"
                           >
                             +5%
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'frente', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
@@ -16098,28 +16121,28 @@
                         <div class="grid grid-cols-4 gap-2">
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 1).toFixed(1)); showToast('✓ +1% registrado no Bloco de Apartamentos'); render();"
+                            onclick="updateFieldProgress(1, 'Bloco de Apartamentos')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +1%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 3).toFixed(1)); showToast('✓ +3% registrado no Bloco de Apartamentos'); render();"
+                            onclick="updateFieldProgress(3, 'Bloco de Apartamentos')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +3%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 5).toFixed(1)); showToast('✓ +5% registrado no Bloco de Apartamentos'); render();"
+                            onclick="updateFieldProgress(5, 'Bloco de Apartamentos')"
                             class="py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer text-center"
                           >
                             +5%
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'frente', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
@@ -16153,28 +16176,28 @@
                         <div class="grid grid-cols-4 gap-2">
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 1).toFixed(1)); showToast('✓ +1% registrado na Infraestrutura'); render();"
+                            onclick="updateFieldProgress(1, 'Infraestrutura')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +1%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 3).toFixed(1)); showToast('✓ +3% registrado na Infraestrutura'); render();"
+                            onclick="updateFieldProgress(3, 'Infraestrutura')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +3%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 5).toFixed(1)); showToast('✓ +5% registrado na Infraestrutura'); render();"
+                            onclick="updateFieldProgress(5, 'Infraestrutura')"
                             class="py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer text-center"
                           >
                             +5%
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'frente', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
@@ -16229,7 +16252,7 @@
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'frente', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
