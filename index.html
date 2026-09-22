@@ -3411,7 +3411,7 @@
       },
 
       isWebAuthnSupported: function() {
-        return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
+        return false;
       },
 
       listUserPasskeys: function(userId) {
@@ -3430,112 +3430,17 @@
       },
 
       registerPasskey: async function(user, deviceCustomName) {
-        if (!user) return { success: false, error: 'Usuário inválido.' };
-        const deviceName = deviceCustomName || `${this.getBiometricMethodName()} (${navigator.platform || 'Dispositivo'})`;
-
-        // Challenge gerado com segurança criptográfica
-        const challenge = new Uint8Array(32);
-        if (window.crypto && window.crypto.getRandomValues) {
-          window.crypto.getRandomValues(challenge);
-        }
-
-        const credId = 'cred-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        const pubKey = 'pubkey_fido2_secp256r1_' + Math.random().toString(36).substr(2, 12);
-        const newPasskey = {
-          id: 'pk-' + Date.now(),
-          user_id: user.id,
-          user_email: user.email,
-          credential_id: credId,
-          public_key: pubKey,
-          sign_count: 0,
-          transports: ['internal'],
-          device_type: this.getBiometricMethodName(),
-          backed_up: true,
-          name: deviceName,
-          created_at: new Date().toISOString(),
-          last_used_at: new Date().toISOString(),
-          revoked_at: null
+        return {
+          success: false,
+          error: 'Passkey/biometria está temporariamente desativada até a ativação do WebAuthn server-side.'
         };
-
-        // Persistência server-side no Supabase (se ativo)
-        if (supabaseClient && user.id) {
-          try {
-            await supabaseClient.from('user_passkeys').insert({
-              user_id: user.id,
-              credential_id: credId,
-              public_key: pubKey,
-              device_name: deviceName,
-              transports: ['internal']
-            });
-          } catch (e) {
-            console.warn('Aviso: erro ao salvar passkey no Supabase:', e);
-          }
-        }
-
-        try {
-          const all = JSON.parse(localStorage.getItem('planes_user_passkeys')) || [];
-          all.push(newPasskey);
-          this.saveUserPasskeys(all);
-
-          logAuditEvent('PASSKEY_REGISTERED', 'user_passkeys', newPasskey.id, { device: deviceName }, user.id);
-          return { success: true, passkey: newPasskey };
-        } catch (err) {
-          return { success: false, error: err.message || 'Falha ao registrar Passkey.' };
-        }
       },
 
       authenticatePasskey: async function() {
-        const all = JSON.parse(localStorage.getItem('planes_user_passkeys')) || [];
-        const activeKeys = all.filter(k => !k.revoked_at);
-
-        if (activeKeys.length === 0) {
-          return { success: false, error: 'Nenhuma Passkey cadastrada neste navegador. Realize o login com Google, Apple ou E-mail e ative sua Passkey em "Meu Perfil".' };
-        }
-
-        // Tenta associar com o usuário salvo ou último ativo
-        const lastKey = activeKeys[0];
-        let user = registeredUsers.find(u => String(u.id) === String(lastKey.user_id) || (u.email && u.email.toLowerCase() === (lastKey.user_email || '').toLowerCase()));
-
-        // Validação server-side no Supabase (se conectado)
-        if (supabaseClient && lastKey.user_id) {
-          try {
-            const { data: prof } = await supabaseClient
-            .from('profiles')
-              .select('*')
-              .eq('id', lastKey.user_id)
-              .single();
-
-            if (prof) {
-              if (prof.status === 'pending') {
-                return { success: false, status: 'pending', user: prof };
-              }
-              if (prof.status === 'suspended') {
-                return { success: false, status: 'suspended', error: 'Esta conta está suspensa preventivamente.' };
-              }
-              if (prof.status === 'rejected') {
-                return { success: false, status: 'rejected', error: 'Sua solicitação não foi autorizada.' };
-              }
-              user = prof;
-            }
-          } catch (e) {}
-        }
-
-        if (!user) {
-          // Checa se está pendente local
-          const pending = pendingUsers.find(u => String(u.id) === String(lastKey.user_id) || (u.email && u.email.toLowerCase() === (lastKey.user_email || '').toLowerCase()));
-          if (pending) {
-            return { success: false, status: 'pending', user: pending };
-          }
-          return { success: false, error: 'Credencial biométrica não vinculada a nenhum usuário ativo.' };
-        }
-
-        // Atualiza contador e último uso
-        lastKey.sign_count = (lastKey.sign_count || 0) + 1;
-        lastKey.last_used_at = new Date().toISOString();
-        this.saveUserPasskeys(all);
-
-        logAuditEvent('PASSKEY_LOGIN', 'user_passkeys', lastKey.id, { sign_count: lastKey.sign_count }, user.id);
-        return { success: true, user: user, passkey: lastKey };
+        return {
+          success: false,
+          error: 'Passkey/biometria está temporariamente indisponível. Entre com Google, Apple ou e-mail e senha.'
+        };
       },
 
       revokePasskey: function(passkeyId) {
@@ -3588,12 +3493,7 @@
     }
 
     function executeStepUpBiometric() {
-      lastStepUpVerificationTime = Date.now();
-      logAuditEvent('STEP_UP_AUTH_SUCCESS', 'security', 'biometric', { method: PasskeyService.getBiometricMethodName() });
-      showToast(`✓ Identidade confirmada com ${PasskeyService.getBiometricMethodName()}!`);
-      const cb = pendingStepUpAction;
-      closeStepUpModal();
-      if (typeof cb === 'function') cb();
+      showToast('Biometria temporariamente indisponível. Confirme esta ação com sua senha.');
     }
 
     function executeStepUpPassword() {
@@ -3626,16 +3526,32 @@
         return;
       }
 
-      // Validação segura local se offline
-      lastStepUpVerificationTime = Date.now();
-      logAuditEvent('STEP_UP_AUTH_SUCCESS', 'security', 'password');
-      showToast('✓ Identidade confirmada.');
-      const cb = pendingStepUpAction;
-      closeStepUpModal();
-      if (typeof cb === 'function') cb();
+      logAuditEvent('STEP_UP_AUTH_BLOCKED', 'security', 'password', { reason: 'server_auth_unavailable' });
+      showToast('Reautenticação indisponível sem conexão segura com o Supabase.');
+      return;
     }
 
     // 7. Motor Central de Autorização & RBAC (`can`)
+    function normalizeRbacRole(value) {
+      const key = String(value || '').trim().toLowerCase();
+      const map = {
+        'super_admin': 'SUPER_ADMIN',
+        'super admin': 'SUPER_ADMIN',
+        'admin': 'ADMIN',
+        'gestor': 'GERENCIA',
+        'diretoria': 'DIRETORIA',
+        'engenharia': 'ENGENHARIA',
+        'campo': 'COLABORADOR',
+        'canteiro': 'COLABORADOR',
+        'financeiro': 'FINANCEIRO',
+        'suprimentos': 'SUPRIMENTOS',
+        'cliente': 'CLIENTE',
+        'visualizador': 'VISUALIZADOR'
+      };
+      const upper = String(value || '').trim().toUpperCase();
+      return map[key] || (ROLE_PERMISSIONS_MAP[upper] ? upper : 'COLABORADOR');
+    }
+
     function can(user, permissionCode, resource = null) {
       if (!user) return false;
 
@@ -3644,8 +3560,8 @@
       if (st !== 'aprovado' && st !== 'approved') return false;
 
       // Super Admin bypass total
-      const roleId = user.role_id || user.level || 'Campo';
-      if (roleId === 'SUPER_ADMIN' || user.role === 'SUPER_ADMIN') {
+      const roleId = normalizeRbacRole(user.role_id || user.level || user.role || 'campo');
+      if (roleId === 'SUPER_ADMIN') {
         return true;
       }
 
@@ -3669,7 +3585,7 @@
 
     function checkScopeAccess(user, resource) {
       if (!resource) return true;
-      const roleId = user.role_id || user.level || 'Campo';
+      const roleId = normalizeRbacRole(user.role_id || user.level || user.role || 'campo');
       if (roleId === 'SUPER_ADMIN' || roleId === 'ADMIN') return true;
 
       // Se o recurso especificar projeto
@@ -4863,27 +4779,8 @@
         }
       }
 
-      // Fallback local
-      const newPending = {
-        id: 'usr-' + Date.now(),
-        name,
-        email,
-        phone,
-        job_title: jobTitle,
-        company,
-        department,
-        city,
-        requestedLevel: reqRole,
-        role: reqRole,
-        reason,
-        provider: 'Email',
-        status: 'Pendente',
-        date: new Date().toLocaleDateString('pt-BR')
-      };
-      pendingUsers.unshift(newPending);
-      closeRegisterModal();
-      showPendingStatusModal(newPending);
-      showToast('✓ Cadastro enviado para análise do Administrador!');
+      showToast('Cadastro indisponível sem conexão com o serviço de autenticação.');
+      return;
     }
 
     function approvePendingUser(id, assignedLevel) {
