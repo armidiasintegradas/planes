@@ -19346,7 +19346,7 @@ ${activeNav === 'Equipe & Contatos' ? `
       return map[key] || 'Campo';
     }
 
-    function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
+    window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
       if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;
 
       try {
@@ -19418,11 +19418,11 @@ ${activeNav === 'Equipe & Contatos' ? `
     }
 
     window.addEventListener('planes-auth-payload-ready', (event) => {
-      applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);
+      window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);
     });
 
     restoreSessionState();
-    if (!applySupabaseAuthPayload()) render();
+    if (!window.applySupabaseAuthPayload()) render();
   </script>
 
 <script id="planes-intelligence-v2-runtime">
