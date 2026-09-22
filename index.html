@@ -19357,13 +19357,17 @@ ${activeNav === 'Equipe & Contatos' ? `
       const targetUserId = payload.user.auth_user_id || payload.user.id || null;
       if (
         window.__PLANES_AUTH_INTERNAL_APPLIED__ &&
-        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId
+        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId &&
+        window.__PLANES_AUTH_HYDRATED__ === true
       ) {
-        window.__PLANES_AUTH_HYDRATED__ = true;
         return true;
       }
 
       try {
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ = false;
+        window.__PLANES_AUTH_HYDRATED__ = false;
+        window.__PLANES_AUTH_LAST_ERROR__ = null;
+
         const normalizedLevel = normalizeSupabaseAccessLevel(
           payload.user.level || payload.user.role || payload.profile?.role
         );
@@ -19388,7 +19392,7 @@ ${activeNav === 'Equipe & Contatos' ? `
           ? requestedScreen
           : 'projects';
 
-        if (savedUiState?.selectedProjectId) {
+        if (savedUiState?.selectedProjectId && Array.isArray(projectsList)) {
           selectedProjectId = savedUiState.selectedProjectId;
           const restoredProject = projectsList.find(project =>
             project.id === selectedProjectId || project.cloudId === selectedProjectId
@@ -19410,16 +19414,41 @@ ${activeNav === 'Equipe & Contatos' ? `
           }
         }
 
-        window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
-        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
-        window.__PLANES_AUTH_HYDRATED__ = true;
+        let rendered = false;
+        try {
+          render();
+          rendered = true;
+        } catch (primaryRenderError) {
+          console.error('PLANES_AUTH_PRIMARY_RENDER_FAILED', primaryRenderError);
+
+          currentScreen = 'projects';
+          activeNav = 'Visão Geral';
+          if (!selectedProject && Array.isArray(projectsList) && projectsList.length) {
+            selectedProject = projectsList[0];
+            selectedProjectId = selectedProject.id;
+          }
+
+          try {
+            render();
+            rendered = true;
+          } catch (fallbackRenderError) {
+            window.__PLANES_AUTH_LAST_ERROR__ =
+              String(fallbackRenderError?.stack || fallbackRenderError?.message || fallbackRenderError);
+            throw fallbackRenderError;
+          }
+        }
+
+        if (!rendered) return false;
 
         try { saveSessionState(); } catch (e) {}
         try { setupRealtimeSubscriptions(); } catch (e) {}
         try { updateUserPresence(); } catch (e) {}
         try { broadcastPresenceHeartbeat(); } catch (e) {}
 
-        render();
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
+        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
+        window.__PLANES_AUTH_HYDRATED__ = true;
+        window.__PLANES_AUTH_LAST_ERROR__ = null;
 
         window.dispatchEvent(new CustomEvent('planes-auth-legacy-hydrated', {
           detail: payload
@@ -19427,7 +19456,15 @@ ${activeNav === 'Equipe & Contatos' ? `
 
         return true;
       } catch (error) {
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ = false;
+        window.__PLANES_AUTH_HYDRATED__ = false;
+        window.__PLANES_AUTH_LAST_ERROR__ =
+          window.__PLANES_AUTH_LAST_ERROR__ ||
+          String(error?.stack || error?.message || error);
         console.error('PLANES_INTERNAL_AUTH_APPLY_FAILED', error);
+        window.dispatchEvent(new CustomEvent('planes-auth-hydration-failed', {
+          detail: { message: window.__PLANES_AUTH_LAST_ERROR__ }
+        }));
         return false;
       }
     }
