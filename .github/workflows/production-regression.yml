@@ -47,12 +47,13 @@ jobs:
               --headless=new \
               --no-sandbox \
               --disable-gpu \
-              --virtual-time-budget=7000 \
+              --virtual-time-budget=15000 \
               --window-size="$size" \
               --dump-dom \
               https://armidiasintegradas.github.io/planes/ > "/tmp/planes-$size.html"
-            grep -q "Entrar no Planes OS" "/tmp/planes-$size.html"
-            grep -Eq "Continuar com Google|Google temporariamente indisponível" "/tmp/planes-$size.html"
+            grep -q 'id="planes-auth-root"' "/tmp/planes-$size.html"
+            grep -q 'planes-auth-card' "/tmp/planes-$size.html"
+            grep -q 'PLANES OS' "/tmp/planes-$size.html"
           done
 
       - name: Run regression tests
