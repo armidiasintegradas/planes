@@ -10043,7 +10043,7 @@
               <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Linha de Balanço' ? 'text-slate-950' : 'text-slate-500'}">Linha</span>
             </button>
 
-            <!-- Tab 4: IA Copiloto -->
+            <!-- Tab 4: Intelligenceo -->
             <button
               type="button"
               onclick="setNavWithHistory('Planes Intelligence')"
@@ -10054,7 +10054,7 @@
               <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('bot', 'w-4 h-4')}
               </div>
-              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">IA Copilot</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">Intelligence</span>
             </button>
 
             <!-- Tab 5: Menu Completo (Abre Drawer) -->
@@ -10172,7 +10172,7 @@
               <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Linha de Balanço' ? 'text-slate-950' : 'text-slate-500'}">Linha</span>
             </button>
 
-            <!-- Tab 4: IA Copiloto -->
+            <!-- Tab 4: Intelligenceo -->
             <button
               type="button"
               onclick="setNavWithHistory('Planes Intelligence')"
@@ -10183,7 +10183,7 @@
               <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('bot', 'w-4 h-4')}
               </div>
-              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">IA Copilot</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">Intelligence</span>
             </button>
 
             <!-- Tab 5: Menu Completo (Abre Drawer) -->
@@ -10211,7 +10211,7 @@
     let intelligenceChatHistory = [
       {
         sender: 'ai',
-        text: 'Oi! Sou o Planes Intelligence. Estou acompanhando os dados desta obra e posso te ajudar a decidir o próximo passo.',
+        text: 'Oi! Estou acompanhando esta obra com você. Pode falar comigo do seu jeito.',
         time: 'Agora',
         identityGreeting: true
       }
@@ -10228,7 +10228,7 @@
       if (Array.isArray(intelligenceChatHistory) && intelligenceChatHistory.length) {
         const greeting = intelligenceChatHistory.find(item => item && item.identityGreeting);
         if (greeting) {
-          greeting.text = 'Oi, ' + firstName + '. Aqui é ' + personaName + '. Estou acompanhando esta obra com você. Pode falar comigo do seu jeito.';
+          greeting.text = 'Oi, ' + firstName + '. Aqui é ' + personaName + '. Tô com você nessa obra. Pode falar comigo do seu jeito.';
         }
       }
     }
@@ -10904,49 +10904,65 @@
       if (/\b(cria|criar|crie)\b/.test(p) && p.includes('tarefa')) {
         const match = raw.match(/(?:cria|criar|crie)\s+(?:uma\s+)?tarefa(?:\s+(?:para|de|:))?\s*(.*)$/i);
         const title = String(match?.[1] || '').trim();
-        if (title) {
-          prepared = await executePlanesRealtimeTool('prepare_create_task', {
-            title,
-            responsible: currentUser?.name || '',
-            deadline: 'Hoje'
-          });
-        }
-      }
-
-      if (!prepared && live.module === 'Fila de Validações' && /\b(aprov|aprova|aprovar|confirma|confirmar)\w*/i.test(p)) {
-        const target = findVoiceValidation(raw) || (validations || [])[0];
-        if (target) {
-          prepared = await executePlanesRealtimeTool('prepare_approve_validation', { query: target.item || raw });
-        }
-      }
-
-      if (!prepared && live.module === 'Suprimentos' &&
-          /\b(receb|canteiro|status|atualiza|alter|confirma)\w*/i.test(p) &&
-          /\b(recebid|canteiro)\w*/i.test(p)) {
-        const target = findVoiceSupply(raw) || (suppliesList || [])[0];
-        if (target) {
-          prepared = await executePlanesRealtimeTool('prepare_update_supply_status', {
-            query: target.name || raw,
-            status: 'No Canteiro'
-          });
-        }
+        if (title) prepared = await executePlanesRealtimeTool('prepare_create_task', {
+          title,
+          responsible: currentUser?.name || '',
+          deadline: 'Hoje'
+        });
       }
 
       if (!prepared && /\b(conclui|concluir|finaliza|finalizar)\w*/i.test(p) && p.includes('tarefa')) {
         const target = findVoiceTask(raw) || (tasksList || []).find(t => !t.done);
+        if (target) prepared = await executePlanesRealtimeTool('prepare_toggle_task', { query: target.title || raw, done: true });
+      }
+
+      if (!prepared && /\b(reabre|reabrir)\w*/i.test(p) && p.includes('tarefa')) {
+        const target = findVoiceTask(raw) || (tasksList || []).find(t => t.done);
+        if (target) prepared = await executePlanesRealtimeTool('prepare_toggle_task', { query: target.title || raw, done: false });
+      }
+
+      if (!prepared && /\b(aprov|aprova|aprovar|confirma|confirmar)\w*/i.test(p) && (live.module === 'Fila de Validações' || p.includes('valida'))) {
+        const target = findVoiceValidation(raw) || (validations || [])[0];
+        if (target) prepared = await executePlanesRealtimeTool('prepare_approve_validation', { query: target.item || raw });
+      }
+
+      if (!prepared && /\b(rejeit|devolv|recus)\w*/i.test(p) && (live.module === 'Fila de Validações' || p.includes('valida'))) {
+        const target = findVoiceValidation(raw) || (validations || [])[0];
         if (target) {
-          prepared = await executePlanesRealtimeTool('prepare_toggle_task', {
-            query: target.title || raw,
-            done: true
+          const reasonMatch = raw.match(/(?:porque|motivo|por)\s+(.+)$/i);
+          prepared = await executePlanesRealtimeTool('prepare_reject_validation', {
+            query: target.item || raw,
+            reason: String(reasonMatch?.[1] || 'Revisar informação da medição').trim()
           });
         }
       }
 
+      if (!prepared && /\b(receb|canteiro|entreg)\w*/i.test(p) && (live.module === 'Suprimentos' || p.includes('material') || p.includes('suprimento'))) {
+        const target = findVoiceSupply(raw) || (suppliesList || [])[0];
+        if (target) prepared = await executePlanesRealtimeTool('prepare_update_supply_status', { query: target.name || raw, status: 'No Canteiro' });
+      }
+
+      if (!prepared && /\b(transporte|a caminho)\b/i.test(p) && (p.includes('material') || p.includes('suprimento') || live.module === 'Suprimentos')) {
+        const target = findVoiceSupply(raw) || (suppliesList || [])[0];
+        if (target) prepared = await executePlanesRealtimeTool('prepare_update_supply_status', { query: target.name || raw, status: 'Em Transporte' });
+      }
+
+      if (!prepared && /\b(atrasad|atraso)\w*/i.test(p) && (p.includes('material') || p.includes('suprimento') || live.module === 'Suprimentos')) {
+        const target = findVoiceSupply(raw) || (suppliesList || [])[0];
+        if (target) prepared = await executePlanesRealtimeTool('prepare_update_supply_status', { query: target.name || raw, status: 'Atrasado' });
+      }
+
+      if (!prepared && /\b(pac|avanço|avanco)\b/i.test(p) && /\b(atualiza|alterar|muda|coloca|define)\w*/i.test(p)) {
+        const pacMatch = raw.match(/pac[^0-9]*(\d+(?:[.,]\d+)?)/i);
+        const progressMatch = raw.match(/(?:avanço|avanco|progresso)[^0-9]*(\d+(?:[.,]\d+)?)/i);
+        const args = {};
+        if (pacMatch) args.pac_score = Number(pacMatch[1].replace(',','.'));
+        if (progressMatch) args.physical_progress = Number(progressMatch[1].replace(',','.'));
+        if (Object.keys(args).length) prepared = await executePlanesRealtimeTool('prepare_update_pac', args);
+      }
+
       if (!prepared || prepared.ok === false) return prepared;
-      return {
-        ...prepared,
-        message: 'Entendi. Posso executar essa alteração agora. Revise abaixo e confirme antes de eu gravar no sistema.'
-      };
+      return { ...prepared, message: 'Entendi. Revise a ação abaixo e confirme para eu gravar no Planes.' };
     }
 
     async function askPlanesIntelligence(predefinedPrompt) {
@@ -10962,6 +10978,25 @@
         text: rawPromptText,
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       });
+
+      if (realtimeVoicePendingMutation) {
+        const normalizedConfirmation = String(rawPromptText || '').trim().toLowerCase();
+        const confirms = /^(sim|confirmo|confirma|pode|pode fazer|pode executar|ok|certo|manda|vai|faz)$/i.test(normalizedConfirmation);
+        const cancels = /^(não|nao|cancelar|cancela|deixa|deixa pra la|deixa para la|esquece)$/i.test(normalizedConfirmation);
+        if (confirms || cancels) {
+          const result = await executePendingRealtimeVoiceMutation(confirms);
+          const responseText = confirms
+            ? (result?.ok ? 'Feito. A alteração foi confirmada e sincronizada no Planes.' : (result?.message || 'Não consegui concluir essa alteração.'))
+            : 'Certo. Cancelei essa alteração.';
+          intelligenceChatHistory.push({
+            sender: 'ai',
+            text: responseText,
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          });
+          render();
+          return;
+        }
+      }
 
       const intelligenceTopic = inferIntelligenceTopic(promptText);
       const liveScreenContext = getPlanesLiveScreenContext();
@@ -12906,7 +12941,7 @@
         intelligenceChatHistory[0].sender === 'ai' &&
         !String(intelligenceChatHistory[0].text || '').startsWith('Oi, ' + firstName)
       ) {
-        intelligenceChatHistory[0].text = 'Oi, ' + firstName + '. Sou o **Planes Intelligence**, seu copiloto de engenharia. Já estou acompanhando os dados da obra e seus padrões de uso para deixar nossa interação mais fluida.';
+        intelligenceChatHistory[0].text = 'Oi, ' + firstName + '. Sou o **Planes Intelligence**, seu assistente da obra. Já estou acompanhando os dados da obra e seus padrões de uso para deixar nossa interação mais fluida.';
       }
       const messages = (Array.isArray(intelligenceChatHistory) && intelligenceChatHistory.length
         ? intelligenceChatHistory
@@ -12950,7 +12985,7 @@
               </div>
               <h2 class="text-xl font-black text-slate-950 leading-tight mt-1">Oi, ${getPlanesUserFirstName()}</h2>
               <p class="text-[12px] font-black text-purple-800 mt-0.5">Planes Intelligence</p>
-              <p class="text-[11px] text-slate-500 mt-0.5">Copiloto operacional · voz, diagnóstico e ação</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">Conversa, contexto e ação em tempo real</p>
               <p class="text-[9px] text-violet-600 font-bold mt-1">${projectMemoryLabel}</p>
               <div class="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono">
                 <span class="w-1.5 h-1.5 rounded-full ${intelligenceDataSource === 'supabase' ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
@@ -19009,7 +19044,7 @@ ${activeNav === 'Equipe & Contatos' ? `
               <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Linha de Balanço' ? 'text-slate-950' : 'text-slate-500'}">Linha</span>
             </button>
 
-            <!-- Tab 4: IA Copiloto -->
+            <!-- Tab 4: Intelligenceo -->
             <button
               type="button"
               onclick="setNavWithHistory('Planes Intelligence')"
@@ -19020,7 +19055,7 @@ ${activeNav === 'Equipe & Contatos' ? `
               <div class="w-8 h-8 rounded-[10px] flex items-center justify-center transition-colors ${activeNav === 'Planes Intelligence' ? 'bg-[#d4ff00] text-slate-950 shadow-xs' : 'text-slate-600'}">
                 ${getSvg('bot', 'w-4 h-4')}
               </div>
-              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">IA Copilot</span>
+              <span class="text-[9.5px] font-bold tracking-tight mt-0.5 ${activeNav === 'Planes Intelligence' ? 'text-slate-950' : 'text-slate-500'}">Intelligence</span>
             </button>
 
             <!-- Tab 5: Menu Completo (Abre Drawer) -->
@@ -19057,16 +19092,16 @@ ${activeNav === 'Equipe & Contatos' ? `
     try{
       const p=new URLSearchParams(location.search);
       if(p.get('intelligenceV2')==='1') localStorage.setItem(FLAG_KEY,'1');
-      if(p.get('intelligenceV2')==='0') localStorage.removeItem(FLAG_KEY);
+      if(p.get('intelligenceV2')==='0') localStorage.setItem(FLAG_KEY,'0');
     }catch(e){}
   }
   queryFlag();
 
   window.isPlanesIntelligenceV2Enabled=function(){
-    try{return localStorage.getItem(FLAG_KEY)==='1'}catch(e){return false}
+    try{return localStorage.getItem(FLAG_KEY)!=='0'}catch(e){return true}
   };
   window.setPlanesIntelligenceV2Enabled=function(enabled){
-    try{enabled?localStorage.setItem(FLAG_KEY,'1'):localStorage.removeItem(FLAG_KEY)}catch(e){}
+    try{localStorage.setItem(FLAG_KEY,enabled?'1':'0')}catch(e){}
     return window.isPlanesIntelligenceV2Enabled();
   };
 
@@ -19113,6 +19148,11 @@ ${activeNav === 'Equipe & Contatos' ? `
   }
 
   function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+  function formatChatText(s){
+    return escapeHtml(s)
+      .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+      .replace(/\n/g,'<br>');
+  }
 
   function ensureOverlay(){
     let el=document.getElementById('planes-intelligence-v2-overlay');
@@ -19236,8 +19276,8 @@ ${activeNav === 'Equipe & Contatos' ? `
     try{rows=Array.isArray(intelligenceChatHistory)?intelligenceChatHistory:[]}catch(e){}
     if(!rows.length){
       rows=[
-        {sender:'ai',text:'Oi, '+firstName()+'. Tô vendo a mesma tela que você. Pode falar comigo normalmente.'},
-        {sender:'ai',text:'Posso começar te mostrando o que merece atenção hoje.'}
+        {sender:'ai',text:'Oi, '+firstName()+'. Aqui é '+personaLabel()+'. Tô com você nessa obra.'},
+        {sender:'ai',text:'Pode falar do seu jeito. Eu entendo a tela, o contexto da obra e te ajudo a decidir ou executar o próximo passo.'}
       ];
     }
     return rows.slice(-12);
@@ -19299,7 +19339,7 @@ ${activeNav === 'Equipe & Contatos' ? `
 
     const chat=document.getElementById('planes-v2-chat');
     if(chat){
-      chat.innerHTML=chatRows().map(m=>'<div class="planes-intel-v2-msg '+(m.sender==='user'?'user':'')+'">'+(m.sender==='ai'?'<b>'+escapeHtml(name)+'</b>':'')+escapeHtml(m.text)+'</div>').join('');
+      chat.innerHTML=chatRows().map(m=>'<div class="planes-intel-v2-msg '+(m.sender==='user'?'user':'')+'">'+(m.sender==='ai'?'<b>'+escapeHtml(name)+'</b>':'')+formatChatText(m.text)+'</div>').join('');
       chat.scrollTop=chat.scrollHeight;
     }
   }
