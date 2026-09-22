@@ -7385,9 +7385,37 @@
 
     try {
       const savedPerms = localStorage.getItem('planes_role_permissions');
-      rolePermissions = savedPerms ? JSON.parse(savedPerms) : defaultRolePermissions;
+      const parsedPerms = savedPerms ? JSON.parse(savedPerms) : {};
+      let repairedPermissions = false;
+
+      rolePermissions = Object.fromEntries(
+        Object.entries(defaultRolePermissions).map(([role, defaults]) => {
+          const stored = parsedPerms && Array.isArray(parsedPerms[role])
+            ? parsedPerms[role].filter(moduleName => typeof moduleName === 'string')
+            : null;
+
+          if (!stored) repairedPermissions = true;
+          return [role, stored || [...defaults]];
+        })
+      );
+
+      // Admin sempre mantém a matriz oficial completa.
+      if (
+        !Array.isArray(parsedPerms?.Admin) ||
+        defaultRolePermissions.Admin.some(moduleName => !parsedPerms.Admin.includes(moduleName))
+      ) {
+        repairedPermissions = true;
+      }
+      rolePermissions.Admin = [...defaultRolePermissions.Admin];
+
+      if (repairedPermissions) {
+        localStorage.setItem('planes_role_permissions', JSON.stringify(rolePermissions));
+      }
     } catch (e) {
-      rolePermissions = defaultRolePermissions;
+      rolePermissions = JSON.parse(JSON.stringify(defaultRolePermissions));
+      try {
+        localStorage.setItem('planes_role_permissions', JSON.stringify(rolePermissions));
+      } catch (_) {}
     }
 
     function saveRolePermissions() {
@@ -14118,7 +14146,16 @@
       const isEngOrAdmin = (accessLevel === 'Engenharia' || accessLevel === 'Admin');
 
       // FILTRO DINÂMICO DE ACORDO COM A MATRIZ DE PERMISSÕES CONFIGURADA PELO ADMIN
-      const allowedModules = rolePermissions[accessLevel] || rolePermissions['Campo'];
+      const allowedModules =
+        (Array.isArray(rolePermissions?.[accessLevel]) && rolePermissions[accessLevel].length
+          ? rolePermissions[accessLevel]
+          : null) ||
+        (Array.isArray(defaultRolePermissions?.[accessLevel]) && defaultRolePermissions[accessLevel].length
+          ? defaultRolePermissions[accessLevel]
+          : null) ||
+        (Array.isArray(rolePermissions?.['Campo']) && rolePermissions['Campo'].length
+          ? rolePermissions['Campo']
+          : defaultRolePermissions['Campo']);
       const navList = [
         { name: 'Visão Geral', icon: 'home', show: allowedModules.includes('Visão Geral') },
         { name: 'Planes Intelligence', icon: 'zap', badge: 'COPILOTO AI', show: (allowedModules.includes('Planes Intelligence') || accessLevel === 'Engenharia' || accessLevel === 'Diretoria' || accessLevel === 'Admin') },
