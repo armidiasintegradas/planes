@@ -3648,91 +3648,56 @@
     }
 
     async function finalizeUserApproval(u, roleObj) {
-      // Coleta projetos selecionados
+      if (!u) return;
       const allowedProjects = Array.from(document.querySelectorAll('input[name="config-allowed-project"]:checked')).map(cb => cb.value);
-      const allowedWorks = Array.from(document.querySelectorAll('input[name="config-allowed-work"]:checked')).map(cb => cb.value);
+      const finalRole = normalizeDatabaseRole(roleObj?.id || roleObj?.name || u.requestedLevel || u.role);
 
-      // Coleta overrides
-      const overrides = {};
-      const permissionsArray = [];
-      if (document.getElementById('override-export-reports')?.checked) {
-        overrides['reports.export'] = 'allow';
-        permissionsArray.push({ permission_id: 'reports.export', override_type: 'allow' });
-      }
-      if (document.getElementById('override-financial-view')?.checked) {
-        overrides['financial.view'] = 'allow';
-        permissionsArray.push({ permission_id: 'financial.view', override_type: 'allow' });
-      }
-      if (document.getElementById('override-users-view')?.checked) {
-        overrides['users.view'] = 'allow';
-        permissionsArray.push({ permission_id: 'users.view', override_type: 'allow' });
-      }
-      if (document.getElementById('override-supplies-edit')?.checked) {
-        overrides['suppliers.edit'] = 'allow';
-        permissionsArray.push({ permission_id: 'suppliers.edit', override_type: 'allow' });
-      }
+      await approvePendingUser(u.id, finalRole);
+      await fetchAdminIAMData();
 
-      // 1. Supabase RPC Transacional
-      if (supabaseClient && u.id) {
-        showToast('Gravando aprovação no Supabase...');
-        try {
-          const { data, error } = await supabaseClient.rpc('approve_access_request', {
-            p_request_id: u.id,
-            p_role_id: roleObj.id,
-            p_projects: allowedProjects,
-            p_works: allowedWorks,
-            p_permissions: permissionsArray
-          });
-
-          if (error) {
-            console.error('Erro na stored procedure:', error);
-            showToast('Erro no banco: ' + error.message);
-          } else {
-            // Dispara Edge Function para envio de email real via Resend
-            try {
-              supabaseClient.functions.invoke('send-iam-email', {
-                body: {
-                  type: 'APPROVAL',
-                  to: u.email,
-                  name: u.name,
-                  roleName: roleObj.name,
-                  projects: allowedProjects
-                }
-              }).then(res => {
-                if (res.data && res.data.success) {
-                  showToast('✓ E-mail de liberação enviado via Resend!');
-                }
-              });
-            } catch (e) {}
-          }
-        } catch (err) {
-          console.error('Falha ao acionar Supabase RPC:', err);
-        }
-      }
-
-      // 2. Atualização de estado local
-      const pIdx = pendingUsers.findIndex(x => String(x.id) === String(u.id));
-      if (pIdx !== -1) pendingUsers.splice(pIdx, 1);
-
-      u.status = 'Aprovado';
-      u.role_id = roleObj.id;
-      u.level = roleObj.name;
-      u.role = roleObj.name;
-      u.allowed_projects = allowedProjects.length > 0 ? allowedProjects : ['*'];
-      u.allowed_works = allowedWorks.length > 0 ? allowedWorks : ['*'];
-      u.user_permissions = overrides;
-      u.approvedAt = new Date().toISOString();
-      u.approvedBy = currentUser ? currentUser.name : 'Administrador Geral';
-
-      registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id) && (x.email || '').toLowerCase() !== (u.email || '').toLowerCase());
-      registeredUsers.push(u);
+      const approvedUser = registeredUsers.find(x =>
+        String(x.id) === String(u.userId || u.auth_user_id) ||
+        (x.email && u.email && x.email.toLowerCase() === u.email.toLowerCase())
+      );
 
       closeConfigAccessModal();
-      showEmailPreviewModal(u, roleObj.name);
-      showToast(`✓ Acesso de ${u.name} APROVADO como "${roleObj.name}"!`);
-      if (supabaseClient) fetchAdminIAMData();
+
+      if (approvedUser && supabaseClient) {
+        try {
+          const { data: projectRows } = await supabaseClient
+            .from('projects')
+            .select('id, code')
+            .in('code', allowedProjects);
+
+          if (Array.isArray(projectRows) && projectRows.length) {
+            const rows = projectRows.map(p => ({
+              user_id: approvedUser.id,
+              project_id: p.id,
+              created_by: currentUser?.id || null
+            }));
+            await supabaseClient.from('user_project_access').upsert(rows, { onConflict: 'user_id,project_id' });
+          }
+        } catch (e) {
+          console.warn('Escopo de projetos não pôde ser atualizado:', e);
+        }
+
+        try {
+          await supabaseClient.functions.invoke('send-iam-email', {
+            body: {
+              type: 'APPROVAL',
+              to: approvedUser.email,
+              name: approvedUser.name,
+              roleName: finalRole,
+              projects: allowedProjects
+            }
+          });
+        } catch (e) {}
+      }
+
+      await fetchAdminIAMData();
       render();
     }
+
 
     // 11. Rejeição e Suspensão com Justificativa
     let currentRejectUserId = null;
@@ -3760,37 +3725,61 @@
     async function confirmRejectWithReason() {
       if (!currentRejectUserId) return;
       const reason = document.getElementById('reject-reason-text')?.value.trim() || 'Solicitação não autorizada pela administração da Planes ENG.';
-      const idx = pendingUsers.findIndex(u => String(u.id) === String(currentRejectUserId) || (u.email && u.email.toLowerCase() === String(currentRejectUserId).toLowerCase()));
-      
-      if (idx !== -1) {
-        const u = pendingUsers.splice(idx, 1)[0];
-        u.status = 'Rejeitado';
-        u.rejection_reason = reason;
-        u.rejected_at = new Date().toISOString();
-        u.rejected_by = currentUser ? currentUser.name : 'Administrador';
+      const u = pendingUsers.find(user =>
+        String(user.id) === String(currentRejectUserId) ||
+        String(user.userId || user.auth_user_id || '') === String(currentRejectUserId)
+      );
+      if (!u) return;
 
-        if (supabaseClient && u.id) {
-          try {
-            await supabaseClient.rpc('reject_access_request', {
-              p_request_id: u.id,
-              p_reason: reason
-            });
-            // Envia e-mail de recusa via Resend
-            supabaseClient.functions.invoke('send-iam-email', {
-              body: { type: 'REJECTION', to: u.email, name: u.name, reason: reason }
-            }).catch(() => {});
-          } catch (e) {}
-        }
-        
-        registeredUsers = registeredUsers.filter(x => String(x.id) !== String(u.id));
-        registeredUsers.push(u);
-
-        closeRejectReasonModal();
-        showToast(`Solicitação de ${u.name} NÃO AUTORIZADA.`);
-        if (supabaseClient) fetchAdminIAMData();
-        render();
+      if (!supabaseClient || navigator.onLine === false) {
+        showToast('Sem conexão com o Supabase. A solicitação não foi alterada.');
+        return;
       }
+
+      const now = new Date().toISOString();
+      const { error: requestError } = await supabaseClient
+        .from('access_requests')
+        .update({
+          status: 'rejected',
+          reviewed_at: now,
+          reviewed_by: currentUser?.id || null,
+          rejection_reason: reason
+        })
+        .eq('id', u.id);
+
+      if (requestError) {
+        showToast('Não foi possível rejeitar esta solicitação.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      const userId = u.userId || u.auth_user_id;
+      const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({ status: 'rejected', updated_at: now })
+        .eq('id', userId);
+
+      if (profileError) {
+        await supabaseClient.from('access_requests')
+          .update({ status: 'pending', reviewed_at: null, reviewed_by: null, rejection_reason: null })
+          .eq('id', u.id);
+        showToast('A rejeição não foi concluída. O estado anterior foi restaurado.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      try {
+        await supabaseClient.functions.invoke('send-iam-email', {
+          body: { type: 'REJECTION', to: u.email, name: u.name, reason }
+        });
+      } catch (e) {}
+
+      closeRejectReasonModal();
+      await fetchAdminIAMData();
+      showToast(`Solicitação de ${u.name} NÃO AUTORIZADA.`);
+      render();
     }
+
 
     function openSuspendReasonModal(userId) {
       const u = registeredUsers.find(x => String(x.id) === String(userId));
@@ -3820,52 +3809,61 @@
       if (!currentSuspendUserId) return;
       const reason = document.getElementById('suspend-reason-text')?.value.trim() || 'Suspensão administrativa temporária.';
       const u = registeredUsers.find(x => String(x.id) === String(currentSuspendUserId));
+      if (!u) return;
 
-      if (u) {
-        u.status = 'Suspenso';
-        u.suspension_reason = reason;
-        u.suspended_at = new Date().toISOString();
-        u.suspended_by = currentUser ? currentUser.name : 'Administrador';
-
-        if (supabaseClient && u.id) {
-          try {
-            await supabaseClient.rpc('suspend_user', {
-              p_user_id: u.id,
-              p_reason: reason
-            });
-          } catch (e) {}
-        }
-
-        if (currentUser && String(currentUser.id) === String(u.id)) {
-          currentUser = null;
-          currentScreen = 'login';
-          showToast('Sua conta foi suspensa temporariamente.');
-        }
-
-        closeSuspendReasonModal();
-        showToast(`⚠️ Usuário ${u.name} foi SUSPENSO.`);
-        if (supabaseClient) fetchAdminIAMData();
-        render();
+      if (!supabaseClient || navigator.onLine === false) {
+        showToast('Sem conexão com o Supabase. A suspensão não foi alterada.');
+        return;
       }
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ status: 'suspended', updated_at: new Date().toISOString() })
+        .eq('id', u.id);
+
+      if (error) {
+        showToast('Não foi possível suspender este usuário.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      closeSuspendReasonModal();
+      await fetchAdminIAMData();
+      showToast(`⚠️ Usuário ${u.name} foi SUSPENSO.`);
+
+      if (currentUser && String(currentUser.id) === String(u.id)) {
+        currentUser = null;
+        currentScreen = 'login';
+      }
+      render();
     }
+
 
     async function reactivateUser(userId) {
       const u = registeredUsers.find(x => String(x.id) === String(userId));
-      if (u) {
-        u.status = 'Aprovado';
-        u.suspension_reason = null;
+      if (!u) return;
 
-        if (supabaseClient && u.id) {
-          try {
-            await supabaseClient.rpc('reactivate_user', { p_user_id: u.id });
-          } catch (e) {}
-        }
-
-        showToast(`✓ Acesso de ${u.name} REATIVADO com sucesso!`);
-        if (supabaseClient) fetchAdminIAMData();
-        render();
+      if (!supabaseClient || navigator.onLine === false) {
+        showToast('Sem conexão com o Supabase. A reativação não foi alterada.');
+        return;
       }
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ status: 'approved', updated_at: new Date().toISOString() })
+        .eq('id', u.id);
+
+      if (error) {
+        showToast('Não foi possível reativar este usuário.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      await fetchAdminIAMData();
+      showToast(`✓ Acesso de ${u.name} REATIVADO com sucesso!`);
+      render();
     }
+
 
     // 12. Meu Perfil -> Segurança & Passkeys
     function openProfileSecurityModal() {
