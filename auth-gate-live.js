@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.105.0';
+const createClient = window.supabase?.createClient?.bind(window.supabase) || null;
 
 const SUPABASE_URL = 'https://xfgcbxppsbwmxwsuajou.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
@@ -10,7 +10,7 @@ const ROOT_ID = 'planes-auth-root';
 const STYLE_ID = 'planes-auth-live-style';
 const PASSKEY_DISMISS_KEY = 'planes-passkey-offer-dismissed';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+const supabase = createClient ? createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -18,7 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     flowType: IS_STANDALONE_IOS ? 'implicit' : 'pkce',
     experimental: { passkey: true },
   },
-});
+}) : null;
 
 let profileChannel = null;
 let capabilities = { email: true, google: false, passkeys: false };
@@ -935,6 +935,17 @@ async function evaluateSessionSerialized(session, reason = 'unknown') {
 
 async function boot() {
   await waitForDocumentBody();
+
+  if (!supabase) {
+    const node = renderShell(`
+      <h1>Não foi possível iniciar o acesso seguro</h1>
+      <p class="planes-auth-muted">O componente de autenticação do PLANES não foi carregado.</p>
+      <div class="planes-auth-status planes-auth-bad">Recarregue a página. Nenhuma sessão será liberada sem validação do Supabase.</div>
+    `);
+    blockApp();
+    node.setAttribute('data-auth-fatal', 'supabase-library-missing');
+    return;
+  }
 
   oauthCallbackInProgress = true;
   const oauth = await completeOAuthCallbackIfPresent();
