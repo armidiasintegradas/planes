@@ -8000,33 +8000,12 @@
       }
     }
 
-    function refreshUsersTable(manual = true) {
-      try {
-        const blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
-        
-        // Recarrega e purga qualquer item excluído
-        const savedUsers = localStorage.getItem('planes_registered_users');
-        if (savedUsers) {
-          let parsed = JSON.parse(savedUsers);
-          if (Array.isArray(parsed)) {
-            registeredUsers = parsed.filter(u => {
-              const e = (u.email || '').toLowerCase();
-              const id = String(u.id || '').toLowerCase();
-              return !blacklist.includes(e) && !blacklist.includes(id) && e !== 'engenharia@planes.eng.br' && u.name !== 'Mariana Alves';
-            });
-          }
-        }
-
-        if (!registeredUsers.find(u => u.email === 'armidiasintegradas@gmail.com')) {
-          registeredUsers.unshift(defaultRegisteredUsers[0]);
-        }
-
-        saveUsersStorage();
-      } catch (e) {}
-
-      if (manual) {
-        showToast(`✓ Painel de usuários atualizado (${registeredUsers.length} perfis ativos)`);
+    async function refreshUsersTable(manual = true) {
+      if (!supabaseClient || navigator.onLine === false) {
+        if (manual) showToast('Sem conexão com o Supabase. O painel não foi alterado.');
+        return;
       }
+      await fetchAdminIAMData(manual);
       render();
     }
 
@@ -8102,18 +8081,23 @@
     }
 
     function handleRoleLogin(role) {
+      const localDev = ['localhost','127.0.0.1'].includes(window.location.hostname);
+      if (!localDev) {
+        showToast('Troca de perfil simulada está desativada em produção. Entre com uma conta autorizada.');
+        return;
+      }
       const rolesMap = {
-        Engenharia: { name: 'Eng. de Planejamento', role: 'Engenheira de Planejamento', email: 'planejamento@planes.eng.br', level: 'Engenharia', avatar: 'EP' },
-        Campo: { name: 'Carlos Lima', role: 'Encarregado de Campo', email: 'campo@planes.eng.br', level: 'Campo', avatar: 'C' },
-        Canteiro: { name: 'Marcos Silva', role: 'Mestre de Obras', email: 'canteiro@planes.eng.br', level: 'Canteiro', avatar: 'M' },
-        Diretoria: { name: 'Ricardo Nunes', role: 'Diretor Executivo', email: 'diretoria@planes.eng.br', level: 'Diretoria', avatar: 'R' },
-        Cliente: { name: 'Dr. Alberto Farias', role: 'Representante Cliente', email: 'cliente@japaratinga.com.br', level: 'Cliente', avatar: 'A' },
-        Admin: { name: 'Administrador Planes', role: 'Gestor de Acessos & TI', email: 'admin@planes.eng.br', level: 'Admin', avatar: 'AD' },
+        Engenharia: { name: 'Teste Engenharia', role: 'engenharia', email: 'dev-engenharia@localhost', level: 'Engenharia', avatar: 'TE' },
+        Campo: { name: 'Teste Campo', role: 'campo', email: 'dev-campo@localhost', level: 'Campo', avatar: 'TC' },
+        Canteiro: { name: 'Teste Canteiro', role: 'canteiro', email: 'dev-canteiro@localhost', level: 'Canteiro', avatar: 'TN' },
+        Diretoria: { name: 'Teste Gestor', role: 'gestor', email: 'dev-gestor@localhost', level: 'Diretoria', avatar: 'TG' },
+        Cliente: { name: 'Teste Cliente', role: 'cliente', email: 'dev-cliente@localhost', level: 'Cliente', avatar: 'TL' },
+        Admin: { name: 'Teste Admin', role: 'admin', email: 'dev-admin@localhost', level: 'Admin', avatar: 'TA' }
       };
+      if (!rolesMap[role]) return;
       currentUser = rolesMap[role];
-      accessLevel = role;
+      accessLevel = currentUser.level;
       currentScreen = 'projects';
-      showToast('✓ Bem-vindo(a), ' + currentUser.name + '! Selecione o projeto.');
       render();
     }
 
