@@ -2182,10 +2182,9 @@
 
       const item = validations[valIndex];
       const previousProgress = Number(physicalProgress) || 0;
-      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
       const nextProgress = Math.min(100, Number((previousProgress + 0.8).toFixed(1)));
 
-      // Supabase-first: nada muda visualmente até o backend confirmar.
+      // Supabase-first: a UI só muda após validação + métrica confirmadas no servidor.
       const validationOk = await persistValidationStatus(item, 'Aprovado');
       if (!validationOk) {
         await refreshIntelligenceOperationalData();
@@ -2194,23 +2193,19 @@
         return;
       }
 
-      physicalProgress = nextProgress;
-      if (selectedProject) selectedProject.progress = nextProgress;
-      const metricsOk = await persistProjectMetrics();
+      const metricsOk = await persistProjectMetrics({ physical_progress: nextProgress });
 
       if (!metricsOk) {
-        physicalProgress = previousProgress;
-        if (selectedProject) selectedProject.progress = previousProjectProgress;
         await persistValidationStatus(item, 'Pendente');
         await refreshIntelligenceOperationalData();
         render();
-        showToast('A aprovação não foi concluída. O estado confirmado foi restaurado.');
+        showToast('A aprovação não foi concluída. Nada foi aplicado localmente.');
         return;
       }
 
       await refreshIntelligenceOperationalData();
       render();
-      showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
+      showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${nextProgress}%`);
     }
 
     async function rejectValidation(id) {
@@ -7754,14 +7749,18 @@
     async function applyExcelProjectUpdate() {
       if (!excelDiffData) return;
 
-      const previousProgress = physicalProgress;
-      const previousPacScore = pacScore;
-      const previousFinancialSpent = financialSpent;
-      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+      const synced = await persistProjectMetrics({
+        physical_progress: 64.2,
+        pac_score: 82,
+        financial_spent_m: 15.45
+      });
 
-      physicalProgress = 64.2;
-      pacScore = 82;
-      financialSpent = 15.45;
+      if (!synced) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('Falha ao sincronizar a atualização do Excel. Nada foi aplicado localmente.');
+        return;
+      }
 
       projectVersions.unshift({
         version: 'v16.04',
@@ -7772,30 +7771,11 @@
         status: 'Versão Atual em Produção'
       });
       if (projectVersions[1]) projectVersions[1].status = 'Arquivado';
-
-      if (selectedProject) selectedProject.progress = physicalProgress;
       excelDiffData = null;
-      render();
 
-      const synced = await persistProjectMetrics();
-      if (synced) {
-        await refreshIntelligenceOperationalData();
-        render();
-        showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
-        return;
-      }
-
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) {
-        physicalProgress = previousProgress;
-        pacScore = previousPacScore;
-        financialSpent = previousFinancialSpent;
-        if (selectedProject) selectedProject.progress = previousProjectProgress;
-        projectVersions.shift();
-        if (projectVersions[0]) projectVersions[0].status = 'Versão Atual em Produção';
-      }
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao sincronizar a atualização do Excel. A tela voltou ao último estado confirmado.');
+      showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
     }
 
     function cancelExcelDiff() {
@@ -8773,7 +8753,6 @@
           result = { ok: false, error: 'validation_not_found' };
         } else {
           const beforeProgress = Number(physicalProgress) || 0;
-          const beforeProjectProgress = selectedProject ? selectedProject.progress : null;
           const nextProgress = Math.min(100, Number((beforeProgress + 0.8).toFixed(1)));
 
           const validationOk = await persistValidationStatus(validation, 'Aprovado');
@@ -8781,20 +8760,16 @@
             await refreshIntelligenceOperationalData();
             result = { ok: false, error: 'validation_update_failed' };
           } else {
-            physicalProgress = nextProgress;
-            if (selectedProject) selectedProject.progress = nextProgress;
-            const metricsOk = await persistProjectMetrics();
+            const metricsOk = await persistProjectMetrics({ physical_progress: nextProgress });
             if (metricsOk) {
               await refreshIntelligenceOperationalData();
               result = {
                 ok: true,
                 approved: validation.item,
                 front: validation.front,
-                physical_progress: physicalProgress
+                physical_progress: nextProgress
               };
             } else {
-              physicalProgress = beforeProgress;
-              if (selectedProject) selectedProject.progress = beforeProjectProgress;
               await persistValidationStatus(validation, 'Pendente');
               await refreshIntelligenceOperationalData();
               result = { ok: false, error: 'metrics_update_failed' };
@@ -8804,26 +8779,21 @@
       }
 
       if (pending.kind === 'update_pac') {
-        const before = { pacScore, physicalProgress, projectProgress: selectedProject ? selectedProject.progress : null };
         const candidatePac = Number.isFinite(Number(pending.payload.pac_score))
           ? Math.max(0, Math.min(100, Number(pending.payload.pac_score)))
-          : pacScore;
+          : Number(pacScore || 0);
         const candidateProgress = Number.isFinite(Number(pending.payload.physical_progress))
           ? Math.max(0, Math.min(100, Number(pending.payload.physical_progress)))
-          : physicalProgress;
+          : Number(physicalProgress || 0);
 
-        pacScore = candidatePac;
-        physicalProgress = candidateProgress;
-        if (selectedProject) selectedProject.progress = candidateProgress;
-
-        const ok = await persistProjectMetrics();
+        const ok = await persistProjectMetrics({
+          pac_score: candidatePac,
+          physical_progress: candidateProgress
+        });
         if (ok) {
           await refreshIntelligenceOperationalData();
-          result = { ok: true, pac: pacScore, physical_progress: physicalProgress };
+          result = { ok: true, pac: candidatePac, physical_progress: candidateProgress };
         } else {
-          pacScore = before.pacScore;
-          physicalProgress = before.physicalProgress;
-          if (selectedProject) selectedProject.progress = before.projectProgress;
           await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'metrics_update_failed' };
         }
@@ -9749,24 +9719,43 @@
       render();
     }
 
-    async function toggleTaskDone(id) {
-      const before = tasksList.map(t => ({ ...t }));
-      tasksList = tasksList.map(t => t.id === id ? { ...t, done: !t.done } : t);
-      const task = tasksList.find(t => t.id === id);
-      render();
-      if (!task) return;
+    async function updateFieldProgress(delta, label, complete = false) {
+      const beforeProgress = Number.parseFloat(physicalProgress) || 0;
+      const nextProgress = complete
+        ? 100
+        : Math.min(100, Number((beforeProgress + Number(delta || 0)).toFixed(1)));
 
-      const ok = await persistTaskRecord(task);
+      const ok = await persistProjectMetrics({ physical_progress: nextProgress });
+      if (!ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('Não foi possível registrar o avanço no Supabase.');
+        return false;
+      }
+
+      await refreshIntelligenceOperationalData();
+      render();
+      showToast(complete
+        ? '✓ ' + label + ' marcada como 100% concluída e sincronizada.'
+        : '✓ +' + Number(delta || 0) + '% registrado em ' + label + ' e sincronizado.');
+      return true;
+    }
+
+    async function toggleTaskDone(id) {
+      const task = tasksList.find(t => t.id === id);
+      if (!task) return;
+      const candidate = { ...task, done: !task.done };
+
+      const ok = await persistTaskRecord(candidate);
       if (ok) {
         await refreshIntelligenceOperationalData();
         render();
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) tasksList = before;
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao atualizar a tarefa. O estado confirmado foi restaurado.');
+      showToast('Falha ao atualizar a tarefa. Nada foi alterado localmente.');
     }
 
     function removeReminder(id) {
@@ -10231,26 +10220,51 @@
       return operationalProjectIdCache;
     }
 
-    async function persistProjectMetrics() {
+    async function persistProjectMetrics(overrides = {}) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
-      const target = Number.parseFloat(selectedProject && selectedProject.targetProgress) || Number.parseFloat(physicalProgress) || 0;
-      const spent = Number.parseFloat(financialSpent) || Number.parseFloat(String(selectedProject?.spent || '').replace(/[^0-9,.-]/g,'').replace(',','.')) || 0;
+
+      const nextPhysical = Number.isFinite(Number(overrides.physical_progress))
+        ? Number(overrides.physical_progress)
+        : (Number.parseFloat(physicalProgress) || 0);
+      const nextTarget = Number.isFinite(Number(overrides.target_progress))
+        ? Number(overrides.target_progress)
+        : (Number.parseFloat(selectedProject && selectedProject.targetProgress) || nextPhysical);
+      const nextPac = Number.isFinite(Number(overrides.pac_score))
+        ? Number(overrides.pac_score)
+        : (Number.parseFloat(pacScore) || 0);
+      const nextSpent = Number.isFinite(Number(overrides.financial_spent_m))
+        ? Number(overrides.financial_spent_m)
+        : (Number.parseFloat(financialSpent) || Number.parseFloat(String(selectedProject?.spent || '').replace(/[^0-9,.-]/g,'').replace(',','.')) || 0);
+      const nextWorkers = Number.isFinite(Number(overrides.workers_count))
+        ? Number(overrides.workers_count)
+        : (Number.parseInt(workersCount) || Number.parseInt(selectedProject?.workers) || 0);
+
       const { error } = await supabaseClient.from('project_metrics').upsert({
         project_id: projectId,
-        physical_progress: Number.parseFloat(physicalProgress) || 0,
-        target_progress: target,
-        pac_score: Number.parseFloat(pacScore) || 0,
-        financial_spent_m: spent,
-        workers_count: Number.parseInt(workersCount) || Number.parseInt(selectedProject?.workers) || 0,
+        physical_progress: Math.max(0, Math.min(100, nextPhysical)),
+        target_progress: Math.max(0, Math.min(100, nextTarget)),
+        pac_score: Math.max(0, Math.min(100, nextPac)),
+        financial_spent_m: Math.max(0, nextSpent),
+        workers_count: Math.max(0, Math.trunc(nextWorkers)),
         updated_at: new Date().toISOString()
       }, { onConflict: 'project_id' });
+
       if (error) {
         console.warn('Falha ao persistir métricas operacionais:', error);
         return false;
       }
-      trackUserHabit('operational_action', { module: 'Curva S & PAC', topic: 'pac', mode: 'touch', metadata: { action: 'metrics_update' } });
+      trackUserHabit('operational_action', {
+        module: 'Curva S & PAC',
+        topic: 'pac',
+        mode: 'touch',
+        metadata: { action: 'metrics_update', source: 'supabase_first' }
+      });
       return true;
     }
 
@@ -16055,28 +16069,28 @@
                         <div class="grid grid-cols-4 gap-2">
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 1).toFixed(1)); showToast('✓ +1% registrado na Arena de Shows'); render();"
+                            onclick="updateFieldProgress(1, 'Arena de Shows')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +1%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 3).toFixed(1)); showToast('✓ +3% registrado na Arena de Shows'); render();"
+                            onclick="updateFieldProgress(3, 'Arena de Shows')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +3%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 5).toFixed(1)); showToast('✓ +5% registrado na Arena de Shows'); render();"
+                            onclick="updateFieldProgress(5, 'Arena de Shows')"
                             class="py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer text-center"
                           >
                             +5%
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'Frente de obra', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
@@ -16131,7 +16145,7 @@
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'Frente de obra', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
@@ -16165,28 +16179,28 @@
                         <div class="grid grid-cols-4 gap-2">
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 1).toFixed(1)); showToast('✓ +1% registrado na Infraestrutura'); render();"
+                            onclick="updateFieldProgress(1, 'Infraestrutura')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +1%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 3).toFixed(1)); showToast('✓ +3% registrado na Infraestrutura'); render();"
+                            onclick="updateFieldProgress(3, 'Infraestrutura')"
                             class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs rounded-[10px] transition border border-slate-200 cursor-pointer text-center"
                           >
                             +3%
                           </button>
                           <button
                             type="button"
-                            onclick="physicalProgress = Math.min(100, (parseFloat(physicalProgress) + 5).toFixed(1)); showToast('✓ +5% registrado na Infraestrutura'); render();"
+                            onclick="updateFieldProgress(5, 'Infraestrutura')"
                             class="py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[10px] transition border border-slate-300 shadow-xs cursor-pointer text-center"
                           >
                             +5%
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'Frente de obra', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
@@ -16241,7 +16255,7 @@
                           </button>
                           <button
                             type="button"
-                            onclick="showToast('✓ Frente marcada como 100% Concluída'); render();"
+                            onclick="updateFieldProgress(0, 'Frente de obra', true)"
                             class="py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs rounded-[10px] transition cursor-pointer text-center"
                           >
                             ✓ Concluir
