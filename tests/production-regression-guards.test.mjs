@@ -86,3 +86,13 @@ test('auth gate avoids duplicate auth CDN and runtime callback handling', async 
   assert.match(gate, /window\.supabase\?\.createClient/);
   assert.match(html, /detectSessionInUrl:\s*false/);
 });
+
+
+test('authenticated render repairs stale RBAC state instead of crashing', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /Object\.entries\(defaultRolePermissions\)/);
+  assert.match(html, /rolePermissions\.Admin = \[\.\.\.defaultRolePermissions\.Admin\]/);
+  assert.match(html, /Array\.isArray\(rolePermissions\?\.\[accessLevel\]\)/);
+  assert.match(html, /defaultRolePermissions\['Campo'\]/);
+});
