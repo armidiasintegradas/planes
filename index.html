@@ -2572,9 +2572,8 @@
     // =========================================================================
     window.PLANES_CONFIG = window.PLANES_CONFIG || {
       supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://xfgcbxppsbwmxwsuajou.supabase.co',
-      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS'
+      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZ2NieHBwc2J3bXh3c3Vham91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NjU0ODEsImV4cCI6MjEwNDU0MTQ4MX0.6NVhUwWR1cjLaD2_1_jk_ub0ASUdQ5eJcydceRVB9FM'
     };
-
     function isSupabaseConfigured() {
       const url = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseUrl ? window.PLANES_CONFIG.supabaseUrl : '';
       const key = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseAnonKey ? window.PLANES_CONFIG.supabaseAnonKey : '';
