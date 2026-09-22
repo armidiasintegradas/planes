@@ -22,6 +22,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 let profileChannel = null;
 let capabilities = { email: true, google: false, passkeys: false };
+let authBootFinished = false;
+let oauthCallbackInProgress = false;
+let lastEvaluatedUserId = null;
+let evaluationInFlight = null;
 
 function escapeHtml(value = '') {
   return String(value)
@@ -124,10 +128,18 @@ function hydratePlanesFromSupabase(user, profile) {
 
 function allowApp(profile = null, user = null) {
   let released = false;
+  let stopped = false;
+  let attempts = 0;
+  let lastHydrationError = null;
+
+  const cleanup = () => {
+    window.removeEventListener('planes-auth-hydration-failed', onHydrationFailed);
+  };
 
   const releaseApp = () => {
-    if (released) return;
+    if (released || stopped) return;
     released = true;
+    cleanup();
     document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
     document.getElementById(ROOT_ID)?.remove();
     window.dispatchEvent(new CustomEvent('planes-auth-approved', {
@@ -135,49 +147,70 @@ function allowApp(profile = null, user = null) {
     }));
 
     if (profile && ['super_admin', 'admin'].includes(profile.role)) {
-      void mountAdminAccessConsole(profile);
+      window.setTimeout(() => void mountAdminAccessConsole(profile), 0);
     }
   };
 
   const onHydrated = () => releaseApp();
+  const onHydrationFailed = (event) => {
+    lastHydrationError =
+      event?.detail?.message ||
+      window.__PLANES_AUTH_LAST_ERROR__ ||
+      'Falha desconhecida no runtime.';
+  };
+
   window.addEventListener('planes-auth-legacy-hydrated', onHydrated, { once: true });
+  window.addEventListener('planes-auth-hydration-failed', onHydrationFailed);
 
   blockApp();
-  const appliedImmediately = hydratePlanesFromSupabase(user, profile);
-  if (appliedImmediately) {
-    releaseApp();
-    return;
-  }
 
-  const retryOnWindowLoad = () => {
-    if (released) return;
+  const attemptHydration = () => {
+    if (released || stopped) return;
+    attempts += 1;
+
     const applied = hydratePlanesFromSupabase(user, profile);
-    if (applied) releaseApp();
+    if (applied || window.__PLANES_AUTH_HYDRATED__ === true) {
+      releaseApp();
+      return;
+    }
+
+    if (attempts < 240) {
+      window.setTimeout(attemptHydration, 125);
+      return;
+    }
+
+    stopped = true;
+    cleanup();
+    window.removeEventListener('planes-auth-legacy-hydrated', onHydrated);
+
+    const detail = lastHydrationError || window.__PLANES_AUTH_LAST_ERROR__;
+    const node = root();
+    node.innerHTML = `
+      <section class="planes-auth-card">
+        <div class="planes-auth-brand">PLANES OS</div>
+        <div class="planes-auth-subtitle">Ambiente seguro de gestão operacional</div>
+        <h1>Não foi possível iniciar a interface</h1>
+        <p>Sua sessão e seu perfil foram validados, mas o runtime do Planes não concluiu a renderização.</p>
+        <div class="planes-auth-message planes-auth-bad">${escapeHtml(detail || 'O runtime não confirmou a inicialização.')}</div>
+        <button class="planes-auth-btn secondary" data-runtime-reload style="margin-top:14px">Recarregar o Planes</button>
+      </section>`;
+    node.querySelector('[data-runtime-reload]')?.addEventListener('click', () => window.location.reload());
   };
-  if (document.readyState === 'complete') {
-    window.setTimeout(retryOnWindowLoad, 0);
-  } else {
-    window.addEventListener('load', retryOnWindowLoad, { once: true });
-  }
+
+  attemptHydration();
 
   window.setTimeout(() => {
-    if (released) return;
+    if (released || stopped) return;
     const node = root();
     node.innerHTML = `
       <section class="planes-auth-card">
         <div class="planes-auth-brand">PLANES OS</div>
         <div class="planes-auth-subtitle">Ambiente seguro de gestão operacional</div>
         <h1>Inicializando seu ambiente</h1>
-        <p>Sua sessão já foi validada. Estamos concluindo o carregamento da interface.</p>
-        <div class="planes-auth-message planes-auth-good">Aguarde alguns instantes. Não é necessário sair nem refazer o login.</div>
+        <p>Sua sessão e seu perfil já foram validados. Estamos aguardando apenas a interface do Planes.</p>
+        <div class="planes-auth-message planes-auth-good">A inicialização continua automaticamente. Não é necessário refazer o login.</div>
       </section>`;
-  }, 7000);
-
-  window.setTimeout(() => {
-    if (released) return;
-    window.removeEventListener('planes-auth-legacy-hydrated', onHydrated);
-    renderProfileError(user, 'Sua sessão foi validada, mas a interface demorou mais que o esperado para iniciar. Toque em recarregar e tente novamente.');
-  }, 60000);
+  }, 4000);
 }
 
 async function mountAdminAccessConsole(profile) {
@@ -864,27 +897,81 @@ async function completeOAuthCallbackIfPresent() {
   return { handled: true, session: data.session, failed: false };
 }
 
+async function evaluateSessionSerialized(session, reason = 'unknown') {
+  const userId = session?.user?.id || null;
+
+  if (
+    userId &&
+    lastEvaluatedUserId === userId &&
+    window.__PLANES_AUTH_HYDRATED__ === true
+  ) {
+    return;
+  }
+
+  if (evaluationInFlight) {
+    try { await evaluationInFlight; } catch {}
+    if (
+      userId &&
+      lastEvaluatedUserId === userId &&
+      window.__PLANES_AUTH_HYDRATED__ === true
+    ) {
+      return;
+    }
+  }
+
+  evaluationInFlight = (async () => {
+    await evaluateSession(session);
+    if (session?.user?.id && window.__PLANES_AUTH_HYDRATED__ === true) {
+      lastEvaluatedUserId = session.user.id;
+    }
+  })();
+
+  try {
+    await evaluationInFlight;
+  } finally {
+    evaluationInFlight = null;
+  }
+}
+
 async function boot() {
   await waitForDocumentBody();
+
+  oauthCallbackInProgress = true;
   const oauth = await completeOAuthCallbackIfPresent();
+  oauthCallbackInProgress = false;
+
   await loadCapabilities();
   installSecureLogoutBridge();
 
-  if (oauth.failed) return;
-
-  if (oauth.session) {
-    await evaluateSession(oauth.session);
-  } else {
-    await evaluateCurrentSession();
+  if (oauth.failed) {
+    authBootFinished = true;
+    return;
   }
 
+  if (oauth.session) {
+    await evaluateSessionSerialized(oauth.session, 'oauth-callback');
+  } else {
+    const { data: { session } } = await supabase.auth.getSession();
+    await evaluateSessionSerialized(session, 'boot');
+  }
+
+  authBootFinished = true;
+
   supabase.auth.onAuthStateChange((event, nextSession) => {
+    if (event === 'SIGNED_OUT' || !nextSession?.user) {
+      window.setTimeout(() => {
+        void resetPlanesRuntimeAfterSignOut().finally(() => {
+          lastEvaluatedUserId = null;
+          void evaluateSessionSerialized(null, event);
+        });
+      }, 0);
+      return;
+    }
+
+    if (!authBootFinished || oauthCallbackInProgress) return;
+
     window.setTimeout(() => {
-      if (event === 'SIGNED_OUT' || !nextSession?.user) {
-        void resetPlanesRuntimeAfterSignOut().finally(() => void evaluateSession(null));
-        return;
-      }
-      void evaluateSession(nextSession);
+      void evaluateSessionSerialized(nextSession, event);
     }, 0);
   });
 }
