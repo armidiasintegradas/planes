@@ -76,13 +76,154 @@ function blockApp() {
   document.documentElement.classList.add('planes-auth-blocked');
 }
 
-function allowApp(profile = null) {
-  document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
-  document.getElementById(ROOT_ID)?.remove();
-  window.dispatchEvent(new CustomEvent('planes-auth-approved'));
-  if (profile && ['super_admin', 'admin'].includes(profile.role)) {
-    void mountAdminAccessConsole(profile);
-  }
+function hydratePlanesFromSupabase(user, profile) {
+  if (!user || !profile || profile.status !== 'approved') return;
+
+  const payload = {
+    user: {
+      id: profile.id || user.id,
+      auth_user_id: user.id,
+      name: profile.full_name || user.user_metadata?.full_name || user.user_metadata?.name || (profile.email || user.email || 'Usuário').split('@')[0],
+      email: profile.email || user.email || '',
+      role: profile.role || 'campo',
+      role_id: profile.role || 'campo',
+      level: profile.role || 'campo',
+      status: 'Aprovado',
+      avatar: profile.avatar_url || ((profile.full_name || user.user_metadata?.full_name || user.email || 'US').slice(0, 2).toUpperCase()),
+    },
+    profile: {
+      id: profile.id || user.id,
+      email: profile.email || user.email || '',
+      role: profile.role || 'campo',
+      status: profile.status,
+    },
+  };
+
+  window.__PLANES_AUTH_BRIDGE_PAYLOAD__ = payload;
+
+  const script = document.createElement('script');
+  script.setAttribute('data-planes-auth-bridge', '1');
+  script.textContent = `
+    (() => {
+      let attempts = 0;
+      const applySupabaseIdentity = () => {
+        attempts += 1;
+        const bridge = window.__PLANES_AUTH_BRIDGE_PAYLOAD__;
+        if (!bridge || !bridge.user) return;
+
+        try {
+          if (typeof render !== 'function' || typeof currentUser === 'undefined' || typeof currentScreen === 'undefined') {
+            if (attempts < 120) window.setTimeout(applySupabaseIdentity, 50);
+            return;
+          }
+
+          currentUser = bridge.user;
+          if (typeof accessLevel !== 'undefined') {
+            accessLevel = bridge.user.level || bridge.user.role || 'campo';
+          }
+
+          let savedUiState = null;
+          try {
+            const rawUiState = localStorage.getItem('planes_active_session');
+            savedUiState = rawUiState ? JSON.parse(rawUiState) : null;
+          } catch {}
+
+          if (savedUiState?.selectedProjectId && typeof selectedProjectId !== 'undefined') {
+            const desiredProjectId = savedUiState.selectedProjectId;
+            selectedProjectId = desiredProjectId;
+
+            const restoreDesiredProject = (attempt = 0) => {
+              try {
+                if (typeof projectsList === 'undefined' || !Array.isArray(projectsList) || typeof selectedProject === 'undefined') {
+                  if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
+                  return;
+                }
+
+                const restoredProject = projectsList.find((project) => project.id === desiredProjectId);
+                if (restoredProject) {
+                  selectedProjectId = desiredProjectId;
+                  selectedProject = restoredProject;
+                  if (typeof operationalProjectIdCache !== 'undefined') {
+                    operationalProjectIdCache = restoredProject.cloudId || null;
+                  }
+                  if (typeof render === 'function') render();
+                  return;
+                }
+
+                if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
+              } catch (error) {
+                if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
+              }
+            };
+
+            restoreDesiredProject();
+          }
+
+          if (savedUiState?.activeNav && typeof activeNav !== 'undefined') {
+            activeNav = savedUiState.activeNav;
+          }
+
+          if (currentScreen === 'login' || currentScreen === 'access_rejected' || currentScreen === 'access_suspended') {
+            const requestedScreen = savedUiState?.currentScreen;
+            currentScreen = requestedScreen === 'dashboard' || requestedScreen === 'projects'
+              ? requestedScreen
+              : 'projects';
+          }
+
+          if (typeof setupRealtimeSubscriptions === 'function') {
+            try { setupRealtimeSubscriptions(); } catch (error) { console.warn('Realtime hydrate warning:', error); }
+          }
+          if (typeof updateUserPresence === 'function') {
+            try { updateUserPresence(); } catch (error) {}
+          }
+          if (typeof broadcastPresenceHeartbeat === 'function') {
+            try { broadcastPresenceHeartbeat(); } catch (error) {}
+          }
+          if (typeof render === 'function') render();
+
+          window.dispatchEvent(new CustomEvent('planes-auth-legacy-hydrated', {
+            detail: bridge
+          }));
+        } catch (error) {
+          console.warn('Planes Supabase identity hydrate failed:', error);
+          if (attempts < 120) window.setTimeout(applySupabaseIdentity, 50);
+        }
+      };
+      applySupabaseIdentity();
+    })();
+  `;
+  document.documentElement.appendChild(script);
+  script.remove();
+}
+
+function allowApp(profile = null, user = null) {
+  let released = false;
+
+  const releaseApp = () => {
+    if (released) return;
+    released = true;
+    document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
+    document.getElementById(ROOT_ID)?.remove();
+    window.dispatchEvent(new CustomEvent('planes-auth-approved', {
+      detail: { user, profile }
+    }));
+
+    if (profile && ['super_admin', 'admin'].includes(profile.role)) {
+      void mountAdminAccessConsole(profile);
+    }
+  };
+
+  const onHydrated = () => releaseApp();
+  window.addEventListener('planes-auth-legacy-hydrated', onHydrated, { once: true });
+
+  blockApp();
+  hydratePlanesFromSupabase(user, profile);
+
+  window.setTimeout(() => {
+    if (released) return;
+    window.removeEventListener('planes-auth-legacy-hydrated', onHydrated);
+    renderProfileError(user, 'A sessão foi validada, mas a interface não conseguiu concluir a inicialização. Recarregue a página.');
+  }, 6500);
 }
 
 async function mountAdminAccessConsole(profile) {
@@ -437,12 +578,12 @@ function renderPasskeyOffer(user, profile) {
       return;
     }
     localStorage.removeItem(PASSKEY_DISMISS_KEY);
-    allowApp(profile);
+    allowApp(profile, user);
   });
 
   node.querySelector('[data-passkey-later]')?.addEventListener('click', () => {
     localStorage.setItem(PASSKEY_DISMISS_KEY, '1');
-    allowApp(profile);
+    allowApp(profile, user);
   });
 }
 
@@ -459,6 +600,27 @@ async function subscribeProfile(userId) {
     .subscribe();
 }
 
+async function fetchProfileWithRetry(userId, attempts = 5) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id,email,full_name,avatar_url,status,role,approved_at')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!error && data) return { data, error: null };
+
+    lastError = error || new Error('profile_not_ready');
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 250 + (attempt * 250)));
+    }
+  }
+
+  return { data: null, error: lastError };
+}
+
 async function evaluateSession(session) {
   if (!session?.user) {
     if (profileChannel) {
@@ -470,11 +632,7 @@ async function evaluateSession(session) {
   }
 
   const user = session.user;
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id,email,status,role,approved_at')
-    .eq('id', user.id)
-    .single();
+  const { data: profile, error } = await fetchProfileWithRetry(user.id);
 
   if (error || !profile) {
     renderProfileError(user, error?.message || 'Perfil não encontrado.');
@@ -492,7 +650,7 @@ async function evaluateSession(session) {
         return;
       }
     }
-    allowApp(profile);
+    allowApp(profile, user);
     return;
   }
   if (profile.status === 'pending') {
@@ -507,6 +665,70 @@ async function evaluateSession(session) {
   renderProfileError(user, `Status de acesso desconhecido: ${profile.status}`);
 }
 
+async function resetPlanesRuntimeAfterSignOut() {
+  try {
+    localStorage.removeItem('planes_active_session');
+    localStorage.removeItem(PASSKEY_DISMISS_KEY);
+  } catch {}
+
+  const script = document.createElement('script');
+  script.setAttribute('data-planes-signout-reset', '1');
+  script.textContent = `
+    (() => {
+      try {
+        if (typeof currentUser !== 'undefined') currentUser = null;
+        if (typeof currentScreen !== 'undefined') currentScreen = 'login';
+        if (typeof selectedProjectId !== 'undefined') selectedProjectId = null;
+        if (typeof selectedProject !== 'undefined') selectedProject = null;
+        if (typeof activeNav !== 'undefined') activeNav = 'Visão Geral';
+        if (typeof render === 'function') render();
+      } catch (error) {
+        console.warn('Planes runtime reset warning:', error);
+      }
+    })();
+  `;
+  document.documentElement.appendChild(script);
+  script.remove();
+}
+
+function installSecureLogoutBridge() {
+  let attempts = 0;
+
+  const install = () => {
+    attempts += 1;
+    const legacyLogout = window.doLogout;
+
+    if (typeof legacyLogout !== 'function') {
+      if (attempts < 120) window.setTimeout(install, 50);
+      return;
+    }
+
+    if (legacyLogout.__planesSupabaseWrapped) return;
+
+    const wrappedLogout = async function(...args) {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.warn('Supabase signOut warning:', error);
+      } catch (error) {
+        console.warn('Supabase signOut failed:', error);
+      }
+
+      await resetPlanesRuntimeAfterSignOut();
+
+      try {
+        return await legacyLogout.apply(this, args);
+      } catch (error) {
+        console.warn('Legacy logout warning:', error);
+      }
+    };
+
+    wrappedLogout.__planesSupabaseWrapped = true;
+    window.doLogout = wrappedLogout;
+  };
+
+  install();
+}
+
 async function evaluateCurrentSession() {
   const { data: { session } } = await supabase.auth.getSession();
   await evaluateSession(session);
@@ -514,9 +736,17 @@ async function evaluateCurrentSession() {
 
 async function boot() {
   await loadCapabilities();
+  installSecureLogoutBridge();
   await evaluateCurrentSession();
-  supabase.auth.onAuthStateChange((_event, nextSession) => {
-    window.setTimeout(() => void evaluateSession(nextSession), 0);
+
+  supabase.auth.onAuthStateChange((event, nextSession) => {
+    window.setTimeout(() => {
+      if (event === 'SIGNED_OUT' || !nextSession?.user) {
+        void resetPlanesRuntimeAfterSignOut().finally(() => void evaluateSession(null));
+        return;
+      }
+      void evaluateSession(nextSession);
+    }, 0);
   });
 }
 
