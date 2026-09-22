@@ -2652,6 +2652,13 @@
       }
       const url = window.PLANES_CONFIG.supabaseUrl;
       const key = window.PLANES_CONFIG.supabaseAnonKey;
+
+      if (window.__PLANES_SUPABASE_CLIENT__) {
+        supabaseClient = window.__PLANES_SUPABASE_CLIENT__;
+        console.log('✓ Supabase Client compartilhado com o gate de autenticação:', url);
+        return;
+      }
+
       if (typeof window.supabase !== 'undefined' && url && key) {
         try {
           supabaseClient = window.supabase.createClient(url, key, {
@@ -2662,6 +2669,7 @@
               flowType: 'pkce'
             }
           });
+          window.__PLANES_SUPABASE_CLIENT__ = supabaseClient;
           console.log('✓ Supabase Client inicializado para:', url);
         } catch (err) {
           console.error('Falha ao inicializar Supabase:', err);
@@ -2907,9 +2915,8 @@
       setupOperationalRealtime();
     }
 
-    // Inicializa carregamento dos dados e canais
-    fetchAdminIAMData();
-    setupRealtimeSubscriptions();
+    // O boot autenticado é responsabilidade do gate.
+    // Realtime será iniciado somente depois que a identidade autenticada for aplicada.
 
     window.addEventListener('offline', () => {
       realtimeStatus = 'Offline';
