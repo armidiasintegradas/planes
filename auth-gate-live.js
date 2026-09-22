@@ -577,25 +577,50 @@ async function subscribeProfile(userId) {
     .subscribe();
 }
 
-async function fetchProfileWithRetry(userId, attempts = 5) {
+async function fetchProfileWithRetry(session, attempts = 6) {
+  const userId = session?.user?.id;
+  const accessToken = session?.access_token;
   let lastError = null;
 
+  if (!userId || !accessToken) {
+    return { data: null, error: new Error('authenticated_session_missing') };
+  }
+
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id,email,full_name,avatar_url,status,role,approved_at')
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const endpoint = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
+      endpoint.searchParams.set('id', `eq.${userId}`);
+      endpoint.searchParams.set('select', 'id,email,full_name,avatar_url,status,role,approved_at');
 
-    if (!error && data) return { data, error: null };
+      const response = await fetch(endpoint.toString(), {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
+        },
+      });
 
-    lastError = error || new Error('profile_not_ready');
+      if (response.ok) {
+        const rows = await response.json();
+        const profile = Array.isArray(rows) ? rows[0] : null;
+        if (profile) return { data: profile, error: null };
+        lastError = new Error('profile_not_ready');
+      } else {
+        const body = await response.text();
+        lastError = new Error(`profile_http_${response.status}: ${body.slice(0, 180)}`);
+      }
+    } catch (error) {
+      lastError = error;
+    }
+
     if (attempt < attempts - 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, 250 + (attempt * 250)));
+      await new Promise((resolve) => window.setTimeout(resolve, 300 + (attempt * 300)));
     }
   }
 
-  return { data: null, error: lastError };
+  return { data: null, error: lastError || new Error('profile_not_ready') };
 }
 
 async function evaluateSession(session) {
@@ -609,7 +634,7 @@ async function evaluateSession(session) {
   }
 
   const user = session.user;
-  const { data: profile, error } = await fetchProfileWithRetry(user.id);
+  const { data: profile, error } = await fetchProfileWithRetry(session);
 
   if (error || !profile) {
     renderProfileError(user, error?.message || 'Perfil não encontrado.');
