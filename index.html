@@ -4102,6 +4102,8 @@
     }
 
     function handleGoogleCustomSubmit() {
+      showToast('Este fluxo legado foi desativado. Use o botão oficial Google OAuth.');
+      return;
       const nameInput = document.getElementById('google-custom-name');
       const emailInput = document.getElementById('google-custom-email');
       const name = nameInput ? nameInput.value.trim() : '';
@@ -4230,6 +4232,8 @@
     }
 
     function handleAppleCustomSubmit() {
+      showToast('Este fluxo legado foi desativado. Use o botão oficial Apple OAuth.');
+      return;
       const nameInput = document.getElementById('apple-custom-name');
       const emailInput = document.getElementById('apple-custom-email');
       const name = nameInput ? nameInput.value.trim() : '';
@@ -4503,34 +4507,13 @@
           return;
         } catch (err) {
           console.error('Erro na autenticação:', err);
-          const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
-          if (registered) {
-            currentUser = registered;
-            accessLevel = registered.level || registered.role || 'Campo';
-            currentScreen = 'projects';
-            showToast('✓ Bem-vindo(a), ' + registered.name + '! (Modo Offline)');
-            saveSessionState();
-            render();
-            return;
-          }
-          showToast('Erro de conexão ao servidor de autenticação.');
+          showToast('Não foi possível validar sua identidade agora. Verifique a conexão e tente novamente.');
           return;
         }
       }
 
-      // 2. Modo Offline / Fallback Local
-      const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
-      if (registered) {
-        currentUser = registered;
-        accessLevel = registered.level || registered.role || 'Campo';
-        currentScreen = 'projects';
-        showToast('✓ Bem-vindo(a), ' + registered.name + '!');
-        saveSessionState();
-        render();
-        return;
-      }
-
-      showToast('E-mail não cadastrado. Conecte o Supabase ou cadastre-se na plataforma.');
+      // Produção não aceita bypass local de autenticação.
+      showToast('Autenticação indisponível. Conecte-se ao serviço de login para continuar.');
     }
 
     async function handleRegisterSubmit() {
@@ -7974,56 +7957,39 @@
     }
 
     async function handleSocialLogin(provider) {
-      if (provider === 'Google') {
-        if (supabaseClient && isSupabaseConfigured()) {
-          showToast('Iniciando Google OAuth oficial...');
-          try {
-            const redirectUrl = window.location.origin + window.location.pathname;
-            const { data, error } = await supabaseClient.auth.signInWithOAuth({
-              provider: 'google',
-              options: {
-                redirectTo: redirectUrl,
-                queryParams: {
-                  access_type: 'offline',
-                  prompt: 'consent'
-                }
-              }
-            });
-            if (error) {
-              console.warn('Google OAuth indisponível no backend, abrindo autenticação direta:', error);
-              openGoogleAuthModal();
-            }
-          } catch (e) {
-            console.warn('Erro ao redirecionar para o Google OAuth, abrindo autenticação direta:', e);
-            openGoogleAuthModal();
-          }
-          return;
+      const normalized = String(provider || '').toLowerCase();
+      if (!supabaseClient || !isSupabaseConfigured()) {
+        showToast('Login social indisponível sem conexão segura com o Supabase.');
+        return;
+      }
+
+      if (normalized !== 'google' && normalized !== 'apple') {
+        showToast('Método de autenticação não suportado.');
+        return;
+      }
+
+      const label = normalized === 'google' ? 'Google' : 'Apple';
+      showToast('Iniciando ' + label + ' OAuth oficial...');
+
+      try {
+        const redirectUrl = window.location.origin + window.location.pathname;
+        const options = { redirectTo: redirectUrl };
+        if (normalized === 'google') {
+          options.queryParams = { access_type: 'offline', prompt: 'consent' };
         }
-        openGoogleAuthModal();
-      } else if (provider === 'Apple') {
-        if (supabaseClient && isSupabaseConfigured()) {
-          showToast('Iniciando Sign in with Apple oficial...');
-          try {
-            const redirectUrl = window.location.origin + window.location.pathname;
-            const { data, error } = await supabaseClient.auth.signInWithOAuth({
-              provider: 'apple',
-              options: {
-                redirectTo: redirectUrl
-              }
-            });
-            if (error) {
-              console.warn('Apple OAuth indisponível no backend, abrindo autenticação direta:', error);
-              openAppleAuthModal();
-            }
-          } catch (e) {
-            console.warn('Erro ao conectar com Apple ID OAuth, abrindo autenticação direta:', e);
-            openAppleAuthModal();
-          }
-          return;
+
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: normalized,
+          options
+        });
+
+        if (error) {
+          console.error(label + ' OAuth error:', error);
+          showToast('Não foi possível iniciar o login com ' + label + '.');
         }
-        openAppleAuthModal();
-      } else {
-        showToast('Método de autenticação: ' + provider);
+      } catch (err) {
+        console.error('Falha ao iniciar OAuth ' + label + ':', err);
+        showToast('Falha ao conectar com ' + label + '. Tente novamente.');
       }
     }
 
