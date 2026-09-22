@@ -127,3 +127,21 @@ test('runtime defers realtime boot and reuses the auth Supabase client', async (
     /\/\/ Inicializa carregamento dos dados e canais\s*fetchAdminIAMData\(\);\s*setupRealtimeSubscriptions\(\);/
   );
 });
+
+
+test('auth flow stays single-owner without PWA auto-logout or external runtime bridge', async () => {
+  const gate = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(gate, /flowType:\s*'implicit'/);
+  assert.match(gate, /detectSessionInUrl:\s*false/);
+  assert.match(gate, /supabase\.auth\.setSession/);
+  assert.match(gate, /window\.applySupabaseAuthPayload/);
+  assert.doesNotMatch(gate, /planes_pwa_auth_recovery_v1/);
+  assert.doesNotMatch(gate, /signOut\(\{\s*scope:\s*'local'\s*\}\)/);
+
+  assert.match(html, /window\.applySupabaseAuthPayload = function applySupabaseAuthPayload/);
+  assert.match(html, /__PLANES_AUTH_APPLIED_USER_ID__/);
+  assert.doesNotMatch(html, /auth-runtime-bridge-live\.js/);
+  assert.doesNotMatch(html, /window\.window\.applySupabaseAuthPayload/);
+});
