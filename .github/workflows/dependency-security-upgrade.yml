@@ -73,4 +73,5 @@ jobs:
           git add package.json package-lock.json
           git diff --cached --quiet && exit 0
           git commit -m "security: upgrade vulnerable build dependencies"
+          git pull --rebase origin main
           git push origin HEAD:main
