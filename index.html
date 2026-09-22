@@ -3531,16 +3531,33 @@
         return;
       }
 
-      // Validação segura local se offline
-      lastStepUpVerificationTime = Date.now();
-      logAuditEvent('STEP_UP_AUTH_SUCCESS', 'security', 'password');
-      showToast('✓ Identidade confirmada.');
-      const cb = pendingStepUpAction;
-      closeStepUpModal();
-      if (typeof cb === 'function') cb();
+      // Produção exige reautenticação server-side para qualquer ação sensível.
+      logAuditEvent('STEP_UP_AUTH_BLOCKED', 'security', 'password', { reason: 'server_auth_unavailable' });
+      showToast('Reautenticação indisponível sem conexão segura com o Supabase.');
+      return;
     }
 
     // 7. Motor Central de Autorização & RBAC (`can`)
+    function normalizeRbacRole(value) {
+      const key = String(value || '').trim().toLowerCase();
+      const map = {
+        'super_admin': 'SUPER_ADMIN',
+        'super admin': 'SUPER_ADMIN',
+        'admin': 'ADMIN',
+        'gestor': 'GERENCIA',
+        'diretoria': 'DIRETORIA',
+        'engenharia': 'ENGENHARIA',
+        'campo': 'COLABORADOR',
+        'canteiro': 'COLABORADOR',
+        'financeiro': 'FINANCEIRO',
+        'suprimentos': 'SUPRIMENTOS',
+        'cliente': 'CLIENTE',
+        'visualizador': 'VISUALIZADOR'
+      };
+      const upper = String(value || '').trim().toUpperCase();
+      return map[key] || (ROLE_PERMISSIONS_MAP[upper] ? upper : 'COLABORADOR');
+    }
+
     function can(user, permissionCode, resource = null) {
       if (!user) return false;
 
@@ -3548,9 +3565,9 @@
       const st = (user.status || '').toLowerCase();
       if (st !== 'aprovado' && st !== 'approved') return false;
 
-      // Super Admin bypass total
-      const roleId = user.role_id || user.level || 'Campo';
-      if (roleId === 'SUPER_ADMIN' || user.role === 'SUPER_ADMIN') {
+      // Normaliza os papéis do Supabase atual para a matriz legada.
+      const roleId = normalizeRbacRole(user.role_id || user.level || user.role || 'campo');
+      if (roleId === 'SUPER_ADMIN') {
         return true;
       }
 
@@ -3574,7 +3591,7 @@
 
     function checkScopeAccess(user, resource) {
       if (!resource) return true;
-      const roleId = user.role_id || user.level || 'Campo';
+      const roleId = normalizeRbacRole(user.role_id || user.level || user.role || 'campo');
       if (roleId === 'SUPER_ADMIN' || roleId === 'ADMIN') return true;
 
       // Se o recurso especificar projeto
