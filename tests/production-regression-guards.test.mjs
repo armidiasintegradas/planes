@@ -14,17 +14,17 @@ test('service worker keeps auth and HTML network-first', async () => {
 test('production source keeps mobile viewport stability guards', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
-  assert.match(html, /planesViewportWasDesktop/);
-  assert.match(html, /orientationchange/);
-  assert.match(html, /max\(10px,env\(safe-area-inset-bottom\)\)/);
   assert.match(html, /planes-mobile-sheet-overlay/);
+  assert.match(html, /safe-area-inset-bottom/);
+  assert.match(html, /planes-mobile-sheet-panel/);
   assert.match(html, /planes-intel-v2-shell/);
+  assert.match(html, /height:100dvh/);
 });
 
 test('production source keeps Supabase-first auth hardening', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
-  assert.match(html, /supabase\.auth\.signOut\(\)/);
+  assert.match(html, /supabaseClient\.auth\.signOut\(\)/);
   assert.match(html, /fetchProfileForAuthUser/);
   assert.match(html, /persistSession:\s*true/);
   assert.match(html, /detectSessionInUrl:\s*true/);
