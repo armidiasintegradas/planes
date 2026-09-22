@@ -111,3 +111,16 @@ test('operational realtime state is initialized before subscriptions', async () 
     'operational realtime state must be initialized before setupRealtimeSubscriptions runs'
   );
 });
+
+
+test('runtime defers realtime boot and reuses the auth Supabase client', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const gate = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
+
+  assert.match(gate, /window\.__PLANES_SUPABASE_CLIENT__\s*=\s*supabase/);
+  assert.match(html, /Supabase Client compartilhado com o gate de autenticação/);
+  assert.doesNotMatch(
+    html,
+    /\/\/ Inicializa carregamento dos dados e canais\s*fetchAdminIAMData\(\);\s*setupRealtimeSubscriptions\(\);/
+  );
+});
