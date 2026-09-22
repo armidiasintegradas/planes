@@ -18767,8 +18767,9 @@ ${activeNav === 'Equipe & Contatos' ? `
             '<div class="planes-intel-v2-switch"><button data-v2-persona="brita">Brita</button><button data-v2-persona="castanha">Castanha</button></div>'+
             '<button class="planes-intel-v2-close" data-v2-close>✕</button>'+
           '</header>'+
-          '<div class="planes-intel-v2-persona"><div class="planes-intel-v2-avatar" id="planes-v2-persona-avatar">B</div><div><strong id="planes-v2-persona-name">Brita</strong><small>Sempre com você na obra</small></div><span class="planes-intel-v2-online"></span></div>'+
+          '<div class="planes-intel-v2-persona"><div class="planes-intel-v2-avatar" id="planes-v2-persona-avatar">B</div><div><strong id="planes-v2-persona-name">Brita</strong><small id="planes-v2-persona-status">Sempre com você na obra</small></div><span class="planes-intel-v2-online" id="planes-v2-online-dot"></span></div>'+
           '<div class="planes-intel-v2-chips"><span class="planes-intel-v2-chip" id="planes-v2-context-chip"></span><span class="planes-intel-v2-chip learning" id="planes-v2-learning-chip"></span></div>'+
+          '<div id="planes-v2-pending" style="display:none;margin:0 18px 10px;padding:12px 14px;border:1px solid #f7cf74;background:#fff8e8;border-radius:16px"><div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#9a6700">Confirmar ação</div><div id="planes-v2-pending-copy" style="margin-top:4px;font-size:12px;font-weight:800;line-height:1.35;color:#101828"></div><div style="display:flex;gap:8px;margin-top:10px"><button id="planes-v2-confirm" style="border:0;border-radius:10px;background:#0f172a;color:#fff;font-size:11px;font-weight:900;padding:9px 13px">Confirmar</button><button id="planes-v2-cancel" style="border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:#344054;font-size:11px;font-weight:900;padding:9px 13px">Cancelar</button></div></div>'+
           '<div class="planes-intel-v2-chat" id="planes-v2-chat"></div>'+
           '<div class="planes-intel-v2-suggestions"><button data-v2-ask="Validação">✓ <span>Validação</span> ›</button><button data-v2-ask="Aço da Arena">▣ <span>Aço da Arena</span> ›</button><button data-v2-ask="Me resume tudo">☷ <span>Me resume tudo</span> ›</button></div>'+
           '<div class="planes-intel-v2-composer"><button aria-label="Anexar">＋</button><div class="planes-intel-v2-inputwrap"><input id="planes-v2-input" placeholder="Fala ou escreve do seu jeito..."><button id="planes-v2-send">➤</button></div><button class="planes-intel-v2-mic" id="planes-v2-mic" aria-label="Usar voz">🎙</button></div>'+
@@ -18788,7 +18789,9 @@ ${activeNav === 'Equipe & Contatos' ? `
     el.querySelectorAll('[data-v2-action]').forEach(b=>b.addEventListener('click',()=>quickAction(b.dataset.v2Action)));
     el.querySelector('#planes-v2-send')?.addEventListener('click',()=>submit());
     el.querySelector('#planes-v2-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
-    el.querySelector('#planes-v2-mic')?.addEventListener('click',()=>{if(typeof toggleVoiceAssistant==='function')toggleVoiceAssistant()});
+    el.querySelector('#planes-v2-mic')?.addEventListener('click',()=>{if(typeof toggleVoiceAssistant==='function')toggleVoiceAssistant(); setTimeout(renderOverlay,80)});
+    el.querySelector('#planes-v2-confirm')?.addEventListener('click',async()=>{if(typeof confirmPendingVoiceMutationFromUI==='function') await confirmPendingVoiceMutationFromUI(true); renderOverlay()});
+    el.querySelector('#planes-v2-cancel')?.addEventListener('click',async()=>{if(typeof confirmPendingVoiceMutationFromUI==='function') await confirmPendingVoiceMutationFromUI(false); renderOverlay()});
     return el;
   }
 
@@ -18821,17 +18824,24 @@ ${activeNav === 'Equipe & Contatos' ? `
 
   async function submit(forced){
     const input=document.getElementById('planes-v2-input');
+    const send=document.getElementById('planes-v2-send');
     const text=String(forced || input?.value || '').trim();
     if(!text) return;
     if(input&&!forced) input.value='';
+    if(input) input.disabled=true;
+    if(send){send.disabled=true;send.textContent='…'}
     try{
       if(typeof askPlanesIntelligence==='function'){
         await askPlanesIntelligence(text);
       }
     }catch(e){
       if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Tente novamente.');
+    }finally{
+      if(input) input.disabled=false;
+      if(send){send.disabled=false;send.textContent='➤'}
     }
     renderOverlay();
+    setTimeout(()=>document.getElementById('planes-v2-input')?.focus(),20);
   }
 
   function chatRows(){
@@ -18853,13 +18863,40 @@ ${activeNav === 'Equipe & Contatos' ? `
     set('planes-v2-user-name',firstName());
     set('planes-v2-user-role-left',role);
     set('planes-v2-persona-name',name);
-    set('planes-v2-persona-avatar',p==='castanha'?'C':'B');
+    const avatar=document.getElementById('planes-v2-persona-avatar');
+    if(avatar){
+      let src='';
+      try{src=typeof getAssistantPersonaAvatar==='function'?getAssistantPersonaAvatar(p):''}catch(e){}
+      avatar.innerHTML=src?'<img src="'+src+'" alt="'+escapeHtml(name)+'" style="width:100%;height:100%;object-fit:cover;object-position:top;border-radius:inherit;display:block">':(p==='castanha'?'C':'B');
+    }
     set('planes-v2-context-chip','● '+role+' · Vendo: '+screen);
     set('planes-v2-learning-chip',communicationLabel());
     set('planes-v2-project',proj);
     set('planes-v2-role',role);
     set('planes-v2-screen',screen);
     set('planes-v2-tip-title','✦ Dica d'+(p==='brita'?'a ':'o ')+name);
+
+    let voiceState='idle';
+    try{voiceState=typeof realtimeVoiceState!=='undefined'?realtimeVoiceState:'idle'}catch(e){}
+    const statusMap={connecting:'Conectando voz…',listening:'Ouvindo você',speaking:'Falando com você',reconnecting:'Reconectando…',error:'Voz local disponível',idle:'Sempre com você na obra'};
+    set('planes-v2-persona-status',statusMap[voiceState]||statusMap.idle);
+    const dot=document.getElementById('planes-v2-online-dot');
+    if(dot){dot.style.background=voiceState==='listening'?'#12b76a':voiceState==='speaking'?'#7f56d9':voiceState==='connecting'||voiceState==='reconnecting'?'#f79009':'#84cc16'}
+    const mic=document.getElementById('planes-v2-mic');
+    if(mic){
+      const active=['connecting','listening','speaking','reconnecting'].includes(voiceState);
+      mic.style.background=active?'#0f172a':'';
+      mic.style.color=active?'#d4ff00':'';
+      mic.setAttribute('aria-label',active?'Encerrar voz':'Usar voz');
+    }
+
+    let pending=null;
+    try{pending=typeof realtimeVoicePendingMutation!=='undefined'?realtimeVoicePendingMutation:null}catch(e){}
+    const pendingBox=document.getElementById('planes-v2-pending');
+    if(pendingBox){
+      pendingBox.style.display=pending?'block':'none';
+      set('planes-v2-pending-copy',pending?.summary||'');
+    }
 
     el.querySelectorAll('[data-v2-persona]').forEach(b=>b.classList.toggle('active',b.dataset.v2Persona===p));
 
