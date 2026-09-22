@@ -4655,6 +4655,14 @@
             return;
           }
 
+          if (signUpData?.session) {
+            try {
+              await supabaseClient.functions.invoke('planes-email-worker', { body: { limit: 5 } });
+            } catch (emailKickError) {
+              console.warn('Cadastro concluído; e-mail transacional será reenviado no próximo ciclo.', emailKickError);
+            }
+          }
+
           closeRegisterModal();
           currentPendingModalUser = {
             name: name,
@@ -4733,54 +4741,26 @@
         return;
       }
 
-      const requestId = u.id;
-      const userId = u.userId || u.auth_user_id;
-      if (!requestId || !userId) {
-        showToast('Solicitação sem vínculo de usuário. Atualize o painel e tente novamente.');
-        return;
-      }
-
-      const now = new Date().toISOString();
-      const { error: requestError } = await supabaseClient
-        .from('access_requests')
-        .update({
-          status: 'approved',
-          reviewed_at: now,
-          reviewed_by: currentUser?.id || null,
-          rejection_reason: null
-        })
-        .eq('id', requestId);
-
-      if (requestError) {
-        console.error('Falha ao aprovar solicitação:', requestError);
-        showToast('Não foi possível aprovar esta solicitação.');
-        await fetchAdminIAMData();
-        return;
-      }
-
-      const { error: profileError } = await supabaseClient
-        .from('profiles')
-        .update({
-          status: 'approved',
+      const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
+        body: {
+          requestId: u.id,
+          decision: 'approve',
           role: finalRole,
-          approved_at: now,
-          approved_by: currentUser?.id || null,
-          updated_at: now
-        })
-        .eq('id', userId);
+          projectIds: [],
+          workIds: [],
+          adminNotes: 'Aprovado pelo painel administrativo do Planes OS.'
+        }
+      });
 
-      if (profileError) {
-        console.error('Falha ao atualizar perfil aprovado:', profileError);
-        await supabaseClient
-          .from('access_requests')
-          .update({ status: 'pending', reviewed_at: null, reviewed_by: null })
-          .eq('id', requestId);
-        showToast('A aprovação não foi concluída. O estado anterior foi restaurado.');
+      if (error || !data?.ok) {
+        console.error('Falha ao aprovar acesso:', error || data);
+        showToast('Não foi possível concluir a aprovação.');
         await fetchAdminIAMData();
         return;
       }
 
       await fetchAdminIAMData();
+      const userId = u.userId || u.auth_user_id;
       const approved = registeredUsers.find(x => String(x.id) === String(userId)) || {
         id: userId,
         name: u.name,
@@ -4790,7 +4770,7 @@
         status: 'Aprovado'
       };
       showEmailPreviewModal(approved, finalRole);
-      showToast(`✓ Acesso de ${approved.name || u.name} aprovado com perfil "${finalRole}".`);
+      showToast(`✓ Acesso de ${approved.name || u.name} aprovado e sincronizado.`);
       render();
     }
 
@@ -4810,41 +4790,18 @@
         return;
       }
 
-      const requestId = u.id;
-      const userId = u.userId || u.auth_user_id;
-      const now = new Date().toISOString();
+      const { data, error } = await supabaseClient.functions.invoke('admin-review-access', {
+        body: {
+          requestId: u.id,
+          decision: 'reject',
+          rejectionReason: 'Solicitação não aprovada pelo administrador.',
+          adminNotes: 'Rejeitado pelo painel administrativo do Planes OS.'
+        }
+      });
 
-      const { error: requestError } = await supabaseClient
-        .from('access_requests')
-        .update({
-          status: 'rejected',
-          reviewed_at: now,
-          reviewed_by: currentUser?.id || null
-        })
-        .eq('id', requestId);
-
-      if (requestError) {
-        console.error('Falha ao rejeitar solicitação:', requestError);
-        showToast('Não foi possível rejeitar esta solicitação.');
-        await fetchAdminIAMData();
-        return;
-      }
-
-      const { error: profileError } = await supabaseClient
-        .from('profiles')
-        .update({
-          status: 'rejected',
-          updated_at: now
-        })
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error('Falha ao atualizar perfil rejeitado:', profileError);
-        await supabaseClient
-          .from('access_requests')
-          .update({ status: 'pending', reviewed_at: null, reviewed_by: null })
-          .eq('id', requestId);
-        showToast('A rejeição não foi concluída. O estado anterior foi restaurado.');
+      if (error || !data?.ok) {
+        console.error('Falha ao rejeitar acesso:', error || data);
+        showToast('Não foi possível concluir a rejeição.');
         await fetchAdminIAMData();
         return;
       }
