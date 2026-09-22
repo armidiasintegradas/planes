@@ -2382,6 +2382,130 @@
       } catch (e) {}
     }
 
+    function slugifyProjectCode(value) {
+      return String(value || 'projeto')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 42) || ('projeto-' + Date.now());
+    }
+
+    async function hydrateProjectsFromSupabase() {
+      if (!supabaseClient || !currentUser || navigator.onLine === false) return false;
+      try {
+        const { data: rows, error } = await supabaseClient
+          .from('projects')
+          .select('id,name,code,active,client,location,status,budget_text,deadline_text,takt,description,spreadsheets_count,created_at,updated_at')
+          .eq('active', true)
+          .order('created_at', { ascending: true });
+        if (error || !Array.isArray(rows)) return false;
+
+        const ids = rows.map(r => r.id).filter(Boolean);
+        let metrics = [];
+        if (ids.length) {
+          const metricsRes = await supabaseClient
+            .from('project_metrics')
+            .select('project_id,physical_progress,target_progress,pac_score,financial_spent_m,workers_count')
+            .in('project_id', ids);
+          if (!metricsRes.error && Array.isArray(metricsRes.data)) metrics = metricsRes.data;
+        }
+        const metricsByProject = new Map(metrics.map(m => [String(m.project_id), m]));
+        const previousId = selectedProject?.id || selectedProjectId || null;
+
+        projectsList = rows.map(row => {
+          const m = metricsByProject.get(String(row.id)) || {};
+          return {
+            id: row.code || row.id,
+            cloudId: row.id,
+            title: row.name,
+            client: row.client || 'Cliente Corporativo',
+            location: row.location || '',
+            description: row.description || '',
+            status: row.status || 'Em Execução',
+            progress: Number(m.physical_progress || 0),
+            targetProgress: Number(m.target_progress || m.physical_progress || 0),
+            spent: 'R$ ' + Number(m.financial_spent_m || 0).toFixed(1).replace('.', ',') + 'M',
+            budget: row.budget_text || '',
+            deadline: row.deadline_text || '',
+            takt: row.takt || '',
+            workers: Number(m.workers_count || 0),
+            spreadsheetsCount: Number(row.spreadsheets_count || 0),
+            badgeColor: 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold'
+          };
+        });
+
+        if (!projectsList.length) return false;
+        selectedProject = projectsList.find(p => p.id === previousId) || projectsList[0];
+        selectedProjectId = selectedProject.id;
+        operationalProjectIdCache = selectedProject.cloudId || null;
+        saveProjectsStorage();
+        return true;
+      } catch (err) {
+        console.warn('Projetos mantidos em cache local após falha de sincronização.', err);
+        return false;
+      }
+    }
+
+    async function createProjectInSupabase(projectDraft) {
+      if (!supabaseClient || !currentUser || navigator.onLine === false) return null;
+      const code = slugifyProjectCode(projectDraft.title) + '-' + Date.now().toString().slice(-5);
+      const { data, error } = await supabaseClient
+        .from('projects')
+        .insert({
+          name: projectDraft.title,
+          code,
+          active: true,
+          client: projectDraft.client || '',
+          location: projectDraft.location || '',
+          status: projectDraft.status || 'Em Execução',
+          budget_text: projectDraft.budget || '',
+          deadline_text: projectDraft.deadline || '',
+          takt: projectDraft.takt || '',
+          description: projectDraft.description || '',
+          spreadsheets_count: Number(projectDraft.spreadsheetsCount || 0),
+          updated_at: new Date().toISOString()
+        })
+        .select('id,code,name')
+        .single();
+
+      if (error || !data?.id) return null;
+
+      const metricsRes = await supabaseClient.from('project_metrics').insert({
+        project_id: data.id,
+        physical_progress: Number(projectDraft.progress || 0),
+        target_progress: Math.max(0, Math.min(100, Number(projectDraft.targetProgress || projectDraft.progress || 0))),
+        pac_score: 0,
+        financial_spent_m: 0,
+        workers_count: Number(projectDraft.workers || 0),
+        updated_at: new Date().toISOString()
+      });
+
+      if (metricsRes.error) {
+        await supabaseClient.from('projects').update({ active: false, updated_at: new Date().toISOString() }).eq('id', data.id);
+        return null;
+      }
+
+      if (currentUser?.id && isUuidLike(currentUser.id)) {
+        try {
+          await supabaseClient.from('user_project_access').upsert({
+            user_id: currentUser.id,
+            project_id: data.id,
+            created_by: currentUser.id
+          }, { onConflict: 'user_id,project_id' });
+        } catch (e) {}
+      }
+      return { cloudId: data.id, code: data.code };
+    }
+
+    async function archiveProjectInSupabase(project) {
+      if (!supabaseClient || !project || navigator.onLine === false) return false;
+      let query = supabaseClient.from('projects').update({ active: false, updated_at: new Date().toISOString() });
+      query = project.cloudId && isUuidLike(project.cloudId) ? query.eq('id', project.cloudId) : query.eq('code', project.id);
+      const { error } = await query;
+      return !error;
+    }
+
 
     let selectedProject = projectsList[0];
     
@@ -2630,6 +2754,7 @@
       if (currentUser) {
         hydrateUserIntelligenceProfile();
         hydrateAssistantPersona();
+        hydrateProjectsFromSupabase().then(ok => { if (ok) render(); });
       }
 
       // 1. Canal de Presença Realtime (ONLINE AGORA)
@@ -7596,7 +7721,7 @@
       }, 700);
     }
 
-    function handleNewProjectSubmit() {
+    async function handleNewProjectSubmit() {
       const title = (document.getElementById('new-proj-title') ? document.getElementById('new-proj-title').value : '').trim();
       const client = (document.getElementById('new-proj-client') ? document.getElementById('new-proj-client').value : '').trim() || 'Cliente Corporativo';
       const location = (document.getElementById('new-proj-loc') ? document.getElementById('new-proj-loc').value : '').trim() || 'Maceió, AL';
@@ -7611,53 +7736,56 @@
         return;
       }
 
-      const newProj = {
-        id: 'proj-' + Date.now(),
-        title: title,
-        client: client,
-        location: location,
-        status: 'Em Execução',
-        progress: progress,
-        targetProgress: progress + 4.0,
-        spent: 'R$ 0,0M',
-        budget: budget,
-        deadline: deadline,
-        takt: takt,
-        workers: 32,
-        spreadsheetsCount: 1,
-        badgeColor: 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold',
-        description: desc
+      const draft = {
+        title, client, location, status: 'Em Execução',
+        progress, targetProgress: Math.min(100, progress + 4.0),
+        budget, deadline, takt, workers: 32, spreadsheetsCount: 1, description: desc
       };
 
-      projectsList.unshift(newProj);
-      saveProjectsStorage();
-      selectedProject = newProj;
+      const created = await createProjectInSupabase(draft);
+      if (!created) {
+        showToast('Não foi possível cadastrar a obra no Supabase.');
+        return;
+      }
+
+      await hydrateProjectsFromSupabase();
+      const newProj = projectsList.find(p => p.cloudId === created.cloudId || p.id === created.code);
+      if (newProj) {
+        selectedProject = newProj;
+        selectedProjectId = newProj.id;
+        operationalProjectIdCache = newProj.cloudId;
+      }
       closeNewProjectModal();
-      showToast(`✓ Obra "${title}" cadastrada com sucesso!`);
-      
-      // Abre o cockpit do novo projeto
-      setTimeout(() => {
-        currentScreen = 'dashboard';
-        activeNav = 'Visão Geral';
-        render();
-      }, 400);
+      currentScreen = 'dashboard';
+      activeNav = 'Visão Geral';
+      saveSessionState();
+      render();
+      showToast(`✓ Obra "${title}" cadastrada e sincronizada.`);
     }
 
-    function deleteProject(projId) {
+    async function deleteProject(projId) {
       if (projectsList.length <= 1) {
         showToast('É necessário manter pelo menos um projeto cadastrado.');
         return;
       }
-      const idx = projectsList.findIndex(p => p.id === projId);
-      if (idx !== -1) {
-        const removed = projectsList.splice(idx, 1)[0];
-        saveProjectsStorage();
-        showToast(`✓ Projeto "${removed.title}" removido.`);
-        if (selectedProject && selectedProject.id === projId) {
-          selectedProject = projectsList[0];
-        }
-        render();
+      const project = projectsList.find(p => p.id === projId);
+      if (!project) return;
+
+      const ok = await archiveProjectInSupabase(project);
+      if (!ok) {
+        showToast('Não foi possível arquivar este projeto no Supabase.');
+        return;
       }
+
+      await hydrateProjectsFromSupabase();
+      if (!projectsList.find(p => p.id === selectedProject?.id)) {
+        selectedProject = projectsList[0];
+        selectedProjectId = selectedProject?.id || null;
+        operationalProjectIdCache = selectedProject?.cloudId || null;
+      }
+      saveSessionState();
+      render();
+      showToast(`✓ Projeto "${project.title}" arquivado e sincronizado.`);
     }
 
 
@@ -10375,6 +10503,15 @@
           }
         );
       });
+
+      operationalRealtimeChannel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        async () => {
+          const synced = await hydrateProjectsFromSupabase();
+          if (synced) render();
+        }
+      );
 
       operationalRealtimeChannel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
