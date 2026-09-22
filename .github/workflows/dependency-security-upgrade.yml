@@ -32,14 +32,17 @@ jobs:
             react-server-dom-webpack@19.3.0 \
             vinext@1.0.0-beta.11 \
             @cloudflare/vite-plugin@1.57.3 \
+            @cloudflare/workers-types@5.20260922.1 \
             @vitejs/plugin-rsc@0.5.35 \
             vite@8.3.0 \
             wrangler@4.125.0
           npm pkg set devDependencies.@cloudflare/vite-plugin=1.57.3
+          npm pkg set devDependencies.@cloudflare/workers-types=5.20260922.1
           npm pkg set devDependencies.@vitejs/plugin-rsc=0.5.35
           npm pkg set devDependencies.vite=8.3.0
           npm pkg set devDependencies.wrangler=4.125.0
           npm pkg delete dependencies.@cloudflare/vite-plugin
+          npm pkg delete dependencies.@cloudflare/workers-types
           npm pkg delete dependencies.@vitejs/plugin-rsc
           npm pkg delete dependencies.vite
           npm pkg delete dependencies.wrangler
