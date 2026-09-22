@@ -1,5 +1,6 @@
 name: Publish Planes live auth
 # Consolidated single-owner auth publisher.
+# Unified OAuth validation retry.
 
 on:
   push:
