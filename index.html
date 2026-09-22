@@ -538,6 +538,30 @@
   }
   </script>
 
+
+<style id="planes-intelligence-v2-styles">
+  .planes-intel-v2-overlay{position:fixed;inset:0;z-index:1400;background:#fff;display:none;color:#0f172a;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .planes-intel-v2-overlay.open{display:grid}
+  .planes-intel-v2-shell{display:grid;grid-template-columns:1fr;min-width:0;height:100dvh;background:#fff}
+  .planes-intel-v2-left,.planes-intel-v2-right{display:none}
+  .planes-intel-v2-center{display:flex;flex-direction:column;min-width:0;height:100dvh;background:#fff}
+  .planes-intel-v2-header{min-height:72px;padding:max(12px,env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0}
+  .planes-intel-v2-back,.planes-intel-v2-close{width:44px;height:44px;border:0;background:transparent;border-radius:12px;font-size:24px;color:#07152b;display:grid;place-items:center}
+  .planes-intel-v2-heading{flex:1;min-width:0}.planes-intel-v2-heading small{display:block;color:#667085;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.planes-intel-v2-heading strong{display:block;font-size:20px;color:#07152b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .planes-intel-v2-persona{display:flex;align-items:center;gap:10px;padding:14px 16px 4px}.planes-intel-v2-avatar{width:50px;height:50px;border-radius:50%;background:#eef2f6;display:grid;place-items:center;font-weight:900;color:#07152b;font-size:18px}.planes-intel-v2-persona small{display:block;color:#667085;margin-top:2px}.planes-intel-v2-online{width:9px;height:9px;border-radius:50%;background:#12b76a}
+  .planes-intel-v2-chips{display:flex;gap:8px;overflow:auto;padding:8px 16px 12px;scrollbar-width:none}.planes-intel-v2-chip{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#eef6fb;color:#344054;font-size:11px;font-weight:800}.planes-intel-v2-chip.learning{background:#ecfdf3;color:#067647}
+  .planes-intel-v2-chat{flex:1;overflow:auto;padding:4px 16px 12px;display:flex;flex-direction:column;gap:10px}.planes-intel-v2-msg{max-width:84%;padding:11px 13px;border-radius:16px;background:#f2f4f7;font-size:14px;line-height:1.45}.planes-intel-v2-msg.user{margin-left:auto;background:#07152b;color:#fff}.planes-intel-v2-msg b{display:block;font-size:12px;margin-bottom:3px}
+  .planes-intel-v2-suggestions{display:grid;gap:1px;margin:0 16px 10px;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;background:#e2e8f0}.planes-intel-v2-suggestions button{min-height:50px;border:0;background:#fff;display:grid;grid-template-columns:24px 1fr 20px;align-items:center;text-align:left;padding:0 14px;font-weight:800;color:#07152b}
+  .planes-intel-v2-composer{display:grid;grid-template-columns:42px 1fr 54px;gap:7px;align-items:center;padding:10px 14px max(10px,env(safe-area-inset-bottom));border-top:1px solid #e2e8f0;background:#fff}.planes-intel-v2-composer>button{height:48px;border-radius:14px;border:1px solid #e2e8f0;background:#fff}.planes-intel-v2-inputwrap{display:grid;grid-template-columns:1fr 46px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}.planes-intel-v2-inputwrap input{height:48px;border:0;outline:0;padding:0 12px;min-width:0}.planes-intel-v2-inputwrap button{border:0;background:#07152b;color:#d4ff00;font-weight:900}.planes-intel-v2-mic{width:54px!important;height:54px!important;border-radius:50%!important;background:#07152b!important;color:#d4ff00!important;font-size:20px;border:5px solid #eef2f6!important}
+  .planes-intel-v2-switch{display:none;gap:6px}.planes-intel-v2-switch button{min-height:40px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;padding:0 12px;font-size:12px;font-weight:800}.planes-intel-v2-switch button.active{background:#07152b;color:#fff;border-color:#07152b}
+  @media(min-width:700px){
+    .planes-intel-v2-shell{grid-template-columns:180px minmax(360px,1fr) 300px}
+    .planes-intel-v2-left{display:flex;flex-direction:column;border-right:1px solid #e2e8f0;padding:22px 14px;background:#fbfcfd}.planes-intel-v2-brand{width:42px;height:42px;border-radius:12px;background:#07152b;color:#d4ff00;display:grid;place-items:center;font-size:24px;font-weight:900;margin-bottom:24px}.planes-intel-v2-nav{display:grid;gap:8px}.planes-intel-v2-nav button{min-height:46px;border:0;background:transparent;border-radius:12px;display:flex;align-items:center;gap:10px;padding:0 12px;text-align:left;font-weight:800;color:#07152b}.planes-intel-v2-user{margin-top:auto;display:flex;align-items:center;gap:9px;border-top:1px solid #e2e8f0;padding-top:14px}.planes-intel-v2-user i{width:36px;height:36px;border-radius:50%;background:#07152b;color:#fff;display:grid;place-items:center;font-style:normal}.planes-intel-v2-user small{display:block;color:#667085}
+    .planes-intel-v2-back{display:none}.planes-intel-v2-header{padding:14px 18px;min-height:80px}.planes-intel-v2-heading strong{font-size:24px}.planes-intel-v2-switch{display:flex}.planes-intel-v2-persona{display:none}.planes-intel-v2-chips{padding:10px 24px 14px}.planes-intel-v2-chat{padding:10px 28px 16px}.planes-intel-v2-msg{max-width:72%}.planes-intel-v2-suggestions{grid-template-columns:repeat(3,1fr);gap:8px;background:transparent;border:0;margin:0 24px 14px}.planes-intel-v2-suggestions button{border:1px solid #e2e8f0;border-radius:14px;min-height:58px}.planes-intel-v2-composer{padding:12px 18px 16px}
+    .planes-intel-v2-right{display:flex;flex-direction:column;gap:14px;border-left:1px solid #e2e8f0;padding:18px 14px;background:#f8fafc;overflow:auto}.planes-intel-v2-panel{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:14px}.planes-intel-v2-panel h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#667085;margin:0 0 12px}.planes-intel-v2-context{display:grid;gap:10px}.planes-intel-v2-context div{display:grid;gap:2px}.planes-intel-v2-context span{font-size:11px;color:#667085}.planes-intel-v2-note{margin-top:12px;padding:10px;border-radius:12px;background:#f2f4f7;font-size:12px;line-height:1.4;color:#344054}.planes-intel-v2-actions{display:grid}.planes-intel-v2-actions button{min-height:48px;border:0;border-bottom:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:space-between;text-align:left;font-weight:700;color:#07152b}.planes-intel-v2-actions button:last-child{border-bottom:0}.planes-intel-v2-tip{margin-top:auto;border-radius:18px;padding:14px;background:#efffd9;border:1px solid #d6f5a2}.planes-intel-v2-tip p{font-size:12px;line-height:1.45;color:#344054;margin:8px 0}.planes-intel-v2-tip button{border:0;background:transparent;color:#07152b;font-weight:900;padding:6px 0}
+  }
+  @media(min-width:1024px){.planes-intel-v2-shell{grid-template-columns:190px minmax(480px,1fr) 320px}}
+</style>
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
 
@@ -10657,7 +10681,7 @@
             <!-- Comando de Voz Global -->
             <button
               type="button"
-              onclick="toggleVoiceAssistant()"
+              onclick="handlePlanesIntelligenceEntry()"
               class="global-voice-trigger w-8 h-8 rounded-full ${isListening ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-950 text-[#d4ff00] border-slate-800'} border flex items-center justify-center ios-press-action cursor-pointer shadow-2xs"
               title="${isListening ? 'Parar comando de voz' : 'Comando de voz Planes'}"
               aria-label="${isListening ? 'Parar comando de voz' : 'Ativar comando de voz'}"
@@ -12705,7 +12729,7 @@
             />
             <button
               type="button"
-              onclick="toggleVoiceAssistant()"
+              onclick="handlePlanesIntelligenceEntry()"
               class="w-10 h-10 rounded-full ${isListening ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700'} flex items-center justify-center ios-press-action shrink-0"
               title="Comando de voz"
               aria-label="Ativar comando de voz"
@@ -14775,7 +14799,7 @@
                       <div class="flex items-center justify-center gap-3">
                         <button
                           type="button"
-                          onclick="toggleVoiceAssistant()"
+                          onclick="handlePlanesIntelligenceEntry()"
                           class="p-3.5 rounded-full shadow-lg transition-all transform active:scale-95 cursor-pointer touch-manipulation flex items-center gap-2 ${
                             isListening
                               ? 'bg-rose-600 text-white ring-8 ring-rose-100 animate-pulse'
@@ -18653,5 +18677,211 @@ ${activeNav === 'Equipe & Contatos' ? `
     restoreSessionState();
     render();
   </script>
+
+<script id="planes-intelligence-v2-runtime">
+(function(){
+  const FLAG_KEY='planes_intelligence_v2_enabled';
+  function queryFlag(){
+    try{
+      const p=new URLSearchParams(location.search);
+      if(p.get('intelligenceV2')==='1') localStorage.setItem(FLAG_KEY,'1');
+      if(p.get('intelligenceV2')==='0') localStorage.removeItem(FLAG_KEY);
+    }catch(e){}
+  }
+  queryFlag();
+
+  window.isPlanesIntelligenceV2Enabled=function(){
+    try{return localStorage.getItem(FLAG_KEY)==='1'}catch(e){return false}
+  };
+  window.setPlanesIntelligenceV2Enabled=function(enabled){
+    try{enabled?localStorage.setItem(FLAG_KEY,'1'):localStorage.removeItem(FLAG_KEY)}catch(e){}
+    return window.isPlanesIntelligenceV2Enabled();
+  };
+
+  window.handlePlanesIntelligenceEntry=function(){
+    if(window.isPlanesIntelligenceV2Enabled()) return window.openPlanesIntelligenceV2();
+    if(typeof toggleVoiceAssistant==='function') return toggleVoiceAssistant();
+  };
+
+  function firstName(){
+    try{return (typeof getPlanesUserFirstName==='function'&&getPlanesUserFirstName()) || (currentUser?.name||'Alex').split(' ')[0] || 'Alex'}catch(e){return 'Alex'}
+  }
+  function persona(){
+    try{return (typeof getAssistantPersona==='function'&&getAssistantPersona()) || 'brita'}catch(e){return 'brita'}
+  }
+  function personaLabel(){
+    try{return (typeof getAssistantPersonaLabel==='function'&&getAssistantPersonaLabel()) || (persona()==='castanha'?'Castanha':'Brita')}catch(e){return persona()==='castanha'?'Castanha':'Brita'}
+  }
+  function roleLabel(){
+    try{
+      const r=(typeof getEffectiveIntelligenceRole==='function'&&getEffectiveIntelligenceRole()) || currentUser?.role || 'engenharia';
+      const map={engenharia:'Engenharia',campo:'Campo',gestor:'Gestor',cliente:'Cliente',admin:'Admin',super_admin:'Admin'};
+      return map[String(r).toLowerCase()] || String(r);
+    }catch(e){return 'Engenharia'}
+  }
+  function screenLabel(){
+    try{
+      if(typeof mobileCurrentTab!=='undefined'){
+        const map={inicio:'Sua obra hoje',planejar:'Planejamento',campo:'Canteiro',mais:'Mais',modulo:'Módulo'};
+        if(map[mobileCurrentTab]) return map[mobileCurrentTab];
+      }
+      return typeof activeNav!=='undefined' && activeNav ? activeNav : 'Sua obra hoje';
+    }catch(e){return 'Sua obra hoje'}
+  }
+  function projectLabel(){
+    try{return selectedProject?.title || projectsList?.[0]?.title || 'Obra ativa'}catch(e){return 'Obra ativa'}
+  }
+  function communicationLabel(){
+    try{
+      const p=typeof intelligenceUserProfile!=='undefined'?intelligenceUserProfile:null;
+      if(p?.prefers_detail) return 'Mais contexto';
+      if(p?.prefers_short) return 'Resposta mais direta';
+    }catch(e){}
+    return 'Aprendendo seu jeito';
+  }
+
+  function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+  function ensureOverlay(){
+    let el=document.getElementById('planes-intelligence-v2-overlay');
+    if(el) return el;
+    el=document.createElement('div');
+    el.id='planes-intelligence-v2-overlay';
+    el.className='planes-intel-v2-overlay';
+    el.innerHTML=
+      '<div class="planes-intel-v2-shell">'+
+        '<aside class="planes-intel-v2-left">'+
+          '<div class="planes-intel-v2-brand">P</div>'+
+          '<div class="planes-intel-v2-nav">'+
+            '<button data-v2-nav="inicio">⌂ <span>Início</span></button>'+
+            '<button data-v2-nav="planejar">▦ <span>Planejar</span></button>'+
+            '<button data-v2-nav="campo">⚡ <span>Canteiro</span></button>'+
+            '<button data-v2-nav="mais">☰ <span>Mais</span></button>'+
+          '</div>'+
+          '<div class="planes-intel-v2-user"><i id="planes-v2-user-avatar">A</i><div><strong id="planes-v2-user-name"></strong><small id="planes-v2-user-role-left"></small></div></div>'+
+        '</aside>'+
+        '<section class="planes-intel-v2-center">'+
+          '<header class="planes-intel-v2-header">'+
+            '<button class="planes-intel-v2-back" data-v2-close>←</button>'+
+            '<div class="planes-intel-v2-heading"><small>Sua obra, em conversa</small><strong>Planes Intelligence</strong></div>'+
+            '<div class="planes-intel-v2-switch"><button data-v2-persona="brita">Brita</button><button data-v2-persona="castanha">Castanha</button></div>'+
+            '<button class="planes-intel-v2-close" data-v2-close>✕</button>'+
+          '</header>'+
+          '<div class="planes-intel-v2-persona"><div class="planes-intel-v2-avatar" id="planes-v2-persona-avatar">B</div><div><strong id="planes-v2-persona-name">Brita</strong><small>Sempre com você na obra</small></div><span class="planes-intel-v2-online"></span></div>'+
+          '<div class="planes-intel-v2-chips"><span class="planes-intel-v2-chip" id="planes-v2-context-chip"></span><span class="planes-intel-v2-chip learning" id="planes-v2-learning-chip"></span></div>'+
+          '<div class="planes-intel-v2-chat" id="planes-v2-chat"></div>'+
+          '<div class="planes-intel-v2-suggestions"><button data-v2-ask="Validação">✓ <span>Validação</span> ›</button><button data-v2-ask="Aço da Arena">▣ <span>Aço da Arena</span> ›</button><button data-v2-ask="Me resume tudo">☷ <span>Me resume tudo</span> ›</button></div>'+
+          '<div class="planes-intel-v2-composer"><button aria-label="Anexar">＋</button><div class="planes-intel-v2-inputwrap"><input id="planes-v2-input" placeholder="Fala ou escreve do seu jeito..."><button id="planes-v2-send">➤</button></div><button class="planes-intel-v2-mic" id="planes-v2-mic" aria-label="Usar voz">🎙</button></div>'+
+        '</section>'+
+        '<aside class="planes-intel-v2-right">'+
+          '<div class="planes-intel-v2-panel"><h3>Contexto atual</h3><div class="planes-intel-v2-context"><div><span>Obra</span><strong id="planes-v2-project"></strong></div><div><span>Perfil</span><strong id="planes-v2-role"></strong></div><div><span>Tela</span><strong id="planes-v2-screen"></strong></div></div><div class="planes-intel-v2-note">● Estou vendo a mesma tela que você e posso ajudar com o que estiver aqui.</div></div>'+
+          '<div class="planes-intel-v2-panel"><h3>Ações rápidas</h3><div class="planes-intel-v2-actions"><button data-v2-action="validation">✓ Abrir validação <span>›</span></button><button data-v2-ask="Aço da Arena">▣ Ver suprimento <span>›</span></button><button data-v2-ask="Criar tarefa">＋ Criar tarefa <span>›</span></button><button data-v2-action="planning">▦ Ver planejamento <span>›</span></button><button data-v2-ask="Gerar relatório">▥ Gerar relatório <span>›</span></button></div></div>'+
+          '<div class="planes-intel-v2-tip"><strong id="planes-v2-tip-title">✦ Dica da Brita</strong><p id="planes-v2-tip-copy">Posso te levar direto para o ponto mais importante desta tela.</p><button data-v2-action="validation">Abrir agora →</button></div>'+
+        '</aside>'+
+      '</div>';
+    document.body.appendChild(el);
+
+    el.querySelectorAll('[data-v2-close]').forEach(b=>b.addEventListener('click',window.closePlanesIntelligenceV2));
+    el.querySelectorAll('[data-v2-ask]').forEach(b=>b.addEventListener('click',()=>submit(b.dataset.v2Ask)));
+    el.querySelectorAll('[data-v2-persona]').forEach(b=>b.addEventListener('click',()=>selectPersona(b.dataset.v2Persona)));
+    el.querySelectorAll('[data-v2-nav]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.v2Nav)));
+    el.querySelectorAll('[data-v2-action]').forEach(b=>b.addEventListener('click',()=>quickAction(b.dataset.v2Action)));
+    el.querySelector('#planes-v2-send')?.addEventListener('click',()=>submit());
+    el.querySelector('#planes-v2-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
+    el.querySelector('#planes-v2-mic')?.addEventListener('click',()=>{if(typeof toggleVoiceAssistant==='function')toggleVoiceAssistant()});
+    return el;
+  }
+
+  function selectPersona(p){
+    try{
+      if(typeof selectAssistantPersona==='function') selectAssistantPersona(p);
+      else if(typeof setAssistantPersona==='function') setAssistantPersona(p);
+    }catch(e){}
+    setTimeout(renderOverlay,50);
+  }
+  function navigate(tab){
+    window.closePlanesIntelligenceV2();
+    try{
+      if(tab==='mais'&&typeof toggleMobileMoreSheet==='function') return toggleMobileMoreSheet();
+      if(typeof setMobileTab==='function') return setMobileTab(tab);
+    }catch(e){}
+  }
+  function quickAction(type){
+    window.closePlanesIntelligenceV2();
+    try{
+      if(type==='planning'&&typeof setMobileTab==='function') return setMobileTab('planejar');
+      if(type==='validation'){
+        if(typeof openValidationModule==='function') return openValidationModule();
+        if(typeof setMobileTab==='function'){setMobileTab('mais');setTimeout(()=>typeof openMobileModule==='function'&&openMobileModule('validations'),0)}
+      }
+    }catch(e){}
+  }
+
+  async function submit(forced){
+    const input=document.getElementById('planes-v2-input');
+    const text=String(forced || input?.value || '').trim();
+    if(!text) return;
+    if(input&&!forced) input.value='';
+    try{
+      if(typeof askPlanesIntelligence==='function'){
+        await askPlanesIntelligence(text);
+      }
+    }catch(e){
+      if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Tente novamente.');
+    }
+    renderOverlay();
+  }
+
+  function chatRows(){
+    let rows=[];
+    try{rows=Array.isArray(intelligenceChatHistory)?intelligenceChatHistory:[]}catch(e){}
+    if(!rows.length){
+      rows=[
+        {sender:'ai',text:'Oi, '+firstName()+'. Tô vendo a mesma tela que você. Pode falar comigo normalmente.'},
+        {sender:'ai',text:'Posso começar te mostrando o que merece atenção hoje.'}
+      ];
+    }
+    return rows.slice(-12);
+  }
+
+  function renderOverlay(){
+    const el=ensureOverlay();
+    const p=persona(), name=personaLabel(), role=roleLabel(), screen=screenLabel(), proj=projectLabel();
+    const set=(id,v)=>{const n=document.getElementById(id);if(n)n.textContent=v};
+    set('planes-v2-user-name',firstName());
+    set('planes-v2-user-role-left',role);
+    set('planes-v2-persona-name',name);
+    set('planes-v2-persona-avatar',p==='castanha'?'C':'B');
+    set('planes-v2-context-chip','● '+role+' · Vendo: '+screen);
+    set('planes-v2-learning-chip',communicationLabel());
+    set('planes-v2-project',proj);
+    set('planes-v2-role',role);
+    set('planes-v2-screen',screen);
+    set('planes-v2-tip-title','✦ Dica d'+(p==='brita'?'a ':'o ')+name);
+
+    el.querySelectorAll('[data-v2-persona]').forEach(b=>b.classList.toggle('active',b.dataset.v2Persona===p));
+
+    const chat=document.getElementById('planes-v2-chat');
+    if(chat){
+      chat.innerHTML=chatRows().map(m=>'<div class="planes-intel-v2-msg '+(m.sender==='user'?'user':'')+'">'+(m.sender==='ai'?'<b>'+escapeHtml(name)+'</b>':'')+escapeHtml(m.text)+'</div>').join('');
+      chat.scrollTop=chat.scrollHeight;
+    }
+  }
+
+  window.openPlanesIntelligenceV2=function(){
+    const el=ensureOverlay();
+    renderOverlay();
+    el.classList.add('open');
+    document.documentElement.style.overflow='hidden';
+    try{if(typeof trackUserHabit==='function')trackUserHabit('intelligence_query',{module:'Planes Intelligence V2',topic:'open',mode:'ui'})}catch(e){}
+    return true;
+  };
+  window.closePlanesIntelligenceV2=function(){
+    const el=document.getElementById('planes-intelligence-v2-overlay');
+    if(el)el.classList.remove('open');
+    document.documentElement.style.overflow='';
+  };
+})();
+</script>
 </body>
 </html>
