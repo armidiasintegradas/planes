@@ -14,7 +14,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: IS_STANDALONE_IOS,
+    detectSessionInUrl: false,
     flowType: IS_STANDALONE_IOS ? 'implicit' : 'pkce',
     experimental: { passkey: true },
   },
@@ -763,6 +763,8 @@ async function completeOAuthCallbackIfPresent() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const hashError = hash.get('error') || hash.get('error_code');
     const hashErrorDescription = hash.get('error_description');
+    const accessToken = hash.get('access_token');
+    const refreshToken = hash.get('refresh_token');
 
     if (hashError) {
       const node = renderShell(`
@@ -779,13 +781,39 @@ async function completeOAuthCallbackIfPresent() {
       return { handled: true, session: null, failed: true };
     }
 
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) {
-      return { handled: true, session: null, failed: true, error };
+    if (accessToken && refreshToken) {
+      blockApp();
+      renderShell(`
+        <h1>Concluindo seu acesso</h1>
+        <p class="planes-auth-muted">Sua conta Google foi validada. Estamos criando sua sessão segura no Planes OS.</p>
+        <div class="planes-auth-status planes-auth-good">Autenticação concluída. Carregando seu perfil…</div>
+      `);
+
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error || !data?.session) {
+        const node = renderShell(`
+          <h1>Não foi possível concluir a sessão</h1>
+          <p class="planes-auth-muted">O Google autenticou sua conta, mas a sessão local não pôde ser gravada.</p>
+          <div class="planes-auth-status planes-auth-bad">${escapeHtml(error?.message || 'Sessão não criada.')}</div>
+          <button class="planes-auth-btn secondary" data-retry-google style="margin-top:14px">Tentar Google novamente</button>
+        `);
+        node.querySelector('[data-retry-google]')?.addEventListener('click', () => {
+          window.history.replaceState({}, document.title, REDIRECT_TO);
+          window.location.replace(REDIRECT_TO);
+        });
+        return { handled: true, session: null, failed: true };
+      }
+
+      window.history.replaceState({}, document.title, REDIRECT_TO);
+      return { handled: true, session: data.session, failed: false };
     }
 
+    const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      window.history.replaceState({}, document.title, REDIRECT_TO);
       return { handled: true, session, failed: false };
     }
 
