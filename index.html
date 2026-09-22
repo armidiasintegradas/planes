@@ -2653,7 +2653,7 @@
         const [profilesRes, requestsRes, notificationsRes] = await Promise.all([
           supabaseClient
             .from('profiles')
-            .select('id, full_name, email, avatar_url, status, role, created_at, updated_at')
+            .select('id, full_name, email, avatar_url, status, role, phone, cpf, rg, birth_date, company, department, sector, created_at, updated_at')
             .order('created_at', { ascending: false }),
           supabaseClient
             .from('access_requests')
@@ -2686,6 +2686,13 @@
             role: p.role || 'campo',
             role_id: p.role || 'campo',
             level: p.role || 'campo',
+            phone: p.phone || '',
+            cpf: p.cpf || '',
+            rg: p.rg || '',
+            birthDate: p.birth_date || '',
+            company: p.company || '',
+            department: p.department || '',
+            sector: p.sector || '',
             status: p.status === 'approved' ? 'Aprovado' : 'Suspenso',
             avatar: p.avatar_url || ((p.full_name || p.email || 'US').slice(0, 2).toUpperCase()),
             created_at: p.created_at
@@ -7854,92 +7861,69 @@
       render();
     }
 
-    function changeUserRole(userId, newRole) {
+    async function changeUserRole(userId, newRole) {
       const u = registeredUsers.find(x => x.id === userId || x.email === userId);
-      if (u) {
-        u.level = newRole;
-        u.role = newRole;
-        
-        // Atualiza na Agenda Telefônica
-        const tm = teamMembersList.find(x => x.id === u.id || x.name === u.name);
-        if (tm) {
-          tm.role = newRole;
-        }
-
-        showToast(`✓ Permissão de ${u.name} atualizada para "${newRole}"!`);
-        render();
+      if (!u) return;
+      if (!supabaseClient || navigator.onLine === false || !isUuidLike(u.id)) {
+        showToast('Sem conexão segura para alterar a permissão.');
+        return;
       }
+
+      const dbRole = normalizeDatabaseRole(newRole);
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ role: dbRole, updated_at: new Date().toISOString() })
+        .eq('id', u.id);
+
+      if (error) {
+        console.error('Falha ao alterar perfil:', error);
+        showToast('Não foi possível alterar a permissão no Supabase.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      await fetchAdminIAMData();
+      showToast(`✓ Permissão de ${u.name} atualizada para "${dbRole}" e sincronizada.`);
+      render();
     }
 
-    function deleteUser(userId) {
+    async function deleteUser(userId) {
       if (!userId) return;
       const strId = String(userId).toLowerCase();
-      const u = registeredUsers.find(x => String(x.id).toLowerCase() === strId || (x.email && x.email.toLowerCase() === strId) || (x.name && x.name.toLowerCase() === strId));
-      
+      const u = registeredUsers.find(x =>
+        String(x.id).toLowerCase() === strId ||
+        (x.email && x.email.toLowerCase() === strId) ||
+        (x.name && x.name.toLowerCase() === strId)
+      );
+
       if (!u) {
         showToast('Usuário não encontrado na base.');
         return;
       }
-
       if (u.email && u.email.toLowerCase() === 'armidiasintegradas@gmail.com') {
         showToast('O Administrador Master não pode ser excluído.');
         return;
       }
-
-      if (confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email}) da base de dados?`)) {
-        const userEmail = (u.email || '').toLowerCase();
-        const userName = (u.name || '').toLowerCase();
-        const userObjId = String(u.id || '').toLowerCase();
-
-        // 1. Grava na blacklist permanente de exclusão definitiva
-        try {
-          let blacklist = JSON.parse(localStorage.getItem('planes_deleted_users_blacklist')) || [];
-          if (userEmail && !blacklist.includes(userEmail)) blacklist.push(userEmail);
-          if (userObjId && !blacklist.includes(userObjId)) blacklist.push(userObjId);
-          localStorage.setItem('planes_deleted_users_blacklist', JSON.stringify(blacklist));
-        } catch (e) {}
-
-        // 2. Remove de registeredUsers
-        registeredUsers = registeredUsers.filter(x => {
-          const xEmail = (x.email || '').toLowerCase();
-          const xId = String(x.id || '').toLowerCase();
-          const xName = (x.name || '').toLowerCase();
-          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
-        });
-
-        // 3. Remove de pendingUsers
-        pendingUsers = pendingUsers.filter(x => {
-          const xEmail = (x.email || '').toLowerCase();
-          const xId = String(x.id || '').toLowerCase();
-          return xEmail !== userEmail && xId !== userObjId;
-        });
-
-        // 4. Remove de teamMembersList
-        teamMembersList = teamMembersList.filter(x => {
-          const xEmail = (x.email || '').toLowerCase();
-          const xId = String(x.id || '').toLowerCase();
-          const xName = (x.name || '').toLowerCase();
-          return xEmail !== userEmail && xId !== userObjId && xName !== userName;
-        });
-
-        // 5. Remove de online sessions
-        try {
-          const raw = localStorage.getItem('planes_online_sessions');
-          if (raw) {
-            let sessions = JSON.parse(raw);
-            sessions = sessions.filter(s => (s.email || '').toLowerCase() !== userEmail);
-            localStorage.setItem('planes_online_sessions', JSON.stringify(sessions));
-          }
-        } catch (e) {}
-
-        // Transmite exclusão para a nuvem para todos os dispositivos
-        broadcastCloudAction('USER_DELETE', { userEmail: userEmail, userId: userObjId, userName: u.name });
-
-        saveUsersStorage();
-        saveSessionState();
-        showToast(`✓ Usuário ${u.name} foi EXCLUÍDO PERMANENTEMENTE da base!`);
-        render();
+      if (!supabaseClient || navigator.onLine === false || !isUuidLike(u.id)) {
+        showToast('Sem conexão segura para excluir este usuário.');
+        return;
       }
+      if (!confirm(`Deseja realmente excluir permanentemente o usuário "${u.name}" (${u.email})?`)) return;
+
+      const { data, error } = await supabaseClient.functions.invoke('admin-delete-user', {
+        body: { userId: u.id }
+      });
+
+      if (error || !data?.ok) {
+        console.error('Falha ao excluir usuário:', error || data);
+        showToast('Não foi possível excluir este usuário do Supabase Auth.');
+        await fetchAdminIAMData();
+        return;
+      }
+
+      await fetchAdminIAMData();
+      showToast(`✓ Usuário ${u.name} excluído do Auth e da base do Planes.`);
+      render();
     }
 
     function refreshUsersTable(manual = true) {
@@ -7979,6 +7963,8 @@
 
       document.getElementById('edit-user-name').value = u.name;
       document.getElementById('edit-user-email').value = u.email;
+      document.getElementById('edit-user-email').readOnly = true;
+      document.getElementById('edit-user-email').title = 'O e-mail de autenticação não é alterado por este formulário.';
       document.getElementById('edit-user-phone').value = maskPhone(u.phone || '+55 (81) 97333-2227');
       document.getElementById('edit-user-cpf').value = maskCpf(u.cpf || '000.000.000-00');
       document.getElementById('edit-user-rg').value = maskRg(u.rg || 'SSP-00.000.000');
@@ -7995,51 +7981,54 @@
       editingUserId = null;
     }
 
-    function saveEditedUser() {
+    async function saveEditedUser() {
       if (!editingUserId) return;
       const u = registeredUsers.find(x => x.id === editingUserId || x.email === editingUserId);
       if (!u) return;
 
       const name = document.getElementById('edit-user-name').value.trim();
-      const email = document.getElementById('edit-user-email').value.trim();
       const phone = document.getElementById('edit-user-phone').value.trim();
       const cpf = document.getElementById('edit-user-cpf').value.trim();
       const rg = document.getElementById('edit-user-rg').value.trim();
       const birth = document.getElementById('edit-user-birth').value.trim();
-      const role = document.getElementById('edit-user-role').value;
+      const role = normalizeDatabaseRole(document.getElementById('edit-user-role').value);
       const company = document.getElementById('edit-user-company').value.trim();
       const sector = document.getElementById('edit-user-sector').value.trim();
 
-      if (!name || !email) {
-        showToast('Nome e E-mail são obrigatórios.');
+      if (!name) {
+        showToast('Nome é obrigatório.');
+        return;
+      }
+      if (!supabaseClient || navigator.onLine === false || !isUuidLike(u.id)) {
+        showToast('Sem conexão segura para salvar este usuário.');
         return;
       }
 
-      u.name = name;
-      u.email = email;
-      u.phone = phone;
-      u.cpf = cpf;
-      u.rg = rg;
-      u.birthDate = birth;
-      u.level = role;
-      u.role = role;
-      u.company = company;
-      u.sector = sector;
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({
+          full_name: name,
+          role,
+          phone: phone || null,
+          cpf: cpf || null,
+          rg: rg || null,
+          birth_date: birth || null,
+          company: company || null,
+          sector: sector || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', u.id);
 
-      // Sincroniza na Agenda Telefônica
-      const tm = teamMembersList.find(x => x.id === u.id || x.name === u.name);
-      if (tm) {
-        tm.name = name;
-        tm.phone = phone;
-        tm.cpf = cpf;
-        tm.rg = rg;
-        tm.role = role;
-        tm.company = company;
-        tm.sector = sector;
+      if (error) {
+        console.error('Falha ao salvar usuário:', error);
+        showToast('Não foi possível salvar as alterações no Supabase.');
+        await fetchAdminIAMData();
+        return;
       }
 
       closeEditUserModal();
-      showToast(`✓ Dados de ${u.name} atualizados com sucesso!`);
+      await fetchAdminIAMData();
+      showToast(`✓ Dados de ${name} atualizados e sincronizados.`);
       render();
     }
 
