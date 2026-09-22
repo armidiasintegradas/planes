@@ -11060,7 +11060,12 @@
     }
 
     async function askPlanesIntelligence(predefinedPrompt) {
-      const inputElem = document.getElementById('intelligence-custom-input');
+      const intelligenceInputs = Array.from(document.querySelectorAll('[data-intelligence-input="true"]'));
+      const inputElem = intelligenceInputs.find(el => {
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+      }) || intelligenceInputs[0] || null;
       const rawPromptText = predefinedPrompt || (inputElem ? inputElem.value : '');
       if (!rawPromptText || rawPromptText.trim() === '') return;
       const promptText = contextualizeIntelligencePrompt(rawPromptText);
@@ -13185,7 +13190,7 @@
 
           <div class="intelligence-compose p-2 bg-white/95 rounded-[18px] border border-slate-200 shadow-lg flex items-center gap-2">
             <input
-              id="intelligence-custom-input"
+              id="intelligence-custom-input-mobile" data-intelligence-input="true"
               type="text"
               placeholder="Pergunte, dite ou peça uma ação..."
               onkeydown="if(event.key === 'Enter'){ event.preventDefault(); askPlanesIntelligence(); }"
@@ -15713,7 +15718,7 @@
                       <div class="pt-3 border-t border-slate-200">
                         <form onsubmit="event.preventDefault(); askPlanesIntelligence();" class="flex items-center gap-2">
                           <input
-                            id="intelligence-custom-input"
+                            id="intelligence-custom-input-desktop" data-intelligence-input="true"
                             type="text"
                             placeholder="Digite uma pergunta técnica ou peça um diagnóstico (ex: 'Qual frente demanda mais atenção?')..."
                             class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#d4ff00]/60 focus:bg-white transition"
