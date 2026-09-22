@@ -620,6 +620,70 @@ async function evaluateSession(session) {
   renderProfileError(user, `Status de acesso desconhecido: ${profile.status}`);
 }
 
+async function resetPlanesRuntimeAfterSignOut() {
+  try {
+    localStorage.removeItem('planes_active_session');
+    localStorage.removeItem(PASSKEY_DISMISS_KEY);
+  } catch {}
+
+  const script = document.createElement('script');
+  script.setAttribute('data-planes-signout-reset', '1');
+  script.textContent = `
+    (() => {
+      try {
+        if (typeof currentUser !== 'undefined') currentUser = null;
+        if (typeof currentScreen !== 'undefined') currentScreen = 'login';
+        if (typeof selectedProjectId !== 'undefined') selectedProjectId = null;
+        if (typeof selectedProject !== 'undefined') selectedProject = null;
+        if (typeof activeNav !== 'undefined') activeNav = 'Visão Geral';
+        if (typeof render === 'function') render();
+      } catch (error) {
+        console.warn('Planes runtime reset warning:', error);
+      }
+    })();
+  `;
+  document.documentElement.appendChild(script);
+  script.remove();
+}
+
+function installSecureLogoutBridge() {
+  let attempts = 0;
+
+  const install = () => {
+    attempts += 1;
+    const legacyLogout = window.doLogout;
+
+    if (typeof legacyLogout !== 'function') {
+      if (attempts < 120) window.setTimeout(install, 50);
+      return;
+    }
+
+    if (legacyLogout.__planesSupabaseWrapped) return;
+
+    const wrappedLogout = async function(...args) {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.warn('Supabase signOut warning:', error);
+      } catch (error) {
+        console.warn('Supabase signOut failed:', error);
+      }
+
+      await resetPlanesRuntimeAfterSignOut();
+
+      try {
+        return await legacyLogout.apply(this, args);
+      } catch (error) {
+        console.warn('Legacy logout warning:', error);
+      }
+    };
+
+    wrappedLogout.__planesSupabaseWrapped = true;
+    window.doLogout = wrappedLogout;
+  };
+
+  install();
+}
+
 async function evaluateCurrentSession() {
   const { data: { session } } = await supabase.auth.getSession();
   await evaluateSession(session);
@@ -627,9 +691,17 @@ async function evaluateCurrentSession() {
 
 async function boot() {
   await loadCapabilities();
+  installSecureLogoutBridge();
   await evaluateCurrentSession();
-  supabase.auth.onAuthStateChange((_event, nextSession) => {
-    window.setTimeout(() => void evaluateSession(nextSession), 0);
+
+  supabase.auth.onAuthStateChange((event, nextSession) => {
+    window.setTimeout(() => {
+      if (event === 'SIGNED_OUT' || !nextSession?.user) {
+        void resetPlanesRuntimeAfterSignOut().finally(() => void evaluateSession(null));
+        return;
+      }
+      void evaluateSession(nextSession);
+    }, 0);
   });
 }
 
