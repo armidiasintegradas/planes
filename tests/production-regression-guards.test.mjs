@@ -28,7 +28,7 @@ test('production source keeps Supabase-first auth hardening', async () => {
   assert.match(html, /supabaseClient\.auth\.signOut\(\)/);
   assert.match(html, /fetchProfileForAuthUser/);
   assert.match(html, /persistSession:\s*true/);
-  assert.match(html, /detectSessionInUrl:\s*true/);
+  assert.match(html, /detectSessionInUrl:\s*false/);
 });
 
 
@@ -75,4 +75,14 @@ test('single-source auth runtime is preserved', async () => {
   assert.match(gate, /Authorization: \`Bearer \$\{accessToken\}\`/);
   assert.match(gate, /window\.applySupabaseAuthPayload/);
   assert.doesNotMatch(gate, /planes_pwa_auth_recovery_v1/);
+});
+
+
+test('auth gate avoids duplicate auth CDN and runtime callback handling', async () => {
+  const gate = await readFile(new URL('../public/auth-gate-live.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(gate, /esm\.sh\/\@supabase\/supabase-js/);
+  assert.match(gate, /window\.supabase\?\.createClient/);
+  assert.match(html, /detectSessionInUrl:\s*false/);
 });
