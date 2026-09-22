@@ -152,17 +152,33 @@ function hydratePlanesFromSupabase(user, profile) {
 }
 
 function allowApp(profile = null, user = null) {
+  let released = false;
+
+  const releaseApp = () => {
+    if (released) return;
+    released = true;
+    document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
+    document.getElementById(ROOT_ID)?.remove();
+    window.dispatchEvent(new CustomEvent('planes-auth-approved', {
+      detail: { user, profile }
+    }));
+
+    if (profile && ['super_admin', 'admin'].includes(profile.role)) {
+      void mountAdminAccessConsole(profile);
+    }
+  };
+
+  const onHydrated = () => releaseApp();
+  window.addEventListener('planes-auth-legacy-hydrated', onHydrated, { once: true });
+
+  blockApp();
   hydratePlanesFromSupabase(user, profile);
 
-  document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
-  document.getElementById(ROOT_ID)?.remove();
-  window.dispatchEvent(new CustomEvent('planes-auth-approved', {
-    detail: { user, profile }
-  }));
-
-  if (profile && ['super_admin', 'admin'].includes(profile.role)) {
-    void mountAdminAccessConsole(profile);
-  }
+  window.setTimeout(() => {
+    if (released) return;
+    window.removeEventListener('planes-auth-legacy-hydrated', onHydrated);
+    renderProfileError(user, 'A sessão foi validada, mas a interface não conseguiu concluir a inicialização. Recarregue a página.');
+  }, 6500);
 }
 
 async function mountAdminAccessConsole(profile) {
