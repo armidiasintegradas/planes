@@ -17,7 +17,7 @@ const supabase = window.__PLANES_SUPABASE_CLIENT__ || (createClient ? createClie
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
-    flowType: IS_STANDALONE_IOS ? 'implicit' : 'pkce',
+    flowType: 'implicit',
     experimental: { passkey: true },
   },
 }) : null);
@@ -786,68 +786,61 @@ async function waitForDocumentBody() {
 
 async function completeOAuthCallbackIfPresent() {
   const url = new URL(window.location.href);
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const hashError = hash.get('error') || hash.get('error_code');
+  const hashErrorDescription = hash.get('error_description');
+  const accessToken = hash.get('access_token');
+  const refreshToken = hash.get('refresh_token');
 
-  if (IS_STANDALONE_IOS) {
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const hashError = hash.get('error') || hash.get('error_code');
-    const hashErrorDescription = hash.get('error_description');
-    const accessToken = hash.get('access_token');
-    const refreshToken = hash.get('refresh_token');
+  // One callback path for Safari and installed PWA.
+  if (hashError) {
+    const node = renderShell(`
+      <h1>Não foi possível concluir o login Google</h1>
+      <p class="planes-auth-muted">O Google retornou uma falha de autenticação.</p>
+      <div class="planes-auth-status planes-auth-bad">${escapeHtml(hashErrorDescription || hashError)}</div>
+      <button class="planes-auth-btn secondary" data-return-login style="margin-top:14px">Voltar para o login</button>
+    `);
+    node.querySelector('[data-return-login]')?.addEventListener('click', () => {
+      window.history.replaceState({}, document.title, REDIRECT_TO);
+      window.location.replace(REDIRECT_TO);
+    });
+    blockApp();
+    return { handled: true, session: null, failed: true };
+  }
 
-    if (hashError) {
+  if (accessToken && refreshToken) {
+    blockApp();
+    renderShell(`
+      <h1>Concluindo seu acesso</h1>
+      <p class="planes-auth-muted">Sua conta Google foi validada. Estamos criando sua sessão segura no Planes OS.</p>
+      <div class="planes-auth-status planes-auth-good">Autenticação concluída. Carregando seu perfil…</div>
+    `);
+
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data?.session) {
       const node = renderShell(`
-        <h1>Não foi possível concluir o login Google</h1>
-        <p class="planes-auth-muted">O Google retornou uma falha de autenticação.</p>
-        <div class="planes-auth-status planes-auth-bad">${escapeHtml(hashErrorDescription || hashError)}</div>
-        <button class="planes-auth-btn secondary" data-return-login style="margin-top:14px">Voltar para o login</button>
+        <h1>Não foi possível concluir a sessão</h1>
+        <p class="planes-auth-muted">O Google autenticou sua conta, mas a sessão local não pôde ser gravada.</p>
+        <div class="planes-auth-status planes-auth-bad">${escapeHtml(error?.message || 'Sessão não criada.')}</div>
+        <button class="planes-auth-btn secondary" data-retry-google style="margin-top:14px">Tentar Google novamente</button>
       `);
-      node.querySelector('[data-return-login]')?.addEventListener('click', () => {
+      node.querySelector('[data-retry-google]')?.addEventListener('click', () => {
         window.history.replaceState({}, document.title, REDIRECT_TO);
         window.location.replace(REDIRECT_TO);
       });
-      blockApp();
       return { handled: true, session: null, failed: true };
     }
 
-    if (accessToken && refreshToken) {
-      blockApp();
-      renderShell(`
-        <h1>Concluindo seu acesso</h1>
-        <p class="planes-auth-muted">Sua conta Google foi validada. Estamos criando sua sessão segura no Planes OS.</p>
-        <div class="planes-auth-status planes-auth-good">Autenticação concluída. Carregando seu perfil…</div>
-      `);
-
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
-      if (error || !data?.session) {
-        const node = renderShell(`
-          <h1>Não foi possível concluir a sessão</h1>
-          <p class="planes-auth-muted">O Google autenticou sua conta, mas a sessão local não pôde ser gravada.</p>
-          <div class="planes-auth-status planes-auth-bad">${escapeHtml(error?.message || 'Sessão não criada.')}</div>
-          <button class="planes-auth-btn secondary" data-retry-google style="margin-top:14px">Tentar Google novamente</button>
-        `);
-        node.querySelector('[data-retry-google]')?.addEventListener('click', () => {
-          window.history.replaceState({}, document.title, REDIRECT_TO);
-          window.location.replace(REDIRECT_TO);
-        });
-        return { handled: true, session: null, failed: true };
-      }
-
-      window.history.replaceState({}, document.title, REDIRECT_TO);
-      return { handled: true, session: data.session, failed: false };
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      return { handled: true, session, failed: false };
-    }
-
-    return { handled: false, session: null, failed: false };
+    // Remove tokens from the visible URL only after the session is persisted.
+    window.history.replaceState({}, document.title, REDIRECT_TO);
+    return { handled: true, session: data.session, failed: false };
   }
 
+  // Backward compatibility for an old PKCE callback already in flight.
   const code = url.searchParams.get('code');
   const oauthError = url.searchParams.get('error');
   const oauthErrorDescription = url.searchParams.get('error_description');
@@ -860,47 +853,49 @@ async function completeOAuthCallbackIfPresent() {
       <button class="planes-auth-btn secondary" data-return-login style="margin-top:14px">Voltar para o login</button>
     `);
     node.querySelector('[data-return-login]')?.addEventListener('click', () => {
-      url.search = '';
-      window.location.replace(url.toString());
+      window.history.replaceState({}, document.title, REDIRECT_TO);
+      window.location.replace(REDIRECT_TO);
     });
     blockApp();
     return { handled: true, session: null, failed: true };
   }
 
-  if (!code) return { handled: false, session: null, failed: false };
+  if (code) {
+    blockApp();
+    const node = renderShell(`
+      <h1>Atualizando seu login</h1>
+      <p class="planes-auth-muted">Detectamos um retorno de autenticação antigo. Vamos concluir ou renovar o acesso.</p>
+      <div class="planes-auth-status planes-auth-good">Processando…</div>
+    `);
 
-  blockApp();
-  const node = renderShell(`
-    <h1>Concluindo seu acesso</h1>
-    <p class="planes-auth-muted">Sua conta Google foi validada. Estamos criando sua sessão segura no Planes OS.</p>
-    <div class="planes-auth-status planes-auth-good">Isso deve levar apenas alguns segundos.</div>
-  `);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data?.session) {
+      window.history.replaceState({}, document.title, REDIRECT_TO);
+      return { handled: true, session: data.session, failed: false };
+    }
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-  if (error || !data?.session) {
+    // Old PKCE state may be unavailable in iOS. Do not loop on the stale code.
     node.innerHTML = `
-      <section class="planes-auth-card">
+      <main class="planes-auth-card">
         <div class="planes-auth-brand">PLANES OS</div>
-        <div class="planes-auth-subtitle">Ambiente seguro de gestão operacional</div>
-        <h1>Não foi possível concluir a sessão</h1>
-        <p class="planes-auth-muted">O Google autenticou sua conta, mas o retorno seguro não foi concluído.</p>
-        <div class="planes-auth-status planes-auth-bad">${escapeHtml(error?.message || 'Sessão não criada.')}</div>
-        <button class="planes-auth-btn secondary" data-retry-google style="margin-top:14px">Tentar Google novamente</button>
-      </section>`;
-    node.querySelector('[data-retry-google]')?.addEventListener('click', () => {
-      url.search = '';
-      window.location.replace(url.toString());
+        <p class="planes-auth-muted" style="font-size:12px;margin:5px 0 22px">Ambiente seguro de gestão operacional</p>
+        <h1>Atualize seu acesso Google</h1>
+        <p class="planes-auth-muted">O retorno anterior usava um fluxo antigo. O PLANES já foi atualizado para um fluxo compatível com iPhone e PWA.</p>
+        <button class="planes-auth-btn" data-new-google style="margin-top:14px">Entrar novamente com Google</button>
+      </main>`;
+    node.querySelector('[data-new-google]')?.addEventListener('click', () => {
+      window.history.replaceState({}, document.title, REDIRECT_TO);
+      window.location.replace(REDIRECT_TO);
     });
     return { handled: true, session: null, failed: true };
   }
 
-  for (const key of ['code','state','error','error_description','error_code']) {
-    url.searchParams.delete(key);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    return { handled: true, session, failed: false };
   }
-  window.history.replaceState({}, document.title, url.toString());
 
-  return { handled: true, session: data.session, failed: false };
+  return { handled: false, session: null, failed: false };
 }
 
 async function evaluateSessionSerialized(session, reason = 'unknown') {
