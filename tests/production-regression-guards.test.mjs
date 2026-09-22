@@ -71,7 +71,7 @@ test('single-source auth runtime is preserved', async () => {
   assert.match(html, /externalAuthOwnsSession/);
   assert.match(html, /__PLANES_EXTERNAL_AUTH_OWNER__/);
 
-  assert.match(gate, /flowType:\s*IS_STANDALONE_IOS\s*\?\s*'implicit'\s*:\s*'pkce'/);
+  assert.match(gate, /flowType:\s*'implicit'/);
   assert.match(gate, /__PLANES_EXTERNAL_AUTH_OWNER__/);
   assert.match(gate, /supabase\.auth\.setSession/);
   assert.match(gate, /hash\.get\('access_token'\)/);
