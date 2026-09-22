@@ -521,7 +521,7 @@
   if ('caches' in window) {
     caches.keys().then(keys => {
       keys.forEach(k => {
-        if (k !== 'planes-os-v9') caches.delete(k);
+        if (k !== 'planes-os-v10') caches.delete(k);
       });
     });
   }
@@ -531,7 +531,7 @@
       navigator.serviceWorker.getRegistrations().then(regs => {
         for (let r of regs) r.update();
       });
-      navigator.serviceWorker.register('./sw.js?v=4').then(reg => {
+      navigator.serviceWorker.register('./sw.js?v=10').then(reg => {
         reg.update();
       }).catch(() => {});
     });
@@ -2851,6 +2851,27 @@
         scheduleOperationalReconnect();
       }
     });
+
+    let planesViewportSyncTimer = null;
+    function stabilizePlanesViewport() {
+      if (planesViewportSyncTimer) clearTimeout(planesViewportSyncTimer);
+      planesViewportSyncTimer = setTimeout(() => {
+        planesViewportSyncTimer = null;
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+        if (isDesktop) {
+          isProjectSwitcherOpen = false;
+          isMoreSheetOpen = false;
+          const drawer = document.getElementById('mobile-drawer');
+          if (drawer) drawer.classList.add('hidden');
+        }
+        const profileModal = document.getElementById('edit-profile-modal');
+        if (profileModal) profileModal.style.maxWidth = '100vw';
+        try { render(); } catch (e) {}
+      }, 120);
+    }
+
+    window.addEventListener('resize', stabilizePlanesViewport, { passive: true });
+    window.addEventListener('orientationchange', stabilizePlanesViewport, { passive: true });
 
     async function refreshPlanesAfterResume() {
       if (!supabaseClient || navigator.onLine === false || !currentUser) return;
@@ -5767,6 +5788,22 @@
 
 
     // --- GESTÃO DE PERFIL DO USUÁRIO CONECTADO ---
+    function getSafeCurrentUserInitials(user = currentUser) {
+      const raw = String(user?.avatar || '').trim();
+      if (raw && !/^(https?:\/\/|data:image\/)/i.test(raw) && /^[A-Za-zÀ-ÿ0-9]{1,3}$/.test(raw)) {
+        return raw.toUpperCase();
+      }
+      const source = String(user?.name || user?.email || 'US').trim();
+      const initials = source
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(part => part[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+      return initials || 'US';
+    }
+
     function openEditProfileModal() {
       if (!currentUser) return;
       const u = currentUser;
@@ -11242,7 +11279,7 @@
               class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-black text-xs cursor-pointer ios-press-action shadow-2xs border border-white/20"
               title="Meu Perfil"
             >
-              ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+              ${getSafeCurrentUserInitials()}
             </div>
           </div>
         </header>
@@ -14318,7 +14355,7 @@
                 <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
                   <div onclick="openEditProfileModal()" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition group" title="Editar Meu Perfil">
                     <div class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-extrabold text-xs group-hover:scale-105 transition">
-                      ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+                      ${getSafeCurrentUserInitials()}
                     </div>
                     <div class="text-left hidden md:block">
                       <strong class="text-xs font-bold text-slate-900 block leading-tight group-hover:text-blue-950">${currentUser ? currentUser.name : 'Alex Ribeiro'}</strong>
@@ -14602,7 +14639,7 @@
                 <!-- User Profile & Quick Edit -->
                 <div class="flex items-center pl-2 xl:pl-3 border-l border-slate-200">
                   <div onclick="openEditProfileModal()" class="w-8 h-8 rounded-full bg-[#0b2535] text-white flex items-center justify-center font-extrabold text-xs cursor-pointer hover:ring-2 hover:ring-[#d4ff00] transition" title="Editar Meu Perfil">
-                    ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+                    ${getSafeCurrentUserInitials()}
                   </div>
                 </div>
               </div>
@@ -14646,7 +14683,7 @@
                   <div class="p-3 bg-slate-50 hover:bg-slate-100/90 rounded-[16px] border border-slate-200 flex items-center justify-between gap-2 shadow-2xs transition group">
                     <div onclick="openEditProfileModal()" class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" title="Clique para Editar seu Perfil">
                       <div class="w-8 h-8 rounded-[10px] bg-[#0b2535] text-white font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:scale-105 transition">
-                        ${currentUser ? (currentUser.avatar || 'AR') : 'AR'}
+                        ${getSafeCurrentUserInitials()}
                       </div>
                       <div class="truncate">
                         <strong class="text-xs font-bold text-slate-950 block leading-tight truncate group-hover:text-blue-950">${currentUser ? currentUser.name : 'Alex Ribeiro'}</strong>
