@@ -4992,51 +4992,31 @@
       const input = document.getElementById('mobile-campo-qtd');
       const finalQtd = input ? (parseInt(input.value) || campoQtd) : campoQtd;
 
-      const newValidItem = {
+      const validationRecord = {
         id: Date.now(),
-        frente: campoFrente,
-        activity: campoAtividade,
-        volume: finalQtd + ' m³ / un',
-        author: currentUser ? currentUser.name : 'Usuário',
-        time: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        photo: campoPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
+        resp: currentUser ? currentUser.name : 'Usuário',
+        cargo: 'Campo',
+        front: campoFrente,
+        item: campoAtividade,
+        qtd: finalQtd + ' m³ / un',
+        data: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         gps: 'Verificado (-9.0912, -35.2481)',
         status: 'Pendente'
       };
 
-      if (Array.isArray(window.pendingValidationsList)) window.pendingValidationsList.unshift(newValidItem);
-      else window.pendingValidationsList = [newValidItem];
-
-      campoPhoto = null;
-      campoQtd = 10;
-
-      const validationRecord = {
-        id: newValidItem.id,
-        resp: newValidItem.author,
-        cargo: 'Campo',
-        front: newValidItem.frente,
-        item: newValidItem.activity,
-        qtd: newValidItem.volume,
-        data: newValidItem.time,
-        gps: newValidItem.gps,
-        status: 'Pendente'
-      };
-
-      render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
-      if (synced) {
+      if (!synced) {
         await refreshIntelligenceOperationalData();
-        setMobileTab('validar');
-        showToast('✓ Apontamento enviado e confirmado no Supabase.');
+        render();
+        showToast('Falha ao salvar o apontamento. Nada foi adicionado localmente.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled && Array.isArray(window.pendingValidationsList)) {
-        window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry !== newValidItem);
-      }
-      render();
-      showToast('Falha ao salvar o apontamento. O registro provisório foi removido.');
+      campoPhoto = null;
+      campoQtd = 10;
+      await refreshIntelligenceOperationalData();
+      setMobileTab('validar');
+      showToast('✓ Apontamento enviado e confirmado no Supabase.');
     }
 
     async function approveMobileValidation(id) {
@@ -5047,9 +5027,6 @@
         showToast('Medição não encontrada na fila atual.');
         return;
       }
-
-      window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
-      render();
 
       const validationRecord = {
         id: item.id,
@@ -5064,17 +5041,16 @@
       };
 
       const ok = await persistValidationStatus(validationRecord, 'Aprovado');
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast('✓ Medição de campo aprovada e sincronizada.');
+        showToast('Falha ao aprovar a medição. Nada foi removido localmente.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) window.pendingValidationsList.unshift(item);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao aprovar a medição. A fila foi restaurada ao último estado confirmado.');
+      showToast('✓ Medição de campo aprovada e sincronizada.');
     }
 
     async function rejectMobileValidation(id) {
@@ -5085,9 +5061,6 @@
         showToast('Medição não encontrada na fila atual.');
         return;
       }
-
-      window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry.id !== id);
-      render();
 
       const validationRecord = {
         id: item.id,
@@ -5102,17 +5075,16 @@
       };
 
       const ok = await persistValidationStatus(validationRecord, 'Rejeitado');
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast('⚠️ Medição devolvida e sincronizada.');
+        showToast('Falha ao devolver a medição. Nada foi removido localmente.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) window.pendingValidationsList.unshift(item);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao devolver a medição. A fila foi restaurada.');
+      showToast('⚠️ Medição devolvida e sincronizada.');
     }
 
     // ESTADO E CONTROLE DA APRESENTAÇÃO DE SLIDES 16:9 (SEM PERDER FULLSCREEN)
@@ -12159,45 +12131,29 @@
       const amount = (document.getElementById('mobile-field-amount') ? document.getElementById('mobile-field-amount').value : '15');
       const unit = (document.getElementById('mobile-field-unit') ? document.getElementById('mobile-field-unit').value : 'm³');
 
-      const newLog = {
-        id: Date.now(),
-        frente: front,
-        activity: act,
-        volume: `${amount} ${unit}`,
-        author: currentUser ? currentUser.name : 'Engenheiro de Campo',
-        time: 'Agora mesmo',
-        photo: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
-        gps: 'Verificado (-9.0912, -35.2481)'
-      };
-
-      if (!window.pendingValidationsList) window.pendingValidationsList = [];
-      window.pendingValidationsList.unshift(newLog);
-
       const validationRecord = {
-        id: newLog.id,
-        resp: newLog.author,
+        id: Date.now(),
+        resp: currentUser ? currentUser.name : 'Engenheiro de Campo',
         cargo: 'Campo',
-        front: newLog.frente,
-        item: newLog.activity,
-        qtd: newLog.volume,
-        data: newLog.time,
-        gps: newLog.gps,
+        front,
+        item: act,
+        qtd: `${amount} ${unit}`,
+        data: 'Agora mesmo',
+        gps: 'Verificado (-9.0912, -35.2481)',
         status: 'Pendente'
       };
 
-      render();
       const synced = await persistValidationStatus(validationRecord, 'Pendente');
-      if (synced) {
+      if (!synced) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`⚡ Apontamento de ${amount} ${unit} registrado e confirmado.`);
+        showToast('Falha ao registrar o apontamento. Nada foi adicionado localmente.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) window.pendingValidationsList = window.pendingValidationsList.filter(entry => entry !== newLog);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao registrar o apontamento. O item provisório foi removido.');
+      showToast(`⚡ Apontamento de ${amount} ${unit} registrado e confirmado.`);
     }
 
     function renderMobileCampoView(selectedProject) {
