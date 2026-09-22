@@ -9,6 +9,7 @@ on:
       - public/auth-gate-live.js
       - public/email-lifecycle-kick-live.js
       - public/legacy-auth-sanitizer-live.js
+      - index.html
       - sw.js
       - .github/workflows/publish-live-auth.yml
   workflow_dispatch:
@@ -61,6 +62,33 @@ jobs:
           cp source/public/legacy-auth-sanitizer-live.js site/legacy-auth-sanitizer-live.js
           cp source/sw.js site/sw.js
 
+      - name: Sync native auth runtime hydrator
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('source/index.html')
+          site_path = Path('site/index.html')
+          source = source_path.read_text(encoding='utf-8')
+          site = site_path.read_text(encoding='utf-8')
+
+          start_marker = "window.applySupabaseAuthPayload = function applySupabaseAuthPayload"
+          end_marker = "window.addEventListener('planes-auth-payload-ready'"
+
+          source_start = source.find(start_marker)
+          source_end = source.find(end_marker, source_start)
+          site_start = site.find(start_marker)
+          site_end = site.find(end_marker, site_start)
+
+          if min(source_start, source_end, site_start, site_end) < 0:
+              raise SystemExit('Could not locate native auth hydrator boundaries')
+
+          hydrated_block = source[source_start:source_end]
+          site = site[:site_start] + hydrated_block + site[site_end:]
+          site_path.write_text(site, encoding='utf-8')
+          PY
+
       - name: Verify published shell contract
         run: |
           set -euo pipefail
@@ -87,7 +115,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add auth-gate-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
+          git add index.html auth-gate-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
           if git diff --cached --quiet; then
             echo "No live auth changes to publish."
             exit 0
