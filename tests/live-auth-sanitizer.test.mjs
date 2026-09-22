@@ -22,10 +22,12 @@ test('live site neutralizes only obsolete authentication dialogs', async () => {
   assert.doesNotMatch(sanitizer, /document\.body\.innerHTML\s*=/);
 });
 
-test('live publisher ships the legacy auth sanitizer without replacing the desktop artifact', async () => {
+test('live publisher ships the sanitizer without rewriting the desktop artifact', async () => {
   const publisher = await readFile(new URL('../.github/workflows/publish-live-auth.yml', import.meta.url), 'utf8');
   assert.match(publisher, /legacy-auth-sanitizer-live\.js/);
-  assert.match(publisher, /Copy production auth modules/);
-  assert.match(publisher, /site\/index\.html/);
+  assert.match(publisher, /Update live auth artifacts/);
+  assert.match(publisher, /Checkout published site/);
+  assert.doesNotMatch(publisher, /site\/index\.html\s*=/);
+  assert.doesNotMatch(publisher, /python3/);
   assert.doesNotMatch(publisher, /cp\s+-r\s+source\/dist/);
 });
