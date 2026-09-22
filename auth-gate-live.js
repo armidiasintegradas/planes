@@ -5,6 +5,7 @@ const createClient = window.supabase?.createClient?.bind(window.supabase) || nul
 const SUPABASE_URL = 'https://xfgcbxppsbwmxwsuajou.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
 const REDIRECT_TO = 'https://armidiasintegradas.github.io/planes/';
+// OAuth policy: one implicit flow across Safari and installed PWA.
 const IS_STANDALONE_IOS =
   window.navigator.standalone === true ||
   window.matchMedia?.('(display-mode: standalone)')?.matches === true;
