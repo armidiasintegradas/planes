@@ -1,4 +1,5 @@
 name: Publish Planes live auth
+# Consolidated single-owner auth publisher.
 
 on:
   push:
