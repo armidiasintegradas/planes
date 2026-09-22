@@ -30,14 +30,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL --retry 3 --retry-delay 2 https://armidiasintegradas.github.io/planes/ -o /tmp/planes-index.html
-          curl -fsSL --retry 3 --retry-delay 2 https://armidiasintegradas.github.io/planes/auth-gate-live.js -o /tmp/planes-auth-gate.js
+          curl -fsSL --retry 3 --retry-delay 2 "https://armidiasintegradas.github.io/planes/?ci=${GITHUB_SHA}" -o /tmp/planes-index.html
+          curl -fsSL --retry 3 --retry-delay 2 "https://armidiasintegradas.github.io/planes/auth-gate-live.js?ci=${GITHUB_SHA}" -o /tmp/planes-auth-gate.js
+          curl -fsSL --retry 3 --retry-delay 2 "https://armidiasintegradas.github.io/planes/sw.js?ci=${GITHUB_SHA}" -o /tmp/planes-sw.js
           grep -q "Planes" /tmp/planes-index.html
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
           grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
           grep -q "planes-auth-payload-ready" /tmp/planes-auth-gate.js
           grep -q "applySupabaseAuthPayload" /tmp/planes-index.html
           grep -q "__PLANES_AUTH_INTERNAL_APPLIED__" /tmp/planes-index.html
+          grep -q "__PLANES_AUTH_APPLIED_USER_ID__" /tmp/planes-index.html
+          ! grep -q "auth-runtime-bridge-live.js" /tmp/planes-index.html
+          grep -q "planes-os-v14" /tmp/planes-sw.js
           matched=0
           for attempt in 1 2 3 4 5 6; do
             curl -fsSL --retry 2 --retry-delay 1 "https://armidiasintegradas.github.io/planes/auth-gate-live.js?parity=$attempt" -o /tmp/planes-auth-gate.js
@@ -62,10 +66,12 @@ jobs:
               --virtual-time-budget=15000 \
               --window-size="$size" \
               --dump-dom \
-              https://armidiasintegradas.github.io/planes/ > "/tmp/planes-$size.html"
-            grep -q 'id="planes-auth-root"' "/tmp/planes-$size.html"
-            grep -q 'planes-auth-card' "/tmp/planes-$size.html"
-            grep -q 'PLANES OS' "/tmp/planes-$size.html"
+              "https://armidiasintegradas.github.io/planes/?ci=${GITHUB_SHA}&viewport=$size" > "/tmp/planes-$size.html"
+            if ! grep -q 'id="planes-auth-root"' "/tmp/planes-$size.html" ||                ! grep -q 'planes-auth-card' "/tmp/planes-$size.html" ||                ! grep -q 'PLANES OS' "/tmp/planes-$size.html"; then
+              echo "Headless auth gate failed for viewport $size"
+              grep -Eo '<h1[^>]*>[^<]*|planes-auth-[a-z-]+' "/tmp/planes-$size.html" | head -40 || true
+              exit 1
+            fi
           done
 
       - name: Run regression tests
