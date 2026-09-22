@@ -129,11 +129,34 @@ function hydratePlanesFromSupabase(user, profile) {
           } catch {}
 
           if (savedUiState?.selectedProjectId && typeof selectedProjectId !== 'undefined') {
-            selectedProjectId = savedUiState.selectedProjectId;
-            if (typeof projectsList !== 'undefined' && Array.isArray(projectsList) && typeof selectedProject !== 'undefined') {
-              const restoredProject = projectsList.find((project) => project.id === selectedProjectId);
-              if (restoredProject) selectedProject = restoredProject;
-            }
+            const desiredProjectId = savedUiState.selectedProjectId;
+            selectedProjectId = desiredProjectId;
+
+            const restoreDesiredProject = (attempt = 0) => {
+              try {
+                if (typeof projectsList === 'undefined' || !Array.isArray(projectsList) || typeof selectedProject === 'undefined') {
+                  if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
+                  return;
+                }
+
+                const restoredProject = projectsList.find((project) => project.id === desiredProjectId);
+                if (restoredProject) {
+                  selectedProjectId = desiredProjectId;
+                  selectedProject = restoredProject;
+                  if (typeof operationalProjectIdCache !== 'undefined') {
+                    operationalProjectIdCache = restoredProject.cloudId || null;
+                  }
+                  if (typeof render === 'function') render();
+                  return;
+                }
+
+                if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
+              } catch (error) {
+                if (attempt < 60) window.setTimeout(() => restoreDesiredProject(attempt + 1), 100);
+              }
+            };
+
+            restoreDesiredProject();
           }
 
           if (savedUiState?.activeNav && typeof activeNav !== 'undefined') {
