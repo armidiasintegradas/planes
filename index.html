@@ -7382,9 +7382,10 @@
     function saveSessionState() {
       try {
         if (currentUser && currentScreen !== 'login') {
+          const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
           localStorage.setItem('planes_active_session', JSON.stringify({
-            user: currentUser,
-            accessLevel: accessLevel,
+            user: localDev ? currentUser : null,
+            accessLevel: localDev ? accessLevel : null,
             currentScreen: currentScreen,
             activeNav: activeNav,
             selectedProjectId: selectedProjectId
@@ -7396,6 +7397,11 @@
     }
 
     function quickAdminLogin() {
+      const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!localDev) {
+        showToast('Acesso administrativo rápido está desativado em produção.');
+        return;
+      }
       const adminUser = registeredUsers.find(u => u.email.toLowerCase() === 'armidiasintegradas@gmail.com');
       currentUser = adminUser || {
         id: 'admin-alex',
@@ -7425,22 +7431,33 @@
           currentScreen = 'login';
           return;
         }
-        if (saved) {
-          const data = JSON.parse(saved);
-          if (data && data.user) {
-            currentUser = data.user;
-            accessLevel = data.accessLevel || data.user.level || 'Admin';
-            currentScreen = (data.currentScreen && data.currentScreen !== 'login') ? data.currentScreen : 'dashboard';
-            activeNav = data.activeNav || 'Visão Geral';
-            if (data.selectedProjectId) {
-              selectedProjectId = data.selectedProjectId;
-              const p = projectsList.find(x => x.id === selectedProjectId);
-              if (p) selectedProject = p;
-            }
-            return;
-          }
+        if (!saved) return;
+
+        const data = JSON.parse(saved);
+        if (!data) return;
+
+        if (data.activeNav) activeNav = data.activeNav;
+        if (data.selectedProjectId) {
+          selectedProjectId = data.selectedProjectId;
+          const p = projectsList.find(x => x.id === selectedProjectId);
+          if (p) selectedProject = p;
         }
-      } catch (e) {}
+
+        const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (localDev && data.user) {
+          currentUser = data.user;
+          accessLevel = data.accessLevel || data.user.level || 'Admin';
+          currentScreen = (data.currentScreen && data.currentScreen !== 'login') ? data.currentScreen : 'dashboard';
+          return;
+        }
+
+        // Produção: identidade e autorização sempre vêm da sessão real do Supabase.
+        currentUser = null;
+        currentScreen = 'login';
+      } catch (e) {
+        currentUser = null;
+        currentScreen = 'login';
+      }
     }
 
     // --- CRUD DE QUADRO DE PESSOAL & CONTATOS RÁPIDOS (ADMIN) ---
