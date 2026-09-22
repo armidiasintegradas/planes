@@ -7872,6 +7872,54 @@
       showToast(`✓ Projeto "${project.title}" arquivado e sincronizado.`);
     }
 
+    async function handleInlineProjectSubmit() {
+      const title = (document.getElementById('view-proj-title') ? document.getElementById('view-proj-title').value : '').trim();
+      const client = (document.getElementById('view-proj-client') ? document.getElementById('view-proj-client').value : '').trim() || 'Cliente Corporativo';
+      const location = (document.getElementById('view-proj-loc') ? document.getElementById('view-proj-loc').value : '').trim() || 'Maceió, AL';
+      const budget = (document.getElementById('view-proj-budget') ? document.getElementById('view-proj-budget').value : '').trim() || 'R$ 20,0M';
+      const deadline = (document.getElementById('view-proj-deadline') ? document.getElementById('view-proj-deadline').value : '').trim() || 'Dezembro 2027';
+      const takt = (document.getElementById('view-proj-takt') ? document.getElementById('view-proj-takt').value : '').trim() || '1 Pav / 7 dias';
+      const description = (document.getElementById('view-proj-desc') ? document.getElementById('view-proj-desc').value : '').trim() || 'Empreendimento integrado ao Planes OS.';
+
+      if (!title) {
+        showToast('Informe o nome do projeto.');
+        return;
+      }
+
+      const created = await createProjectInSupabase({
+        title,
+        client,
+        location,
+        status: 'Em Execução',
+        progress: 0,
+        targetProgress: 5,
+        budget,
+        deadline,
+        takt,
+        workers: 28,
+        spreadsheetsCount: 1,
+        description
+      });
+
+      if (!created) {
+        showToast('Não foi possível cadastrar o empreendimento no Supabase.');
+        return;
+      }
+
+      await hydrateProjectsFromSupabase();
+      const project = projectsList.find(p => p.cloudId === created.cloudId || p.id === created.code);
+      if (project) {
+        selectedProject = project;
+        if (typeof selectedProjectId !== 'undefined') selectedProjectId = project.id;
+        operationalProjectIdCache = project.cloudId;
+      }
+      currentScreen = 'dashboard';
+      activeNav = 'Visão Geral';
+      saveSessionState();
+      render();
+      showToast('✓ Novo empreendimento cadastrado e sincronizado.');
+    }
+
 
     function handleExcelUpload(event) {
       const file = event.target.files[0];
@@ -18116,48 +18164,8 @@ ${activeNav === 'Equipe & Contatos' ? `
                         <div class="pt-2">
                           <button
                             type="button"
-                            onclick="
-                              const t = (document.getElementById('view-proj-title') ? document.getElementById('view-proj-title').value : '').trim();
-                              const c = (document.getElementById('view-proj-client') ? document.getElementById('view-proj-client').value : '').trim() || 'Cliente Corporativo';
-                              const l = (document.getElementById('view-proj-loc') ? document.getElementById('view-proj-loc').value : '').trim() || 'Maceió, AL';
-                              const b = (document.getElementById('view-proj-budget') ? document.getElementById('view-proj-budget').value : '').trim() || 'R$ 20,0M';
-                              const d = (document.getElementById('view-proj-deadline') ? document.getElementById('view-proj-deadline').value : '').trim() || 'Dezembro 2027';
-                              const tk = (document.getElementById('view-proj-takt') ? document.getElementById('view-proj-takt').value : '').trim() || '1 Pav / 7 dias';
-                              const ds = (document.getElementById('view-proj-desc') ? document.getElementById('view-proj-desc').value : '').trim() || 'Empreendimento integrado ao Planes OS.';
+                            onclick="handleInlineProjectSubmit()"
 
-                              if (!t) {
-                                showToast('Informe o nome do projeto.');
-                                return;
-                              }
-
-                              const np = {
-                                id: 'proj-' + Date.now(),
-                                title: t,
-                                client: c,
-                                location: l,
-                                status: 'Em Execução',
-                                progress: 0,
-                                targetProgress: 5.0,
-                                spent: 'R$ 0,0M',
-                                budget: b,
-                                deadline: d,
-                                takt: tk,
-                                workers: 28,
-                                spreadsheetsCount: 1,
-                                badgeColor: 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold',
-                                description: ds
-                              };
-
-                              projectsList.unshift(np);
-                              saveProjectsStorage();
-                              selectedProject = np;
-                              showToast('✓ Novo empreendimento cadastrado com sucesso!');
-                              setTimeout(() => {
-                                currentScreen = 'dashboard';
-                                activeNav = 'Visão Geral';
-                                render();
-                              }, 400);
-                            "
                             class="w-full py-3.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[14px] transition border border-slate-300 shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                           >
                             ${getSvg('plus', 'w-4 h-4 text-slate-950')}
