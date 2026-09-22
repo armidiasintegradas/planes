@@ -2534,7 +2534,7 @@
             .order('created_at', { ascending: false }),
           supabaseClient
             .from('access_requests')
-            .select('id, user_id, status, requested_at, reviewed_at, rejection_reason, admin_notes')
+            .select('id, user_id, status, requested_at, reviewed_at, rejection_reason, admin_notes, requested_role, provider, reason')
             .order('requested_at', { ascending: false }),
           currentUser?.id
             ? supabaseClient
@@ -2579,11 +2579,11 @@
               auth_user_id: r.user_id,
               name: pr.full_name || (pr.email ? pr.email.split('@')[0] : 'Novo Colaborador'),
               email: pr.email || '',
-              requestedLevel: pr.role || 'engenharia',
-              role: pr.role || 'engenharia',
-              provider: 'Supabase Auth',
+              requestedLevel: r.requested_role || pr.role || 'engenharia',
+              role: r.requested_role || pr.role || 'engenharia',
+              provider: r.provider || 'Supabase Auth',
               status: 'Pendente',
-              reason: r.admin_notes || '',
+              reason: r.reason || r.admin_notes || '',
               created_at: r.requested_at,
               requestDate: r.requested_at ? new Date(r.requested_at).toLocaleDateString('pt-BR') : ''
             };
@@ -4517,7 +4517,7 @@
               name: profile.full_name || authUser.email.split('@')[0],
               email: profile.email,
               provider: 'Email',
-              requestedLevel: profile.role,
+              requestedLevel: profile.role || authUser.user_metadata?.requested_role || 'engenharia',
               date: new Date(profile.created_at).toLocaleDateString('pt-BR')
             };
             showPendingStatusModal(currentPendingModalUser);
