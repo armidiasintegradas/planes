@@ -197,38 +197,38 @@ jobs:
               re.S,
           )
 
-          guarded_auth_listener = '''    if (typeof window !== 'undefined') {
-      window.addEventListener('load', () => {
-        const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;
-
-        if (supabaseClient && !externalAuthOwnsSession) {
-          checkActiveSupabaseSession();
-          supabaseClient.auth.onAuthStateChange((event, session) => {
-            console.log('Supabase Auth state change:', event);
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              void checkActiveSupabaseSession();
-            } else if (event === 'SIGNED_OUT') {
-              currentUser = null;
-              currentScreen = 'login';
-              render();
-            }
-          });
-        } else if (supabaseClient && externalAuthOwnsSession) {
-          console.log('✓ Autenticação controlada exclusivamente pelo gate ao vivo.');
-        }
-
-        try {
-          const params = new URLSearchParams(window.location.search);
-          if (!externalAuthOwnsSession) {
-            if (params.get('test') === 'google') {
-              handleSocialLogin('Google');
-            } else if (params.get('test') === 'apple') {
-              handleSocialLogin('Apple');
-            }
-          }
-        } catch (e) {}
-      });
-    }'''
+          guarded_auth_listener = (
+              "    if (typeof window !== 'undefined') {\n"
+              "      window.addEventListener('load', () => {\n"
+              "        const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;\n\n"
+              "        if (supabaseClient && !externalAuthOwnsSession) {\n"
+              "          checkActiveSupabaseSession();\n"
+              "          supabaseClient.auth.onAuthStateChange((event, session) => {\n"
+              "            console.log('Supabase Auth state change:', event);\n"
+              "            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {\n"
+              "              void checkActiveSupabaseSession();\n"
+              "            } else if (event === 'SIGNED_OUT') {\n"
+              "              currentUser = null;\n"
+              "              currentScreen = 'login';\n"
+              "              render();\n"
+              "            }\n"
+              "          });\n"
+              "        } else if (supabaseClient && externalAuthOwnsSession) {\n"
+              "          console.log('✓ Autenticação controlada exclusivamente pelo gate ao vivo.');\n"
+              "        }\n\n"
+              "        try {\n"
+              "          const params = new URLSearchParams(window.location.search);\n"
+              "          if (!externalAuthOwnsSession) {\n"
+              "            if (params.get('test') === 'google') {\n"
+              "              handleSocialLogin('Google');\n"
+              "            } else if (params.get('test') === 'apple') {\n"
+              "              handleSocialLogin('Apple');\n"
+              "            }\n"
+              "          }\n"
+              "        } catch (e) {}\n"
+              "      });\n"
+              "    }"
+          )
 
           if "const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;" not in html:
               html, legacy_auth_replacements = legacy_auth_listener.subn(
