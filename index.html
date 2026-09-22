@@ -2848,8 +2848,10 @@
 
           void fetchAdminIAMData();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_notifications' }, (payload) => {
-          fetchAdminIAMData();
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+          if (!currentUser || !payload?.new?.user_id || payload.new.user_id === currentUser.id) {
+            void fetchAdminIAMData();
+          }
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
