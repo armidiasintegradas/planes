@@ -2704,6 +2704,27 @@
     fetchAdminIAMData();
     setupRealtimeSubscriptions();
 
+    window.addEventListener('offline', () => {
+      realtimeStatus = 'Offline';
+      setOperationalRealtimeStatus('Offline');
+      try { render(); } catch (e) {}
+      try { showToast('Sem conexão. Alterações operacionais ficam pausadas até reconectar.'); } catch (e) {}
+    });
+
+    window.addEventListener('online', async () => {
+      realtimeStatus = 'Reconectando';
+      setOperationalRealtimeStatus('Reconectando');
+      try {
+        setupRealtimeSubscriptions();
+        await refreshIntelligenceOperationalData();
+        setOperationalRealtimeStatus('Ao vivo');
+        render();
+        showToast('✓ Conexão restabelecida. Dados operacionais sincronizados.');
+      } catch (e) {
+        scheduleOperationalReconnect();
+      }
+    });
+
     function broadcastPresenceHeartbeat() {
       if (presenceChannel && currentUser) {
         presenceChannel.track({
@@ -10111,6 +10132,35 @@
     let operationalRealtimeChannel = null;
     let operationalRealtimeRefreshTimer = null;
     let operationalRealtimeRefreshInFlight = false;
+    let operationalRealtimeStatus = navigator.onLine === false ? 'Offline' : 'Conectando';
+    let operationalReconnectTimer = null;
+
+    function isOperationalBackendReady() {
+      return !!supabaseClient && navigator.onLine !== false && operationalRealtimeStatus !== 'Offline';
+    }
+
+    function setOperationalRealtimeStatus(status) {
+      operationalRealtimeStatus = status;
+      try {
+        const dot = document.getElementById('planes-v2-online-dot');
+        const label = document.getElementById('planes-v2-persona-status');
+        if (dot) {
+          dot.style.background = status === 'Ao vivo' ? '#84cc16' : status === 'Reconectando' || status === 'Conectando' ? '#f79009' : '#ef4444';
+        }
+        if (label && status !== 'Ao vivo') {
+          label.textContent = status === 'Offline' ? 'Sem conexão · ações pausadas' : 'Reconectando ao Planes…';
+        }
+      } catch (e) {}
+    }
+
+    function scheduleOperationalReconnect() {
+      if (operationalReconnectTimer || !supabaseClient || navigator.onLine === false) return;
+      setOperationalRealtimeStatus('Reconectando');
+      operationalReconnectTimer = setTimeout(() => {
+        operationalReconnectTimer = null;
+        try { setupOperationalRealtime(); } catch (e) {}
+      }, 1200);
+    }
 
     function isUuidLike(value) {
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
@@ -10131,6 +10181,10 @@
     }
 
     async function persistProjectMetrics() {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10154,6 +10208,10 @@
     }
 
     async function persistSupplyRecord(sup) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !sup) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10182,6 +10240,10 @@
     }
 
     async function deleteSupplyRecordRemote(id) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !isUuidLike(id)) return true;
       const { data, error } = await supabaseClient.from('project_supplies').delete().eq('id', id).select('id');
       if (error || !Array.isArray(data) || data.length === 0) {
@@ -10192,6 +10254,10 @@
     }
 
     async function persistValidationStatus(validation, status, rejectionReason = '') {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !validation) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10223,6 +10289,10 @@
     }
 
     async function persistTaskRecord(task) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !task) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10287,10 +10357,19 @@
 
       operationalRealtimeChannel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
+          setOperationalRealtimeStatus('Ao vivo');
           const refreshed = await refreshIntelligenceOperationalData();
           if (refreshed) {
             await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
           }
+          render();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setOperationalRealtimeStatus('Reconectando');
+          scheduleOperationalReconnect();
+          render();
+        } else if (status === 'CLOSED') {
+          setOperationalRealtimeStatus(navigator.onLine === false ? 'Offline' : 'Reconectando');
+          if (navigator.onLine !== false) scheduleOperationalReconnect();
           render();
         }
       });
@@ -19055,9 +19134,12 @@ ${activeNav === 'Equipe & Contatos' ? `
     let voiceState='idle';
     try{voiceState=typeof realtimeVoiceState!=='undefined'?realtimeVoiceState:'idle'}catch(e){}
     const statusMap={connecting:'Conectando voz…',listening:'Ouvindo você',speaking:'Falando com você',reconnecting:'Reconectando…',error:'Voz local disponível',idle:'Sempre com você na obra'};
-    set('planes-v2-persona-status',statusMap[voiceState]||statusMap.idle);
+    let backendState='Ao vivo';
+    try{backendState=typeof operationalRealtimeStatus!=='undefined'?operationalRealtimeStatus:'Ao vivo'}catch(e){}
+    const backendLabel=backendState==='Offline'?'Sem conexão · ações pausadas':backendState==='Reconectando'||backendState==='Conectando'?'Reconectando ao Planes…':null;
+    set('planes-v2-persona-status',backendLabel || statusMap[voiceState] || statusMap.idle);
     const dot=document.getElementById('planes-v2-online-dot');
-    if(dot){dot.style.background=voiceState==='listening'?'#12b76a':voiceState==='speaking'?'#7f56d9':voiceState==='connecting'||voiceState==='reconnecting'?'#f79009':'#84cc16'}
+    if(dot){dot.style.background=backendState==='Offline'?'#ef4444':backendState==='Reconectando'||backendState==='Conectando'?'#f79009':voiceState==='listening'?'#12b76a':voiceState==='speaking'?'#7f56d9':voiceState==='connecting'||voiceState==='reconnecting'?'#f79009':'#84cc16'}
     const mic=document.getElementById('planes-v2-mic');
     if(mic){
       const active=['connecting','listening','speaking','reconnecting'].includes(voiceState);
