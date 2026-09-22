@@ -2179,56 +2179,54 @@
       if (valIndex === -1) return;
 
       const item = validations[valIndex];
-      const previousProgress = physicalProgress;
+      const previousProgress = Number(physicalProgress) || 0;
       const previousProjectProgress = selectedProject ? selectedProject.progress : null;
+      const nextProgress = Math.min(100, Number((previousProgress + 0.8).toFixed(1)));
 
-      validations.splice(valIndex, 1);
-      physicalProgress = Math.min(100, Number((parseFloat(physicalProgress) + 0.8).toFixed(1)));
-      if (selectedProject) selectedProject.progress = physicalProgress;
-      render();
-
-      const [validationOk, metricsOk] = await Promise.all([
-        persistValidationStatus(item, 'Aprovado'),
-        persistProjectMetrics()
-      ]);
-
-      if (validationOk && metricsOk) {
+      // Supabase-first: nada muda visualmente até o backend confirmar.
+      const validationOk = await persistValidationStatus(item, 'Aprovado');
+      if (!validationOk) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
+        showToast('Não foi possível aprovar esta medição no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) {
-        validations.splice(Math.min(valIndex, validations.length), 0, item);
+      physicalProgress = nextProgress;
+      if (selectedProject) selectedProject.progress = nextProgress;
+      const metricsOk = await persistProjectMetrics();
+
+      if (!metricsOk) {
         physicalProgress = previousProgress;
         if (selectedProject) selectedProject.progress = previousProjectProgress;
+        await persistValidationStatus(item, 'Pendente');
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('A aprovação não foi concluída. O estado confirmado foi restaurado.');
+        return;
       }
+
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Não foi possível concluir a aprovação no Supabase. A tela foi reconciliada com o último estado confirmado.');
+      showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
     }
 
     async function rejectValidation(id) {
-      const valIndex = validations.findIndex(v => v.id === id);
-      if (valIndex === -1) return;
+      const item = validations.find(v => v.id === id);
+      if (!item) return;
 
-      const item = validations[valIndex];
-      validations.splice(valIndex, 1);
-      render();
-
+      // Supabase-first: só remove da fila depois da confirmação remota.
       const ok = await persistValidationStatus(item, 'Rejeitado');
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✕ Medição de "${item.item}" devolvida e sincronizada.`);
+        showToast('Não foi possível devolver esta medição no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) validations.splice(Math.min(valIndex, validations.length), 0, item);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Não foi possível devolver a medição no Supabase. O estado confirmado foi restaurado.');
+      showToast(`✕ Medição de "${item.item}" devolvida e sincronizada.`);
     }
 
     // AÇÕES DE SUPRIMENTOS
@@ -2236,23 +2234,19 @@
       const sup = suppliesList.find(s => s.id === id);
       if (!sup) return;
 
-      const previous = { ...sup };
-      sup.status = 'No Canteiro';
-      sup.badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-      render();
+      const remoteCandidate = { ...sup, status: 'No Canteiro' };
+      const ok = await persistSupplyRecord(remoteCandidate);
 
-      const ok = await persistSupplyRecord(sup);
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Recebimento de "${sup.name}" confirmado e sincronizado.`);
+        showToast('Falha ao confirmar recebimento no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) Object.assign(sup, previous);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao confirmar recebimento. A tela voltou ao último estado confirmado no Supabase.');
+      showToast(`✓ Recebimento de "${sup.name}" confirmado e sincronizado.`);
     }
 
 // Ações de aprovação consolidadas na seção de autenticação
@@ -2263,7 +2257,6 @@
       const sup = suppliesList.find(s => s.id === editingSupplyId);
       if (!sup) return;
 
-      const previous = { ...sup };
       const name = document.getElementById('edit-sup-name').value.trim();
       const supplier = document.getElementById('edit-sup-supplier').value.trim();
       const qtd = document.getElementById('edit-sup-qtd').value.trim();
@@ -2276,56 +2269,45 @@
         return;
       }
 
-      sup.name = name;
-      sup.supplier = supplier;
-      sup.qtd = qtd;
-      sup.date = date || 'Programado';
-      sup.sector = sector;
-      sup.status = status;
+      const remoteCandidate = {
+        ...sup,
+        name,
+        supplier,
+        qtd,
+        date: date || 'Programado',
+        sector,
+        status
+      };
 
-      let badge = 'bg-blue-100 text-blue-900 border-blue-300';
-      if (status === 'No Canteiro') badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-      if (status === 'Em Transporte') badge = 'bg-amber-100 text-amber-900 border-amber-300';
-      if (status === 'Atrasado') badge = 'bg-rose-100 text-rose-900 border-rose-300';
-      sup.badge = badge;
-
-      closeEditSupplyModal();
-      render();
-
-      const ok = await persistSupplyRecord(sup);
-      if (ok) {
+      const ok = await persistSupplyRecord(remoteCandidate);
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Insumo "${name}" atualizado e sincronizado.`);
+        showToast('Falha ao atualizar o insumo no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) Object.assign(sup, previous);
+      closeEditSupplyModal();
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao atualizar o insumo. A alteração local foi revertida para o último estado confirmado.');
+      showToast(`✓ Insumo "${name}" atualizado e sincronizado.`);
     }
 
     async function deleteSupply(supId) {
-      const idx = suppliesList.findIndex(s => s.id === supId);
-      if (idx === -1) return;
-
-      const item = suppliesList[idx];
-      suppliesList.splice(idx, 1);
-      render();
+      const item = suppliesList.find(s => s.id === supId);
+      if (!item) return;
 
       const ok = await deleteSupplyRecordRemote(item.id);
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Insumo "${item.name}" excluído e sincronizado.`);
+        showToast('Falha ao excluir o insumo no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) suppliesList.splice(Math.min(idx, suppliesList.length), 0, item);
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao excluir o insumo. O registro confirmado foi restaurado.');
+      showToast(`✓ Insumo "${item.name}" excluído e sincronizado.`);
     }
 
     let currentScreen = 'login';
@@ -10264,6 +10246,16 @@
       }
       trackUserHabit('operational_action', { module: 'Planes Intelligence', topic: 'tarefas', mode: 'touch', metadata: { action: 'task_update' } });
       return true;
+    }
+
+    async function syncOperationalMutationAfterCommit(message) {
+      const refreshed = await refreshIntelligenceOperationalData();
+      if (refreshed) {
+        await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
+      }
+      render();
+      if (message) showToast(message);
+      return refreshed;
     }
 
     function setupOperationalRealtime() {
