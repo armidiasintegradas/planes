@@ -2607,6 +2607,25 @@
     }
 
     // Configuração dos Canais Supabase Realtime & Presence
+    async function kickPlanesTransactionalEmails(limit = 5) {
+      if (!supabaseClient || navigator.onLine === false) return false;
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session?.access_token) return false;
+        const { data, error } = await supabaseClient.functions.invoke('planes-email-worker', {
+          body: { limit: Math.max(1, Math.min(10, Number(limit) || 5)) }
+        });
+        if (error) {
+          console.warn('Worker de e-mail não concluiu o ciclo:', error);
+          return false;
+        }
+        return !!data?.ok;
+      } catch (err) {
+        console.warn('Falha ao acionar worker de e-mail:', err);
+        return false;
+      }
+    }
+
     function setupRealtimeSubscriptions() {
       if (!supabaseClient) return;
       if (currentUser) {
@@ -4553,6 +4572,7 @@
           currentScreen = 'projects';
           saveSessionState();
           setupRealtimeSubscriptions();
+          kickPlanesTransactionalEmails(10);
           showToast('✓ Bem-vindo(a), ' + currentUser.name + '! Nível de Acesso: ' + accessLevel);
           render();
           return;
@@ -8098,6 +8118,7 @@
               };
               currentScreen = 'login';
               render();
+              kickPlanesTransactionalEmails(5);
               showPendingStatusModal(currentPendingModalUser);
               return;
             }
@@ -8131,6 +8152,7 @@
               currentScreen = 'projects';
               saveSessionState();
               setupRealtimeSubscriptions();
+              kickPlanesTransactionalEmails(10);
               render();
             }
           }
