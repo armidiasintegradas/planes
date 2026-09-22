@@ -586,6 +586,7 @@
 
 
 
+
 <!-- PLANES_AUTH_GATE_START -->
 <style id="planes-auth-bootstrap">
   html.planes-auth-loading body{visibility:hidden!important}
@@ -594,9 +595,9 @@
   html.planes-auth-blocked #planes-auth-root{visibility:visible!important;pointer-events:auto!important}
 </style>
 <script>document.documentElement.classList.add('planes-auth-loading');</script>
-<script type="module" src="./legacy-auth-sanitizer-live.js?v=146dace6583b"></script>
-<script type="module" src="./auth-gate-live.js?v=146dace6583b"></script>
-<script type="module" src="./email-lifecycle-kick-live.js?v=146dace6583b"></script>
+<script type="module" src="./legacy-auth-sanitizer-live.js?v=49921da13206"></script>
+<script type="module" src="./auth-gate-live.js?v=49921da13206"></script>
+<script type="module" src="./email-lifecycle-kick-live.js?v=49921da13206"></script>
 <!-- PLANES_AUTH_GATE_END -->
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
@@ -19347,7 +19348,7 @@ ${activeNav === 'Equipe & Contatos' ? `
       return map[key] || 'Campo';
     }
 
-    window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
+    window.applySupabaseAuthPayload = window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
       if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;
 
       try {
@@ -19419,7 +19420,7 @@ ${activeNav === 'Equipe & Contatos' ? `
     }
 
     window.addEventListener('planes-auth-payload-ready', (event) => {
-      window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);
+      window.window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);
     });
 
     restoreSessionState();
@@ -19740,8 +19741,9 @@ ${activeNav === 'Equipe & Contatos' ? `
 
 
 
+
 <!-- PLANES_AUTH_RUNTIME_BRIDGE_START -->
-<script src="./auth-runtime-bridge-live.js?v=146dace6583b"></script>
+<script src="./auth-runtime-bridge-live.js?v=49921da13206"></script>
 <!-- PLANES_AUTH_RUNTIME_BRIDGE_END -->
 </body>
 </html>
