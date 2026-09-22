@@ -5,8 +5,9 @@ import { readFile } from 'node:fs/promises';
 test('service worker keeps auth and HTML network-first', async () => {
   const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
 
-  assert.match(sw, /const CACHE_NAME = 'planes-os-v12'/);
+  assert.match(sw, /const CACHE_NAME = 'planes-os-v13'/);
   assert.match(sw, /auth-gate-live\.js/);
+  assert.match(sw, /auth-runtime-bridge-live\.js/);
   assert.match(sw, /cache:\s*'no-store'/);
   assert.match(sw, /event\.request\.mode === 'navigate'/);
 });
