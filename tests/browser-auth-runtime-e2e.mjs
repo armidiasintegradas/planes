@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 
+const targetUrl = process.env.PLANES_E2E_URL || 'https://armidiasintegradas.github.io/planes/';
+
 const chrome = spawn('google-chrome', [
   '--headless=new',
   '--no-sandbox',
@@ -88,7 +90,7 @@ async function main() {
     await cdp.ready;
     await cdp.call('Page.enable');
     await cdp.call('Runtime.enable');
-    await cdp.call('Page.navigate', { url: 'https://armidiasintegradas.github.io/planes/' });
+    await cdp.call('Page.navigate', { url: targetUrl });
     await delay(7000);
 
     const preflight = await cdp.call('Runtime.evaluate', {
