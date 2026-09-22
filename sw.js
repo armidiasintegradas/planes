@@ -1,5 +1,5 @@
 // Planes OS Service Worker — stable PWA shell
-const CACHE_NAME = 'planes-os-v11';
+const CACHE_NAME = 'planes-os-v12';
 const APP_SHELL = [
   './',
   './index.html',
@@ -40,6 +40,22 @@ self.addEventListener('fetch', (event) => {
     event.request.destination === 'document' ||
     url.pathname.endsWith('/') ||
     url.pathname.endsWith('.html');
+
+  const isLiveAuthGate = url.pathname.endsWith('/auth-gate-live.js');
+  if (isLiveAuthGate) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(async () => (await caches.match(event.request)) || Response.error())
+    );
+    return;
+  }
 
   if (isHtml) {
     event.respondWith(
