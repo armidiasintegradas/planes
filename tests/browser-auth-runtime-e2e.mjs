@@ -65,6 +65,9 @@ async function main() {
     await cdp.ready;
     await cdp.call('Page.enable');
     await cdp.call('Runtime.enable');
+
+    const runtimeExceptions = [];
+    const originalOnMessage = cdp.onMessage;
     await cdp.call('Page.navigate', { url: 'https://armidiasintegradas.github.io/planes/' });
     await delay(7000);
 
@@ -85,7 +88,20 @@ async function main() {
       };
 
       if (typeof window.applySupabaseAuthPayload !== 'function') {
-        return { ok:false, reason:'hydrator_missing' };
+        const scripts = [...document.scripts];
+        const mainScript = scripts.find(s => (s.textContent || '').includes('applySupabaseAuthPayload'));
+        return {
+          ok:false,
+          reason:'hydrator_missing',
+          readyState: document.readyState,
+          appExists: !!document.getElementById('app'),
+          appLength: document.getElementById('app')?.innerHTML?.length || 0,
+          scriptCount: scripts.length,
+          mainScriptPresent: !!mainScript,
+          authRootPresent: !!document.getElementById('planes-auth-root'),
+          bodyClass: document.body?.className || '',
+          htmlClass: document.documentElement?.className || ''
+        };
       }
 
       delete window.__PLANES_AUTH_INTERNAL_APPLIED__;
