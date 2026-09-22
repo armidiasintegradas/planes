@@ -2381,6 +2381,134 @@
       } catch (e) {}
     }
 
+    function slugifyProjectCode(value) {
+      return String(value || 'projeto')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 42) || ('projeto-' + Date.now());
+    }
+
+    async function hydrateProjectsFromSupabase() {
+      if (!supabaseClient || !currentUser || navigator.onLine === false) return false;
+      try {
+        const { data: rows, error } = await supabaseClient
+          .from('projects')
+          .select('id,name,code,active,client,location,status,budget_text,deadline_text,takt,description,spreadsheets_count,created_at,updated_at')
+          .eq('active', true)
+          .order('created_at', { ascending: true });
+        if (error || !Array.isArray(rows)) return false;
+
+        const ids = rows.map(r => r.id).filter(Boolean);
+        let metrics = [];
+        if (ids.length) {
+          const metricsRes = await supabaseClient
+            .from('project_metrics')
+            .select('project_id,physical_progress,target_progress,pac_score,financial_spent_m,workers_count')
+            .in('project_id', ids);
+          if (!metricsRes.error && Array.isArray(metricsRes.data)) metrics = metricsRes.data;
+        }
+
+        const metricsByProject = new Map(metrics.map(m => [String(m.project_id), m]));
+        const previousId = selectedProject?.id || (typeof selectedProjectId !== 'undefined' ? selectedProjectId : null) || null;
+
+        projectsList = rows.map(row => {
+          const m = metricsByProject.get(String(row.id)) || {};
+          return {
+            id: row.code || row.id,
+            cloudId: row.id,
+            title: row.name,
+            client: row.client || 'Cliente Corporativo',
+            location: row.location || '',
+            description: row.description || '',
+            status: row.status || 'Em Execução',
+            progress: Number(m.physical_progress || 0),
+            targetProgress: Number(m.target_progress || m.physical_progress || 0),
+            spent: 'R$ ' + Number(m.financial_spent_m || 0).toFixed(1).replace('.', ',') + 'M',
+            budget: row.budget_text || '',
+            deadline: row.deadline_text || '',
+            takt: row.takt || '',
+            workers: Number(m.workers_count || 0),
+            spreadsheetsCount: Number(row.spreadsheets_count || 0),
+            badgeColor: 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold'
+          };
+        });
+
+        if (!projectsList.length) return false;
+        selectedProject = projectsList.find(p => p.id === previousId) || projectsList[0];
+        if (typeof selectedProjectId !== 'undefined') selectedProjectId = selectedProject.id;
+        operationalProjectIdCache = selectedProject.cloudId || null;
+        saveProjectsStorage();
+        return true;
+      } catch (err) {
+        console.warn('Projetos mantidos em cache local após falha de sincronização.', err);
+        return false;
+      }
+    }
+
+    async function createProjectInSupabase(projectDraft) {
+      if (!supabaseClient || !currentUser || navigator.onLine === false) return null;
+      const code = slugifyProjectCode(projectDraft.title) + '-' + Date.now().toString().slice(-5);
+      const { data, error } = await supabaseClient
+        .from('projects')
+        .insert({
+          name: projectDraft.title,
+          code,
+          active: true,
+          client: projectDraft.client || '',
+          location: projectDraft.location || '',
+          status: projectDraft.status || 'Em Execução',
+          budget_text: projectDraft.budget || '',
+          deadline_text: projectDraft.deadline || '',
+          takt: projectDraft.takt || '',
+          description: projectDraft.description || '',
+          spreadsheets_count: Number(projectDraft.spreadsheetsCount || 0),
+          updated_at: new Date().toISOString()
+        })
+        .select('id,code,name')
+        .single();
+
+      if (error || !data?.id) return null;
+
+      const metricsRes = await supabaseClient.from('project_metrics').insert({
+        project_id: data.id,
+        physical_progress: Number(projectDraft.progress || 0),
+        target_progress: Math.max(0, Math.min(100, Number(projectDraft.targetProgress || projectDraft.progress || 0))),
+        pac_score: 0,
+        financial_spent_m: 0,
+        workers_count: Number(projectDraft.workers || 0),
+        updated_at: new Date().toISOString()
+      });
+
+      if (metricsRes.error) {
+        await supabaseClient.from('projects').update({ active: false, updated_at: new Date().toISOString() }).eq('id', data.id);
+        return null;
+      }
+
+      if (currentUser?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(currentUser.id))) {
+        try {
+          await supabaseClient.from('user_project_access').upsert({
+            user_id: currentUser.id,
+            project_id: data.id,
+            created_by: currentUser.id
+          }, { onConflict: 'user_id,project_id' });
+        } catch (e) {}
+      }
+
+      return { cloudId: data.id, code: data.code };
+    }
+
+    async function archiveProjectInSupabase(project) {
+      if (!supabaseClient || !project || navigator.onLine === false) return false;
+      let query = supabaseClient.from('projects').update({ active: false, updated_at: new Date().toISOString() });
+      query = project.cloudId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(project.cloudId))
+        ? query.eq('id', project.cloudId)
+        : query.eq('code', project.id);
+      const { error } = await query;
+      return !error;
+    }
+
 
     let selectedProject = projectsList[0];
     
@@ -2446,8 +2574,8 @@
     // PLANES OS — SUPABASE BACKEND CLIENT, REALTIME & PRESENCE ENGINE
     // =========================================================================
     window.PLANES_CONFIG = window.PLANES_CONFIG || {
-      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://odknhfcvuvjphxndtsqj.supabase.co',
-      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ka25oZmN2dXZqcGh4bmR0c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDM4NzQsImV4cCI6MjAyNTA3OTg3NH0.demo-placeholder'
+      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://xfgcbxppsbwmxwsuajou.supabase.co',
+      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZ2NieHBwc2J3bXh3c3Vham91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NjU0ODEsImV4cCI6MjEwNDU0MTQ4MX0.6NVhUwWR1cjLaD2_1_jk_ub0ASUdQ5eJcydceRVB9FM'
     };
 
     function isSupabaseConfigured() {
@@ -2609,6 +2737,7 @@
       if (currentUser) {
         hydrateUserIntelligenceProfile();
         hydrateAssistantPersona();
+        hydrateProjectsFromSupabase().then(ok => { if (ok) render(); });
       }
 
       // 1. Canal de Presença Realtime (ONLINE AGORA)
@@ -2700,6 +2829,28 @@
     // Inicializa carregamento dos dados e canais
     fetchAdminIAMData();
     setupRealtimeSubscriptions();
+
+    window.addEventListener('offline', () => {
+      realtimeStatus = 'Offline';
+      setOperationalRealtimeStatus('Offline');
+      try { render(); } catch (e) {}
+      try { showToast('Sem conexão. Alterações operacionais ficam pausadas até reconectar.'); } catch (e) {}
+    });
+
+    window.addEventListener('online', async () => {
+      realtimeStatus = 'Reconectando';
+      setOperationalRealtimeStatus('Reconectando');
+      try {
+        setupRealtimeSubscriptions();
+        await hydrateProjectsFromSupabase();
+        await refreshIntelligenceOperationalData();
+        setOperationalRealtimeStatus('Ao vivo');
+        render();
+        showToast('✓ Conexão restabelecida. Dados operacionais sincronizados.');
+      } catch (e) {
+        scheduleOperationalReconnect();
+      }
+    });
 
     async function refreshPlanesAfterResume() {
       if (!supabaseClient || navigator.onLine === false || !currentUser) return;
@@ -7652,7 +7803,7 @@
       }, 700);
     }
 
-    function handleNewProjectSubmit() {
+    async function handleNewProjectSubmit() {
       const title = (document.getElementById('new-proj-title') ? document.getElementById('new-proj-title').value : '').trim();
       const client = (document.getElementById('new-proj-client') ? document.getElementById('new-proj-client').value : '').trim() || 'Cliente Corporativo';
       const location = (document.getElementById('new-proj-loc') ? document.getElementById('new-proj-loc').value : '').trim() || 'Maceió, AL';
@@ -7667,53 +7818,58 @@
         return;
       }
 
-      const newProj = {
-        id: 'proj-' + Date.now(),
-        title: title,
-        client: client,
-        location: location,
-        status: 'Em Execução',
-        progress: progress,
-        targetProgress: progress + 4.0,
-        spent: 'R$ 0,0M',
-        budget: budget,
-        deadline: deadline,
-        takt: takt,
-        workers: 32,
-        spreadsheetsCount: 1,
-        badgeColor: 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold',
-        description: desc
+      const draft = {
+        title, client, location, status: 'Em Execução',
+        progress, targetProgress: Math.min(100, progress + 4.0),
+        budget, deadline, takt, workers: 32, spreadsheetsCount: 1, description: desc
       };
 
-      projectsList.unshift(newProj);
-      saveProjectsStorage();
-      selectedProject = newProj;
+      const created = await createProjectInSupabase(draft);
+      if (!created) {
+        showToast('Não foi possível cadastrar a obra no Supabase.');
+        return;
+      }
+
+      await hydrateProjectsFromSupabase();
+      const newProj = projectsList.find(p => p.cloudId === created.cloudId || p.id === created.code);
+      if (newProj) {
+        selectedProject = newProj;
+        if (typeof selectedProjectId !== 'undefined') selectedProjectId = newProj.id;
+        operationalProjectIdCache = newProj.cloudId;
+      }
+
       closeNewProjectModal();
-      showToast(`✓ Obra "${title}" cadastrada com sucesso!`);
-      
-      // Abre o cockpit do novo projeto
-      setTimeout(() => {
-        currentScreen = 'dashboard';
-        activeNav = 'Visão Geral';
-        render();
-      }, 400);
+      currentScreen = 'dashboard';
+      activeNav = 'Visão Geral';
+      saveSessionState();
+      render();
+      showToast(`✓ Obra "${title}" cadastrada e sincronizada.`);
     }
 
-    function deleteProject(projId) {
+    async function deleteProject(projId) {
       if (projectsList.length <= 1) {
         showToast('É necessário manter pelo menos um projeto cadastrado.');
         return;
       }
-      const idx = projectsList.findIndex(p => p.id === projId);
-      if (idx !== -1) {
-        const removed = projectsList.splice(idx, 1)[0];
-        saveProjectsStorage();
-        showToast(`✓ Projeto "${removed.title}" removido.`);
-        if (selectedProject && selectedProject.id === projId) {
-          selectedProject = projectsList[0];
-        }
-        render();
+
+      const project = projectsList.find(p => p.id === projId);
+      if (!project) return;
+
+      const ok = await archiveProjectInSupabase(project);
+      if (!ok) {
+        showToast('Não foi possível arquivar este projeto no Supabase.');
+        return;
       }
+
+      await hydrateProjectsFromSupabase();
+      if (!projectsList.find(p => p.id === selectedProject?.id)) {
+        selectedProject = projectsList[0];
+        if (typeof selectedProjectId !== 'undefined') selectedProjectId = selectedProject?.id || null;
+        operationalProjectIdCache = selectedProject?.cloudId || null;
+      }
+      saveSessionState();
+      render();
+      showToast(`✓ Projeto "${project.title}" arquivado e sincronizado.`);
     }
 
 
@@ -10201,6 +10357,35 @@
     let operationalRealtimeChannel = null;
     let operationalRealtimeRefreshTimer = null;
     let operationalRealtimeRefreshInFlight = false;
+    let operationalRealtimeStatus = navigator.onLine === false ? 'Offline' : 'Conectando';
+    let operationalReconnectTimer = null;
+
+    function isOperationalBackendReady() {
+      return !!supabaseClient && navigator.onLine !== false && operationalRealtimeStatus !== 'Offline';
+    }
+
+    function setOperationalRealtimeStatus(status) {
+      operationalRealtimeStatus = status;
+      try {
+        const dot = document.getElementById('planes-v2-online-dot');
+        const label = document.getElementById('planes-v2-persona-status');
+        if (dot) {
+          dot.style.background = status === 'Ao vivo' ? '#84cc16' : status === 'Reconectando' || status === 'Conectando' ? '#f79009' : '#ef4444';
+        }
+        if (label && status !== 'Ao vivo') {
+          label.textContent = status === 'Offline' ? 'Sem conexão · ações pausadas' : 'Reconectando ao Planes…';
+        }
+      } catch (e) {}
+    }
+
+    function scheduleOperationalReconnect() {
+      if (operationalReconnectTimer || !supabaseClient || navigator.onLine === false) return;
+      setOperationalRealtimeStatus('Reconectando');
+      operationalReconnectTimer = setTimeout(() => {
+        operationalReconnectTimer = null;
+        try { setupOperationalRealtime(); } catch (e) {}
+      }, 1200);
+    }
 
     function isUuidLike(value) {
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
@@ -10269,6 +10454,10 @@
     }
 
     async function persistSupplyRecord(sup) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !sup) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10297,6 +10486,10 @@
     }
 
     async function deleteSupplyRecordRemote(id) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !isUuidLike(id)) return true;
       const { data, error } = await supabaseClient.from('project_supplies').delete().eq('id', id).select('id');
       if (error || !Array.isArray(data) || data.length === 0) {
@@ -10307,6 +10500,10 @@
     }
 
     async function persistValidationStatus(validation, status, rejectionReason = '') {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !validation) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10338,6 +10535,10 @@
     }
 
     async function persistTaskRecord(task) {
+      if (navigator.onLine === false) {
+        setOperationalRealtimeStatus('Offline');
+        return false;
+      }
       if (!supabaseClient || !task) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
@@ -10400,12 +10601,30 @@
         );
       });
 
+      operationalRealtimeChannel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        async () => {
+          const synced = await hydrateProjectsFromSupabase();
+          if (synced) render();
+        }
+      );
+
       operationalRealtimeChannel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
+          setOperationalRealtimeStatus('Ao vivo');
           const refreshed = await refreshIntelligenceOperationalData();
           if (refreshed) {
             await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
           }
+          render();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setOperationalRealtimeStatus('Reconectando');
+          scheduleOperationalReconnect();
+          render();
+        } else if (status === 'CLOSED') {
+          setOperationalRealtimeStatus(navigator.onLine === false ? 'Offline' : 'Reconectando');
+          if (navigator.onLine !== false) scheduleOperationalReconnect();
           render();
         }
       });
