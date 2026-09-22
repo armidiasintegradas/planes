@@ -10425,6 +10425,88 @@
       return Number.isFinite(n) ? n.toFixed(1).replace('.', ',') + '%' : Number(fallback).toFixed(1).replace('.', ',') + '%';
     }
 
+    function getPlanesLiveScreenContext() {
+      const nav = String(typeof activeNav !== 'undefined' && activeNav ? activeNav : 'Visão Geral');
+      const project = selectedProject || projectsList?.[0] || {};
+      const ctx = {
+        module: nav,
+        project: project.title || 'Obra ativa',
+        mobileTab: typeof mobileCurrentTab !== 'undefined' ? mobileCurrentTab : null,
+        focus: 'visão integrada da obra',
+        visibleFacts: []
+      };
+
+      if (nav === 'Suprimentos') {
+        const delayed = (suppliesList || []).filter(s => String(s.status || '').toLowerCase().includes('atras'));
+        const transit = (suppliesList || []).filter(s => String(s.status || '').toLowerCase().includes('transporte'));
+        ctx.focus = 'suprimentos, entregas e fornecedores';
+        ctx.visibleFacts = [
+          delayed.length + ' suprimento(s) atrasado(s)',
+          transit.length + ' em transporte',
+          (suppliesList || []).length + ' item(ns) monitorados'
+        ];
+      } else if (nav === 'Fila de Validações') {
+        const pending = (validations || []).filter(v => String(v.status || '').toLowerCase() !== 'aprovado');
+        ctx.focus = 'medições e validações pendentes';
+        ctx.visibleFacts = [
+          pending.length + ' validação(ões) pendente(s)',
+          pending[0]?.item ? 'próxima: ' + pending[0].item : 'fila sem prioridade pendente'
+        ];
+      } else if (nav === 'Curva S & PAC') {
+        ctx.focus = 'aderência física, PAC e curva S';
+        ctx.visibleFacts = [
+          'PAC ' + Number(pacScore || 0).toFixed(0) + '%',
+          'avanço ' + formatPct(Number(project.progress ?? physicalProgress) || 0),
+          'meta ' + formatPct(Number(project.targetProgress ?? project.progress ?? physicalProgress) || 0)
+        ];
+      } else if (nav === 'Médio Prazo (R4)' || nav === 'Médio Prazo R4') {
+        ctx.focus = 'lookahead, restrições e planejamento de médio prazo';
+        ctx.visibleFacts = [
+          (tasksList || []).filter(t => !t.done).length + ' tarefa(s) aberta(s)',
+          (remindersList || []).filter(r => r.active !== false).length + ' lembrete(s) ativo(s)'
+        ];
+      } else if (nav === 'Canteiro 1-Touch') {
+        ctx.focus = 'execução de campo e apontamentos do canteiro';
+        ctx.visibleFacts = [
+          (tasksList || []).filter(t => !t.done).length + ' pendência(s) operacional(is)',
+          (validations || []).length + ' medição(ões) em acompanhamento'
+        ];
+      } else if (nav === 'Linha de Balanço') {
+        ctx.focus = 'ritmo de produção, frentes e takt-time';
+        ctx.visibleFacts = [
+          'avanço ' + formatPct(Number(project.progress ?? physicalProgress) || 0),
+          'meta ' + formatPct(Number(project.targetProgress ?? project.progress ?? physicalProgress) || 0)
+        ];
+      } else if (nav === 'Planes Intelligence') {
+        const memory = getIntelligenceFollowUpState();
+        ctx.focus = 'prioridades, decisões e memória operacional';
+        ctx.visibleFacts = [
+          memory.pending.length + ' item(ns) para acompanhar',
+          memory.decisions.length + ' decisão(ões) recente(s)'
+        ];
+      } else {
+        ctx.focus = 'visão geral, progresso e prioridades';
+        ctx.visibleFacts = [
+          'avanço ' + formatPct(Number(project.progress ?? physicalProgress) || 0),
+          'PAC ' + Number(pacScore || 0).toFixed(0) + '%',
+          (validations || []).filter(v => String(v.status || '').toLowerCase() !== 'aprovado').length + ' validação(ões) pendente(s)'
+        ];
+      }
+
+      return ctx;
+    }
+
+    function contextualizeIntelligencePrompt(promptText) {
+      const raw = String(promptText || '').trim();
+      const normalized = raw.toLowerCase();
+      const isGeneric = !raw ||
+        /^(me ajuda|ajuda|o que tem aqui|o que voce ve|o que você vê|me explica|e agora|o que faço|o que faco|analisa isso|resume isso|me diga)$/i.test(normalized);
+      if (!isGeneric) return raw;
+
+      const ctx = getPlanesLiveScreenContext();
+      return 'Analise a tela atual "' + ctx.module + '" com foco em ' + ctx.focus + '. Considere estes dados visíveis: ' + ctx.visibleFacts.join('; ') + '. Diga o que merece atenção e qual é a próxima ação mais útil.';
+    }
+
     function buildPlanesIntelligenceAnalysis(promptText) {
       const p = String(promptText || '').toLowerCase();
       const project = selectedProject || projectsList[0] || {};
@@ -10606,24 +10688,39 @@
 
     async function askPlanesIntelligence(predefinedPrompt) {
       const inputElem = document.getElementById('intelligence-custom-input');
-      const promptText = predefinedPrompt || (inputElem ? inputElem.value : '');
-      if (!promptText || promptText.trim() === '') return;
+      const rawPromptText = predefinedPrompt || (inputElem ? inputElem.value : '');
+      if (!rawPromptText || rawPromptText.trim() === '') return;
+      const promptText = contextualizeIntelligencePrompt(rawPromptText);
 
       if (inputElem) inputElem.value = '';
 
       intelligenceChatHistory.push({
         sender: 'user',
-        text: promptText,
+        text: rawPromptText,
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       });
 
       const intelligenceTopic = inferIntelligenceTopic(promptText);
-      trackUserHabit('intelligence_query', { topic: intelligenceTopic, module: 'Planes Intelligence', mode: 'text' });
-      addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence: "' + promptText.slice(0, 80) + '"');
+      const liveScreenContext = getPlanesLiveScreenContext();
+      trackUserHabit('intelligence_query', {
+        topic: intelligenceTopic,
+        module: liveScreenContext.module || 'Planes Intelligence',
+        mode: 'text',
+        metadata: {
+          screen: liveScreenContext.module,
+          focus: liveScreenContext.focus,
+          source: 'context_aware_query'
+        }
+      });
+      addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence [' + liveScreenContext.module + ']: "' + rawPromptText.slice(0, 80) + '"');
       render();
 
       await refreshIntelligenceOperationalData();
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
+      analysis.screenContext = liveScreenContext;
+      if (rawPromptText !== promptText) {
+        analysis.answer = 'Estou olhando a tela de **' + liveScreenContext.module + '** com você.\n' + analysis.answer;
+      }
       analysis.answer = personalizeIntelligenceAnswer(analysis.answer);
       lastIntelligenceAnalysis = analysis;
 
@@ -18874,6 +18971,13 @@ ${activeNav === 'Equipe & Contatos' ? `
     set('planes-v2-project',proj);
     set('planes-v2-role',role);
     set('planes-v2-screen',screen);
+    try{
+      const live=typeof getPlanesLiveScreenContext==='function'?getPlanesLiveScreenContext():null;
+      if(live?.visibleFacts?.length){
+        const tip=document.getElementById('planes-v2-tip-copy');
+        if(tip) tip.textContent='Agora estou vendo ' + live.focus + '. ' + live.visibleFacts.slice(0,2).join(' · ') + '.';
+      }
+    }catch(e){}
     set('planes-v2-tip-title','✦ Dica d'+(p==='brita'?'a ':'o ')+name);
 
     let voiceState='idle';
