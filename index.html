@@ -2850,7 +2850,7 @@
     let audioUnlocked = false;
     let bestPtVoice = null;
     let assistantLog = [
-      { text: 'Olá Mariana. Como posso ajudar agora?', sender: 'ai', time: 'Agora' }
+      { text: 'Oi! Como posso ajudar agora?', sender: 'ai', time: 'Agora', identityGreeting: true }
     ];
     let liveTranscript = '';
 
@@ -10149,10 +10149,27 @@
     let intelligenceChatHistory = [
       {
         sender: 'ai',
-        text: 'Olá, sou o **Planes Intelligence**, copiloto de engenharia e análise preditiva da obra. Analisei a Linha de Balanço 16.03, o Lookahead R4, as medições de campo e a Curva S. Como posso auxiliar na reunião executiva de hoje?',
-        time: 'Hoje 09:30'
+        text: 'Oi! Sou o Planes Intelligence. Estou acompanhando os dados desta obra e posso te ajudar a decidir o próximo passo.',
+        time: 'Agora',
+        identityGreeting: true
       }
     ];
+
+    function syncPlanesAssistantGreetingIdentity() {
+      if (!currentUser) return;
+      const firstName = getPlanesUserFirstName();
+      const personaName = typeof getAssistantPersonaLabel === 'function' ? getAssistantPersonaLabel() : 'Planes Intelligence';
+      if (Array.isArray(assistantLog) && assistantLog.length) {
+        const greeting = assistantLog.find(item => item && item.identityGreeting);
+        if (greeting) greeting.text = 'Oi, ' + firstName + '. Como posso ajudar agora?';
+      }
+      if (Array.isArray(intelligenceChatHistory) && intelligenceChatHistory.length) {
+        const greeting = intelligenceChatHistory.find(item => item && item.identityGreeting);
+        if (greeting) {
+          greeting.text = 'Oi, ' + firstName + '. Aqui é ' + personaName + '. Estou acompanhando esta obra com você. Pode falar comigo do seu jeito.';
+        }
+      }
+    }
 
     let intelligenceDataSource = 'local';
     let intelligenceLastSyncAt = null;
@@ -13672,6 +13689,7 @@
     }
 
     function render() {
+      try { syncPlanesAssistantGreetingIdentity(); } catch (e) {}
       const app = document.getElementById('app');
       const isEngOrAdmin = (accessLevel === 'Engenharia' || accessLevel === 'Admin');
 
@@ -18966,7 +18984,7 @@ ${activeNav === 'Equipe & Contatos' ? `
   };
 
   function firstName(){
-    try{return (typeof getPlanesUserFirstName==='function'&&getPlanesUserFirstName()) || (currentUser?.name||'Alex').split(' ')[0] || 'Alex'}catch(e){return 'Alex'}
+    try{return (typeof getPlanesUserFirstName==='function'&&getPlanesUserFirstName()) || (currentUser?.name||'Usuário').split(' ')[0] || 'Usuário'}catch(e){return 'Usuário'}
   }
   function persona(){
     try{return (typeof getAssistantPersona==='function'&&getAssistantPersona()) || 'brita'}catch(e){return 'brita'}
