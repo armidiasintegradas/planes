@@ -37,6 +37,24 @@ jobs:
           grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
           grep -q "restoreDesiredProject" /tmp/planes-auth-gate.js
 
+      - name: Headless browser login gate across viewports
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v google-chrome
+          for size in 390,844 820,1180 1440,900; do
+            google-chrome \
+              --headless=new \
+              --no-sandbox \
+              --disable-gpu \
+              --virtual-time-budget=7000 \
+              --window-size="$size" \
+              --dump-dom \
+              https://armidiasintegradas.github.io/planes/ > "/tmp/planes-$size.html"
+            grep -q "Entrar no Planes OS" "/tmp/planes-$size.html"
+            grep -Eq "Continuar com Google|Google temporariamente indisponível" "/tmp/planes-$size.html"
+          done
+
       - name: Run regression tests
         run: npm test
 
