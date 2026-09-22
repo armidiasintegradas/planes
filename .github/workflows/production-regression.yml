@@ -28,3 +28,24 @@ jobs:
 
       - name: Run regression tests
         run: npm test
+
+      - name: Report dependency audit
+        shell: bash
+        run: |
+          npm audit --json > audit.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+          const rows = Object.entries(audit.vulnerabilities || {}).map(([name, value]) => ({
+            name,
+            severity: value.severity,
+            direct: Boolean(value.isDirect),
+            fixAvailable: value.fixAvailable === true
+              ? 'yes'
+              : value.fixAvailable && typeof value.fixAvailable === 'object'
+                ? `${value.fixAvailable.name}@${value.fixAvailable.version}${value.fixAvailable.isSemVerMajor ? ' (major)' : ''}`
+                : 'no'
+          }));
+          console.log('AUDIT_SUMMARY=' + JSON.stringify(rows));
+          console.log('AUDIT_METADATA=' + JSON.stringify(audit.metadata?.vulnerabilities || {}));
+          NODE
