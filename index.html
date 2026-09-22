@@ -4134,97 +4134,10 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    function handleGoogleSelect(email, name, avatar) {
-      email = (email || '').trim().toLowerCase();
-      name = name || email.split('@')[0];
-      avatar = avatar || name.slice(0, 2).toUpperCase();
-
-      // 1. Ver se é Admin Master
-      if (email === 'armidiasintegradas@gmail.com') {
-        const adminUser = registeredUsers.find(u => u.email.toLowerCase() === email) || {
-          id: 'admin-alex',
-          name: 'Alex Ribeiro',
-          email: 'armidiasintegradas@gmail.com',
-          role: 'Diretor / Administrador Geral',
-          level: 'Admin',
-          provider: 'Google',
-          avatar: 'AR'
-        };
-        currentUser = adminUser;
-        accessLevel = 'Admin';
-        currentScreen = 'projects';
-        closeGoogleAuthModal();
-        showToast('✓ Bem-vindo, Alex Ribeiro! Autenticado via Google com Acesso Total.');
-        saveSessionState();
-        updateUserPresence();
-        broadcastPresenceHeartbeat();
-        render();
-        return;
-      }
-
-      // 2. Ver se é usuário APROVADO em registeredUsers
-      const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
-      if (registered) {
-        if (registered.status === 'Suspenso') {
-          closeGoogleAuthModal();
-          currentScreen = 'access_suspended';
-          render();
-          return;
-        }
-        if (registered.status === 'Rejeitado') {
-          closeGoogleAuthModal();
-          currentScreen = 'access_rejected';
-          render();
-          return;
-        }
-
-        currentUser = registered;
-        accessLevel = registered.level || registered.role || 'Campo';
-        currentScreen = 'projects';
-        closeGoogleAuthModal();
-        showToast(`✓ Bem-vindo(a), ${registered.name}! Login com Google verificado (Nível: ${accessLevel}).`);
-        saveSessionState();
-        updateUserPresence();
-        broadcastPresenceHeartbeat();
-        render();
-        return;
-      }
-
-      // 3. Ver se está PENDENTE em pendingUsers
-      const pending = pendingUsers.find(u => u.email.toLowerCase() === email);
-      if (pending) {
-        closeGoogleAuthModal();
-        showPendingStatusModal(pending);
-        return;
-      }
-
-      // 4. Novo cadastro via Google -> Criar solicitação pendente
-      const newGoogleUser = {
-        id: 'usr-g-' + Date.now(),
-        name: name,
-        email: email,
-        provider: 'Google',
-        role: 'Engenharia',
-        level: 'Engenharia',
-        requestedLevel: 'Engenharia',
-        company: 'Planes ENG',
-        sector: 'Engenharia',
-        phone: '(82) 99822-1100',
-        whatsapp: '5582998221100',
-        cpf: '000.000.000-00',
-        rg: 'SSP-00.000.000',
-        date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'Pendente',
-        avatar: avatar
-      };
-
-      pendingUsers.unshift(newGoogleUser);
-      saveUsersStorage();
-      broadcastCloudAction('USER_REQUEST_ACCESS', { user: newGoogleUser });
+    function handleGoogleSelect() {
       closeGoogleAuthModal();
-      showPendingStatusModal(newGoogleUser);
-      showToast(`✓ Solicitação via Google enviada para ${name}! Aguardando aprovação do Admin.`);
-      render();
+      showToast('Este fluxo legado foi desativado por segurança. Use o Google OAuth oficial.');
+      return false;
     }
 
     function handleGoogleCustomSubmit() {
@@ -4265,96 +4178,10 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    function handleAppleSelect(email, name) {
-      email = (email || '').trim().toLowerCase();
-      name = name || email.split('@')[0];
-
-      // 1. Ver se é Admin Master
-      if (email === 'armidiasintegradas@gmail.com') {
-        const adminUser = registeredUsers.find(u => u.email.toLowerCase() === email) || {
-          id: 'admin-alex',
-          name: 'Alex Ribeiro',
-          email: 'armidiasintegradas@gmail.com',
-          role: 'Diretor / Administrador Geral',
-          level: 'Admin',
-          provider: 'Apple',
-          avatar: 'AR'
-        };
-        currentUser = adminUser;
-        accessLevel = 'Admin';
-        currentScreen = 'projects';
-        closeAppleAuthModal();
-        showToast('✓ Bem-vindo, Alex Ribeiro! Autenticado com Apple ID (Acesso Total).');
-        saveSessionState();
-        updateUserPresence();
-        broadcastPresenceHeartbeat();
-        render();
-        return;
-      }
-
-      // 2. Ver se já está em registeredUsers
-      const registered = registeredUsers.find(u => u.email.toLowerCase() === email);
-      if (registered) {
-        if (registered.status === 'Suspenso') {
-          closeAppleAuthModal();
-          currentScreen = 'access_suspended';
-          render();
-          return;
-        }
-        if (registered.status === 'Rejeitado') {
-          closeAppleAuthModal();
-          currentScreen = 'access_rejected';
-          render();
-          return;
-        }
-
-        currentUser = registered;
-        accessLevel = registered.level || registered.role || 'Canteiro';
-        currentScreen = 'projects';
-        closeAppleAuthModal();
-        showToast(`✓ Bem-vindo(a), ${registered.name}! Autenticado com Apple ID.`);
-        saveSessionState();
-        updateUserPresence();
-        broadcastPresenceHeartbeat();
-        render();
-        return;
-      }
-
-      // 2. Ver se está em pendingUsers
-      const pending = pendingUsers.find(u => u.email.toLowerCase() === email);
-      if (pending) {
-        closeAppleAuthModal();
-        showPendingStatusModal(pending);
-        return;
-      }
-
-      // 3. Novo cadastro Apple
-      const newAppleUser = {
-        id: 'usr-a-' + Date.now(),
-        name: name,
-        email: email,
-        provider: 'Apple',
-        role: 'Canteiro',
-        level: 'Canteiro',
-        requestedLevel: 'Canteiro',
-        company: 'Planes ENG',
-        sector: 'Operação de Campo',
-        phone: '(82) 99822-1100',
-        whatsapp: '5582998221100',
-        cpf: '000.000.000-00',
-        rg: 'SSP-00.000.000',
-        date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'Pendente',
-        avatar: ''
-      };
-
-      pendingUsers.unshift(newAppleUser);
-      saveUsersStorage();
-      broadcastCloudAction('USER_REQUEST_ACCESS', { user: newAppleUser });
+    function handleAppleSelect() {
       closeAppleAuthModal();
-      showPendingStatusModal(newAppleUser);
-      showToast(`✓ Solicitação via Apple ID enviada para ${name}! Aguardando aprovação do Admin.`);
-      render();
+      showToast('Este fluxo legado foi desativado por segurança. Use o Apple OAuth oficial.');
+      return false;
     }
 
     function handleAppleCustomSubmit() {
