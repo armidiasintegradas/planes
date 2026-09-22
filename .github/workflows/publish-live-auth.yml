@@ -7,7 +7,6 @@ on:
       - main
     paths:
       - public/auth-gate-live.js
-      - public/auth-runtime-bridge-live.js
       - public/email-lifecycle-kick-live.js
       - public/legacy-auth-sanitizer-live.js
       - sw.js
@@ -57,7 +56,6 @@ jobs:
         run: |
           set -euo pipefail
           cp source/public/auth-gate-live.js site/auth-gate-live.js
-          cp source/public/auth-runtime-bridge-live.js site/auth-runtime-bridge-live.js
           cp source/public/email-lifecycle-kick-live.js site/email-lifecycle-kick-live.js
           cp source/public/legacy-auth-sanitizer-live.js site/legacy-auth-sanitizer-live.js
           cp source/sw.js site/sw.js
@@ -182,19 +180,16 @@ jobs:
           runtime_existing = re.compile(re.escape(runtime_start) + r'.*?' + re.escape(runtime_end), re.S)
           html = runtime_existing.sub('', html)
 
-          runtime_block = f'''{runtime_start}
-          <script src="./auth-runtime-bridge-live.js?v={version}"></script>
-          {runtime_end}'''
+          # Production must use only the native runtime hydrator.
+          html = re.sub(
+              r'\s*<script[^>]+auth-runtime-bridge-live\.js[^>]*></script>\s*',
+              '\n',
+              html,
+              flags=re.I,
+          )
 
-          if '</body>' not in html:
-              raise SystemExit('index.html has no </body> marker; refusing to publish runtime bridge')
-
-          html = html.replace('</body>', runtime_block + '\n</body>', 1)
-
-          if html.count(runtime_start) != 1 or html.count(runtime_end) != 1:
-              raise SystemExit('runtime bridge marker count is not exactly one')
-          if './auth-runtime-bridge-live.js?v=' not in html:
-              raise SystemExit('runtime bridge reference missing after patch')
+          if 'auth-runtime-bridge-live.js' in html:
+              raise SystemExit('external runtime bridge reference still present')
 
           path.write_text(html, encoding='utf-8')
           PY
@@ -204,7 +199,6 @@ jobs:
           set -euo pipefail
           test -s site/index.html
           test -s site/auth-gate-live.js
-          test -s site/auth-runtime-bridge-live.js
           test -s site/email-lifecycle-kick-live.js
           test -s site/legacy-auth-sanitizer-live.js
           test -s site/sw.js
@@ -212,7 +206,7 @@ jobs:
           test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
           grep -q 'legacy-auth-sanitizer-live.js?v=' site/index.html
           grep -q 'auth-gate-live.js?v=' site/index.html
-          grep -q 'auth-runtime-bridge-live.js?v=' site/index.html
+          ! grep -q 'auth-runtime-bridge-live.js' site/index.html
           grep -q "sw.js?v=13" site/index.html
           grep -q 'controllerchange' site/index.html
           grep -q 'window.applySupabaseAuthPayload = function applySupabaseAuthPayload' site/index.html
@@ -220,15 +214,12 @@ jobs:
           grep -q 'data-planes-legacy-auth-disabled' site/legacy-auth-sanitizer-live.js
           grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
           grep -q "planes-os-v13" site/sw.js
-          grep -q 'auth-runtime-bridge-live.js' site/sw.js
           grep -q 'signInWithOAuth' site/auth-gate-live.js
           grep -q "provider: 'google'" site/auth-gate-live.js
           grep -q 'signInWithPassword' site/auth-gate-live.js
           grep -q 'signInWithPasskey' site/auth-gate-live.js
           grep -q 'registerPasskey' site/auth-gate-live.js
           grep -q 'passkeys_enabled' site/auth-gate-live.js
-          grep -q '__PLANES_AUTH_HYDRATED__' site/auth-runtime-bridge-live.js
-          grep -q 'planes-auth-legacy-hydrated' site/auth-runtime-bridge-live.js
 
       - name: Publish to gh-pages
         working-directory: site
@@ -236,7 +227,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html auth-gate-live.js auth-runtime-bridge-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
+          git add index.html auth-gate-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
           if git diff --cached --quiet; then
             echo "No Pages changes to publish."
             exit 0
