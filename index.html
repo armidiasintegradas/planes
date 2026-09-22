@@ -2896,25 +2896,46 @@
     });
 
     let planesViewportSyncTimer = null;
-    function stabilizePlanesViewport() {
+    let planesViewportWasDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+    function stabilizePlanesViewport(force = false) {
       if (planesViewportSyncTimer) clearTimeout(planesViewportSyncTimer);
       planesViewportSyncTimer = setTimeout(() => {
         planesViewportSyncTimer = null;
+
         const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+        const crossedBreakpoint = isDesktop !== planesViewportWasDesktop;
+        planesViewportWasDesktop = isDesktop;
+        let stateChanged = false;
+
         if (isDesktop) {
-          isProjectSwitcherOpen = false;
-          isMoreSheetOpen = false;
+          if (isProjectSwitcherOpen) {
+            isProjectSwitcherOpen = false;
+            stateChanged = true;
+          }
+          if (isMoreSheetOpen) {
+            isMoreSheetOpen = false;
+            stateChanged = true;
+          }
           const drawer = document.getElementById('mobile-drawer');
-          if (drawer) drawer.classList.add('hidden');
+          if (drawer && !drawer.classList.contains('hidden')) {
+            drawer.classList.add('hidden');
+          }
         }
+
         const profileModal = document.getElementById('edit-profile-modal');
         if (profileModal) profileModal.style.maxWidth = '100vw';
-        try { render(); } catch (e) {}
-      }, 120);
+
+        // Mobile browser chrome can fire many resize events while scrolling.
+        // Avoid re-rendering the entire app unless the responsive mode actually changed.
+        if (force || crossedBreakpoint || stateChanged) {
+          try { render(); } catch (e) {}
+        }
+      }, 180);
     }
 
-    window.addEventListener('resize', stabilizePlanesViewport, { passive: true });
-    window.addEventListener('orientationchange', stabilizePlanesViewport, { passive: true });
+    window.addEventListener('resize', () => stabilizePlanesViewport(false), { passive: true });
+    window.addEventListener('orientationchange', () => stabilizePlanesViewport(true), { passive: true });
 
     async function refreshPlanesAfterResume() {
       if (!supabaseClient || navigator.onLine === false || !currentUser) return;
