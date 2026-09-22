@@ -7400,32 +7400,28 @@
         return;
       }
 
-      let badge = 'bg-blue-100 text-blue-900 border-blue-300';
-      if (status === 'No Canteiro') badge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-      if (status === 'Em Transporte') badge = 'bg-amber-100 text-amber-900 border-amber-300';
-      if (status === 'Atrasado') badge = 'bg-rose-100 text-rose-900 border-rose-300';
-
       const newSupply = {
         id: Date.now(),
-        name, supplier, qtd, date: date || 'Programado', sector, status, badge
+        name,
+        supplier,
+        qtd,
+        date: date || 'Programado',
+        sector,
+        status
       };
-      suppliesList.unshift(newSupply);
-
-      closeAddSupplyModal();
-      render();
 
       const ok = await persistSupplyRecord(newSupply);
-      if (ok) {
+      if (!ok) {
         await refreshIntelligenceOperationalData();
         render();
-        showToast(`✓ Insumo "${name}" cadastrado e sincronizado.`);
+        showToast('Falha ao cadastrar o insumo no Supabase.');
         return;
       }
 
-      const reconciled = await refreshIntelligenceOperationalData();
-      if (!reconciled) suppliesList = suppliesList.filter(item => item !== newSupply);
+      closeAddSupplyModal();
+      await refreshIntelligenceOperationalData();
       render();
-      showToast('Falha ao cadastrar o insumo no Supabase. O item provisório foi removido.');
+      showToast(`✓ Insumo "${name}" cadastrado e sincronizado.`);
     }
 
     function handleSupplyExcelUpload(event) {
@@ -7438,8 +7434,6 @@
           { id: Date.now()+2, name: 'Cabos Elétricos Cobre 4mm (Revisão Excel)', supplier: 'Prysmian Cabos', qtd: '1.200 Metros', date: 'Amanhã', sector: 'Arena Shows', status: 'Em Transporte', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
         ];
 
-        suppliesList.unshift(...imported);
-        render();
         const results = await Promise.all(imported.map(persistSupplyRecord));
         await refreshIntelligenceOperationalData();
         render();
@@ -7533,26 +7527,44 @@
       if (!file) return;
 
       showToast(`Comparando "${file.name}" com os dados atuais da obra...`);
-      setTimeout(() => {
+      setTimeout(async () => {
         const oldP = parseFloat(physicalProgress) || 61.8;
-        const newP = Math.min(100, (oldP + 2.4)).toFixed(1);
+        const oldTarget = selectedProject ? selectedProject.targetProgress : null;
+        const oldSpent = selectedProject ? selectedProject.spent : null;
+        const newP = Number(Math.min(100, oldP + 2.4).toFixed(1));
+        const newTarget = Number(Math.min(100, newP + 4.6).toFixed(1));
+
+        // Valores candidatos ficam fora da UI até o Supabase confirmar.
         physicalProgress = newP;
         if (selectedProject) {
           selectedProject.progress = newP;
-          selectedProject.targetProgress = Math.min(100, parseFloat(newP) + 4.6).toFixed(1);
+          selectedProject.targetProgress = newTarget;
           selectedProject.spent = 'R$ 15,3M';
         }
-        saveProjectsStorage();
+
+        const ok = await persistProjectMetrics();
+        if (!ok) {
+          physicalProgress = oldP;
+          if (selectedProject) {
+            selectedProject.progress = oldP;
+            selectedProject.targetProgress = oldTarget;
+            selectedProject.spent = oldSpent;
+          }
+          await refreshIntelligenceOperationalData();
+          render();
+          showToast('A planilha não foi aplicada porque o Supabase não confirmou a atualização.');
+          return;
+        }
 
         const newLog = {
           id: 'LOG-' + Date.now().toString().slice(-6),
           fileName: file.name,
-          author: 'Alex Ribeiro (Admin Master)',
+          author: currentUser?.name || 'Administrador',
           date: 'Hoje, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           prevProgress: oldP,
-          newProgress: parseFloat(newP),
-          progressDiff: '+2.4%',
-          prevSpent: 'R$ 14,8M',
+          newProgress: newP,
+          progressDiff: '+' + (newP - oldP).toFixed(1) + '%',
+          prevSpent: oldSpent || 'R$ 14,8M',
           newSpent: 'R$ 15,3M',
           forecastDiff: '-5 dias recuperados',
           status: 'Auditado & Aplicado',
@@ -7561,11 +7573,10 @@
 
         projectUpdateLogs.unshift(newLog);
         saveProjectLogsStorage();
-
+        saveProjectsStorage();
+        await refreshIntelligenceOperationalData();
         render();
-        persistProjectMetrics().then(ok => {
-          showToast(ok ? `✓ Planilha "${file.name}" aplicada e sincronizada. Novo avanço: ${newP}%.` : `Planilha aplicada localmente; sincronização pendente.`);
-        });
+        showToast(`✓ Planilha "${file.name}" aplicada e sincronizada. Novo avanço: ${newP}%.`);
       }, 900);
     }
 
