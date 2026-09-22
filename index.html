@@ -517,7 +517,7 @@
   <script>
   window.__BUILD_TIMESTAMP__ = 1790080320;
   
-  // PWA v13: o Service Worker gerencia a expiração dos caches antigos.
+  // PWA v14: o Service Worker gerencia a expiração dos caches antigos.
   // Não apagar caches manualmente aqui; isso causava conflito com o SW ativo no iOS.
   if ('serviceWorker' in navigator) {
     let planesSwReloaded = false;
@@ -529,7 +529,7 @@
     });
 
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=13').then(reg => {
+      navigator.serviceWorker.register('./sw.js?v=14').then(reg => {
         reg.update();
       }).catch(() => {});
     });
@@ -589,6 +589,7 @@
 
 
 
+
 <!-- PLANES_AUTH_GATE_START -->
 <style id="planes-auth-bootstrap">
   html.planes-auth-loading body{visibility:hidden!important}
@@ -597,9 +598,9 @@
   html.planes-auth-blocked #planes-auth-root{visibility:visible!important;pointer-events:auto!important}
 </style>
 <script>document.documentElement.classList.add('planes-auth-loading');</script>
-<script type="module" src="./legacy-auth-sanitizer-live.js?v=cd4a0e0b4b93"></script>
-<script type="module" src="./auth-gate-live.js?v=cd4a0e0b4b93"></script>
-<script type="module" src="./email-lifecycle-kick-live.js?v=cd4a0e0b4b93"></script>
+<script type="module" src="./legacy-auth-sanitizer-live.js?v=b996c19e3f0e"></script>
+<script type="module" src="./auth-gate-live.js?v=b996c19e3f0e"></script>
+<script type="module" src="./email-lifecycle-kick-live.js?v=b996c19e3f0e"></script>
 <!-- PLANES_AUTH_GATE_END -->
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
@@ -19351,7 +19352,16 @@ ${activeNav === 'Equipe & Contatos' ? `
     }
 
     window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {
-      if (!payload || !payload.user || window.__PLANES_AUTH_INTERNAL_APPLIED__) return false;
+      if (!payload || !payload.user) return false;
+
+      const targetUserId = payload.user.auth_user_id || payload.user.id || null;
+      if (
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ &&
+        window.__PLANES_AUTH_APPLIED_USER_ID__ === targetUserId
+      ) {
+        window.__PLANES_AUTH_HYDRATED__ = true;
+        return true;
+      }
 
       try {
         const normalizedLevel = normalizeSupabaseAccessLevel(
@@ -19401,6 +19411,7 @@ ${activeNav === 'Equipe & Contatos' ? `
         }
 
         window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
+        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
         window.__PLANES_AUTH_HYDRATED__ = true;
 
         try { saveSessionState(); } catch (e) {}

@@ -80,7 +80,7 @@ function blockApp() {
 }
 
 function hydratePlanesFromSupabase(user, profile) {
-  if (!user || !profile || profile.status !== 'approved') return;
+  if (!user || !profile || profile.status !== 'approved') return false;
 
   const payload = {
     user: {
@@ -110,7 +110,7 @@ function hydratePlanesFromSupabase(user, profile) {
   if (typeof window.applySupabaseAuthPayload === 'function') {
     try {
       const applied = window.applySupabaseAuthPayload(payload);
-      if (applied) return;
+      if (applied) return true;
     } catch (error) {
       console.warn('Direct runtime auth hydrate failed:', error);
     }
@@ -119,6 +119,7 @@ function hydratePlanesFromSupabase(user, profile) {
   window.dispatchEvent(new CustomEvent('planes-auth-payload-ready', {
     detail: payload
   }));
+  return false;
 }
 
 function allowApp(profile = null, user = null) {
@@ -142,10 +143,16 @@ function allowApp(profile = null, user = null) {
   window.addEventListener('planes-auth-legacy-hydrated', onHydrated, { once: true });
 
   blockApp();
-  hydratePlanesFromSupabase(user, profile);
+  const appliedImmediately = hydratePlanesFromSupabase(user, profile);
+  if (appliedImmediately) {
+    releaseApp();
+    return;
+  }
 
   const retryOnWindowLoad = () => {
-    if (!released) hydratePlanesFromSupabase(user, profile);
+    if (released) return;
+    const applied = hydratePlanesFromSupabase(user, profile);
+    if (applied) releaseApp();
   };
   if (document.readyState === 'complete') {
     window.setTimeout(retryOnWindowLoad, 0);
@@ -367,10 +374,18 @@ function renderMessage(target, text, kind = '') {
 async function loadCapabilities() {
   try {
     const settingsUrl = `${SUPABASE_URL}/auth/v1/settings?ts=${Date.now()}`;
-    const response = await fetch(settingsUrl, {
-      cache: 'no-store',
-      headers: { apikey: SUPABASE_KEY },
-    });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3500);
+    let response;
+    try {
+      response = await fetch(settingsUrl, {
+        cache: 'no-store',
+        headers: { apikey: SUPABASE_KEY },
+        signal: controller.signal,
+      });
+    } finally {
+      window.clearTimeout(timeout);
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const settings = await response.json();
     capabilities = {
@@ -641,6 +656,10 @@ async function resetPlanesRuntimeAfterSignOut() {
   try {
     localStorage.removeItem('planes_active_session');
     localStorage.removeItem(PASSKEY_DISMISS_KEY);
+    delete window.__PLANES_AUTH_BRIDGE_PAYLOAD__;
+    delete window.__PLANES_AUTH_HYDRATED__;
+    delete window.__PLANES_AUTH_INTERNAL_APPLIED__;
+    delete window.__PLANES_AUTH_APPLIED_USER_ID__;
   } catch {}
 
   const script = document.createElement('script');
