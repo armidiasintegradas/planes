@@ -2194,13 +2194,9 @@
         return;
       }
 
-      physicalProgress = nextProgress;
-      if (selectedProject) selectedProject.progress = nextProgress;
-      const metricsOk = await persistProjectMetrics();
+      const metricsOk = await persistProjectMetrics({ physical_progress: nextProgress });
 
       if (!metricsOk) {
-        physicalProgress = previousProgress;
-        if (selectedProject) selectedProject.progress = previousProjectProgress;
         await persistValidationStatus(item, 'Pendente');
         await refreshIntelligenceOperationalData();
         render();
@@ -2210,7 +2206,7 @@
 
       await refreshIntelligenceOperationalData();
       render();
-      showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${physicalProgress}%`);
+      showToast(`✓ Medição de "${item.item}" aprovada e sincronizada. Avanço: ${nextProgress}%`);
     }
 
     async function rejectValidation(id) {
@@ -7701,22 +7697,12 @@
     async function applyExcelProjectUpdate() {
       if (!excelDiffData) return;
 
-      const previousProgress = physicalProgress;
-      const previousPacScore = pacScore;
-      const previousFinancialSpent = financialSpent;
-      const previousProjectProgress = selectedProject ? selectedProject.progress : null;
-
-      physicalProgress = 64.2;
-      pacScore = 82;
-      financialSpent = 15.45;
-      if (selectedProject) selectedProject.progress = physicalProgress;
-
-      const synced = await persistProjectMetrics();
+      const synced = await persistProjectMetrics({
+        physical_progress: 64.2,
+        pac_score: 82,
+        financial_spent_m: 15.45
+      });
       if (!synced) {
-        physicalProgress = previousProgress;
-        pacScore = previousPacScore;
-        financialSpent = previousFinancialSpent;
-        if (selectedProject) selectedProject.progress = previousProjectProgress;
         await refreshIntelligenceOperationalData();
         render();
         showToast('Falha ao sincronizar a atualização do Excel. Nada foi aplicado localmente.');
@@ -8730,26 +8716,21 @@
       }
 
       if (pending.kind === 'update_pac') {
-        const before = { pacScore, physicalProgress, projectProgress: selectedProject ? selectedProject.progress : null };
         const candidatePac = Number.isFinite(Number(pending.payload.pac_score))
           ? Math.max(0, Math.min(100, Number(pending.payload.pac_score)))
-          : pacScore;
+          : Number(pacScore || 0);
         const candidateProgress = Number.isFinite(Number(pending.payload.physical_progress))
           ? Math.max(0, Math.min(100, Number(pending.payload.physical_progress)))
-          : physicalProgress;
+          : Number(physicalProgress || 0);
 
-        pacScore = candidatePac;
-        physicalProgress = candidateProgress;
-        if (selectedProject) selectedProject.progress = candidateProgress;
-
-        const ok = await persistProjectMetrics();
+        const ok = await persistProjectMetrics({
+          pac_score: candidatePac,
+          physical_progress: candidateProgress
+        });
         if (ok) {
           await refreshIntelligenceOperationalData();
-          result = { ok: true, pac: pacScore, physical_progress: physicalProgress };
+          result = { ok: true, pac: candidatePac, physical_progress: candidateProgress };
         } else {
-          pacScore = before.pacScore;
-          physicalProgress = before.physicalProgress;
-          if (selectedProject) selectedProject.progress = before.projectProgress;
           await refreshIntelligenceOperationalData();
           result = { ok: false, error: 'metrics_update_failed' };
         }
@@ -9677,18 +9658,12 @@
 
     async function updateFieldProgress(delta, label, complete = false) {
       const beforeProgress = Number.parseFloat(physicalProgress) || 0;
-      const beforeProjectProgress = selectedProject ? selectedProject.progress : null;
       const nextProgress = complete
         ? 100
         : Math.min(100, Number((beforeProgress + Number(delta || 0)).toFixed(1)));
 
-      physicalProgress = nextProgress;
-      if (selectedProject) selectedProject.progress = nextProgress;
-
-      const ok = await persistProjectMetrics();
+      const ok = await persistProjectMetrics({ physical_progress: nextProgress });
       if (!ok) {
-        physicalProgress = beforeProgress;
-        if (selectedProject) selectedProject.progress = beforeProjectProgress;
         await refreshIntelligenceOperationalData();
         render();
         showToast('Não foi possível registrar o avanço no Supabase.');
@@ -10213,7 +10188,7 @@
       return operationalProjectIdCache;
     }
 
-    async function persistProjectMetrics() {
+    async function persistProjectMetrics(overrides = {}) {
       if (navigator.onLine === false) {
         setOperationalRealtimeStatus('Offline');
         return false;
@@ -10221,22 +10196,43 @@
       if (!supabaseClient) return false;
       const projectId = await getOperationalProjectId();
       if (!projectId) return false;
-      const target = Number.parseFloat(selectedProject && selectedProject.targetProgress) || Number.parseFloat(physicalProgress) || 0;
-      const spent = Number.parseFloat(financialSpent) || Number.parseFloat(String(selectedProject?.spent || '').replace(/[^0-9,.-]/g,'').replace(',','.')) || 0;
+
+      const nextPhysical = Number.isFinite(Number(overrides.physical_progress))
+        ? Number(overrides.physical_progress)
+        : (Number.parseFloat(physicalProgress) || 0);
+      const nextTarget = Number.isFinite(Number(overrides.target_progress))
+        ? Number(overrides.target_progress)
+        : (Number.parseFloat(selectedProject && selectedProject.targetProgress) || nextPhysical);
+      const nextPac = Number.isFinite(Number(overrides.pac_score))
+        ? Number(overrides.pac_score)
+        : (Number.parseFloat(pacScore) || 0);
+      const nextSpent = Number.isFinite(Number(overrides.financial_spent_m))
+        ? Number(overrides.financial_spent_m)
+        : (Number.parseFloat(financialSpent) || Number.parseFloat(String(selectedProject?.spent || '').replace(/[^0-9,.-]/g,'').replace(',','.')) || 0);
+      const nextWorkers = Number.isFinite(Number(overrides.workers_count))
+        ? Number(overrides.workers_count)
+        : (Number.parseInt(workersCount) || Number.parseInt(selectedProject?.workers) || 0);
+
       const { error } = await supabaseClient.from('project_metrics').upsert({
         project_id: projectId,
-        physical_progress: Number.parseFloat(physicalProgress) || 0,
-        target_progress: target,
-        pac_score: Number.parseFloat(pacScore) || 0,
-        financial_spent_m: spent,
-        workers_count: Number.parseInt(workersCount) || Number.parseInt(selectedProject?.workers) || 0,
+        physical_progress: Math.max(0, Math.min(100, nextPhysical)),
+        target_progress: Math.max(0, Math.min(100, nextTarget)),
+        pac_score: Math.max(0, Math.min(100, nextPac)),
+        financial_spent_m: Math.max(0, nextSpent),
+        workers_count: Math.max(0, Math.trunc(nextWorkers)),
         updated_at: new Date().toISOString()
       }, { onConflict: 'project_id' });
+
       if (error) {
         console.warn('Falha ao persistir métricas operacionais:', error);
         return false;
       }
-      trackUserHabit('operational_action', { module: 'Curva S & PAC', topic: 'pac', mode: 'touch', metadata: { action: 'metrics_update' } });
+      trackUserHabit('operational_action', {
+        module: 'Curva S & PAC',
+        topic: 'pac',
+        mode: 'touch',
+        metadata: { action: 'metrics_update', source: 'supabase_first' }
+      });
       return true;
     }
 
