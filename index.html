@@ -1846,7 +1846,7 @@
   <!-- MODAL (DESKTOP) / BOTTOM SHEET (MOBILE): EDITAR MEU PERFIL        -->
   <!-- ================================================================= -->
   <div id="edit-profile-modal" style="display: none;" class="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-slate-950/70 backdrop-blur-xs p-0 lg:p-4 hidden animate-fade-in overflow-y-auto" onclick="closeEditProfileModal()">
-    <div class="bg-white rounded-t-[28px] lg:rounded-[24px] max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-scale-up max-h-[88vh] lg:max-h-auto overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-0" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-t-[28px] lg:rounded-[24px] max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-scale-up max-h-[88vh] lg:max-h-auto overflow-y-auto overflow-x-hidden pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-0" onclick="event.stopPropagation()">
       <!-- Modal Header -->
       <div class="bg-slate-950 text-white p-5 sm:p-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -1876,7 +1876,7 @@
           <div id="edit-profile-avatar-preview" class="w-14 h-14 rounded-[14px] bg-slate-950 text-[#d4ff00] flex items-center justify-center font-black text-xl shadow-xs shrink-0">
             AR
           </div>
-          <div class="flex-1 space-y-1">
+          <div class="flex-1 min-w-0 space-y-1">
             <label class="font-bold text-slate-800 block">Iniciais / Avatar</label>
             <input
               id="edit-profile-avatar"
@@ -5613,8 +5613,20 @@
       const newpassInput = document.getElementById('edit-profile-newpass');
       const passconfirmInput = document.getElementById('edit-profile-passconfirm');
 
-      if (avatarInput) avatarInput.value = u.avatar || 'AR';
-      if (preview) preview.innerText = u.avatar || 'AR';
+      const rawAvatar = String(u.avatar || '').trim();
+      const avatarLooksLikeUrl = /^(https?:\/\/|data:image\/)/i.test(rawAvatar);
+      const safeAvatar = (!avatarLooksLikeUrl && /^[A-Za-zÀ-ÿ0-9]{1,3}$/.test(rawAvatar))
+        ? rawAvatar.toUpperCase()
+        : ((u.name || u.email || 'US')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(part => part[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase() || 'US');
+      if (avatarInput) avatarInput.value = safeAvatar;
+      if (preview) preview.innerText = safeAvatar;
       if (nameInput) nameInput.value = u.name || '';
       if (emailInput) emailInput.value = u.email || '';
       if (phoneInput) phoneInput.value = maskPhone(u.phone || '');
