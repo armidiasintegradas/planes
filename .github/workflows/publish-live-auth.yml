@@ -141,24 +141,41 @@ jobs:
               raise SystemExit('PWA bootstrap is not v13; refusing to publish')
 
           # Expose the native runtime hydrator so the auth gate can call it directly.
+          # Keep this transformation idempotent because gh-pages may already be patched.
           html = html.replace(
-              "function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
-              "window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
-              1,
+              "window.applySupabaseAuthPayload = window.applySupabaseAuthPayload = function applySupabaseAuthPayload",
+              "window.applySupabaseAuthPayload = function applySupabaseAuthPayload",
           )
           html = html.replace(
-              "applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
-              "window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
-              1,
-          )
-          html = html.replace(
-              "if (!applySupabaseAuthPayload()) render();",
-              "if (!window.applySupabaseAuthPayload()) render();",
-              1,
+              "window.window.applySupabaseAuthPayload(",
+              "window.applySupabaseAuthPayload(",
           )
 
           if "window.applySupabaseAuthPayload = function applySupabaseAuthPayload" not in html:
+              html = html.replace(
+                  "function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
+                  "window.applySupabaseAuthPayload = function applySupabaseAuthPayload(payload = window.__PLANES_AUTH_BRIDGE_PAYLOAD__) {",
+                  1,
+              )
+
+          if "window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);" not in html:
+              html = html.replace(
+                  "applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
+                  "window.applySupabaseAuthPayload(event.detail || window.__PLANES_AUTH_BRIDGE_PAYLOAD__);",
+                  1,
+              )
+
+          if "if (!window.applySupabaseAuthPayload()) render();" not in html:
+              html = html.replace(
+                  "if (!applySupabaseAuthPayload()) render();",
+                  "if (!window.applySupabaseAuthPayload()) render();",
+                  1,
+              )
+
+          if "window.applySupabaseAuthPayload = function applySupabaseAuthPayload" not in html:
               raise SystemExit('native runtime hydrator was not exposed')
+          if "window.window.applySupabaseAuthPayload" in html:
+              raise SystemExit('invalid double-window runtime hydrator reference')
 
           runtime_start = '<!-- PLANES_AUTH_RUNTIME_BRIDGE_START -->'
           runtime_end = '<!-- PLANES_AUTH_RUNTIME_BRIDGE_END -->'
