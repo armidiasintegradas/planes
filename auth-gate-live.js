@@ -113,7 +113,7 @@ function hydratePlanesFromSupabase(user, profile) {
 
         try {
           if (typeof render !== 'function' || typeof currentUser === 'undefined' || typeof currentScreen === 'undefined') {
-            if (attempts < 120) window.setTimeout(applySupabaseIdentity, 50);
+            if (attempts < 1200) window.setTimeout(applySupabaseIdentity, 50);
             return;
           }
 
@@ -186,7 +186,7 @@ function hydratePlanesFromSupabase(user, profile) {
           }));
         } catch (error) {
           console.warn('Planes Supabase identity hydrate failed:', error);
-          if (attempts < 120) window.setTimeout(applySupabaseIdentity, 50);
+          if (attempts < 1200) window.setTimeout(applySupabaseIdentity, 50);
         }
       };
       applySupabaseIdentity();
@@ -219,11 +219,33 @@ function allowApp(profile = null, user = null) {
   blockApp();
   hydratePlanesFromSupabase(user, profile);
 
+  const retryOnWindowLoad = () => {
+    if (!released) hydratePlanesFromSupabase(user, profile);
+  };
+  if (document.readyState === 'complete') {
+    window.setTimeout(retryOnWindowLoad, 0);
+  } else {
+    window.addEventListener('load', retryOnWindowLoad, { once: true });
+  }
+
+  window.setTimeout(() => {
+    if (released) return;
+    const node = root();
+    node.innerHTML = `
+      <section class="planes-auth-card">
+        <div class="planes-auth-brand">PLANES OS</div>
+        <div class="planes-auth-subtitle">Ambiente seguro de gestão operacional</div>
+        <h1>Inicializando seu ambiente</h1>
+        <p>Sua sessão já foi validada. Estamos concluindo o carregamento da interface.</p>
+        <div class="planes-auth-message planes-auth-good">Aguarde alguns instantes. Não é necessário sair nem refazer o login.</div>
+      </section>`;
+  }, 7000);
+
   window.setTimeout(() => {
     if (released) return;
     window.removeEventListener('planes-auth-legacy-hydrated', onHydrated);
-    renderProfileError(user, 'A sessão foi validada, mas a interface não conseguiu concluir a inicialização. Recarregue a página.');
-  }, 6500);
+    renderProfileError(user, 'Sua sessão foi validada, mas a interface demorou mais que o esperado para iniciar. Toque em recarregar e tente novamente.');
+  }, 60000);
 }
 
 async function mountAdminAccessConsole(profile) {
