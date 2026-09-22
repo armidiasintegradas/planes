@@ -1,3 +1,4 @@
+window.__PLANES_EXTERNAL_AUTH_OWNER__ = true;
 window.__PLANES_AUTH_GATE_ACTIVE__ = true;
 const createClient = window.supabase?.createClient?.bind(window.supabase) || null;
 
