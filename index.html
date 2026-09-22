@@ -7579,12 +7579,12 @@
           { id: Date.now()+1, name: 'Treliças Metálicas Modulares (Lote Extra)', supplier: 'Gerdau Aços', qtd: '18 Toneladas', date: 'Hoje', sector: 'Arena Shows', status: 'No Canteiro', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { id: Date.now()+2, name: 'Pastilhas de Porcelana 20x20 Azul Cobalto', supplier: 'Portobello Shop', qtd: '450 m²', date: 'Amanhã', sector: 'Parque de Piscinas', status: 'Em Transporte', badge: 'bg-sky-100 text-sky-900 border-sky-300' }
         ];
-        suppliesList.unshift(...imported);
-        render();
         const results = await Promise.all(imported.map(persistSupplyRecord));
+        await refreshIntelligenceOperationalData();
+        render();
         showToast(results.every(Boolean)
           ? `✓ 2 novos insumos cadastrados e sincronizados a partir de "${file.name}".`
-          : `Insumos cadastrados localmente; parte da sincronização ficou pendente.`);
+          : `Não foi possível sincronizar todos os insumos. Apenas registros confirmados no Supabase foram mantidos.`);
       }, 700);
     }
 
@@ -7705,11 +7705,10 @@
       if (projectVersions[1]) projectVersions[1].status = 'Arquivado';
 
       if (selectedProject) selectedProject.progress = physicalProgress;
-      excelDiffData = null;
-      render();
 
       const synced = await persistProjectMetrics();
       if (synced) {
+        excelDiffData = null;
         await refreshIntelligenceOperationalData();
         render();
         showToast('✓ Projeto atualizado e sincronizado a partir da planilha. Avanço agora em 64.2%.');
@@ -8089,13 +8088,20 @@
       });
     }
 
-    function openProject(id) {
+    async function openProject(id) {
       const p = projectsList.find(x => x.id === id);
       if (p) {
         selectedProject = p;
+        operationalProjectIdCache = null;
+        projectIntelligenceContext = null;
         currentScreen = 'dashboard';
         showToast('Abrindo painel de ' + p.title + '...');
+        const refreshed = await refreshIntelligenceOperationalData();
+        if (supabaseClient) setupOperationalRealtime();
         render();
+        if (!refreshed && supabaseClient) {
+          showToast('Obra aberta. Dados operacionais aguardando sincronização.');
+        }
       }
     }
 
@@ -8233,44 +8239,45 @@
       }
     }
 
-    function submitFieldLog() {
+    async function submitFieldLog() {
       const front = document.getElementById('modal-front').value;
       const act = document.getElementById('modal-activity').value;
       const amt = document.getElementById('modal-amount').value;
       const unit = document.getElementById('modal-unit').value;
 
-      validations.unshift({
+      const validation = {
         id: Date.now(),
         resp: currentUser.name + ' (' + currentUser.level + ')',
         cargo: currentUser.role,
-        front: front,
+        front,
         item: act,
         qtd: amt + ' ' + unit,
         data: 'Agora mesmo',
         gps: 'Japaratinga - Coordenada GPS verificada',
         status: 'Pendente',
-        foto: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80',
-      });
+        foto: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80'
+      };
+
+      const ok = await persistValidationStatus(validation, 'Pendente');
+      if (!ok) {
+        await refreshIntelligenceOperationalData();
+        render();
+        showToast('Não foi possível enviar o apontamento. Verifique a conexão e tente novamente.');
+        return;
+      }
 
       closeLogModal();
-      showToast(amt + ' ' + unit + ' de ' + act + ' enviados para a Engenharia!');
+      await refreshIntelligenceOperationalData();
       render();
+      showToast(amt + ' ' + unit + ' de ' + act + ' enviados e sincronizados com a Engenharia.');
     }
 
-    function approveItem(id) {
-      const it = validations.find(v => v.id === id);
-      validations = validations.filter(v => v.id !== id);
-      physicalProgress = Number((physicalProgress + 0.6).toFixed(1));
-      financialSpent = Number((financialSpent + 0.15).toFixed(2));
-      showToast('✓ Medição de ' + (it ? it.item : 'item') + ' aprovada! Avanço: ' + physicalProgress + '%.');
-      render();
+    async function approveItem(id) {
+      return approveValidation(id);
     }
 
-    function rejectItem(id) {
-      const it = validations.find(v => v.id === id);
-      validations = validations.filter(v => v.id !== id);
-      showToast('Apontamento de ' + (it ? it.item : 'item') + ' devolvido para ajuste.');
-      render();
+    async function rejectItem(id) {
+      return rejectValidation(id);
     }
 
     // --- CHATGPT FAST CONVERSATIONAL ENGINE ---
