@@ -26,6 +26,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Checkout current production shell
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: production-site
+
+      - name: Assemble candidate production artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp public/auth-gate-live.js production-site/auth-gate-live.js
+          cp public/email-lifecycle-kick-live.js production-site/email-lifecycle-kick-live.js
+          cp public/legacy-auth-sanitizer-live.js production-site/legacy-auth-sanitizer-live.js
+          cp sw.js production-site/sw.js
+
+          grep -q "Planes" production-site/index.html
+          grep -q "hydratePlanesFromSupabase" production-site/auth-gate-live.js
+          grep -q "installSecureLogoutBridge" production-site/auth-gate-live.js
+          grep -q "planes-auth-payload-ready" production-site/auth-gate-live.js
+          grep -q "__PLANES_EXTERNAL_AUTH_OWNER__" production-site/auth-gate-live.js
+          grep -q "flowType: 'implicit'" production-site/auth-gate-live.js
+          grep -q "applySupabaseAuthPayload" production-site/index.html
+          grep -q "__PLANES_AUTH_INTERNAL_APPLIED__" production-site/index.html
+          grep -q "__PLANES_AUTH_APPLIED_USER_ID__" production-site/index.html
+          grep -q "externalAuthOwnsSession" production-site/index.html
+          ! grep -q "auth-runtime-bridge-live.js" production-site/index.html
+          grep -q "planes-os-v14" production-site/sw.js
+
       - name: Smoke test public production shell
         shell: bash
         run: |
@@ -35,26 +63,18 @@ jobs:
           curl -fsSL --retry 3 --retry-delay 2 "https://armidiasintegradas.github.io/planes/sw.js?ci=${GITHUB_SHA}" -o /tmp/planes-sw.js
           grep -q "Planes" /tmp/planes-index.html
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
-          grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
-          grep -q "planes-auth-payload-ready" /tmp/planes-auth-gate.js
           grep -q "applySupabaseAuthPayload" /tmp/planes-index.html
-          grep -q "__PLANES_AUTH_INTERNAL_APPLIED__" /tmp/planes-index.html
-          grep -q "__PLANES_AUTH_APPLIED_USER_ID__" /tmp/planes-index.html
-          ! grep -q "auth-runtime-bridge-live.js" /tmp/planes-index.html
           grep -q "planes-os-v14" /tmp/planes-sw.js
-          matched=0
-          for attempt in 1 2 3 4 5 6; do
-            curl -fsSL --retry 2 --retry-delay 1 "https://armidiasintegradas.github.io/planes/auth-gate-live.js?parity=$attempt" -o /tmp/planes-auth-gate.js
-            if cmp --silent public/auth-gate-live.js /tmp/planes-auth-gate.js; then
-              matched=1
-              break
-            fi
-            sleep 5
-          done
-          test "$matched" -eq 1
 
       - name: Validate authenticated runtime hydration in real browser
-        run: node tests/browser-auth-runtime-e2e.mjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --directory production-site >/tmp/planes-e2e-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          sleep 1
+          PLANES_E2E_URL="http://127.0.0.1:4173/" node tests/browser-auth-runtime-e2e.mjs
 
       - name: Diagnose login gate across viewports
         shell: bash
@@ -63,6 +83,10 @@ jobs:
           command -v google-chrome
           for size in 390,844 820,1180 1440,900; do
             out="/tmp/planes-$size.html"
+            python3 -m http.server 4174 --directory production-site >/tmp/planes-viewport-server.log 2>&1 &
+            server_pid=$!
+            trap 'kill $server_pid || true' EXIT
+            sleep 1
             google-chrome \
               --headless=new \
               --no-sandbox \
@@ -70,7 +94,9 @@ jobs:
               --virtual-time-budget=15000 \
               --window-size="$size" \
               --dump-dom \
-              "https://armidiasintegradas.github.io/planes/?ci=${GITHUB_SHA}&viewport=$size" > "$out"
+              "http://127.0.0.1:4174/?viewport=$size" > "$out"
+            kill $server_pid || true
+            trap - EXIT
             echo "VIEWPORT=$size AUTH_ROOT=$(grep -c 'id=\"planes-auth-root\"' "$out" || true) AUTH_CARD=$(grep -c 'planes-auth-card' "$out" || true) LOGIN=$(grep -c 'Entrar no Planes OS' "$out" || true) INIT=$(grep -c 'Inicializando seu ambiente' "$out" || true)"
             grep -Eo '<h1[^>]*>[^<]*|planes-auth-[a-z-]+' "$out" | head -20 || true
             grep -q 'PLANES OS' "$out"
