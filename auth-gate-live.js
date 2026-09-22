@@ -3,6 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.105.0';
 const SUPABASE_URL = 'https://xfgcbxppsbwmxwsuajou.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS';
 const REDIRECT_TO = 'https://armidiasintegradas.github.io/planes/';
+const IS_STANDALONE_IOS =
+  window.navigator.standalone === true ||
+  window.matchMedia?.('(display-mode: standalone)')?.matches === true;
 const ROOT_ID = 'planes-auth-root';
 const STYLE_ID = 'planes-auth-live-style';
 const PASSKEY_DISMISS_KEY = 'planes-passkey-offer-dismissed';
@@ -11,8 +14,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
+    detectSessionInUrl: IS_STANDALONE_IOS,
+    flowType: IS_STANDALONE_IOS ? 'implicit' : 'pkce',
     experimental: { passkey: true },
   },
 });
@@ -730,6 +733,40 @@ async function waitForDocumentBody() {
 
 async function completeOAuthCallbackIfPresent() {
   const url = new URL(window.location.href);
+
+  if (IS_STANDALONE_IOS) {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const hashError = hash.get('error') || hash.get('error_code');
+    const hashErrorDescription = hash.get('error_description');
+
+    if (hashError) {
+      const node = renderShell(`
+        <h1>Não foi possível concluir o login Google</h1>
+        <p class="planes-auth-muted">O Google retornou uma falha de autenticação.</p>
+        <div class="planes-auth-status planes-auth-bad">${escapeHtml(hashErrorDescription || hashError)}</div>
+        <button class="planes-auth-btn secondary" data-return-login style="margin-top:14px">Voltar para o login</button>
+      `);
+      node.querySelector('[data-return-login]')?.addEventListener('click', () => {
+        window.history.replaceState({}, document.title, REDIRECT_TO);
+        window.location.replace(REDIRECT_TO);
+      });
+      blockApp();
+      return { handled: true, session: null, failed: true };
+    }
+
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      return { handled: true, session: null, failed: true, error };
+    }
+
+    if (session?.user) {
+      window.history.replaceState({}, document.title, REDIRECT_TO);
+      return { handled: true, session, failed: false };
+    }
+
+    return { handled: false, session: null, failed: false };
+  }
+
   const code = url.searchParams.get('code');
   const oauthError = url.searchParams.get('error');
   const oauthErrorDescription = url.searchParams.get('error_description');
