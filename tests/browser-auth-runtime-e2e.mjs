@@ -189,4 +189,4 @@ main().catch(error => {
   process.exit(1);
 });
 
-// rerun marker: stabilized production
+// rerun marker: consolidated auth runtime
