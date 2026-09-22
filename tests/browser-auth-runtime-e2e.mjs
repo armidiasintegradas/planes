@@ -32,9 +32,15 @@ function createCdp(wsUrl) {
   const ws = new WebSocket(wsUrl);
   let id = 0;
   const pending = new Map();
+  const events = [];
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    if (!msg.id) return;
+    if (!msg.id) {
+      if (msg.method === 'Runtime.exceptionThrown' || msg.method === 'Runtime.consoleAPICalled') {
+        events.push(msg);
+      }
+      return;
+    }
     const waiter = pending.get(msg.id);
     if (!waiter) return;
     pending.delete(msg.id);
@@ -53,6 +59,7 @@ function createCdp(wsUrl) {
       ws.send(JSON.stringify({ id: callId, method, params }));
       return new Promise((resolve, reject) => pending.set(callId, { resolve, reject }));
     },
+    events,
     close() { ws.close(); }
   };
 }
@@ -70,6 +77,24 @@ async function main() {
     const originalOnMessage = cdp.onMessage;
     await cdp.call('Page.navigate', { url: 'https://armidiasintegradas.github.io/planes/' });
     await delay(7000);
+
+    const preflight = await cdp.call('Runtime.evaluate', {
+      expression: `({
+        readyState: document.readyState,
+        authHydratorType: typeof window.applySupabaseAuthPayload,
+        supabaseType: typeof window.supabase,
+        appPresent: !!document.getElementById('app'),
+        appLength: document.getElementById('app')?.innerHTML?.length || 0,
+        htmlClass: document.documentElement.className,
+        authRootPresent: !!document.getElementById('planes-auth-root')
+      })`,
+      returnByValue: true
+    });
+    console.log('PLANES_AUTH_PREFLIGHT=' + JSON.stringify(preflight?.result?.value || null));
+
+    if (cdp.events.length) {
+      console.log('PLANES_AUTH_BROWSER_EVENTS=' + JSON.stringify(cdp.events.slice(-20)));
+    }
 
     const expression = `(async () => {
       const payload = {
