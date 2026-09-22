@@ -36,7 +36,16 @@ jobs:
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
           grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
           grep -q "restoreDesiredProject" /tmp/planes-auth-gate.js
-          cmp --silent public/auth-gate-live.js /tmp/planes-auth-gate.js
+          matched=0
+          for attempt in 1 2 3 4 5 6; do
+            curl -fsSL --retry 2 --retry-delay 1 "https://armidiasintegradas.github.io/planes/auth-gate-live.js?parity=$attempt" -o /tmp/planes-auth-gate.js
+            if cmp --silent public/auth-gate-live.js /tmp/planes-auth-gate.js; then
+              matched=1
+              break
+            fi
+            sleep 5
+          done
+          test "$matched" -eq 1
 
       - name: Headless browser login gate across viewports
         shell: bash
