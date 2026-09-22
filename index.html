@@ -10676,6 +10676,60 @@
       return 'Oi, ' + firstName + '. Análise concluída. O cockpit foi atualizado com risco, prioridade e próxima ação recomendada.';
     }
 
+    async function tryPrepareContextualTextMutation(rawPromptText) {
+      const raw = String(rawPromptText || '').trim();
+      const p = raw.toLowerCase();
+      const live = getPlanesLiveScreenContext();
+      let prepared = null;
+
+      if (/\b(cria|criar|crie)\b/.test(p) && p.includes('tarefa')) {
+        const match = raw.match(/(?:cria|criar|crie)\s+(?:uma\s+)?tarefa(?:\s+(?:para|de|:))?\s*(.*)$/i);
+        const title = String(match?.[1] || '').trim();
+        if (title) {
+          prepared = await executePlanesRealtimeTool('prepare_create_task', {
+            title,
+            responsible: currentUser?.name || '',
+            deadline: 'Hoje'
+          });
+        }
+      }
+
+      if (!prepared && live.module === 'Fila de Validações' && /\b(aprov|aprova|aprovar|confirma|confirmar)\w*/i.test(p)) {
+        const target = findVoiceValidation(raw) || (validations || [])[0];
+        if (target) {
+          prepared = await executePlanesRealtimeTool('prepare_approve_validation', { query: target.item || raw });
+        }
+      }
+
+      if (!prepared && live.module === 'Suprimentos' &&
+          /\b(receb|canteiro|status|atualiza|alter|confirma)\w*/i.test(p) &&
+          /\b(recebid|canteiro)\w*/i.test(p)) {
+        const target = findVoiceSupply(raw) || (suppliesList || [])[0];
+        if (target) {
+          prepared = await executePlanesRealtimeTool('prepare_update_supply_status', {
+            query: target.name || raw,
+            status: 'No Canteiro'
+          });
+        }
+      }
+
+      if (!prepared && /\b(conclui|concluir|finaliza|finalizar)\w*/i.test(p) && p.includes('tarefa')) {
+        const target = findVoiceTask(raw) || (tasksList || []).find(t => !t.done);
+        if (target) {
+          prepared = await executePlanesRealtimeTool('prepare_toggle_task', {
+            query: target.title || raw,
+            done: true
+          });
+        }
+      }
+
+      if (!prepared || prepared.ok === false) return prepared;
+      return {
+        ...prepared,
+        message: 'Entendi. Posso executar essa alteração agora. Revise abaixo e confirme antes de eu gravar no sistema.'
+      };
+    }
+
     async function askPlanesIntelligence(predefinedPrompt) {
       const inputElem = document.getElementById('intelligence-custom-input');
       const rawPromptText = predefinedPrompt || (inputElem ? inputElem.value : '');
@@ -10704,6 +10758,17 @@
       });
       addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence [' + liveScreenContext.module + ']: "' + rawPromptText.slice(0, 80) + '"');
       render();
+
+      const preparedMutation = await tryPrepareContextualTextMutation(rawPromptText);
+      if (preparedMutation && preparedMutation.ok !== false && preparedMutation.requires_confirmation) {
+        intelligenceChatHistory.push({
+          sender: 'ai',
+          text: preparedMutation.message || ('Posso executar: ' + (preparedMutation.summary || 'alteração solicitada') + '. Confirme antes de eu gravar.'),
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        });
+        render();
+        return;
+      }
 
       await refreshIntelligenceOperationalData();
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
@@ -19006,7 +19071,7 @@ ${activeNav === 'Equipe & Contatos' ? `
     renderOverlay();
     el.classList.add('open');
     document.documentElement.style.overflow='hidden';
-    try{if(typeof trackUserHabit==='function')trackUserHabit('intelligence_query',{module:'Planes Intelligence V2',topic:'open',mode:'ui'})}catch(e){}
+    try{if(typeof trackUserHabit==='function')trackUserHabit('intelligence_query',{module:'Planes Intelligence V2',topic:'open',mode:'touch'})}catch(e){}
     return true;
   };
   window.closePlanesIntelligenceV2=function(){
