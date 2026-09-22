@@ -539,6 +539,27 @@ async function subscribeProfile(userId) {
     .subscribe();
 }
 
+async function fetchProfileWithRetry(userId, attempts = 5) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id,email,full_name,avatar_url,status,role,approved_at')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!error && data) return { data, error: null };
+
+    lastError = error || new Error('profile_not_ready');
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 250 + (attempt * 250)));
+    }
+  }
+
+  return { data: null, error: lastError };
+}
+
 async function evaluateSession(session) {
   if (!session?.user) {
     if (profileChannel) {
@@ -550,11 +571,7 @@ async function evaluateSession(session) {
   }
 
   const user = session.user;
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id,email,full_name,avatar_url,status,role,approved_at')
-    .eq('id', user.id)
-    .single();
+  const { data: profile, error } = await fetchProfileWithRetry(user.id);
 
   if (error || !profile) {
     renderProfileError(user, error?.message || 'Perfil não encontrado.');
