@@ -9,6 +9,7 @@ on:
       - public/auth-runtime-bridge-live.js
       - public/email-lifecycle-kick-live.js
       - public/legacy-auth-sanitizer-live.js
+      - sw.js
       - .github/workflows/publish-live-auth.yml
   workflow_dispatch:
 
@@ -58,6 +59,7 @@ jobs:
           cp source/public/auth-runtime-bridge-live.js site/auth-runtime-bridge-live.js
           cp source/public/email-lifecycle-kick-live.js site/email-lifecycle-kick-live.js
           cp source/public/legacy-auth-sanitizer-live.js site/legacy-auth-sanitizer-live.js
+          cp source/sw.js site/sw.js
 
       - name: Inject auth bootstrap without replacing current site
         env:
@@ -134,6 +136,7 @@ jobs:
           test -s site/auth-runtime-bridge-live.js
           test -s site/email-lifecycle-kick-live.js
           test -s site/legacy-auth-sanitizer-live.js
+          test -s site/sw.js
           test "$(grep -o 'PLANES_AUTH_GATE_START' site/index.html | wc -l | tr -d ' ')" = "1"
           test "$(grep -o 'PLANES_AUTH_GATE_END' site/index.html | wc -l | tr -d ' ')" = "1"
           grep -q 'legacy-auth-sanitizer-live.js?v=' site/index.html
@@ -142,6 +145,8 @@ jobs:
           grep -q 'email-lifecycle-kick-live.js?v=' site/index.html
           grep -q 'data-planes-legacy-auth-disabled' site/legacy-auth-sanitizer-live.js
           grep -q 'planes-email-worker' site/email-lifecycle-kick-live.js
+          grep -q "planes-os-v13" site/sw.js
+          grep -q 'auth-runtime-bridge-live.js' site/sw.js
           grep -q 'signInWithOAuth' site/auth-gate-live.js
           grep -q "provider: 'google'" site/auth-gate-live.js
           grep -q 'signInWithPassword' site/auth-gate-live.js
@@ -157,7 +162,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html auth-gate-live.js auth-runtime-bridge-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js
+          git add index.html auth-gate-live.js auth-runtime-bridge-live.js email-lifecycle-kick-live.js legacy-auth-sanitizer-live.js sw.js
           if git diff --cached --quiet; then
             echo "No Pages changes to publish."
             exit 0
