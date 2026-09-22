@@ -26,6 +26,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Smoke test public production shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --retry-delay 2 https://armidiasintegradas.github.io/planes/ -o /tmp/planes-index.html
+          curl -fsSL --retry 3 --retry-delay 2 https://armidiasintegradas.github.io/planes/auth-gate-live.js -o /tmp/planes-auth-gate.js
+          grep -q "Planes" /tmp/planes-index.html
+          grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
+          grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
+          grep -q "restoreDesiredProject" /tmp/planes-auth-gate.js
+
       - name: Run regression tests
         run: npm test
 
