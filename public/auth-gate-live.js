@@ -100,6 +100,9 @@ function hydratePlanesFromSupabase(user, profile) {
   };
 
   window.__PLANES_AUTH_BRIDGE_PAYLOAD__ = payload;
+  window.dispatchEvent(new CustomEvent('planes-auth-payload-ready', {
+    detail: payload
+  }));
 
   const script = document.createElement('script');
   script.setAttribute('data-planes-auth-bridge', '1');
