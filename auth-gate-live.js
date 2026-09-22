@@ -76,15 +76,11 @@ function blockApp() {
   document.documentElement.classList.add('planes-auth-blocked');
 }
 
-function syncLegacyPlanesSession(user, profile) {
-  if (!user || !profile || profile.status !== 'approved') return false;
+function hydratePlanesFromSupabase(user, profile) {
+  if (!user || !profile || profile.status !== 'approved') return;
 
-  try {
-    const saved = localStorage.getItem('planes_active_session');
-    let existing = null;
-    try { existing = saved ? JSON.parse(saved) : null; } catch {}
-
-    const normalizedUser = {
+  const payload = {
+    user: {
       id: profile.id || user.id,
       auth_user_id: user.id,
       name: profile.full_name || user.user_metadata?.full_name || user.user_metadata?.name || (profile.email || user.email || 'Usuário').split('@')[0],
@@ -94,30 +90,69 @@ function syncLegacyPlanesSession(user, profile) {
       level: profile.role || 'campo',
       status: 'Aprovado',
       avatar: profile.avatar_url || ((profile.full_name || user.user_metadata?.full_name || user.email || 'US').slice(0, 2).toUpperCase()),
-    };
+    },
+    profile: {
+      id: profile.id || user.id,
+      email: profile.email || user.email || '',
+      role: profile.role || 'campo',
+      status: profile.status,
+    },
+  };
 
-    const alreadyHydrated =
-      existing?.user?.id === normalizedUser.id &&
-      existing?.currentScreen &&
-      existing.currentScreen !== 'login';
+  window.__PLANES_AUTH_BRIDGE_PAYLOAD__ = payload;
 
-    localStorage.setItem('planes_active_session', JSON.stringify({
-      user: normalizedUser,
-      accessLevel: normalizedUser.level,
-      currentScreen: existing?.currentScreen && existing.currentScreen !== 'login' ? existing.currentScreen : 'projects',
-      activeNav: existing?.activeNav || 'Visão Geral',
-      selectedProjectId: existing?.selectedProjectId || null,
-    }));
+  const script = document.createElement('script');
+  script.setAttribute('data-planes-auth-bridge', '1');
+  script.textContent = `
+    (() => {
+      let attempts = 0;
+      const applySupabaseIdentity = () => {
+        attempts += 1;
+        const bridge = window.__PLANES_AUTH_BRIDGE_PAYLOAD__;
+        if (!bridge || !bridge.user) return;
 
-    return !alreadyHydrated;
-  } catch (error) {
-    console.warn('Planes auth bridge could not persist legacy session:', error);
-    return false;
-  }
+        try {
+          if (typeof render !== 'function' || typeof currentUser === 'undefined' || typeof currentScreen === 'undefined') {
+            if (attempts < 120) window.setTimeout(applySupabaseIdentity, 50);
+            return;
+          }
+
+          currentUser = bridge.user;
+          if (typeof accessLevel !== 'undefined') {
+            accessLevel = bridge.user.level || bridge.user.role || 'campo';
+          }
+          if (currentScreen === 'login' || currentScreen === 'access_rejected' || currentScreen === 'access_suspended') {
+            currentScreen = 'projects';
+          }
+
+          if (typeof setupRealtimeSubscriptions === 'function') {
+            try { setupRealtimeSubscriptions(); } catch (error) { console.warn('Realtime hydrate warning:', error); }
+          }
+          if (typeof updateUserPresence === 'function') {
+            try { updateUserPresence(); } catch (error) {}
+          }
+          if (typeof broadcastPresenceHeartbeat === 'function') {
+            try { broadcastPresenceHeartbeat(); } catch (error) {}
+          }
+          if (typeof render === 'function') render();
+
+          window.dispatchEvent(new CustomEvent('planes-auth-legacy-hydrated', {
+            detail: bridge
+          }));
+        } catch (error) {
+          console.warn('Planes Supabase identity hydrate failed:', error);
+          if (attempts < 120) window.setTimeout(applySupabaseIdentity, 50);
+        }
+      };
+      applySupabaseIdentity();
+    })();
+  `;
+  document.documentElement.appendChild(script);
+  script.remove();
 }
 
 function allowApp(profile = null, user = null) {
-  const shouldReloadLegacyApp = syncLegacyPlanesSession(user, profile);
+  hydratePlanesFromSupabase(user, profile);
 
   document.documentElement.classList.remove('planes-auth-loading', 'planes-auth-blocked');
   document.getElementById(ROOT_ID)?.remove();
@@ -127,10 +162,6 @@ function allowApp(profile = null, user = null) {
 
   if (profile && ['super_admin', 'admin'].includes(profile.role)) {
     void mountAdminAccessConsole(profile);
-  }
-
-  if (shouldReloadLegacyApp) {
-    window.setTimeout(() => window.location.reload(), 0);
   }
 }
 
