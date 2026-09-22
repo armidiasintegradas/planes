@@ -12,7 +12,7 @@ const ROOT_ID = 'planes-auth-root';
 const STYLE_ID = 'planes-auth-live-style';
 const PASSKEY_DISMISS_KEY = 'planes-passkey-offer-dismissed';
 
-const supabase = createClient ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+const supabase = window.__PLANES_SUPABASE_CLIENT__ || (createClient ? createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -20,9 +20,9 @@ const supabase = createClient ? createClient(SUPABASE_URL, SUPABASE_KEY, {
     flowType: IS_STANDALONE_IOS ? 'implicit' : 'pkce',
     experimental: { passkey: true },
   },
-}) : null;
+}) : null);
 
-if (supabase) {
+if (supabase && !window.__PLANES_SUPABASE_CLIENT__) {
   window.__PLANES_SUPABASE_CLIENT__ = supabase;
 }
 
