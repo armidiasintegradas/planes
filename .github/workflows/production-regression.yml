@@ -35,7 +35,9 @@ jobs:
           grep -q "Planes" /tmp/planes-index.html
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
           grep -q "installSecureLogoutBridge" /tmp/planes-auth-gate.js
-          grep -q "restoreDesiredProject" /tmp/planes-auth-gate.js
+          grep -q "planes-auth-payload-ready" /tmp/planes-auth-gate.js
+          grep -q "applySupabaseAuthPayload" /tmp/planes-index.html
+          grep -q "__PLANES_AUTH_INTERNAL_APPLIED__" /tmp/planes-index.html
           matched=0
           for attempt in 1 2 3 4 5 6; do
             curl -fsSL --retry 2 --retry-delay 1 "https://armidiasintegradas.github.io/planes/auth-gate-live.js?parity=$attempt" -o /tmp/planes-auth-gate.js
