@@ -2656,6 +2656,7 @@
 
     // Busca real de dados IAM no Supabase (Perfis, Solicitações e Notificações)
     async function fetchAdminIAMData(manual = false) {
+      if (!currentUser) return;
       if (!supabaseClient) {
         if (manual) showToast('Sincronização indisponível: Supabase não conectado.');
         return;
