@@ -19085,36 +19085,9 @@ ${activeNav === 'Equipe & Contatos' ? `
           }
         }
 
-        let rendered = false;
-        try {
-          render();
-          rendered = true;
-        } catch (primaryRenderError) {
-          console.error('PLANES_AUTH_PRIMARY_RENDER_FAILED', primaryRenderError);
-
-          currentScreen = 'projects';
-          activeNav = 'Visão Geral';
-          if (!selectedProject && Array.isArray(projectsList) && projectsList.length) {
-            selectedProject = projectsList[0];
-            selectedProjectId = selectedProject.id;
-          }
-
-          try {
-            render();
-            rendered = true;
-          } catch (fallbackRenderError) {
-            window.__PLANES_AUTH_LAST_ERROR__ =
-              String(fallbackRenderError?.stack || fallbackRenderError?.message || fallbackRenderError);
-            throw fallbackRenderError;
-          }
-        }
-
-        if (!rendered) return false;
-
+        // A autenticação termina aqui: identidade, nível e tela já estão definidos.
+        // Persistimos antes de qualquer renderização ou integração secundária.
         try { saveSessionState(); } catch (e) {}
-        try { setupRealtimeSubscriptions(); } catch (e) {}
-        try { updateUserPresence(); } catch (e) {}
-        try { broadcastPresenceHeartbeat(); } catch (e) {}
 
         window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
         window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
@@ -19125,12 +19098,29 @@ ${activeNav === 'Equipe & Contatos' ? `
           detail: payload
         }));
 
+        // Renderização e serviços auxiliares não podem invalidar a autenticação.
+        try {
+          render();
+        } catch (renderError) {
+          console.error('PLANES_AUTH_RENDER_WARNING', renderError);
+          try {
+            currentScreen = 'projects';
+            activeNav = 'Visão Geral';
+            render();
+          } catch (fallbackRenderError) {
+            console.error('PLANES_AUTH_FALLBACK_RENDER_WARNING', fallbackRenderError);
+          }
+        }
+
+        try { setupRealtimeSubscriptions(); } catch (e) {}
+        try { updateUserPresence(); } catch (e) {}
+        try { broadcastPresenceHeartbeat(); } catch (e) {}
+
         return true;
       } catch (error) {
         window.__PLANES_AUTH_INTERNAL_APPLIED__ = false;
         window.__PLANES_AUTH_HYDRATED__ = false;
         window.__PLANES_AUTH_LAST_ERROR__ =
-          window.__PLANES_AUTH_LAST_ERROR__ ||
           String(error?.stack || error?.message || error);
         console.error('PLANES_INTERNAL_AUTH_APPLY_FAILED', error);
         window.dispatchEvent(new CustomEvent('planes-auth-hydration-failed', {
