@@ -4539,7 +4539,7 @@
           // Aprovado: carrega sessão
           currentUser = {
             id: profile.id,
-            auth_user_id: profile.auth_user_id,
+            auth_user_id: profile.id,
             name: profile.full_name || authUser.email.split('@')[0],
             email: profile.email,
             role: profile.role,
@@ -8160,7 +8160,7 @@
             if (profile.status === 'approved') {
               currentUser = {
                 id: profile.id,
-                auth_user_id: profile.auth_user_id,
+                auth_user_id: profile.id,
                 name: profile.full_name || authUser.email.split('@')[0],
                 email: profile.email,
                 role: profile.role,
