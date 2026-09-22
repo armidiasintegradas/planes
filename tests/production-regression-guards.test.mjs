@@ -68,8 +68,11 @@ test('single-source auth runtime is preserved', async () => {
   assert.match(html, /__PLANES_AUTH_INTERNAL_APPLIED__/);
   assert.match(html, /__PLANES_AUTH_APPLIED_USER_ID__/);
   assert.doesNotMatch(html, /auth-runtime-bridge-live\.js/);
+  assert.match(html, /externalAuthOwnsSession/);
+  assert.match(html, /__PLANES_EXTERNAL_AUTH_OWNER__/);
 
-  assert.match(gate, /IS_STANDALONE_IOS \? 'implicit' : 'pkce'/);
+  assert.match(gate, /flowType:\s*'implicit'/);
+  assert.match(gate, /__PLANES_EXTERNAL_AUTH_OWNER__/);
   assert.match(gate, /supabase\.auth\.setSession/);
   assert.match(gate, /hash\.get\('access_token'\)/);
   assert.match(gate, /Authorization: \`Bearer \$\{accessToken\}\`/);
