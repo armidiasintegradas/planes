@@ -188,3 +188,5 @@ main().catch(error => {
   chrome.kill('SIGTERM');
   process.exit(1);
 });
+
+// rerun marker: stabilized production
