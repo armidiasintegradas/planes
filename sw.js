@@ -1,6 +1,6 @@
-// Planes OS Service Worker — PWA App Shell & Offline Caching
-const CACHE_NAME = 'planes-os-v10';
-const ASSETS_TO_CACHE = [
+// Planes OS Service Worker — stable PWA shell
+const CACHE_NAME = 'planes-os-v11';
+const APP_SHELL = [
   './',
   './index.html',
   './tv.html',
@@ -12,23 +12,15 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => key === CACHE_NAME ? null : caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
@@ -36,43 +28,59 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-  const isHtml = event.request.mode === 'navigate' || 
-                 event.request.destination === 'document' || 
-                 url.pathname.endsWith('/') || 
-                 url.pathname.endsWith('.html');
 
-  // NETWORK-FIRST STRATEGY FOR HTML DOCUMENTS
-  // Ensures user ALWAYS gets the latest fresh version when online, never getting stuck with stale cache
+  // Never cache API/auth/dynamic cross-origin traffic.
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  const isHtml =
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    url.pathname.endsWith('/') ||
+    url.pathname.endsWith('.html');
+
   if (isHtml) {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
-          return networkResponse;
+          return response;
         })
-        .catch(() => {
-          return caches.match(event.request).then((cached) => {
-            return cached || caches.match('./index.html');
-          });
+        .catch(async () => {
+          return (await caches.match(event.request)) ||
+                 (await caches.match('./index.html')) ||
+                 Response.error();
         })
     );
     return;
   }
 
-  // CACHE-FIRST STRATEGY FOR STATIC ASSETS (images, icons)
+  const staticDestinations = new Set(['image', 'style', 'script', 'font']);
+  const isStaticAsset =
+    staticDestinations.has(event.request.destination) ||
+    /\.(?:png|jpg|jpeg|webp|svg|ico|css|js|woff2?)$/i.test(url.pathname);
+
+  if (!isStaticAsset) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        }
-        return networkResponse;
-      });
+    caches.match(event.request).then((cached) => {
+      const network = fetch(event.request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      return cached || network;
     })
   );
 });
