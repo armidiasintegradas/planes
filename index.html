@@ -2591,6 +2591,13 @@
     let adminNotificationsList = [];
     let cloudOnlineSessions = {};
 
+    let operationalProjectIdCache = null;
+    let operationalRealtimeChannel = null;
+    let operationalRealtimeRefreshTimer = null;
+    let operationalRealtimeRefreshInFlight = false;
+    let operationalRealtimeStatus = navigator.onLine === false ? 'Offline' : 'Conectando';
+    let operationalReconnectTimer = null;
+
     function initSupabaseClient() {
       if (!isSupabaseConfigured()) {
         supabaseClient = null;
@@ -10136,12 +10143,6 @@
     let intelligenceDataSource = 'local';
     let intelligenceLastSyncAt = null;
 
-    let operationalProjectIdCache = null;
-    let operationalRealtimeChannel = null;
-    let operationalRealtimeRefreshTimer = null;
-    let operationalRealtimeRefreshInFlight = false;
-    let operationalRealtimeStatus = navigator.onLine === false ? 'Offline' : 'Conectando';
-    let operationalReconnectTimer = null;
 
     function isOperationalBackendReady() {
       return !!supabaseClient && navigator.onLine !== false && operationalRealtimeStatus !== 'Offline';
