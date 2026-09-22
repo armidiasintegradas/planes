@@ -2449,16 +2449,17 @@
     // PLANES OS — SUPABASE BACKEND CLIENT, REALTIME & PRESENCE ENGINE
     // =========================================================================
     window.PLANES_CONFIG = window.PLANES_CONFIG || {
-      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://odknhfcvuvjphxndtsqj.supabase.co',
-      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ka25oZmN2dXZqcGh4bmR0c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDM4NzQsImV4cCI6MjAyNTA3OTg3NH0.demo-placeholder'
+      supabaseUrl: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_url')) || 'https://xfgcbxppsbwmxwsuajou.supabase.co',
+      supabaseAnonKey: (typeof localStorage !== 'undefined' && localStorage.getItem('planes_supabase_anon_key')) || 'sb_publishable_tFvlFVbpOPYPPA72qcMWQg_IZO4V4xS'
     };
 
     function isSupabaseConfigured() {
       const url = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseUrl ? window.PLANES_CONFIG.supabaseUrl : '';
       const key = window.PLANES_CONFIG && window.PLANES_CONFIG.supabaseAnonKey ? window.PLANES_CONFIG.supabaseAnonKey : '';
       if (!url || !key) return false;
-      if (key.indexOf('demo-placeholder') !== -1 || url.indexOf('odknhfcvuvjphxndtsqj') !== -1) return false;
-      if (!url.startsWith('https://') || !key.startsWith('ey')) return false;
+      if (key.indexOf('demo-placeholder') !== -1) return false;
+      const validPublicKey = key.startsWith('sb_publishable_') || key.startsWith('ey');
+      if (!url.startsWith('https://') || !validPublicKey) return false;
       return true;
     }
 
