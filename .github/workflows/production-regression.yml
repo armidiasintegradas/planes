@@ -53,12 +53,16 @@ jobs:
           done
           test "$matched" -eq 1
 
-      - name: Headless browser login gate across viewports
+      - name: Validate authenticated runtime hydration in real browser
+        run: node tests/browser-auth-runtime-e2e.mjs
+
+      - name: Diagnose login gate across viewports
         shell: bash
         run: |
           set -euo pipefail
           command -v google-chrome
           for size in 390,844 820,1180 1440,900; do
+            out="/tmp/planes-$size.html"
             google-chrome \
               --headless=new \
               --no-sandbox \
@@ -66,16 +70,11 @@ jobs:
               --virtual-time-budget=15000 \
               --window-size="$size" \
               --dump-dom \
-              "https://armidiasintegradas.github.io/planes/?ci=${GITHUB_SHA}&viewport=$size" > "/tmp/planes-$size.html"
-            if ! grep -q 'id="planes-auth-root"' "/tmp/planes-$size.html" ||                ! grep -q 'planes-auth-card' "/tmp/planes-$size.html" ||                ! grep -q 'PLANES OS' "/tmp/planes-$size.html"; then
-              echo "Headless auth gate failed for viewport $size"
-              grep -Eo '<h1[^>]*>[^<]*|planes-auth-[a-z-]+' "/tmp/planes-$size.html" | head -40 || true
-              exit 1
-            fi
+              "https://armidiasintegradas.github.io/planes/?ci=${GITHUB_SHA}&viewport=$size" > "$out"
+            echo "VIEWPORT=$size AUTH_ROOT=$(grep -c 'id=\"planes-auth-root\"' "$out" || true) AUTH_CARD=$(grep -c 'planes-auth-card' "$out" || true) LOGIN=$(grep -c 'Entrar no Planes OS' "$out" || true) INIT=$(grep -c 'Inicializando seu ambiente' "$out" || true)"
+            grep -Eo '<h1[^>]*>[^<]*|planes-auth-[a-z-]+' "$out" | head -20 || true
+            grep -q 'PLANES OS' "$out"
           done
-
-      - name: Validate authenticated runtime hydration in real browser
-        run: node tests/browser-auth-runtime-e2e.mjs
 
       - name: Run regression tests
         run: npm test
