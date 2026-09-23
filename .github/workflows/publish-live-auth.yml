@@ -107,7 +107,7 @@ jobs:
           grep -q "flowType: 'implicit'" site/auth-gate-live.js
           grep -q 'supabase.auth.setSession' site/auth-gate-live.js
           grep -q 'Authorization: `Bearer ${accessToken}`' site/auth-gate-live.js
-          grep -q "planes-os-v15" site/sw.js
+          grep -q "planes-os-v16" site/sw.js
 
       - name: Publish to gh-pages
         working-directory: site
