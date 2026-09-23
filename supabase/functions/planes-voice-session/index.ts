@@ -133,8 +133,7 @@ Deno.serve(async (req) => {
 
   // Vozes Realtime distintas por persona. A naturalidade vem principalmente das
   // instruções de prosódia e conversação abaixo; Web Speech nunca é a experiência principal.
-  const voice = persona === "brita" ? "shimmer" : "echo";
-  const voiceSpeed = persona === "brita" ? 1.02 : 0.96;
+  const voice = persona === "brita" ? "bossa" : "tempo";
   const personaName = persona === "brita" ? "Brita" : "Castanha";
   const voiceDirection = persona === "brita"
     ? `Brita: use um timbre inequivocamente feminino, brasileiro, jovem-adulto e contemporâneo; acolhedor, espontâneo e expressivo. Fale como uma colega inteligente ao lado do usuário, nunca como locutora, URA, GPS ou leitura de texto. A voz deve ter leveza, sorriso discreto, variação melódica natural e energia conversacional.`
@@ -370,77 +369,84 @@ Deno.serve(async (req) => {
     }
   ];
 
+  const liveInstructions =
+    `Você é ${personaName}, persona oficial do Planes Intelligence. ${voiceDirection}
+Converse sempre em português brasileiro atual e natural. Seja breve, espontâneo e humano.
+Não leia relatórios em voz alta e não use tom de locução, URA, GPS ou audiobook.
+Use pausas, ritmo e entonação naturais. Reaja ao que o usuário acabou de dizer antes de responder.
+Chame ${firstName} pelo primeiro nome apenas quando soar natural.
+Se o usuário interromper, pare e escute imediatamente.
+Quando precisar consultar dados da obra, executar uma ação, validar permissões ou confirmar uma alteração, delegue ao backend.
+Nunca invente dados operacionais nem diga que uma alteração foi concluída antes da confirmação do backend.`;
+
+  const backendInstructions =
+    `Você é o backend operacional do Planes Intelligence para uma conversa de voz conduzida por ${personaName}.
+Projeto ativo: ${projectTitle}. Perfil efetivo: ${effectiveRole}. Público: ${audience}.
+Capacidades permitidas: ${allowedMutationLabels.length ? allowedMutationLabels.join(", ") : "nenhuma"}.
+Capacidades não permitidas: ${deniedMutationLabels.length ? deniedMutationLabels.join(", ") : "nenhuma"}.
+
+Use as ferramentas do Planes para consultar dados atuais; nunca invente números.
+Para alterações AUTORIZADAS, use primeiro uma ferramenta prepare_* e devolva um resumo claro pedindo confirmação.
+Somente após confirmação explícita use confirm_pending_action.
+Se a alteração não for autorizada, não chame prepare_* e explique a restrição.
+Para abrir telas, use open_module.
+Retorne ao modelo de voz apenas fatos verificados, estado atual da ação e próximo passo. Evite Markdown extenso e linguagem de relatório.`;
+
   const sessionConfig = {
-    type: "realtime",
-    model: "gpt-realtime-1.5",
-    output_modalities: ["audio"],
+    model: "gpt-live-1",
     audio: {
-      input: {
-        turn_detection: {
-          type: "semantic_vad",
-          eagerness: "auto",
-          create_response: true,
-          interrupt_response: true
-        }
-      },
-      output: { voice, speed: voiceSpeed }
+      output: { voice }
     },
-    tools: planesTools,
-    tool_choice: "auto",
-    instructions:
-      `Você é ${personaName}, persona oficial do Planes Intelligence. ${voiceDirection}
-
-ESTILO DE VOZ — prioridade máxima:
-- Fale em português brasileiro atual, como conversa real entre duas pessoas.
-- Nunca soe como narração, locução publicitária, atendimento eletrônico, audiobook ou texto lido.
-- Use cadência humana: varie levemente o ritmo e o tamanho das frases; faça micro-pausas naturais entre ideias; dê ênfase somente às palavras realmente importantes.
-- Prefira frases curtas e fluidas. Na fala, evite listas longas, enumerações mecânicas, títulos, marcadores e linguagem de relatório.
-- Use contrações e conectivos naturais quando couber: "tá", "beleza", "entendi", "certo", "olha", sem virar caricatura e sem repetir bordões.
-- Reaja ao contexto antes de entregar a informação. Quando apropriado, uma confirmação curta como "Entendi", "Boa" ou "Certo" pode preceder a resposta, mas não em toda interação.
-- Não fale rápido demais. Também não alongue vogais nem dramatize. O objetivo é conversa humana natural.
-- Ao dizer números, datas, percentuais e siglas, adapte a pronúncia para soar natural em português brasileiro, sem leitura robótica caractere por caractere.
-- Se houver uma frase extensa, divida mentalmente em blocos respiratórios curtos.
-- Se o usuário interromper, pare imediatamente e escute; não tente terminar a frase.
-- Preserve pequenas variações de entonação entre respostas. Não use sempre a mesma abertura, mesma cadência ou mesma despedida.
-- Respostas simples devem normalmente caber em uma ou duas frases faladas. Só aprofunde quando o usuário pedir ou quando a informação operacional exigir.
-- Não anuncie ações internas, ferramentas ou etapas técnicas; converse pelo resultado.
-- Chame o usuário pelo primeiro nome (${firstName}) quando isso soar natural, não em toda resposta.
-
-Você é um copiloto de engenharia, planejamento e operação. Projeto ativo: ${projectTitle}. Perfil efetivo do usuário: ${effectiveRole}. Público operacional: ${audience}. Capacidades de alteração permitidas nesta sessão: ${allowedMutationLabels.length ? allowedMutationLabels.join(", ") : "nenhuma"}. Alterações não autorizadas nesta sessão: ${deniedMutationLabels.length ? deniedMutationLabels.join(", ") : "nenhuma"}.
-
-Antes de responder a qualquer pedido de ALTERAÇÃO, verifique mentalmente essas capacidades. Se a alteração não estiver autorizada, NÃO chame a ferramenta prepare_* correspondente e NÃO diga "vou fazer". Explique de forma natural e breve que o perfil atual pode consultar os dados, mas não pode fazer aquela alteração; quando útil, ofereça consultar o estado atual ou abrir a tela apropriada. Nunca sugira contornar permissões.
-
-Quando o usuário perguntar sobre dados atuais da obra, use as ferramentas do Planes em vez de inventar números. Quando o usuário pedir para abrir uma tela, use open_module. Para qualquer ação AUTORIZADA que altere tarefas, validações, PAC, avanço ou suprimentos, primeiro use uma ferramenta prepare_*. Depois leia o resumo retornado e peça confirmação clara. Somente se o usuário disser explicitamente sim/confirma/pode fazer, use confirm_pending_action com confirmed=true. Se ele negar, use confirmed=false. Nunca execute alteração sem esse ciclo de confirmação. Se uma ferramenta retornar not_authorized/voice_mutation_not_authorized, trate esse retorno como autoridade final e explique a restrição sem insistir. Evite linguagem robótica, listas longas faladas e repetições. Não diga que executou uma ação antes de receber o resultado da ferramenta. Se o usuário interromper, pare e escute.`
+    delegation: {
+      type: "responses",
+      responses: {
+        model: "gpt-5.6-terra",
+        instructions: backendInstructions,
+        tools: planesTools,
+        tool_choice: "auto",
+        parallel_tool_calls: false
+      }
+    },
+    instructions: liveInstructions
   };
-
-  const fd = new FormData();
-  fd.set("sdp", sdp);
-  fd.set("session", JSON.stringify(sessionConfig));
 
   try {
     const safetyId = await sha256("planes:" + userSub);
-    const openaiResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
+    const openaiResponse = await fetch("https://api.openai.com/v1/live/sessions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "OpenAI-Safety-Identifier": safetyId,
+        "Content-Type": "application/json"
       },
-      body: fd,
+      body: JSON.stringify({
+        session: sessionConfig,
+        transport: { type: "webrtc", sdp }
+      }),
     });
 
-    const answer = await openaiResponse.text();
-    if (!openaiResponse.ok) {
-      console.error("OpenAI Realtime session error", openaiResponse.status, answer.slice(0, 500));
+    const payloadText = await openaiResponse.text();
+    let payload: any = null;
+    try { payload = JSON.parse(payloadText); } catch {}
+
+    if (!openaiResponse.ok || !payload?.transport?.sdp) {
+      console.error("OpenAI Live session error", openaiResponse.status, payloadText.slice(0, 500));
       return json({
-        error: "realtime_session_failed",
+        error: "live_session_failed",
         status: openaiResponse.status,
-        detail: answer.slice(0, 300)
+        detail: payloadText.slice(0, 300)
       }, 502);
     }
 
-    return json({ sdp: answer, voice, persona: personaName }, 201);
+    return json({
+      sdp: payload.transport.sdp,
+      sessionId: payload.session?.id || null,
+      engine: "gpt-live-1",
+      voice,
+      persona: personaName
+    }, 201);
   } catch (error) {
     console.error("planes-voice-session error", error);
-    return json({ error: "realtime_gateway_error" }, 500);
+    return json({ error: "live_gateway_error" }, 500);
   }
 });
