@@ -22,13 +22,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           path: source
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.19.0
           cache: npm
@@ -59,7 +59,7 @@ jobs:
           grep -q '@media (max-width: 420px)' public/live-mobile-layout.css
 
       - name: Checkout current GitHub Pages artifact
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: gh-pages
           path: site
