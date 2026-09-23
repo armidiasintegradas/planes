@@ -210,3 +210,43 @@ test('live auth runtime and HTML remain network-first with offline fallback', as
   assert.match(sw, /caches\.match\('\.\/index\.html'\)/);
   assert.match(sw, /Response\.error\(\)/);
 });
+
+
+test('spreadsheet imports reconcile only Supabase-confirmed operational records', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /function handleSupplyExcelUpload[\s\S]*Promise\.all\(imported\.map\(persistSupplyRecord\)\)[\s\S]*refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /function importSuppliesSpreadsheet[\s\S]*Promise\.all\(imported\.map\(persistSupplyRecord\)\)[\s\S]*refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /function handleGeneralSpreadsheetUpload[\s\S]*persistProjectMetrics\([\s\S]*refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /async function applyExcelProjectUpdate[\s\S]*persistProjectMetrics\([\s\S]*refreshIntelligenceOperationalData\(\)/);
+});
+
+test('visible operational actions do not mutate shared state before Supabase confirmation', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /async function handleAddSupplySubmit[\s\S]*await persistSupplyRecord\(newSupply\)[\s\S]*await refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /async function handleEditSupplySubmit[\s\S]*await persistSupplyRecord\(remoteCandidate\)[\s\S]*await refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /async function approveValidation[\s\S]*await persistValidationStatus\(item, 'Aprovado'\)[\s\S]*await persistProjectMetrics\([\s\S]*await refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /async function rejectValidation[\s\S]*await persistValidationStatus\(item, 'Rejeitado'\)[\s\S]*await refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /async function toggleTaskDone[\s\S]*await persistTaskRecord\(candidate\)[\s\S]*await refreshIntelligenceOperationalData\(\)/);
+
+  assert.doesNotMatch(html, /suppliesList\.push\(/);
+  assert.doesNotMatch(html, /validations\.splice\(/);
+  assert.doesNotMatch(html, /tasksList\.push\(/);
+});
+
+test('confirmed Intelligence voice mutations authorize then persist through shared Supabase writers', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /getVoiceMutationAuthorization\(pending\.kind\)/);
+  assert.match(html, /pending\.kind === 'create_task'[\s\S]*persistTaskRecord\(task\)/);
+  assert.match(html, /pending\.kind === 'approve_validation'[\s\S]*persistValidationStatus\(validation, 'Aprovado'\)[\s\S]*persistProjectMetrics\(/);
+  assert.match(html, /pending\.kind === 'update_pac'[\s\S]*persistProjectMetrics\(/);
+  assert.match(html, /pending\.kind === 'update_supply_status'[\s\S]*persistSupplyRecord\(candidate\)/);
+  assert.match(html, /pending\.kind === 'edit_task'[\s\S]*persistTaskRecord\(candidate\)/);
+  assert.match(html, /pending\.kind === 'toggle_task'[\s\S]*persistTaskRecord\(candidate\)/);
+  assert.match(html, /pending\.kind === 'reject_validation'[\s\S]*persistValidationStatus\(validation, 'Rejeitado'/);
+  assert.match(html, /pending\.kind === 'create_supply'[\s\S]*persistSupplyRecord\(supply\)/);
+  assert.match(html, /pending\.kind === 'edit_supply'[\s\S]*persistSupplyRecord\(candidate\)/);
+  assert.match(html, /voice_confirmed_mutation/);
+});
