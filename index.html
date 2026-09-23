@@ -19088,8 +19088,8 @@ ${activeNav === 'Equipe & Contatos' ? `
         // A identidade é persistida antes do render para nunca perder uma sessão válida.
         try { saveSessionState(); } catch (e) {}
 
-        window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
-        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ = false;
+        window.__PLANES_AUTH_APPLIED_USER_ID__ = null;
         window.__PLANES_AUTH_HYDRATED__ = false;
         window.__PLANES_AUTH_LAST_ERROR__ = null;
 
@@ -19122,6 +19122,8 @@ ${activeNav === 'Equipe & Contatos' ? `
           return false;
         }
 
+        window.__PLANES_AUTH_INTERNAL_APPLIED__ = true;
+        window.__PLANES_AUTH_APPLIED_USER_ID__ = targetUserId;
         window.__PLANES_AUTH_HYDRATED__ = true;
         window.__PLANES_AUTH_LAST_ERROR__ = null;
 
