@@ -3002,6 +3002,8 @@
     let realtimeVoiceStream = null;
     let realtimeVoiceAudioEl = null;
     let realtimeVoiceSessionStartedAt = null;
+    let fallbackTtsAudio = null;
+    let fallbackTtsObjectUrl = null;
     let realtimeVoiceHandledCalls = new Set();
     let realtimeVoicePendingMutation = null;
 
@@ -3012,7 +3014,7 @@
         listening: 'Ouvindo',
         speaking: 'Falando',
         reconnecting: 'Reconectando',
-        error: 'Fallback local'
+        error: 'Voz alternativa'
       };
       return labels[realtimeVoiceState] || 'Online';
     }
@@ -9360,9 +9362,9 @@
         cleanupRealtimeVoice();
         realtimeVoiceState = 'error';
         if (String(err?.message || err).includes('OPENAI_API_KEY_NOT_CONFIGURED')) {
-          showToast('Gateway Realtime pronto; falta configurar a chave OpenAI no Supabase. Usando voz local por enquanto.');
+          showToast('Voz Realtime indisponível. Usando voz OpenAI alternativa da ' + getAssistantPersonaLabel() + '.');
         } else {
-          showToast('Não foi possível iniciar a voz Realtime. Usando modo local.');
+          showToast('Não foi possível iniciar a voz Realtime. Usando voz OpenAI alternativa da ' + getAssistantPersonaLabel() + '.');
         }
         startVoiceAssistant();
         return false;
@@ -9379,46 +9381,101 @@
       render();
     }
 
-    function speakText(text) {
-      if (!text || !('speechSynthesis' in window)) {
+    async function speakText(text) {
+      const cleanText = String(text || '')
+        .replace(/\*\*/g, '')
+        .replace(/[•✓]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleanText) {
         isSpeaking = false;
         return;
       }
+
       try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(
-          String(text)
-            .replace(/\*\*/g, '')
-            .replace(/[•✓]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim()
-        );
-        utterance.lang = 'pt-BR';
-        utterance.rate = 0.98;
-        utterance.pitch = 1;
-        utterance.volume = 1;
-        if (bestPtVoice) utterance.voice = bestPtVoice;
-        utterance.onstart = () => {
+        if (fallbackTtsAudio) {
+          try { fallbackTtsAudio.pause(); } catch(e) {}
+          fallbackTtsAudio = null;
+        }
+        if (fallbackTtsObjectUrl) {
+          try { URL.revokeObjectURL(fallbackTtsObjectUrl); } catch(e) {}
+          fallbackTtsObjectUrl = null;
+        }
+
+        if (!supabaseClient) throw new Error('Supabase indisponível para voz de alta qualidade.');
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const accessToken = session?.access_token;
+        if (!accessToken) throw new Error('Sessão autenticada necessária para voz.');
+
+        const endpoint = String(window.PLANES_CONFIG?.supabaseUrl || '').replace(/\/$/, '') + '/functions/v1/planes-voice-tts';
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + accessToken,
+            'apikey': window.PLANES_CONFIG.supabaseAnonKey
+          },
+          body: JSON.stringify({
+            text: cleanText,
+            persona: getAssistantPersona()
+          })
+        });
+
+        if (!response.ok) {
+          const detail = await response.text().catch(() => '');
+          throw new Error('TTS ' + response.status + ': ' + detail.slice(0, 160));
+        }
+
+        const audioBlob = await response.blob();
+        fallbackTtsObjectUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(fallbackTtsObjectUrl);
+        audio.playsInline = true;
+        fallbackTtsAudio = audio;
+
+        audio.onplay = () => {
           isSpeaking = true;
           render();
         };
-        utterance.onend = () => {
+        audio.onended = () => {
           isSpeaking = false;
+          fallbackTtsAudio = null;
+          if (fallbackTtsObjectUrl) {
+            URL.revokeObjectURL(fallbackTtsObjectUrl);
+            fallbackTtsObjectUrl = null;
+          }
           render();
         };
-        utterance.onerror = () => {
+        audio.onerror = () => {
           isSpeaking = false;
+          fallbackTtsAudio = null;
+          if (fallbackTtsObjectUrl) {
+            URL.revokeObjectURL(fallbackTtsObjectUrl);
+            fallbackTtsObjectUrl = null;
+          }
           render();
         };
+
         isSpeaking = true;
-        window.speechSynthesis.speak(utterance);
+        render();
+        await audio.play();
       } catch (e) {
-        console.warn('Speech synthesis indisponível:', e);
+        console.warn('Planes OpenAI TTS indisponível:', e);
         isSpeaking = false;
+        showToast('A resposta foi exibida na tela, mas a voz de alta qualidade não pôde ser carregada.');
+        render();
       }
     }
 
     function stopSpeaking() {
+      if (fallbackTtsAudio) {
+        try { fallbackTtsAudio.pause(); } catch(e) {}
+        fallbackTtsAudio = null;
+      }
+      if (fallbackTtsObjectUrl) {
+        try { URL.revokeObjectURL(fallbackTtsObjectUrl); } catch(e) {}
+        fallbackTtsObjectUrl = null;
+      }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
