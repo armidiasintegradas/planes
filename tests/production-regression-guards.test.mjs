@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 test('service worker keeps auth and HTML network-first', async () => {
   const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
 
-  assert.match(sw, /const CACHE_NAME = 'planes-os-v15'/);
+  assert.match(sw, /const CACHE_NAME = 'planes-os-v16'/);
   assert.match(sw, /auth-gate-live\.js/);
   assert.doesNotMatch(sw, /auth-runtime-bridge-live\.js/);
   assert.match(sw, /cache:\s*'no-store'/);
