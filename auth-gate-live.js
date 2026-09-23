@@ -48,12 +48,18 @@ function ensureStyles() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    #${ROOT_ID}{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 10% 20%,#f7f9fb 0%,#e5eaf0 90%);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;visibility:visible!important;pointer-events:auto!important}
+    #${ROOT_ID}{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 12% 14%,#ffffff 0%,#eef2f5 48%,#e6ebef 100%);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;visibility:visible!important;pointer-events:auto!important;overflow:hidden}
     #${ROOT_ID} *{box-sizing:border-box}
-    #${ROOT_ID} .planes-auth-card{width:min(94vw,520px);background:#fff;border:1px solid #e2e8f0;border-radius:28px;padding:32px;box-shadow:0 24px 70px rgba(15,23,42,.14)}
-    #${ROOT_ID} .planes-auth-brand{font-size:12px;font-weight:900;letter-spacing:.16em}
-    #${ROOT_ID} h1{font-size:28px;letter-spacing:-.04em;margin:10px 0 8px}
+    #${ROOT_ID} .planes-auth-card{width:min(92vw,470px);background:rgba(255,255,255,.96);border:1px solid rgba(226,232,240,.9);border-radius:28px;padding:34px;box-shadow:0 28px 80px rgba(15,23,42,.13);backdrop-filter:blur(18px)}
+    #${ROOT_ID} .planes-auth-logo-wrap{display:flex;align-items:center;justify-content:flex-start;margin:0 0 26px}
+    #${ROOT_ID} .planes-auth-logo{display:block;width:min(210px,58vw);height:auto;object-fit:contain}
+    #${ROOT_ID} .planes-auth-subtitle{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin:-15px 0 24px}
+    #${ROOT_ID} h1{font-size:30px;line-height:1.08;letter-spacing:-.045em;margin:0 0 10px;font-weight:780}
     #${ROOT_ID} .planes-auth-muted{color:#64748b;line-height:1.55}
+    #${ROOT_ID} .planes-auth-splash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#fff;opacity:1;transition:opacity .45s ease;cursor:pointer}
+    #${ROOT_ID} .planes-auth-splash.exiting{opacity:0;pointer-events:none}
+    #${ROOT_ID} .planes-auth-splash-logo{width:min(310px,62vw);height:auto;object-fit:contain;animation:planesSplashEntrance 1.05s cubic-bezier(.2,.8,.2,1) both;filter:drop-shadow(0 14px 28px rgba(15,23,42,.10))}
+    @keyframes planesSplashEntrance{0%{opacity:0;transform:scale(.88) translateY(10px)}55%{opacity:1;transform:scale(1.025) translateY(0)}100%{opacity:1;transform:scale(1) translateY(0)}}
     #${ROOT_ID} .planes-auth-grid{display:grid;gap:12px}
     #${ROOT_ID} .planes-auth-input,#${ROOT_ID} .planes-auth-btn{width:100%;height:48px;border-radius:14px;font:inherit}
     #${ROOT_ID} .planes-auth-input{border:1px solid #dbe2ea;padding:0 14px;background:#fff;color:#111827}
@@ -69,7 +75,17 @@ function ensureStyles() {
     #${ROOT_ID} .planes-auth-warn{background:#fffbeb;border-color:#fde68a;color:#854d0e}
     #${ROOT_ID} .planes-auth-bad{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
     #${ROOT_ID} .planes-auth-hide{display:none!important}
-    @media(max-width:520px){#${ROOT_ID} .planes-auth-card{padding:24px;border-radius:22px}}
+    @media(max-width:520px){
+      #${ROOT_ID}{padding:18px}
+      #${ROOT_ID} .planes-auth-card{padding:28px 24px;border-radius:24px}
+      #${ROOT_ID} h1{font-size:28px}
+      #${ROOT_ID} .planes-auth-logo{width:min(190px,56vw)}
+      #${ROOT_ID} .planes-auth-splash-logo{width:min(270px,64vw)}
+    }
+    @media(prefers-reduced-motion:reduce){
+      #${ROOT_ID} .planes-auth-splash-logo{animation:none}
+      #${ROOT_ID} .planes-auth-splash{transition-duration:.18s}
+    }
   `;
   document.head.appendChild(style);
 }
@@ -400,8 +416,60 @@ async function openAdminAccessConsole(profile, refreshCount) {
 function renderShell(body) {
   blockApp();
   const node = root();
-  node.innerHTML = `<main class="planes-auth-card"><div class="planes-auth-brand">PLANES OS</div><p class="planes-auth-muted" style="font-size:12px;margin:5px 0 22px">Ambiente seguro de gestão operacional</p>${body}</main>`;
+  node.innerHTML = `<main class="planes-auth-card"><div class="planes-auth-logo-wrap"><img class="planes-auth-logo" src="assets/planes-logo.png" alt="PLANES" /></div><div class="planes-auth-subtitle">Gestão operacional inteligente</div>${body}</main>`;
   return node;
+}
+
+async function renderLoginSplash() {
+  const key = 'planes_login_splash_viewed';
+  let alreadyViewed = false;
+  try { alreadyViewed = sessionStorage.getItem(key) === '1'; } catch {}
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('nosplash') === '1') alreadyViewed = true;
+  const locked = params.get('splash_lock') === '1' || params.get('splash') === '1';
+
+  if (alreadyViewed && !locked) {
+    renderLogin();
+    return;
+  }
+
+  blockApp();
+  const node = root();
+  node.innerHTML = `
+    <div class="planes-auth-splash" data-login-splash aria-label="PLANES — abertura">
+      <img class="planes-auth-splash-logo" src="assets/planes-logo.png" alt="PLANES" />
+    </div>
+  `;
+
+  const splash = node.querySelector('[data-login-splash]');
+  if (!splash) {
+    renderLogin();
+    return;
+  }
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+  const visibleMs = reducedMotion ? 420 : 2550;
+  const fadeMs = reducedMotion ? 180 : 450;
+  let finished = false;
+
+  await new Promise((resolve) => {
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      splash.classList.add('exiting');
+      window.setTimeout(resolve, fadeMs);
+    };
+
+    const timer = locked ? null : window.setTimeout(finish, visibleMs);
+    splash.addEventListener('click', () => {
+      if (timer) window.clearTimeout(timer);
+      finish();
+    }, { once: true });
+  });
+
+  try { sessionStorage.setItem(key, '1'); } catch {}
+  renderLogin();
 }
 
 function renderMessage(target, text, kind = '') {
@@ -463,12 +531,12 @@ function renderLogin() {
     : '';
 
   const node = renderShell(`
-    <h1>Entrar no Planes OS</h1>
-    <p class="planes-auth-muted">A forma mais rápida para usuários novos é o Google. Usuários que já cadastraram uma Passkey podem entrar sem digitar e-mail ou senha.</p>
+    <h1>Acesse o PLANES</h1>
+    <p class="planes-auth-muted" style="margin:0 0 22px">Entre com sua conta autorizada para continuar.</p>
     ${passkeyButton}
     <button class="planes-auth-btn" data-google ${capabilities.google ? '' : 'disabled'}>${googleLabel}</button>
     <p class="planes-auth-muted" style="font-size:12px;margin:10px 0 0">${providerText}</p>
-    <button class="planes-auth-btn link" data-admin-toggle style="margin-top:12px">Acesso administrativo de contingência</button>
+    <button class="planes-auth-btn link" data-admin-toggle style="margin-top:12px">Acesso administrativo</button>
     <div class="planes-auth-hide" data-admin-wrap style="border-top:1px solid #e2e8f0;padding-top:16px">
       <p class="planes-auth-muted" style="font-size:12px;margin-top:0">Reservado à conta administrativa já existente. Este formulário não cria novos usuários.</p>
       <form class="planes-auth-grid" data-admin-form>
@@ -654,7 +722,7 @@ async function evaluateSession(session) {
       await supabase.removeChannel(profileChannel);
       profileChannel = null;
     }
-    renderLogin();
+    await renderLoginSplash();
     return;
   }
 
