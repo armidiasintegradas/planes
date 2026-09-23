@@ -1,5 +1,5 @@
 // Planes OS Service Worker — stable PWA shell
-const CACHE_NAME = 'planes-os-v15';
+const CACHE_NAME = 'planes-os-v16';
 const APP_SHELL = [
   './',
   './index.html',
