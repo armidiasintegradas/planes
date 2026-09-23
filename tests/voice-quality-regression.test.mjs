@@ -42,3 +42,20 @@ test('Realtime UI confirmations use conversation item events', async () => {
   assert.match(block, /type: 'response\.create'/);
   assert.doesNotMatch(block, /type: 'response\.item\.create'/);
 });
+
+
+test('semantic VAD keeps natural interruption and streaming response behavior', async () => {
+  const src = await readFile('supabase/functions/planes-voice-session/index.ts', 'utf8');
+  assert.match(src, /type:\s*"semantic_vad"/);
+  assert.match(src, /eagerness:\s*"auto"/);
+  assert.match(src, /create_response:\s*true/);
+  assert.match(src, /interrupt_response:\s*true/);
+  assert.match(src, /output_modalities:\s*\["audio"\]/);
+});
+
+test('voice identity stays personalized and operationally grounded', async () => {
+  const src = await readFile('supabase/functions/planes-voice-session/index.ts', 'utf8');
+  assert.match(src, /Chame \$\{firstName\} pelo primeiro nome apenas quando soar natural/);
+  assert.match(src, /Use as ferramentas do Planes para consultar dados atuais; nunca invente números/);
+  assert.match(src, /Somente após confirmação explícita use confirm_pending_action/);
+});
