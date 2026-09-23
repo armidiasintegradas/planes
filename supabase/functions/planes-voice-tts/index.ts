@@ -39,11 +39,12 @@ Deno.serve(async (req) => {
   if (!text) return json({ error: "missing_text" }, 400);
 
   const persona = body?.persona === "brita" ? "brita" : "castanha";
-  const voice = persona === "brita" ? "nova" : "onyx";
-  const speed = persona === "brita" ? 1.02 : 0.94;
+  // Mantém a identidade vocal igual à sessão Realtime.
+  // Marin e Cedar são as vozes OpenAI recomendadas para maior qualidade no Speech API.
+  const voice = persona === "brita" ? "marin" : "cedar";
   const instructions = persona === "brita"
-    ? "Fale em português brasileiro com voz feminina claramente perceptível, contemporânea, calorosa e espontânea. Soe como uma colega conversando naturalmente, com pequenas variações de ritmo, micro-pausas e entonação viva. Não leia como locutora, URA, GPS ou audiobook."
-    : "Fale em português brasileiro com voz masculina claramente perceptível, adulta, mais grave, contemporânea, calorosa e espontânea. Soe como um colega experiente conversando naturalmente, com pequenas variações de ritmo, pausas humanas e entonação segura. Não leia como locutor, URA, GPS ou audiobook.";
+    ? "Fale em português brasileiro contemporâneo como Brita, uma colega inteligente conversando ao lado do usuário. Voz feminina acolhedora, espontânea e natural. Use cadência humana, micro-pausas entre ideias, variação sutil de ritmo e ênfase contextual. Não leia o texto como locutora, anúncio, URA, GPS ou audiobook. Evite cadência perfeitamente uniforme. Números, datas, percentuais e siglas devem soar naturais em português. Respostas curtas devem soar como fala espontânea, não como uma gravação."
+    : "Fale em português brasileiro contemporâneo como Castanha, um colega experiente conversando ao lado do usuário. Voz masculina próxima, tranquila, segura e espontânea. Use cadência humana, pausas curtas entre ideias, variação sutil de ritmo e ênfase contextual. Não leia o texto como locutor, anúncio, URA, GPS ou audiobook. Evite cadência perfeitamente uniforme. Números, datas, percentuais e siglas devem soar naturais em português. Respostas curtas devem soar como fala espontânea, não como uma gravação.";
 
   const response = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
@@ -56,8 +57,7 @@ Deno.serve(async (req) => {
       voice,
       input: text,
       instructions,
-      response_format: "mp3",
-      speed
+      response_format: "wav"
     }),
   });
 
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     status: 200,
     headers: {
       ...corsHeaders,
-      "Content-Type": "audio/mpeg",
+      "Content-Type": "audio/wav",
       "Cache-Control": "no-store"
     }
   });
