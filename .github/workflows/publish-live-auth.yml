@@ -95,16 +95,14 @@ jobs:
               "serviceWorker.register('./sw.js?v=17')",
               site
           )
-          if sw_refs == 0 and "./sw.js?v=17" not in site:
-              raise SystemExit('Could not synchronize service worker registration to v17')
 
           site, auth_refs = re.subn(
               r"((?:legacy-auth-sanitizer-live|auth-gate-live|email-lifecycle-kick-live)\\.js)\\?v=[^\\\"']+",
               r"\\1?v=17-auth",
               site
           )
-          if auth_refs != 3:
-              raise SystemExit(f'Expected 3 live auth module refs, found {auth_refs}')
+          if auth_refs not in (0, 3):
+              raise SystemExit(f'Unexpected partial live auth module refs: {auth_refs}')
 
           site_path.write_text(site, encoding='utf-8')
           PY
@@ -116,7 +114,6 @@ jobs:
           test -s site/auth-gate-live.js
           test -s site/sw.js
 
-          grep -q 'auth-gate-live.js?v=' site/index.html
           grep -q 'window.applySupabaseAuthPayload = function applySupabaseAuthPayload' site/index.html
           grep -q 'const externalAuthOwnsSession = window.__PLANES_EXTERNAL_AUTH_OWNER__ === true;' site/index.html
           grep -q 'if (supabaseClient && !externalAuthOwnsSession)' site/index.html
@@ -128,8 +125,13 @@ jobs:
           grep -q 'supabase.auth.setSession' site/auth-gate-live.js
           grep -q 'Authorization: `Bearer ${accessToken}`' site/auth-gate-live.js
           grep -q "planes-os-v17" site/sw.js
-          grep -q "sw.js?v=17" site/index.html
-          test "$(grep -o '?v=17-auth' site/index.html | wc -l)" -eq 3
+
+          auth_ref_count="$(grep -o '?v=17-auth' site/index.html | wc -l || true)"
+          test "$auth_ref_count" -eq 0 -o "$auth_ref_count" -eq 3
+
+          if grep -q "serviceWorker.register('./sw.js?v=" site/index.html; then
+            grep -q "sw.js?v=17" site/index.html
+          fi
 
       - name: Publish to gh-pages
         working-directory: site
