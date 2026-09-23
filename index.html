@@ -529,7 +529,7 @@
     });
 
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=16').then(reg => {
+      navigator.serviceWorker.register('./sw.js?v=17').then(reg => {
         reg.update();
       }).catch(() => {});
     });
@@ -604,9 +604,9 @@
   html.planes-auth-blocked #planes-auth-root{visibility:visible!important;pointer-events:auto!important}
 </style>
 <script>document.documentElement.classList.add('planes-auth-loading');</script>
-<script type="module" src="./legacy-auth-sanitizer-live.js?v=16-auth"></script>
-<script type="module" src="./auth-gate-live.js?v=16-auth"></script>
-<script type="module" src="./email-lifecycle-kick-live.js?v=16-auth"></script>
+<script type="module" src="./legacy-auth-sanitizer-live.js?v=17-auth"></script>
+<script type="module" src="./auth-gate-live.js?v=17-auth"></script>
+<script type="module" src="./email-lifecycle-kick-live.js?v=17-auth"></script>
 <!-- PLANES_AUTH_GATE_END -->
 </head>
 <body class="relative w-full min-h-screen overflow-x-hidden flex flex-col justify-between" onclick="unlockAudioContextOnce()">
