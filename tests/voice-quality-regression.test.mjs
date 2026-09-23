@@ -2,15 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-test('Brita and Castanha use distinct natural GPT-Live Brazilian voices', async () => {
+test('Brita and Castanha use distinct natural Realtime voices', async () => {
   const src = await readFile('supabase/functions/planes-voice-session/index.ts', 'utf8');
-  assert.match(src, /model: "gpt-live-1"/);
-  assert.match(src, /persona === "brita" \? "bossa" : "tempo"/);
-  assert.match(src, /model: "gpt-5\.6-terra"/);
-  assert.match(src, /timbre inequivocamente feminino/);
-  assert.match(src, /timbre inequivocamente masculino/);
-  assert.match(src, /pausas, ritmo e entonação naturais/);
-  assert.match(src, /Se o usuário interromper, pare e escute imediatamente/);
+  assert.match(src, /model: "gpt-realtime-1\.5"/);
+  assert.match(src, /persona === "brita" \? "marin" : "cedar"/);
+  assert.match(src, /cadência humana/);
+  assert.match(src, /micro-pausas naturais/);
+  assert.match(src, /Se o usuário interromper, pare imediatamente e escute/);
 });
 
 test('high quality fallback uses distinct OpenAI TTS voices', async () => {
@@ -34,13 +32,13 @@ test('browser speech synthesis is not used for assistant output', async () => {
 });
 
 
-test('GPT-Live UI confirmations use Responses events only', async () => {
+test('Realtime UI confirmations use conversation item events', async () => {
   const html = await readFile('index.html', 'utf8');
   const start = html.indexOf('async function confirmPendingVoiceMutationFromUI');
   const end = html.indexOf('async function executePendingRealtimeVoiceMutation', start);
   assert.ok(start >= 0 && end > start, 'UI confirmation block must exist');
   const block = html.slice(start, end);
-  assert.match(block, /type: 'response\.item\.create'/);
+  assert.match(block, /type: 'conversation\.item\.create'/);
   assert.match(block, /type: 'response\.create'/);
-  assert.doesNotMatch(block, /conversation\.item\.create/);
+  assert.doesNotMatch(block, /type: 'response\.item\.create'/);
 });
