@@ -3,6 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const targetUrl = process.env.PLANES_E2E_URL || 'https://armidiasintegradas.github.io/planes/';
 const chromeProfileDir = `/tmp/planes-auth-runtime-e2e-${process.pid}`;
+const chromeDebugPort = Number(process.env.PLANES_CHROME_DEBUG_PORT || 9223);
 
 const chrome = spawn('google-chrome', [
   '--headless=new',
@@ -10,7 +11,7 @@ const chrome = spawn('google-chrome', [
   '--disable-gpu',
   '--disable-dev-shm-usage',
   '--remote-debugging-address=127.0.0.1',
-  '--remote-debugging-port=0',
+  `--remote-debugging-port=${chromeDebugPort}`,
   `--user-data-dir=${chromeProfileDir}`,
   'about:blank'
 ], { stdio: ['ignore', 'ignore', 'inherit'] });
@@ -22,18 +23,11 @@ async function getJson(url) {
 }
 
 async function waitForDebugger() {
-  const { readFile } = await import('node:fs/promises');
-  const devToolsPortFile = `${chromeProfileDir}/DevToolsActivePort`;
-
-  for (let i = 0; i < 100; i += 1) {
+  for (let i = 0; i < 150; i += 1) {
     try {
-      const [portLine] = (await readFile(devToolsPortFile, 'utf8')).trim().split(/\\r?\\n/);
-      const port = Number(portLine);
-      if (Number.isInteger(port) && port > 0) {
-        const pages = await getJson(`http://127.0.0.1:${port}/json`);
-        const page = pages.find(p => p.type === 'page');
-        if (page?.webSocketDebuggerUrl) return page.webSocketDebuggerUrl;
-      }
+      const pages = await getJson(`http://127.0.0.1:${chromeDebugPort}/json`);
+      const page = pages.find(p => p.type === 'page');
+      if (page?.webSocketDebuggerUrl) return page.webSocketDebuggerUrl;
     } catch {}
 
     if (chrome.exitCode !== null) {
@@ -41,7 +35,7 @@ async function waitForDebugger() {
     }
     await delay(200);
   }
-  throw new Error('Chrome debugger unavailable');
+  throw new Error(`Chrome debugger unavailable on port ${chromeDebugPort}`);
 }
 
 function createCdp(wsUrl, onEvent = null) {
