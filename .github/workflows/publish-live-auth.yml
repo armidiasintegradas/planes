@@ -1,5 +1,5 @@
 name: Publish Planes live auth
-# consolidated-v16
+# consolidated-v17
 # Consolidated single-owner auth publisher.
 # Unified OAuth validation retry.
 
@@ -91,15 +91,15 @@ jobs:
           import re
           site, sw_refs = re.subn(
               r"serviceWorker\.register\('\./sw\.js\?v=\d+'\)",
-              "serviceWorker.register('./sw.js?v=16')",
+              "serviceWorker.register('./sw.js?v=17')",
               site
           )
-          if sw_refs == 0 and "./sw.js?v=16" not in site:
-              raise SystemExit('Could not synchronize service worker registration to v16')
+          if sw_refs == 0 and "./sw.js?v=17" not in site:
+              raise SystemExit('Could not synchronize service worker registration to v17')
 
           site, auth_refs = re.subn(
               r"((?:legacy-auth-sanitizer-live|auth-gate-live|email-lifecycle-kick-live)\\.js)\\?v=[^\\\"']+",
-              r"\\1?v=16-auth",
+              r"\\1?v=17-auth",
               site
           )
           if auth_refs != 3:
@@ -126,9 +126,9 @@ jobs:
           grep -q "flowType: 'implicit'" site/auth-gate-live.js
           grep -q 'supabase.auth.setSession' site/auth-gate-live.js
           grep -q 'Authorization: `Bearer ${accessToken}`' site/auth-gate-live.js
-          grep -q "planes-os-v16" site/sw.js
-          grep -q "sw.js?v=16" site/index.html
-          test "$(grep -o '?v=16-auth' site/index.html | wc -l)" -eq 3
+          grep -q "planes-os-v17" site/sw.js
+          grep -q "sw.js?v=17" site/index.html
+          test "$(grep -o '?v=17-auth' site/index.html | wc -l)" -eq 3
 
       - name: Publish to gh-pages
         working-directory: site
