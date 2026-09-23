@@ -145,3 +145,35 @@ test('auth flow stays single-owner without PWA auto-logout or external runtime b
   assert.doesNotMatch(html, /auth-runtime-bridge-live\.js/);
   assert.doesNotMatch(html, /window\.window\.applySupabaseAuthPayload/);
 });
+
+
+test('operational mutations stay Supabase-first and refresh Intelligence after commit', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /supabaseClient\.from\('project_metrics'\)\.upsert/);
+  assert.match(html, /supabaseClient\.from\('project_supplies'\)\.(?:update|insert)/);
+  assert.match(html, /supabaseClient\.from\('project_validations'\)\.(?:update|insert)/);
+  assert.match(html, /supabaseClient\.from\('project_tasks'\)\.(?:update|insert)/);
+  assert.match(html, /refreshIntelligenceOperationalData\(\)/);
+  assert.match(html, /executePendingRealtimeVoiceMutation/);
+  assert.match(html, /requires_confirmation:\s*true/);
+});
+
+test('operational Realtime listens to every shared Intelligence table', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /supabaseClient\.channel\('planes-operational-feed'\)/);
+  assert.match(html, /\['project_metrics','project_supplies','project_validations','project_tasks'\]\.forEach/);
+  assert.match(html, /'postgres_changes'/);
+  assert.match(html, /scheduleOperationalRealtimeRefresh\(\)/);
+  assert.match(html, /setOperationalRealtimeStatus\('Ao vivo'\)/);
+});
+
+test('voice mutations expire and remain bound to the active project', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /pendingAgeMs > 5 \* 60 \* 1000/);
+  assert.match(html, /pending\.projectCode && currentProjectCode && pending\.projectCode !== currentProjectCode/);
+  assert.match(html, /stale_pending_action/);
+  assert.match(html, /confirm_pending_action/);
+});
