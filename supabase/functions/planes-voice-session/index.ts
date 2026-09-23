@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
 
   // Vozes Realtime distintas por persona. A naturalidade vem principalmente das
   // instruções de prosódia e conversação abaixo; Web Speech nunca é a experiência principal.
-  const voice = persona === "brita" ? "bossa" : "tempo";
+  const voice = persona === "brita" ? "marin" : "cedar";
   const personaName = persona === "brita" ? "Brita" : "Castanha";
   const voiceDirection = persona === "brita"
     ? `Brita: use um timbre inequivocamente feminino, brasileiro, jovem-adulto e contemporâneo; acolhedor, espontâneo e expressivo. Fale como uma colega inteligente ao lado do usuário, nunca como locutora, URA, GPS ou leitura de texto. A voz deve ter leveza, sorriso discreto, variação melódica natural e energia conversacional.`
@@ -369,19 +369,22 @@ Deno.serve(async (req) => {
     }
   ];
 
-  const liveInstructions =
+  const sessionInstructions =
     `Você é ${personaName}, persona oficial do Planes Intelligence. ${voiceDirection}
-Converse sempre em português brasileiro atual e natural. Seja breve, espontâneo e humano.
-Não leia relatórios em voz alta e não use tom de locução, URA, GPS ou audiobook.
-Use pausas, ritmo e entonação naturais. Reaja ao que o usuário acabou de dizer antes de responder.
-Chame ${firstName} pelo primeiro nome apenas quando soar natural.
-Se o usuário interromper, pare e escute imediatamente.
-Quando precisar consultar dados da obra, executar uma ação, validar permissões ou confirmar uma alteração, delegue ao backend.
-Nunca invente dados operacionais nem diga que uma alteração foi concluída antes da confirmação do backend.`;
 
-  const backendInstructions =
-    `Você é o backend operacional do Planes Intelligence para uma conversa de voz conduzida por ${personaName}.
-Projeto ativo: ${projectTitle}. Perfil efetivo: ${effectiveRole}. Público: ${audience}.
+ESTILO DE VOZ — prioridade máxima:
+- Fale sempre em português brasileiro atual, natural e conversacional.
+- Soe como uma pessoa conversando ao lado do usuário, nunca como locução, URA, GPS, audiobook ou texto lido.
+- Use cadência humana, micro-pausas naturais, variação leve de ritmo e ênfase contextual.
+- Prefira frases curtas e fluidas; evite listas longas e linguagem de relatório em voz alta.
+- Não repita a mesma abertura em todas as respostas.
+- Números, datas, percentuais e siglas devem ser pronunciados naturalmente em português.
+- Se o usuário interromper, pare imediatamente e escute.
+- Chame ${firstName} pelo primeiro nome apenas quando soar natural.
+- Reaja ao contexto antes de responder; seja breve, espontâneo, caloroso e profissional.
+
+Você é também o copiloto operacional do Planes para ${projectTitle}.
+Perfil efetivo: ${effectiveRole}. Público: ${audience}.
 Capacidades permitidas: ${allowedMutationLabels.length ? allowedMutationLabels.join(", ") : "nenhuma"}.
 Capacidades não permitidas: ${deniedMutationLabels.length ? deniedMutationLabels.join(", ") : "nenhuma"}.
 
@@ -390,63 +393,61 @@ Para alterações AUTORIZADAS, use primeiro uma ferramenta prepare_* e devolva u
 Somente após confirmação explícita use confirm_pending_action.
 Se a alteração não for autorizada, não chame prepare_* e explique a restrição.
 Para abrir telas, use open_module.
-Retorne ao modelo de voz apenas fatos verificados, estado atual da ação e próximo passo. Evite Markdown extenso e linguagem de relatório.`;
+Nunca diga que uma alteração foi concluída antes do retorno da ferramenta.`;
 
   const sessionConfig = {
-    model: "gpt-live-1",
+    type: "realtime",
+    model: "gpt-realtime-1.5",
+    output_modalities: ["audio"],
     audio: {
+      input: {
+        turn_detection: {
+          type: "semantic_vad",
+          eagerness: "auto",
+          create_response: true,
+          interrupt_response: true
+        }
+      },
       output: { voice }
     },
-    delegation: {
-      type: "responses",
-      responses: {
-        model: "gpt-5.6-terra",
-        instructions: backendInstructions,
-        tools: planesTools,
-        tool_choice: "auto",
-        parallel_tool_calls: false
-      }
-    },
-    instructions: liveInstructions
+    tools: planesTools,
+    tool_choice: "auto",
+    instructions: sessionInstructions
   };
+
+  const fd = new FormData();
+  fd.set("sdp", sdp);
+  fd.set("session", JSON.stringify(sessionConfig));
 
   try {
     const safetyId = await sha256("planes:" + userSub);
-    const openaiResponse = await fetch("https://api.openai.com/v1/live/sessions", {
+    const openaiResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "OpenAI-Safety-Identifier": safetyId,
-        "Content-Type": "application/json"
+        "OpenAI-Safety-Identifier": safetyId
       },
-      body: JSON.stringify({
-        session: sessionConfig,
-        transport: { type: "webrtc", sdp }
-      }),
+      body: fd,
     });
 
-    const payloadText = await openaiResponse.text();
-    let payload: any = null;
-    try { payload = JSON.parse(payloadText); } catch {}
-
-    if (!openaiResponse.ok || !payload?.transport?.sdp) {
-      console.error("OpenAI Live session error", openaiResponse.status, payloadText.slice(0, 500));
+    const answer = await openaiResponse.text();
+    if (!openaiResponse.ok) {
+      console.error("OpenAI Realtime session error", openaiResponse.status, answer.slice(0, 500));
       return json({
-        error: "live_session_failed",
+        error: "realtime_session_failed",
         status: openaiResponse.status,
-        detail: payloadText.slice(0, 300)
+        detail: answer.slice(0, 300)
       }, 502);
     }
 
     return json({
-      sdp: payload.transport.sdp,
-      sessionId: payload.session?.id || null,
-      engine: "gpt-live-1",
+      sdp: answer,
+      engine: "gpt-realtime-1.5",
       voice,
       persona: personaName
     }, 201);
   } catch (error) {
     console.error("planes-voice-session error", error);
-    return json({ error: "live_gateway_error" }, 500);
+    return json({ error: "realtime_gateway_error" }, 500);
   }
 });
