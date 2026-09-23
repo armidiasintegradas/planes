@@ -517,7 +517,7 @@
   <script>
   window.__BUILD_TIMESTAMP__ = 1788485000;
   
-  // PWA v13: o Service Worker gerencia a expiração dos caches antigos.
+  // PWA v17: o Service Worker gerencia a expiração dos caches antigos.
   // Não apagar caches manualmente aqui; isso causava conflito com o SW ativo no iOS.
   if ('serviceWorker' in navigator) {
     let planesSwReloaded = false;
@@ -529,7 +529,7 @@
     });
 
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=15').then(reg => {
+      navigator.serviceWorker.register('./sw.js?v=17').then(reg => {
         reg.update();
       }).catch(() => {});
     });
