@@ -108,6 +108,85 @@ jobs:
             grep -q 'PLANES OS' "$out"
           done
 
+      - name: Headless authenticated runtime hydration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+
+          payload = """<script>
+          window.__PLANES_EXTERNAL_AUTH_OWNER__ = true;
+          window.__PLANES_AUTH_BRIDGE_PAYLOAD__ = {
+            user: {
+              id: 'ci-admin',
+              auth_user_id: 'ci-admin',
+              name: 'CI Admin',
+              email: 'ci-admin@example.com',
+              role: 'admin',
+              role_id: 'admin',
+              level: 'admin',
+              status: 'Aprovado',
+              avatar: 'CI'
+            },
+            profile: {
+              id: 'ci-admin',
+              email: 'ci-admin@example.com',
+              role: 'admin',
+              status: 'approved'
+            }
+          };
+          </script>"""
+          html = html.replace('</head>', payload + '\n</head>', 1)
+
+          probe = """<script>
+          (() => {
+            let n = 0;
+            const check = () => {
+              n += 1;
+              const hydrated = window.__PLANES_AUTH_HYDRATED__ === true;
+              document.documentElement.setAttribute(
+                'data-planes-auth-test',
+                hydrated ? 'hydrated' : (window.__PLANES_AUTH_LAST_ERROR__ ? 'error' : 'pending')
+              );
+              if (window.__PLANES_AUTH_LAST_ERROR__) {
+                document.documentElement.setAttribute(
+                  'data-planes-auth-error',
+                  String(window.__PLANES_AUTH_LAST_ERROR__).slice(0, 500)
+                );
+              }
+              if (!hydrated && n < 100) setTimeout(check, 100);
+            };
+            check();
+          })();
+          </script>"""
+          html = html.replace('</body>', probe + '\n</body>', 1)
+          Path('/tmp/planes-auth-test.html').write_text(html, encoding='utf-8')
+          PY
+
+          cp /tmp/planes-auth-test.html ./planes-auth-test.html
+          python3 -m http.server 8765 >/tmp/planes-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          sleep 2
+
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --virtual-time-budget=20000 \
+            --window-size=390,844 \
+            --dump-dom \
+            http://127.0.0.1:8765/planes-auth-test.html > /tmp/planes-authenticated.html
+
+          grep -q 'data-planes-auth-test="hydrated"' /tmp/planes-authenticated.html || {
+            echo 'Authenticated runtime hydration failed'
+            grep -o 'data-planes-auth-error="[^"]*"' /tmp/planes-authenticated.html || true
+            exit 1
+          }
+
       - name: Run regression tests
         run: npm test
 
