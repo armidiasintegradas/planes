@@ -98,3 +98,15 @@ test('voice fallback keeps high-quality OpenAI audio and never speaks with brows
   assert.doesNotMatch(block, /SpeechSynthesisUtterance/);
   assert.doesNotMatch(block, /speechSynthesis\.speak/);
 });
+
+
+test('dropped Realtime sessions actively reconnect before falling back', async () => {
+  const html = await readFile('index.html', 'utf8');
+
+  assert.match(html, /let realtimeReconnectScheduled = false/);
+  assert.match(html, /pc\.connectionState === 'failed' \|\| pc\.connectionState === 'disconnected'/);
+  assert.match(html, /if \(!realtimeReconnectScheduled\)/);
+  assert.match(html, /realtimeVoicePc !== disconnectedPc/);
+  assert.match(html, /cleanupRealtimeVoice\(\)[\s\S]*startRealtimeVoiceAssistant\(0\)/);
+  assert.match(html, /Restabelecendo a conversa com/);
+});
