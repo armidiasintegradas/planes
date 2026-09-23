@@ -97,6 +97,14 @@ jobs:
           if sw_refs == 0 and "./sw.js?v=16" not in site:
               raise SystemExit('Could not synchronize service worker registration to v16')
 
+          site, auth_refs = re.subn(
+              r"((?:legacy-auth-sanitizer-live|auth-gate-live|email-lifecycle-kick-live)\\.js)\\?v=[^\\\"']+",
+              r"\\1?v=16-auth",
+              site
+          )
+          if auth_refs != 3:
+              raise SystemExit(f'Expected 3 live auth module refs, found {auth_refs}')
+
           site_path.write_text(site, encoding='utf-8')
           PY
 
@@ -120,6 +128,7 @@ jobs:
           grep -q 'Authorization: `Bearer ${accessToken}`' site/auth-gate-live.js
           grep -q "planes-os-v16" site/sw.js
           grep -q "sw.js?v=16" site/index.html
+          test "$(grep -o '?v=16-auth' site/index.html | wc -l)" -eq 3
 
       - name: Publish to gh-pages
         working-directory: site
