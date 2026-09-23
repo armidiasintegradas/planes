@@ -59,3 +59,42 @@ test('voice identity stays personalized and operationally grounded', async () =>
   assert.match(src, /Use as ferramentas do Planes para consultar dados atuais; nunca invente números/);
   assert.match(src, /Somente após confirmação explícita use confirm_pending_action/);
 });
+
+
+test('Realtime voice UI exposes every operational state and safe fallback', async () => {
+  const html = await readFile('index.html', 'utf8');
+
+  assert.match(html, /idle:\s*'Online'/);
+  assert.match(html, /connecting:\s*'Conectando'/);
+  assert.match(html, /listening:\s*'Ouvindo'/);
+  assert.match(html, /speaking:\s*'Falando'/);
+  assert.match(html, /reconnecting:\s*'Reconectando'/);
+  assert.match(html, /error:\s*'Voz alternativa'/);
+  assert.match(html, /Reconectando a voz neural/);
+  assert.match(html, /Ativando voz OpenAI alternativa/);
+  assert.match(html, /audio\.playsInline = true/);
+});
+
+test('daily persona greeting persists per user and stays interruption-friendly', async () => {
+  const html = await readFile('index.html', 'utf8');
+
+  assert.match(html, /assistant_last_daily_greeting_at/);
+  assert.match(html, /shouldSendDailyPersonaGreeting/);
+  assert.match(html, /markDailyPersonaGreetingUsed/);
+  assert.match(html, /Oi, \$\{firstName\}, tudo bem\?/);
+  assert.match(html, /output_modalities:\s*\['audio'\]/);
+  assert.match(html, /sem soar como leitura/);
+});
+
+test('voice fallback keeps high-quality OpenAI audio and never speaks with browser synthesis', async () => {
+  const html = await readFile('index.html', 'utf8');
+  const start = html.indexOf('async function speakText(text)');
+  const end = html.indexOf('function stopSpeaking()', start);
+  const block = html.slice(start, end);
+
+  assert.match(block, /planes-voice-tts/);
+  assert.match(block, /new Audio\(/);
+  assert.match(block, /audio\.playsInline = true/);
+  assert.doesNotMatch(block, /SpeechSynthesisUtterance/);
+  assert.doesNotMatch(block, /speechSynthesis\.speak/);
+});
