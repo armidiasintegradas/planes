@@ -54,18 +54,20 @@ jobs:
           ! grep -q "auth-runtime-bridge-live.js" production-site/index.html
           grep -q "planes-os-v16" production-site/sw.js
 
-          # GPT-Live voice production contract
-          grep -q "session.started" production-site/index.html
-          grep -q "session.input_transcript.delta" production-site/index.html
-          grep -q "session.output_transcript.delta" production-site/index.html
-          grep -q "session.instructions.append" production-site/index.html
-          grep -q "response.item.create" production-site/index.html
+          # Realtime voice production contract
+          grep -q "input_audio_buffer.speech_started" production-site/index.html
+          grep -q "conversation.item.input_audio_transcription.completed" production-site/index.html
+          grep -q "response.output_item.done" production-site/index.html
+          grep -q "response.function_call_arguments.done" production-site/index.html
+          grep -q "conversation.item.create" production-site/index.html
+          grep -q "response.create" production-site/index.html
           grep -q "startRealtimeVoiceAssistant(retryAttempt = 0)" production-site/index.html
           grep -q "/functions/v1/planes-voice-tts" production-site/index.html
           grep -q "Reconectando a voz neural" production-site/index.html
-          ! grep -q "conversation.item.create" production-site/index.html
-          ! grep -q "input_audio_buffer." production-site/index.html
-          ! grep -q "conversation.item.input_audio_transcription" production-site/index.html
+          ! grep -q "session.instructions.append" production-site/index.html
+          ! grep -q "session.input_transcript.delta" production-site/index.html
+          ! grep -q "session.output_transcript.delta" production-site/index.html
+          ! grep -q "response.item.create" production-site/index.html
 
       - name: Smoke test public production shell
         shell: bash
@@ -78,8 +80,8 @@ jobs:
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
           grep -q "applySupabaseAuthPayload" /tmp/planes-index.html
           grep -q "const CACHE_NAME = 'planes-os-v" /tmp/planes-sw.js
-          grep -q "session.started" /tmp/planes-index.html
-          grep -q "session.input_transcript.delta" /tmp/planes-index.html
+          grep -q "input_audio_buffer.speech_started" /tmp/planes-index.html
+          grep -q "conversation.item.input_audio_transcription.completed" /tmp/planes-index.html
           grep -q "/functions/v1/planes-voice-tts" /tmp/planes-index.html
 
       - name: Validate authenticated runtime hydration in real browser
