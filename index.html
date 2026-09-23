@@ -9240,7 +9240,7 @@
       });
     }
 
-    async function startRealtimeVoiceAssistant() {
+    async function startRealtimeVoiceAssistant(retryAttempt = 0) {
       if (!getAssistantPersona()) {
         showToast('Escolha Brita ou Castanha antes de iniciar a conversa por voz.');
         activeNav = 'Planes Intelligence';
@@ -9359,13 +9359,23 @@
         return true;
       } catch (err) {
         console.warn('Planes Realtime Voice:', err);
+        const errorMessage = String(err?.message || err);
         cleanupRealtimeVoice();
-        realtimeVoiceState = 'error';
-        if (String(err?.message || err).includes('OPENAI_API_KEY_NOT_CONFIGURED')) {
-          showToast('Voz Realtime indisponível. Usando voz OpenAI alternativa da ' + getAssistantPersonaLabel() + '.');
-        } else {
-          showToast('Não foi possível iniciar a voz Realtime. Usando voz OpenAI alternativa da ' + getAssistantPersonaLabel() + '.');
+
+        // Uma oscilação curta de rede não deve empurrar imediatamente o usuário
+        // para o modo alternativo. Tenta restabelecer a sessão neural uma vez.
+        if (retryAttempt < 1 && !errorMessage.includes('OPENAI_API_KEY_NOT_CONFIGURED')) {
+          realtimeVoiceState = 'reconnecting';
+          isListening = false;
+          isSpeaking = false;
+          showToast('Reconectando a voz neural da ' + getAssistantPersonaLabel() + '…');
+          render();
+          await new Promise(resolve => setTimeout(resolve, 700));
+          return startRealtimeVoiceAssistant(retryAttempt + 1);
         }
+
+        realtimeVoiceState = 'error';
+        showToast('Voz neural temporariamente indisponível. Ativando voz OpenAI alternativa da ' + getAssistantPersonaLabel() + '.');
         startVoiceAssistant();
         return false;
       }
