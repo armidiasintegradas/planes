@@ -133,11 +133,12 @@ Deno.serve(async (req) => {
 
   // Vozes Realtime distintas por persona. A naturalidade vem principalmente das
   // instruções de prosódia e conversação abaixo; Web Speech nunca é a experiência principal.
-  const voice = persona === "brita" ? "marin" : "cedar";
+  const voice = persona === "brita" ? "shimmer" : "echo";
+  const voiceSpeed = persona === "brita" ? 1.02 : 0.96;
   const personaName = persona === "brita" ? "Brita" : "Castanha";
   const voiceDirection = persona === "brita"
-    ? `Brita: voz feminina brasileira contemporânea, acolhedora e espontânea. Fale como uma colega inteligente ao lado do usuário, não como locutora, URA, GPS ou leitura de texto. Use energia leve, sorriso sutil quando fizer sentido e confiança sem formalidade excessiva.`
-    : `Castanha: voz masculina brasileira contemporânea, tranquila, próxima e espontânea. Fale como um colega experiente conversando ao lado do usuário, não como locutor, URA, GPS ou leitura de texto. Use calor, segurança e informalidade profissional sem exagero.`;
+    ? `Brita: use um timbre inequivocamente feminino, brasileiro, jovem-adulto e contemporâneo; acolhedor, espontâneo e expressivo. Fale como uma colega inteligente ao lado do usuário, nunca como locutora, URA, GPS ou leitura de texto. A voz deve ter leveza, sorriso discreto, variação melódica natural e energia conversacional.`
+    : `Castanha: use um timbre inequivocamente masculino, brasileiro, adulto e contemporâneo; mais grave, tranquilo, próximo e expressivo. Fale como um colega experiente ao lado do usuário, nunca como locutor, URA, GPS ou leitura de texto. A voz deve ter corpo, calor, pausas naturais e segurança sem formalidade excessiva.`;
 
   const planesTools = [
     {
@@ -371,7 +372,7 @@ Deno.serve(async (req) => {
 
   const sessionConfig = {
     type: "realtime",
-    model: "gpt-realtime-2.1",
+    model: "gpt-realtime-1.5",
     output_modalities: ["audio"],
     audio: {
       input: {
@@ -382,7 +383,7 @@ Deno.serve(async (req) => {
           interrupt_response: true
         }
       },
-      output: { voice }
+      output: { voice, speed: voiceSpeed }
     },
     tools: planesTools,
     tool_choice: "auto",
