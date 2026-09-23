@@ -32,3 +32,15 @@ test('browser speech synthesis is not used for assistant output', async () => {
   assert.doesNotMatch(block, /SpeechSynthesisUtterance/);
   assert.doesNotMatch(block, /speechSynthesis\.speak/);
 });
+
+
+test('GPT-Live UI confirmations use Responses events only', async () => {
+  const html = await readFile('index.html', 'utf8');
+  const start = html.indexOf('async function confirmPendingVoiceMutationFromUI');
+  const end = html.indexOf('async function executePendingRealtimeVoiceMutation', start);
+  assert.ok(start >= 0 && end > start, 'UI confirmation block must exist');
+  const block = html.slice(start, end);
+  assert.match(block, /type: 'response\.item\.create'/);
+  assert.match(block, /type: 'response\.create'/);
+  assert.doesNotMatch(block, /conversation\.item\.create/);
+});
