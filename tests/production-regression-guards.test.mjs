@@ -177,3 +177,36 @@ test('voice mutations expire and remain bound to the active project', async () =
   assert.match(html, /stale_pending_action/);
   assert.match(html, /confirm_pending_action/);
 });
+
+
+test('mobile PWA chrome keeps iOS safe areas and overlay stacking stable', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /safe-area-inset-top/);
+  assert.match(html, /safe-area-inset-bottom/);
+  assert.match(html, /\.planes-mobile-sheet-overlay[\s\S]*z-index:\s*1100/);
+  assert.match(html, /\[id\$="-modal"\]\.fixed\.inset-0[\s\S]*z-index:\s*1200/);
+  assert.match(html, /#toast[\s\S]*z-index:\s*1300/);
+  assert.match(html, /\.planes-intel-v2-overlay[^{]*\{[^}]*z-index:\s*1400/);
+  assert.match(html, /height:100dvh/);
+});
+
+test('service worker never caches cross-origin traffic and retires old shells', async () => {
+  const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+
+  assert.match(sw, /url\.origin !== self\.location\.origin/);
+  assert.match(sw, /event\.respondWith\(fetch\(event\.request\)\)/);
+  assert.match(sw, /caches\.keys\(\)/);
+  assert.match(sw, /key === CACHE_NAME \? null : caches\.delete\(key\)/);
+  assert.match(sw, /self\.clients\.claim\(\)/);
+  assert.match(sw, /self\.skipWaiting\(\)/);
+});
+
+test('live auth runtime and HTML remain network-first with offline fallback', async () => {
+  const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+
+  assert.match(sw, /isLiveAuthRuntime/);
+  assert.match(sw, /fetch\(event\.request, \{ cache: 'no-store' \}\)/);
+  assert.match(sw, /caches\.match\('\.\/index\.html'\)/);
+  assert.match(sw, /Response\.error\(\)/);
+});
