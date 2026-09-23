@@ -63,6 +63,9 @@ jobs:
           grep -q "startRealtimeVoiceAssistant(retryAttempt = 0)" production-site/index.html
           grep -q "/functions/v1/planes-voice-tts" production-site/index.html
           grep -q "Reconectando a voz neural" production-site/index.html
+          ! grep -q "conversation.item.create" production-site/index.html
+          ! grep -q "input_audio_buffer." production-site/index.html
+          ! grep -q "conversation.item.input_audio_transcription" production-site/index.html
 
       - name: Smoke test public production shell
         shell: bash
