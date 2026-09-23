@@ -64,7 +64,7 @@ jobs:
           grep -q "Planes" /tmp/planes-index.html
           grep -q "hydratePlanesFromSupabase" /tmp/planes-auth-gate.js
           grep -q "applySupabaseAuthPayload" /tmp/planes-index.html
-          grep -q "planes-os-v15" /tmp/planes-sw.js
+          grep -q "const CACHE_NAME = 'planes-os-v" /tmp/planes-sw.js
 
       - name: Validate authenticated runtime hydration in real browser
         shell: bash
