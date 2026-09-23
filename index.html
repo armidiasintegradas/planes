@@ -8627,7 +8627,7 @@
           ? 'Confirmei pela interface a ação: ' + summary + '. Resultado do Planes: ' + JSON.stringify(result)
           : 'Cancelei pela interface a ação: ' + summary + '.';
         sendRealtimeVoiceEvent({
-          type: 'conversation.item.create',
+          type: 'response.item.create',
           item: {
             type: 'message',
             role: 'user',
