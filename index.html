@@ -8370,9 +8370,13 @@
       const phrase = `Oi, ${firstName}, tudo bem? Aqui é ${personaName === 'Castanha' ? 'o Castanha' : 'a Brita'}. Vamos trabalhar?`;
 
       const sent = sendRealtimeVoiceEvent({
-        type: 'session.instructions.append',
-        delegation_id: null,
-        content: 'Cumprimente ' + firstName + ' agora, em português brasileiro, como ' + personaName + '. Seja espontâneo, caloroso e breve. Use esta ideia apenas como intenção, sem ler palavra por palavra: "' + phrase + '". Em seguida, pause e escute.'
+        type: 'response.create',
+        response: {
+          input: [],
+          output_modalities: ['audio'],
+          tool_choice: 'none',
+          instructions: 'Cumprimente ' + firstName + ' em português brasileiro como ' + personaName + ', de forma espontânea, calorosa e breve. Use esta ideia como base, sem soar como leitura e sem precisar repetir palavra por palavra: "' + phrase + '". Varie levemente a entonação e a formulação como numa conversa real.'
+        }
       });
       if (sent) {
         await markDailyPersonaGreetingUsed();
@@ -8627,7 +8631,7 @@
           ? 'Confirmei pela interface a ação: ' + summary + '. Resultado do Planes: ' + JSON.stringify(result)
           : 'Cancelei pela interface a ação: ' + summary + '.';
         sendRealtimeVoiceEvent({
-          type: 'response.item.create',
+          type: 'conversation.item.create',
           item: {
             type: 'message',
             role: 'user',
@@ -9136,7 +9140,7 @@
       }
 
       sendRealtimeVoiceEvent({
-        type: 'response.item.create',
+        type: 'conversation.item.create',
         item: {
           type: 'function_call_output',
           call_id: callId,
@@ -9152,7 +9156,7 @@
         const event = typeof raw === 'string' ? JSON.parse(raw) : raw;
         const type = String(event?.type || '');
 
-        if (type === 'session.started') {
+        if (type === 'input_audio_buffer.speech_started') {
           realtimeVoiceState = 'listening';
           isListening = true;
           isSpeaking = false;
@@ -9160,17 +9164,23 @@
           return;
         }
 
-        if (type === 'session.input_transcript.delta') {
-          const delta = String(event?.delta || '');
-          if (delta) liveTranscript += delta;
-          realtimeVoiceState = 'listening';
-          isListening = true;
-          isSpeaking = false;
-          render();
+        if (
+          type === 'response.output_item.done' &&
+          event?.item?.type === 'function_call'
+        ) {
+          handleRealtimeVoiceFunctionCall(event.item);
           return;
         }
 
-        if (type === 'session.output_transcript.delta') {
+        if (
+          type === 'response.function_call_arguments.done' &&
+          event?.item?.type === 'function_call'
+        ) {
+          handleRealtimeVoiceFunctionCall(event.item);
+          return;
+        }
+
+        if (type === 'response.created' || type.includes('response.output_audio')) {
           realtimeVoiceState = 'speaking';
           isListening = false;
           isSpeaking = true;
@@ -9178,38 +9188,41 @@
           return;
         }
 
-        if (type === 'response.event') {
-          const inner = event?.event || {};
-          const innerType = String(inner?.type || '');
-          if (
-            innerType === 'response.output_item.done' &&
-            inner?.item?.type === 'function_call'
-          ) {
-            handleRealtimeVoiceFunctionCall(inner.item);
-            return;
-          }
-          if (innerType === 'response.completed' || innerType === 'response.done') {
+        if (type === 'response.done') {
+          const functionCalls = Array.isArray(event?.response?.output)
+            ? event.response.output.filter(item => item?.type === 'function_call')
+            : [];
+          functionCalls.forEach(item => handleRealtimeVoiceFunctionCall(item));
+
+          if (!functionCalls.length) {
             realtimeVoiceState = 'listening';
             isListening = true;
             isSpeaking = false;
             render();
-            return;
           }
-        }
-
-        if (type === 'session.delegation.completed') {
-          realtimeVoiceState = 'listening';
-          isListening = true;
-          isSpeaking = false;
-          render();
           return;
         }
 
-        if (type === 'error' || type === 'session.error') {
-          console.warn('Planes GPT-Live event error:', event);
+        if (type === 'conversation.item.input_audio_transcription.completed') {
+          const transcript = String(event.transcript || '').trim();
+          if (transcript) {
+            liveTranscript = transcript;
+            if (typeof trackUserHabit === 'function') {
+              trackUserHabit('voice_command', {
+                module: activeNav || 'Planes Intelligence',
+                topic: inferIntelligenceTopic(transcript),
+                mode: 'voice'
+              });
+            }
+          }
+          return;
+        }
+
+        if (type === 'error') {
+          console.warn('Planes Realtime event error:', event);
         }
       } catch (err) {
-        console.warn('Planes GPT-Live: evento inválido.', err);
+        console.warn('Planes Realtime: evento inválido.', err);
       }
     }
 
@@ -9279,21 +9292,14 @@
         const dc = pc.createDataChannel('oai-events');
         realtimeVoiceDc = dc;
 
-        dc.addEventListener('open', () => {
+        dc.addEventListener('open', async () => {
           realtimeVoiceSessionStartedAt = new Date().toISOString();
-          realtimeVoiceState = 'connecting';
-          render();
+          setRealtimeVoiceState('listening');
+          showToast(getAssistantPersonaLabel() + ' está ouvindo.');
+          await sendDailyPersonaGreeting();
         });
 
-        dc.addEventListener('message', async event => {
-          let parsed = null;
-          try { parsed = JSON.parse(event.data); } catch {}
-          handleRealtimeVoiceServerEvent(parsed || event.data);
-          if (parsed?.type === 'session.started') {
-            showToast(getAssistantPersonaLabel() + ' está ouvindo.');
-            await sendDailyPersonaGreeting();
-          }
-        });
+        dc.addEventListener('message', event => handleRealtimeVoiceServerEvent(event.data));
         dc.addEventListener('close', () => {
           if (realtimeVoiceState !== 'idle') {
             realtimeVoiceState = 'reconnecting';
@@ -9346,13 +9352,13 @@
           if (code === 'openai_api_key_missing') {
             throw new Error('OPENAI_API_KEY_NOT_CONFIGURED');
           }
-          throw new Error(result?.message || result?.detail || 'Falha ao abrir sessão GPT-Live.');
+          throw new Error(result?.message || result?.detail || 'Falha ao abrir sessão Realtime.');
         }
 
         await pc.setRemoteDescription({ type: 'answer', sdp: result.sdp });
         return true;
       } catch (err) {
-        console.warn('Planes GPT-Live Voice:', err);
+        console.warn('Planes Realtime Voice:', err);
         const errorMessage = String(err?.message || err);
         cleanupRealtimeVoice();
 
