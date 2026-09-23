@@ -76,6 +76,12 @@ jobs:
           sleep 1
           PLANES_E2E_URL="http://127.0.0.1:4173/" node tests/browser-auth-runtime-e2e.mjs
 
+      - name: Validate live production runtime hydration
+        shell: bash
+        run: |
+          set -euo pipefail
+          PLANES_E2E_URL="https://armidiasintegradas.github.io/planes/?live-e2e=${GITHUB_SHA}" node tests/browser-auth-runtime-e2e.mjs
+
       - name: Diagnose login gate across viewports
         shell: bash
         run: |
