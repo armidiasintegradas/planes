@@ -30,7 +30,7 @@ async function waitForDebugger() {
   throw new Error('Chrome debugger unavailable');
 }
 
-function createCdp(wsUrl) {
+function createCdp(wsUrl, onEvent = null) {
   const ws = new WebSocket(wsUrl);
   let id = 0;
   const pending = new Map();
@@ -40,6 +40,7 @@ function createCdp(wsUrl) {
     if (!msg.id) {
       if (msg.method === 'Runtime.exceptionThrown' || msg.method === 'Runtime.consoleAPICalled') {
         events.push(msg);
+        try { onEvent?.(msg); } catch {}
       }
       return;
     }
