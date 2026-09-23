@@ -52,7 +52,7 @@ jobs:
           grep -q "__PLANES_AUTH_APPLIED_USER_ID__" production-site/index.html
           grep -q "externalAuthOwnsSession" production-site/index.html
           ! grep -q "auth-runtime-bridge-live.js" production-site/index.html
-          grep -q "planes-os-v16" production-site/sw.js
+          grep -q "planes-os-v17" production-site/sw.js
 
           # Realtime voice production contract
           grep -q "input_audio_buffer.speech_started" production-site/index.html
