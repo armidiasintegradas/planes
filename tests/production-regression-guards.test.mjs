@@ -250,3 +250,27 @@ test('confirmed Intelligence voice mutations authorize then persist through shar
   assert.match(html, /pending\.kind === 'edit_supply'[\s\S]*persistSupplyRecord\(candidate\)/);
   assert.match(html, /voice_confirmed_mutation/);
 });
+
+
+test('background realtime refresh never redraws unchanged screens', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /function getOperationalVisualFingerprint\(\)/);
+  assert.match(html, /function renderOperationalBackgroundIfChanged\(beforeFingerprint\)/);
+  assert.match(html, /if \(beforeFingerprint === afterFingerprint\) return false/);
+  assert.match(html, /refreshOperationalRealtimeState[\s\S]*renderOperationalBackgroundIfChanged\(beforeFingerprint\)/);
+  assert.match(html, /refreshPlanesAfterResume[\s\S]*renderOperationalBackgroundIfChanged\(beforeFingerprint\)/);
+});
+
+test('Realtime connection status does not force a full page render', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  const setupStart = html.indexOf('function setupOperationalRealtime()');
+  const setupEnd = html.indexOf('async function refreshIntelligenceOperationalData()', setupStart);
+  const block = html.slice(setupStart, setupEnd);
+
+  assert.match(block, /status === 'CHANNEL_ERROR'[\s\S]*scheduleOperationalReconnect\(\)/);
+  assert.match(block, /status === 'CLOSED'[\s\S]*scheduleOperationalReconnect\(\)/);
+  assert.doesNotMatch(block, /status === 'CHANNEL_ERROR'[\s\S]{0,260}render\(\)/);
+  assert.doesNotMatch(block, /status === 'CLOSED'[\s\S]{0,260}render\(\)/);
+});
