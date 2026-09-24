@@ -9241,10 +9241,22 @@
     }
 
     async function startRealtimeVoiceAssistant(retryAttempt = 0) {
+      if (!getAssistantPersona() && typeof hydrateAssistantPersona === 'function') {
+        await hydrateAssistantPersona();
+      }
       if (!getAssistantPersona()) {
-        showToast('Escolha Brita ou Castanha antes de iniciar a conversa por voz.');
+        showToast('Escolha Brita ou Castanha para iniciar a conversa por voz.');
         activeNav = 'Planes Intelligence';
         render();
+        if (typeof window.openPlanesIntelligenceV2 === 'function') {
+          window.openPlanesIntelligenceV2();
+          setTimeout(() => {
+            try {
+              const onboarding = document.getElementById('planes-v2-onboarding');
+              if (onboarding) onboarding.style.display = 'flex';
+            } catch (e) {}
+          }, 50);
+        }
         return false;
       }
 
@@ -19376,7 +19388,21 @@ ${activeNav === 'Equipe & Contatos' ? `
     el.querySelectorAll('[data-v2-action]').forEach(b=>b.addEventListener('click',()=>quickAction(b.dataset.v2Action)));
     el.querySelector('#planes-v2-send')?.addEventListener('click',()=>submit());
     el.querySelector('#planes-v2-input')?.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
-    el.querySelector('#planes-v2-mic')?.addEventListener('click',()=>{if(typeof toggleVoiceAssistant==='function')toggleVoiceAssistant(); setTimeout(renderOverlay,80)});
+    el.querySelector('#planes-v2-mic')?.addEventListener('click',async()=>{
+      let chosen=null;
+      try{chosen=typeof getAssistantPersona==='function'?getAssistantPersona():null}catch(e){}
+      if(!chosen && typeof hydrateAssistantPersona==='function'){
+        try{await hydrateAssistantPersona(); chosen=typeof getAssistantPersona==='function'?getAssistantPersona():null}catch(e){}
+      }
+      if(!chosen){
+        window.__PLANES_VOICE_START_AFTER_PERSONA__=true;
+        renderOverlay();
+        if(typeof showToast==='function') showToast('Escolha Brita ou Castanha. A voz inicia logo depois.');
+        return;
+      }
+      if(typeof toggleVoiceAssistant==='function') toggleVoiceAssistant();
+      setTimeout(renderOverlay,80);
+    });
     el.querySelector('#planes-v2-confirm')?.addEventListener('click',()=>confirmFromV2(true));
     el.querySelector('#planes-v2-cancel')?.addEventListener('click',()=>confirmFromV2(false));
     return el;
@@ -19401,6 +19427,10 @@ ${activeNav === 'Equipe & Contatos' ? `
   async function selectPersona(p){
     try{
       if(typeof chooseAssistantPersona==='function') await chooseAssistantPersona(p);
+      if(window.__PLANES_VOICE_START_AFTER_PERSONA__){
+        window.__PLANES_VOICE_START_AFTER_PERSONA__=false;
+        setTimeout(()=>{ if(typeof toggleVoiceAssistant==='function') toggleVoiceAssistant(); },120);
+      }
     }catch(e){}
     setTimeout(renderOverlay,50);
   }
