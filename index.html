@@ -2774,7 +2774,10 @@
       if (currentUser) {
         hydrateUserIntelligenceProfile();
         hydrateAssistantPersona();
-        hydrateProjectsFromSupabase().then(ok => { if (ok) render(); });
+        const projectsBeforeFingerprint = getOperationalVisualFingerprint();
+        hydrateProjectsFromSupabase().then(ok => {
+          if (ok) renderOperationalBackgroundIfChanged(projectsBeforeFingerprint);
+        });
       }
 
       // 1. Canal de Presença Realtime (ONLINE AGORA)
@@ -2894,12 +2897,13 @@
     async function refreshPlanesAfterResume() {
       if (!supabaseClient || navigator.onLine === false || !currentUser) return;
       try {
+        const beforeFingerprint = getOperationalVisualFingerprint();
         operationalProjectIdCache = null;
         await refreshIntelligenceOperationalData();
         await hydrateUserProjectIntelligenceContext();
         if (!operationalRealtimeChannel) setupOperationalRealtime();
         setOperationalRealtimeStatus('Ao vivo');
-        render();
+        renderOperationalBackgroundIfChanged(beforeFingerprint);
       } catch (e) {
         scheduleOperationalReconnect();
       }
@@ -6226,19 +6230,22 @@
       if (operationalRealtimeRefreshInFlight) return;
       operationalRealtimeRefreshInFlight = true;
       try {
+        const beforeFingerprint = getOperationalVisualFingerprint();
         const refreshed = await refreshIntelligenceOperationalData();
         if (refreshed) {
           await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
         }
 
         if (
-          activeNav === 'Planes Intelligence' ||
-          activeNav === 'Suprimentos' ||
-          activeNav === 'Fila de Validações' ||
-          activeNav === 'Curva S & PAC' ||
-          activeNav === 'Visão Geral'
+          refreshed && (
+            activeNav === 'Planes Intelligence' ||
+            activeNav === 'Suprimentos' ||
+            activeNav === 'Fila de Validações' ||
+            activeNav === 'Curva S & PAC' ||
+            activeNav === 'Visão Geral'
+          )
         ) {
-          render();
+          renderOperationalBackgroundIfChanged(beforeFingerprint);
         }
       } finally {
         operationalRealtimeRefreshInFlight = false;
@@ -10261,6 +10268,38 @@
       return !!supabaseClient && navigator.onLine !== false && operationalRealtimeStatus !== 'Offline';
     }
 
+    function getOperationalVisualFingerprint() {
+      try {
+        return JSON.stringify({
+          screen: currentScreen,
+          nav: activeNav,
+          project: selectedProject ? {
+            id: selectedProject.id,
+            progress: selectedProject.progress,
+            targetProgress: selectedProject.targetProgress,
+            spent: selectedProject.spent,
+            workers: selectedProject.workers
+          } : null,
+          physicalProgress,
+          financialSpent,
+          pacScore,
+          workersCount,
+          validations: Array.isArray(validations) ? validations.map(v => [v.id, v.status, v.qtd]) : [],
+          supplies: Array.isArray(suppliesList) ? suppliesList.map(v => [v.id, v.status, v.qtd, v.date]) : [],
+          tasks: Array.isArray(tasksList) ? tasksList.map(v => [v.id, !!v.done, v.deadline]) : []
+        });
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function renderOperationalBackgroundIfChanged(beforeFingerprint) {
+      const afterFingerprint = getOperationalVisualFingerprint();
+      if (beforeFingerprint === afterFingerprint) return false;
+      render();
+      return true;
+    }
+
     function setOperationalRealtimeStatus(status) {
       operationalRealtimeStatus = status;
       try {
@@ -10502,27 +10541,27 @@
         'postgres_changes',
         { event: '*', schema: 'public', table: 'projects' },
         async () => {
+          const beforeFingerprint = getOperationalVisualFingerprint();
           const synced = await hydrateProjectsFromSupabase();
-          if (synced) render();
+          if (synced) renderOperationalBackgroundIfChanged(beforeFingerprint);
         }
       );
 
       operationalRealtimeChannel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
+          const beforeFingerprint = getOperationalVisualFingerprint();
           setOperationalRealtimeStatus('Ao vivo');
           const refreshed = await refreshIntelligenceOperationalData();
           if (refreshed) {
             await refreshProactiveIntelligenceBrief({ commitSnapshot: false });
+            renderOperationalBackgroundIfChanged(beforeFingerprint);
           }
-          render();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setOperationalRealtimeStatus('Reconectando');
           scheduleOperationalReconnect();
-          render();
         } else if (status === 'CLOSED') {
           setOperationalRealtimeStatus(navigator.onLine === false ? 'Offline' : 'Reconectando');
           if (navigator.onLine !== false) scheduleOperationalReconnect();
-          render();
         }
       });
     }
