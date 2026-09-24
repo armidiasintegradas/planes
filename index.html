@@ -9752,14 +9752,32 @@
           }
         });
 
+        let realtimeReconnectScheduled = false;
         pc.addEventListener('connectionstatechange', () => {
           if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
             realtimeVoiceState = 'reconnecting';
             isListening = false;
             isSpeaking = false;
             render();
-          } else if (pc.connectionState === 'connected' && realtimeVoiceState === 'reconnecting') {
-            setRealtimeVoiceState('listening');
+
+            if (!realtimeReconnectScheduled) {
+              realtimeReconnectScheduled = true;
+              const disconnectedPc = pc;
+              setTimeout(async () => {
+                if (realtimeVoicePc !== disconnectedPc) return;
+                if (disconnectedPc.connectionState === 'connected') {
+                  realtimeReconnectScheduled = false;
+                  setRealtimeVoiceState('listening');
+                  return;
+                }
+                cleanupRealtimeVoice();
+                showToast('Restabelecendo a conversa com ' + getAssistantPersonaLabel() + '…');
+                await startRealtimeVoiceAssistant(0);
+              }, pc.connectionState === 'failed' ? 300 : 1200);
+            }
+          } else if (pc.connectionState === 'connected') {
+            realtimeReconnectScheduled = false;
+            if (realtimeVoiceState === 'reconnecting') setRealtimeVoiceState('listening');
           }
         });
 
