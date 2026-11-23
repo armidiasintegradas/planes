@@ -29,6 +29,7 @@ function harness({
   metrics = [{ physical_progress: 0, target_progress: 10, pac_score: 80, financial_spent_m: 3, workers_count: 0 }],
   code = 'obra_demo',
   projectId = 'demo-project',
+  enabled = true,
 } = {}) {
   let handler;
   const queried = [];
@@ -63,7 +64,7 @@ function harness({
   const ctx = {
     __createClient: createClient,
     Deno: {
-      env: { get: key => ({ SUPABASE_URL: 'https://demo.supabase.co', SUPABASE_ANON_KEY: 'public-key', OPENAI_API_KEY: 'test-secret' })[key] },
+      env: { get: key => ({ SUPABASE_URL: 'https://demo.supabase.co', SUPABASE_ANON_KEY: 'public-key', OPENAI_API_KEY: 'test-secret', PLANES_INTELLIGENCE_TEXT_ENABLED: enabled ? 'true' : 'false' })[key] },
       serve(fn) { handler = fn; },
     },
     Response, Headers, AbortController, setTimeout, clearTimeout, Date,
@@ -214,4 +215,13 @@ test('mock Edge Function: projects with readable codes resolve by code only', as
   assert.equal(r.status, 200);
   assert.ok(h.queried.some(q => Array.isArray(q) && q[0] === 'projects' && q[1] === 'code' && q[2] === 'obra_demo'));
   assert.equal(h.queried.some(q => Array.isArray(q) && q[0] === 'projects' && q[1] === 'id'), false);
+});
+
+test('mock Edge Function: server kill switch prevents access and model calls', async () => {
+  const h = harness({ enabled: false });
+  const r = await h.post();
+  assert.equal(r.status, 503);
+  assert.equal(r.body.error, 'intelligence_not_enabled');
+  assert.equal(h.calls.length, 0);
+  assert.equal(h.queried.length, 0);
 });
