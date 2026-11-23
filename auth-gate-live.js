@@ -1074,3 +1074,16 @@ void boot().catch((error) => {
   script.onerror = () => console.warn('Planes Intelligence: noncritical chat hotfix unavailable');
   (document.head || document.documentElement).appendChild(script);
 })();
+
+
+/* Intelligence layout: promote the chat to full width and move decision memory
+   to the original right-hand column without altering either component. */
+(() => {
+  if (document.getElementById('planes-intelligence-panel-order-loader')) return;
+  const script = document.createElement('script');
+  script.id = 'planes-intelligence-panel-order-loader';
+  script.src = './intelligence-panel-order-live.js?v=20261123-1';
+  script.async = true;
+  script.onerror = () => console.warn('Planes Intelligence: layout swap unavailable');
+  (document.head || document.documentElement).appendChild(script);
+})();
