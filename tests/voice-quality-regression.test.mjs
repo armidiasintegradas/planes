@@ -87,3 +87,21 @@ test('live Intelligence refuses stale local data and permits zero-valued metrics
   assert.doesNotMatch(refresh, /Number\(metrics\.(?:physical_progress|pac_score|financial_spent_m|workers_count)\) \|\|/);
   assert.match(refresh, /metrics\.physical_progress !== null/);
 });
+
+test('Intelligence requires explicitly selected project and loaded metrics', async () => {
+  const html = await readFile('index.html', 'utf8');
+  const begin = html.indexOf('async function refreshIntelligenceOperationalData()');
+  const end = html.indexOf('function formatPct(', begin);
+  const refresh = html.slice(begin, end);
+  assert.ok(begin >= 0 && end > begin);
+  assert.match(refresh, /!selectedProject\?\.id/);
+  assert.match(refresh, /const projectCode = String\(selectedProject\.id\)/);
+  assert.doesNotMatch(refresh, /'japaratinga-r3'/);
+  assert.match(refresh, /if \(!metrics\)/);
+  assert.match(refresh, /intelligenceDataSource = 'unavailable'/);
+});
+
+test('Legacy response distinguishes synced Supabase rows from local charts', async () => {
+  const html = await readFile('index.html', 'utf8');
+  assert.match(html, /Gráficos e indicadores complementares desta visualização podem incluir dados locais/);
+});
