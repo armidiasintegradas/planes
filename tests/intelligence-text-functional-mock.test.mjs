@@ -225,3 +225,31 @@ test('mock Edge Function: server kill switch prevents access and model calls', a
   assert.equal(h.calls.length, 0);
   assert.equal(h.queried.length, 0);
 });
+
+test('mock Edge Function: field and engineering roles never forward financial values', async () => {
+  for (const role of ['campo', 'engenharia']) {
+    const h = harness({ role });
+    const r = await h.post();
+    assert.equal(r.status, 200);
+    const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\\n').slice(1).join('\\n'));
+    assert.equal(snapshot.metrics.financial_spent_m, undefined);
+    assert.equal(snapshot.metrics.pac_score, 80);
+    assert.equal(snapshot.metrics.workers_count, 0);
+    const projection = h.queried.find(x => Array.isArray(x) && x[0] === 'project_metrics' && typeof x[1] === 'string');
+    assert.ok(projection);
+    assert.doesNotMatch(projection[1], /financial_spent_m/);
+  }
+});
+
+test('mock Edge Function: finance role requests only authorized financial metrics', async () => {
+  const h = harness({ role: 'financeiro' });
+  const r = await h.post();
+  assert.equal(r.status, 200);
+  const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\\n').slice(1).join('\\n'));
+  assert.equal(snapshot.metrics.financial_spent_m, 3);
+  assert.equal(snapshot.metrics.pac_score, undefined);
+  assert.equal(snapshot.metrics.workers_count, undefined);
+  const projection = h.queried.find(x => Array.isArray(x) && x[0] === 'project_metrics' && typeof x[1] === 'string');
+  assert.ok(projection);
+  assert.doesNotMatch(projection[1], /pac_score|workers_count/);
+});
