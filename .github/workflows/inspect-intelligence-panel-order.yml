@@ -2,7 +2,7 @@ name: Inspect Intelligence panel order
 on:
   push:
     branches: [gh-pages]
-    paths: [scripts/inspect-profile-login-flows.cjs, .github/workflows/inspect-intelligence-panel-order.yml]
+    paths: [scripts/inspect-global-rhythm.cjs, .github/workflows/inspect-intelligence-panel-order.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,4 +15,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node scripts/inspect-profile-login-flows.cjs
+      - run: node scripts/inspect-global-rhythm.cjs
