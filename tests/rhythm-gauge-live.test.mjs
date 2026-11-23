@@ -24,7 +24,13 @@ function setup({reduced=false}={}){
       removeAttribute(k){delete attrs[k];}
     };
   });
-  const markers=paths.map(()=>({attrs:{},setAttribute(k,v){this.attrs[k]=v;}}));
+  const markers=paths.map((_,i)=>{
+    const classes=new Set(i===0?['anim-pulse-slow']:[]);
+    return {attrs:{},style:{},classes,
+      classList:{remove:name=>classes.delete(name)},
+      setAttribute(k,v){this.attrs[k]=v;}
+    };
+  });
   const svg={
     dataset:{},attrs:{},isConnected:true,
     querySelectorAll(selector){
@@ -100,4 +106,20 @@ test('subsequent mutation does not reanimate an already aligned gauge',()=>{
   h.frame(0);h.frame(1250);
   h.notify();h.frame(1500);
   assert.equal(h.pending,0);
+});
+
+test('lime marker does not retain independent pulse transform during animation',()=>{
+  const h=setup();
+  h.frame(0);h.frame(625);
+  for(let i=0;i<3;i++){
+    assert.equal(h.markers[i].style.animation,'none');
+    assert.equal(h.markers[i].style.transform,'none');
+    assert.equal(h.markers[i].style.transition,'none');
+  }
+  assert.equal(h.markers[0].classes.has('anim-pulse-slow'),false);
+  const ease=1-Math.pow(1-.5,3);
+  const outer=h.paths[0];
+  const expected=outer.getPointAtLength(outer.getTotalLength()*.92*ease);
+  assert.ok(Math.abs(Number(h.markers[0].attrs.cx)-expected.x)<.001);
+  assert.ok(Math.abs(Number(h.markers[0].attrs.cy)-expected.y)<.001);
 });
