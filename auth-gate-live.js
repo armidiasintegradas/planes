@@ -1100,3 +1100,15 @@ void boot().catch((error) => {
   script.onerror=()=>console.warn('Planes Intelligence: visual refresh unavailable');
   (document.head||document.documentElement).appendChild(script);
 })();
+
+
+/* Rhythm Global gauge: synchronize arc animation and colored endpoint markers. */
+(() => {
+  if (document.getElementById('planes-rhythm-gauge-fix-loader')) return;
+  const script=document.createElement('script');
+  script.id='planes-rhythm-gauge-fix-loader';
+  script.src='./rhythm-gauge-live.js?v=20261123-1';
+  script.async=true;
+  script.onerror=()=>console.warn('Planes OS: Rhythm Global gauge correction unavailable');
+  (document.head||document.documentElement).appendChild(script);
+})();
