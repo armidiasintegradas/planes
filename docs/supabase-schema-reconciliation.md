@@ -29,3 +29,12 @@ Captura: **23/11/2026** · Fonte: metadados SOMENTE LEITURA do projeto Supabase 
 ## Estado desta investigação
 
 A incompatibilidade foi **identificada e documentada**, e existe referência de tipos para detectar regressões. **Não foi reconstruído nem testado um Supabase local equivalente**: isso exige o dump schema-only validado, políticas e funções reais, além de execução local. Não apresentar testes simulados como equivalentes aos testes RLS reais.
+
+## Evidências adicionais da auditoria (23/11/2026)
+
+- Snapshot de tipos obtido por leitura do esquema da instância conectada e versionado em `types/supabase-production-baseline.ts`. Testes `tests/intelligence-schema-baseline.test.mjs` validam as tabelas/colunas necessárias ao endpoint, sem copiar linhas ou credenciais.
+- RLS: uma consulta de leitura sob identidade fictícia sem acesso retornou **0 linhas visíveis** para projetos, métricas, suprimentos, tarefas e validações. Esse é somente um **teste negativo**, não prova a matriz completa de papéis ou autenticação real no navegador.
+- O histórico `supabase_migrations.schema_migrations` contém SQL original armazenado no Supabase. Algumas migrações incluem `INSERT` e literais de inicialização; não exportar esses statements diretamente para um repositório sem triagem de segurança e remoção de dados/seeds. Um dump validado *schema-only* permanece o caminho preferido para testes locais.
+- Os pipelines `Validate Planes IAM` e `PLANES Production Regression` passaram no commit `796d7b0b68f48ea6d7320acc2c7038df679d0657`. Uma alteração posterior deste documento exigirá nova execução dos checks.
+
+**Decisão:** ainda não há evidência suficiente de paridade real do Supabase local. Mantém-se NO-GO para publicar a Edge Function generativa ou ativar `intelligenceTextApiEnabled` na produção.
