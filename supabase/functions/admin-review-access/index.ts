@@ -86,6 +86,53 @@ Deno.serve(async (req: Request) => {
     const rejectionReason = typeof body.rejectionReason === "string" ? body.rejectionReason.trim() : null;
     const adminNotes = typeof body.adminNotes === "string" ? body.adminNotes.trim() : null;
 
+    const { data: existingRequest, error: existingRequestError } = await adminClient
+      .from("access_requests")
+      .select("id,user_id,status")
+      .eq("id", requestId)
+      .single();
+
+    if (existingRequestError || !existingRequest) {
+      return Response.json({ error: "Access request not found" }, { status: 404, headers });
+    }
+
+    if (existingRequest.status !== "pending") {
+      const { data: existingProfile } = await adminClient
+        .from("profiles")
+        .select("id,status,role")
+        .eq("id", existingRequest.user_id)
+        .single();
+
+      const alreadyApproved =
+        decision === "approve" &&
+        existingRequest.status === "approved" &&
+        existingProfile?.status === "approved" &&
+        existingProfile?.role === role;
+
+      const alreadyRejected =
+        decision === "reject" &&
+        existingRequest.status === "rejected" &&
+        existingProfile?.status === "rejected";
+
+      if (alreadyApproved || alreadyRejected) {
+        return Response.json({
+          ok: true,
+          idempotent: true,
+          result: {
+            request_id: existingRequest.id,
+            user_id: existingRequest.user_id,
+            status: existingRequest.status,
+          },
+          appUrl: APP_URL,
+        }, { status: 200, headers });
+      }
+
+      return Response.json({
+        error: "Access request is no longer pending",
+        currentStatus: existingRequest.status,
+      }, { status: 409, headers });
+    }
+
     const roles = ["super_admin", "admin", "gestor", "engenharia", "campo", "financeiro", "cliente"];
     if (!requestId || !decision) {
       return Response.json({ error: "requestId and decision are required" }, { status: 400, headers });
@@ -100,7 +147,9 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: "Only a super administrator can grant super_admin" }, { status: 403, headers });
     }
 
-    const { data, error } = await adminClient.rpc("admin_review_access_request", {
+    // The database transaction checks auth.uid() against p_actor_id.
+    // Call using the verified request JWT (not service_role, which has no user context).
+    const { data, error } = await userClient.rpc("admin_review_access_request", {
       p_actor_id: userData.user.id,
       p_request_id: requestId,
       p_decision: decision,
