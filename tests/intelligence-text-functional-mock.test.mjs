@@ -27,6 +27,8 @@ function harness({
   origin = 'https://armidiasintegradas.github.io',
   supplies = [{ name: 'Aço', supplier: 'Fornecedor de teste', status: 'Programado' }],
   metrics = [{ physical_progress: 0, target_progress: 10, pac_score: 80, financial_spent_m: 3, workers_count: 0 }],
+  code = 'obra_demo',
+  projectId = 'demo-project',
 } = {}) {
   let handler;
   const queried = [];
@@ -34,7 +36,7 @@ function harness({
   const errors = [];
   const rows = {
     profiles: { id: 'demo-user', role, status: approved ? 'approved' : 'pending' },
-    projects: accessible ? { id: 'demo-project', code: 'obra_demo', name: 'Obra demonstrativa', status: 'Ativa' } : null,
+    projects: accessible ? { id: projectId, code, name: 'Obra demonstrativa', status: 'Ativa' } : null,
     project_metrics: metrics,
     project_supplies: supplies,
     project_validations: [{ item: 'Laje', status: 'Pendente', front: 'F1' }],
@@ -194,4 +196,22 @@ test('mock Edge Function: oversized JSON does not call provider', async () => {
   assert.equal(r.status, 413);
   assert.equal(r.body.error, 'request_too_large');
   assert.equal(h.calls.length, 0);
+});
+
+test('mock Edge Function: projects without code resolve by authorized UUID', async () => {
+  const uuid = 'c5f6b760-e8f2-4c6f-a905-dc649947e3a1';
+  const h = harness({ code: null, projectId: uuid });
+  const r = await h.post({ message: 'Situação da obra?', project_code: uuid });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.project_code, uuid);
+  assert.ok(h.queried.some(q => Array.isArray(q) && q[0] === 'projects' && q[1] === 'id' && q[2] === uuid));
+  assert.equal(h.calls.length, 1);
+});
+
+test('mock Edge Function: projects with readable codes resolve by code only', async () => {
+  const h = harness();
+  const r = await h.post();
+  assert.equal(r.status, 200);
+  assert.ok(h.queried.some(q => Array.isArray(q) && q[0] === 'projects' && q[1] === 'code' && q[2] === 'obra_demo'));
+  assert.equal(h.queried.some(q => Array.isArray(q) && q[0] === 'projects' && q[1] === 'id'), false);
 });
