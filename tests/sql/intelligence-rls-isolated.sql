@@ -4,6 +4,9 @@
 \set ON_ERROR_STOP on
 BEGIN;
 CREATE ROLE authenticated NOLOGIN;
+CREATE ROLE anon NOLOGIN;
+CREATE ROLE authenticator LOGIN PASSWORD 'planes_http_test_only';
+GRANT authenticated, anon TO authenticator;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
 GRANT USAGE ON SCHEMA auth, private, public TO authenticated;
@@ -11,7 +14,10 @@ CREATE TYPE public.planes_user_role AS ENUM ('super_admin','admin','gestor','eng
 CREATE TYPE public.planes_user_status AS ENUM ('pending','approved','rejected','suspended');
 
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
-  SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
+  SELECT coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    nullif((nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'), '')
+  )::uuid;
 $$;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 
