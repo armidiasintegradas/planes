@@ -66,3 +66,12 @@ test('refuses access to production client',()=>{
   assert.equal(h.window.planesStagingTaskAction,undefined);
   assert.equal(h.root.children.length,0);
 });
+
+test('chat request may prefill but never prepare or save task automatically',()=>{
+  const h=setup();
+  const ok=h.window.planesStagingTaskAction.suggestInstruction('Adicione uma tarefa para verificar o acabamento');
+  assert.equal(ok,true);
+  const inputs=h.window.planesStagingTaskAction.section.children.filter(x=>x.type==='input');
+  assert.equal(inputs[1].value,'verificar o acabamento');
+  assert.equal(h.calls.length,0);
+});
