@@ -1,0 +1,98 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
+import ts from 'typescript';
+
+const source = await readFile(new URL('../supabase/functions/planes-universal-assistant/index.ts', import.meta.url), 'utf8');
+const transpilation = ts.transpileModule(source,{
+  compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},
+  reportDiagnostics:true
+});
+const failures=(transpilation.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error);
+assert.deepEqual(failures.map(d=>ts.flattenDiagnosticMessageText(d.messageText,'\n')),[]);
+const runnable=transpilation.outputText.replace(
+  /import \{ createClient \} from ["']npm:@supabase\/supabase-js@[^"']+["'];?\s*/,
+  'const createClient = __createClient;\n'
+);
+assert.doesNotMatch(runnable,/^import\s/m);
+
+function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=true}={}){
+  let handler;
+  const calls=[];
+  const rows={
+    profiles:approved?{id:'user',role:'engenharia',status:'approved'}:{id:'user',role:'engenharia',status:'pending'},
+    projects:project?{id:'project-id',code:'obraA',name:'Obra A',status:'Ativa'}:null
+  };
+  const createClient=()=>({
+    auth:{getUser:async(jwt)=>jwt==='test-token'?{data:{user:{id:'user'}},error:null}:{data:null,error:{}}},
+    from(table) {
+      const q={select(){return q;},eq(){return q;},single:async()=>rows[table]?{data:rows[table],error:null}:{data:null,error:{}}};
+      return q;
+    }
+  });
+  const env={SUPABASE_URL:'https://test.supabase.co',SUPABASE_ANON_KEY:'public-key',OPENAI_API_KEY:'mock-key',
+    PLANES_ASSISTANT_ENABLED:enabled?'true':'false',
+    PLANES_ASSISTANT_QUOTAS_VERIFIED:quotas?'true':'false',
+    PLANES_ASSISTANT_WEB_ENABLED:allowWeb?'true':'false'};
+  vm.runInNewContext(runnable,{
+    __createClient:createClient,
+    Deno:{env:{get:k=>env[k]},serve:fn=>{handler=fn;}},
+    console,Response,Headers,AbortController,setTimeout,clearTimeout,Date,
+    fetch:async(url,options)=>{
+      calls.push({url,body:JSON.parse(options.body)});
+      return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:'Resposta específica da pergunta.'}]}]})};
+    }
+  });
+  return {calls,async post(body,auth='test-token'){
+    const result=await handler({method:'POST',headers:new Headers({
+      Origin:'https://armidiasintegradas.github.io',
+      ...(auth?{Authorization:'Bearer '+auth}:{})
+    }),text:async()=>JSON.stringify(body)});
+    return {status:result.status,body:JSON.parse(await result.text())};
+  }};
+}
+test('general question is sent to LLM without forced project overview',async()=>{
+  const h=harness();
+  const r=await h.post({message:'Que horas são?'});
+  assert.equal(r.status,200);
+  assert.equal(r.body.mode,'general');
+  assert.equal(r.body.answer,'Resposta específica da pergunta.');
+  assert.equal(h.calls.length,1);
+  assert.equal(h.calls[0].body.store,false);
+  assert.equal(h.calls[0].body.tools,undefined);
+});
+test('research uses web search only when explicitly requested',async()=>{
+  const h=harness();
+  await h.post({message:'Pesquise materiais reciclados',mode:'research'});
+  assert.equal(h.calls[0].body.tools[0].type,'web_search');
+});
+test('research cannot bypass server flag',async()=>{
+  const h=harness({allowWeb:false});
+  const r=await h.post({message:'Pesquise materiais reciclados',mode:'research'});
+  assert.equal(r.status,503);
+  assert.equal(h.calls.length,0);
+});
+test('call request is only a proposal, never a phone call',async()=>{
+  const h=harness();
+  const r=await h.post({message:'Ligue para João'});
+  assert.equal(r.body.kind,'action_proposal');
+  assert.equal(r.body.proposal.type,'call_contact');
+  assert.equal(r.body.proposal.executed,false);
+  assert.equal(h.calls.length,0);
+});
+test('database mutation is only a proposal',async()=>{
+  const h=harness();
+  const r=await h.post({message:'Adicione uma tarefa para verificar o concreto'});
+  assert.equal(r.body.proposal.type,'database_change');
+  assert.equal(r.body.executed,false);
+  assert.equal(h.calls.length,0);
+});
+test('deny unavailable quota service, unapproved profile and unknown project',async()=>{
+  const a=harness({quotas:false});
+  assert.equal((await a.post({message:'Olá'})).status,503);
+  const b=harness({approved:false});
+  assert.equal((await b.post({message:'Olá'})).status,403);
+  const c=harness({project:false});
+  assert.equal((await c.post({message:'PAC da obra',project_code:'obraB'})).status,403);
+});
