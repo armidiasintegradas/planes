@@ -38,6 +38,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return errorMessage("method_not_allowed", headers, 405);
   if (origin && !allowedOrigins.has(origin)) return errorMessage("origin_not_allowed", headers, 403);
+  // Server-owned kill switch: client feature flags are never sufficient authorization.
+  if (Deno.env.get("PLANES_INTELLIGENCE_TEXT_ENABLED") !== "true") {
+    return errorMessage("intelligence_not_enabled", headers, 503);
+  }
 
   // Refuse oversized requests before JSON parsing / external AI usage.
   const claimedLength = Number(req.headers.get("Content-Length") || 0);
