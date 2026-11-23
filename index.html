@@ -2033,7 +2033,7 @@
         <div class="p-3.5 bg-slate-50 rounded-[16px] border border-slate-200 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="font-bold text-slate-900">Segurança & Alteração de Senha</span>
-            <span class="text-[10px] text-slate-500 font-medium">Deixe em branco para manter a atual</span>
+            <span class="text-[10px] text-slate-500 font-medium">Alteração de senha independente do perfil</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -2041,6 +2041,7 @@
               <input
                 id="edit-profile-newpass"
                 type="password"
+                autocomplete="new-password"
                 placeholder="Mínimo 6 dígitos"
                 class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-none focus:border-slate-950"
               />
@@ -2050,11 +2051,18 @@
               <input
                 id="edit-profile-passconfirm"
                 type="password"
+                autocomplete="new-password"
                 placeholder="Repita a nova senha"
                 class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-[10px] text-xs text-slate-900 font-medium focus:outline-none focus:border-slate-950"
               />
             </div>
           </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 px-1">
+          <button type="button" onclick="handleChangeProfilePassword()"
+            class="px-4 py-2.5 bg-slate-950 text-white font-extrabold text-xs rounded-[12px] hover:bg-slate-800">Atualizar senha</button>
+          <span class="text-[11px] text-slate-500">Salvar perfil não altera sua senha. Autenticação recente pode ser exigida.</span>
         </div>
 
         <!-- Seção de Passkeys / Biometria -->
@@ -2083,12 +2091,16 @@
         >
           Cancelar
         </button>
+        <button type="button" onclick="handleChangeProfileEmail()"
+          class="px-3 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-[12px]">
+          Alterar e-mail
+        </button>
         <button
           type="button"
           onclick="handleSaveProfile()"
           class="px-5 py-2.5 bg-[#d4ff00] hover:bg-[#c4ed00] text-slate-950 font-black text-xs rounded-[12px] transition cursor-pointer shadow-xs border border-slate-300"
         >
-          ✓ Salvar Alterações
+          ✓ Salvar perfil
         </button>
       </div>
     </div>
@@ -5883,9 +5895,9 @@
       if (phoneInput) phoneInput.value = maskPhone(u.phone || '');
       if (cpfInput) cpfInput.value = maskCpf(u.cpf || '');
       if (rgInput) rgInput.value = maskRg(u.rg || '');
-      if (birthInput) birthInput.value = u.birthDate || '1985-05-15';
-      if (companyInput) companyInput.value = u.company || 'Planes ENG';
-      if (sectorInput) sectorInput.value = u.sector || (u.level === 'Admin' ? 'Diretoria Geral' : 'Geral');
+      if (birthInput) birthInput.value = u.birthDate || '';
+      if (companyInput) companyInput.value = u.company || '';
+      if (sectorInput) sectorInput.value = u.sector || '';
       if (newpassInput) newpassInput.value = '';
       if (passconfirmInput) passconfirmInput.value = '';
 
@@ -5896,6 +5908,65 @@
     function closeEditProfileModal() {
       const modal = document.getElementById('edit-profile-modal');
       if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
+    }
+
+    async function handleChangeProfilePassword() {
+      const newPass=document.getElementById('edit-profile-newpass')?.value || '';
+      const confirmation=document.getElementById('edit-profile-passconfirm')?.value || '';
+      if (!currentUser || !supabaseClient || navigator.onLine===false) {
+        showToast('Autenticação indisponível. Nenhuma senha foi alterada.');
+        return;
+      }
+      if (newPass.length<8 || newPass.length>128) {
+        showToast('A nova senha deve ter de 8 a 128 caracteres.');
+        return;
+      }
+      if (newPass!==confirmation) {
+        showToast('A confirmação da senha não corresponde.');
+        return;
+      }
+      const {data:auth,error:identityError}=await supabaseClient.auth.getUser();
+      if (identityError || !auth?.user?.id || auth.user.id!==currentUser.id) {
+        showToast('Entre novamente para validar a sessão antes de alterar a senha.');
+        return;
+      }
+      const {error}=await supabaseClient.auth.updateUser({password:newPass});
+      if (error) {
+        console.warn('Password update rejected:',error?.code||error?.status);
+        showToast('Senha não alterada. O Supabase pode exigir um login recente. Entre novamente e tente de novo.');
+        return;
+      }
+      const pass=document.getElementById('edit-profile-newpass');
+      const conf=document.getElementById('edit-profile-passconfirm');
+      if(pass)pass.value='';
+      if(conf)conf.value='';
+      showToast('Senha atualizada no Supabase Auth.');
+    }
+
+    async function handleChangeProfileEmail() {
+      const email=String(document.getElementById('edit-profile-email')?.value||'').trim().toLowerCase();
+      if(!validateEmail(email)) { showToast('Informe um e-mail válido.'); return; }
+      if(email===String(currentUser?.email||'').toLowerCase()) {
+        showToast('Este já é o e-mail cadastrado.');
+        return;
+      }
+      if(!currentUser || !supabaseClient || navigator.onLine===false) {
+        showToast('Autenticação indisponível. O e-mail não foi alterado.');
+        return;
+      }
+      const {data:auth,error:identityError}=await supabaseClient.auth.getUser();
+      if(identityError || !auth?.user?.id || auth.user.id!==currentUser.id) {
+        showToast('Entre novamente para validar sua sessão antes de alterar o e-mail.');
+        return;
+      }
+      const {error}=await supabaseClient.auth.updateUser({email});
+      if(error) {
+        console.warn('Email update rejected:',error?.code||error?.status);
+        showToast('Não foi possível solicitar a alteração do e-mail. Entre novamente e tente de novo.');
+        return;
+      }
+      // Never change local email/profile until Supabase Auth confirms the change.
+      showToast('Solicitação enviada. Confirme o link de segurança antes de usar o novo e-mail.');
     }
 
     async function handleSaveProfile() {
@@ -5909,9 +5980,6 @@
       const company = (document.getElementById('edit-profile-company') ? document.getElementById('edit-profile-company').value : '').trim() || 'Planes ENG';
       const sector = (document.getElementById('edit-profile-sector') ? document.getElementById('edit-profile-sector').value : '').trim() || 'Geral';
       const avatar = (document.getElementById('edit-profile-avatar') ? document.getElementById('edit-profile-avatar').value : '').trim().toUpperCase() || (name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US');
-      const newPass = (document.getElementById('edit-profile-newpass') ? document.getElementById('edit-profile-newpass').value : '').trim();
-      const passConfirm = (document.getElementById('edit-profile-passconfirm') ? document.getElementById('edit-profile-passconfirm').value : '').trim();
-
       if (!name || name.length < 3) {
         showToast('Informe o seu nome completo (mínimo 3 letras).');
         return;
@@ -5920,17 +5988,6 @@
         showToast('Informe um e-mail corporativo válido.');
         return;
       }
-      if (newPass) {
-        if (newPass.length < 6) {
-          showToast('A nova senha deve ter no mínimo 6 dígitos.');
-          return;
-        }
-        if (newPass !== passConfirm) {
-          showToast('A confirmação de senha não confere.');
-          return;
-        }
-      }
-
       const localDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
       const oldEmail = String(currentUser.email || '').toLowerCase();
       const cleanPhone = phone.replace(/\D/g, '');
@@ -5942,22 +5999,7 @@
           return;
         }
 
-        let authUser = null;
-        const authChanges = {};
-        if (newPass) authChanges.password = newPass;
-        if (email !== oldEmail) authChanges.email = email;
-
-        if (Object.keys(authChanges).length) {
-          const { data: authData, error: authError } = await supabaseClient.auth.updateUser(authChanges);
-          if (authError) {
-            console.warn('Falha ao atualizar credenciais:', authError);
-            showToast('Não foi possível atualizar e-mail/senha. Nenhuma credencial local foi alterada.');
-            return;
-          }
-          authUser = authData?.user || null;
-        }
-
-        const authEmailConfirmed = !authChanges.email || String(authUser?.email || oldEmail).toLowerCase() === email;
+        // Profile-only save; credential updates require explicit action.
         const profilePayload = {
           full_name: name,
           phone: maskPhone(phone),
@@ -5968,7 +6010,6 @@
           sector,
           updated_at: new Date().toISOString()
         };
-        if (authEmailConfirmed) profilePayload.email = email;
 
         const { data: profile, error: profileError } = await supabaseClient
           .from('profiles')
@@ -5984,7 +6025,7 @@
         }
 
         currentUser.name = profile.full_name || name;
-        currentUser.email = profile.email || authUser?.email || oldEmail;
+        currentUser.email = profile.email || oldEmail;
         currentUser.phone = profile.phone || maskPhone(phone);
         currentUser.whatsapp = cleanWhatsapp;
         currentUser.cpf = profile.cpf || '';
@@ -6000,12 +6041,10 @@
         closeEditProfileModal();
         render();
 
-        if (authChanges.email && !authEmailConfirmed) {
-          showToast('✓ Perfil salvo. Confirme o novo e-mail pelo link enviado para concluir a alteração.');
-        } else if (newPass) {
-          showToast('✓ Perfil e senha atualizados com segurança.');
+        if (email!==oldEmail) {
+          showToast('Perfil salvo. Para alterar o e-mail de acesso, use Alterar e-mail e confirme o link.');
         } else {
-          showToast(`✓ Perfil de ${name} atualizado e sincronizado.`);
+          showToast('Perfil atualizado. E-mail e senha não foram alterados.');
         }
         return;
       }
