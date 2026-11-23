@@ -33,6 +33,7 @@ export default function PlanesDictationButton({ onTranscript, disabled = false, 
   const mounted = useRef(true);
   const stopping = useRef(false);
   const transcriptParts = useRef<string[]>([]);
+  const interimPart = useRef('');
 
   useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
 
@@ -72,18 +73,21 @@ export default function PlanesDictationButton({ onTranscript, disabled = false, 
     const current = new Recognition();
     recognizer.current = current;
     transcriptParts.current = [];
+    interimPart.current = '';
     stopping.current = false;
     current.lang = 'pt-BR';
     current.continuous = false; // Browser closes after a pause or silence.
     current.interimResults = true;
 
     current.onresult = (event) => {
+      // Keep interim words when a user stops before a browser delivers a final event.
+      interimPart.current = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        if (result.isFinal) {
-          const text = result[0]?.transcript?.trim();
-          if (text) transcriptParts.current.push(text);
-        }
+        const text = result[0]?.transcript?.trim();
+        if (!text) continue;
+        if (result.isFinal) transcriptParts.current.push(text);
+        else interimPart.current = text;
       }
     };
 
@@ -104,8 +108,9 @@ export default function PlanesDictationButton({ onTranscript, disabled = false, 
     current.onend = () => {
       if (!mounted.current || recognizer.current !== current) return;
       recognizer.current = null;
-      const text = transcriptParts.current.join(' ').trim();
+      const text = [...transcriptParts.current, interimPart.current].filter(Boolean).join(' ').trim();
       transcriptParts.current = [];
+      interimPart.current = '';
       stopping.current = false;
       if (text) {
         onTranscriptRef.current(text);
