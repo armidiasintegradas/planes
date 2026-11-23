@@ -60,3 +60,22 @@ test('unsupported browser retains typed input and never starts speech', () => {
   assert.equal(input.value, 'texto existente');
   assert.match(mic.title, /indisponível/);
 });
+
+
+test('specific clock question bypasses fixed engineering report', async () => {
+  const document = {getElementById() {return null;}, addEventListener() {}};
+  let legacyCalls = 0;
+  const window = {askPlanesIntelligence: async () => {legacyCalls++; return 'Leitura integrada do empreendimento';}};
+  vm.runInNewContext(source, {document, window, Intl, Date});
+  const fixedDate = new Date('2026-11-23T14:20:00Z');
+  const answer = window.planesIntelligenceDirectQuestion('que horas sao?', fixedDate);
+  assert.match(answer, /11:20/);
+  assert.doesNotMatch(answer, /Leitura integrada/);
+  assert.equal(legacyCalls, 0);
+  const answerFromChat = await window.askPlanesIntelligence('que horas sao?');
+  assert.match(answerFromChat, /horário de Recife/);
+  assert.equal(legacyCalls, 0);
+  const technical = await window.askPlanesIntelligence('Qual o PAC da obra?');
+  assert.equal(technical, 'Leitura integrada do empreendimento');
+  assert.equal(legacyCalls, 1);
+});

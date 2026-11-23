@@ -110,5 +110,38 @@
     };
   }
 
+  // Route small, objectively answerable requests before the legacy
+  // keyword-based project summary. No external provider or fabricated data.
+  // In production, open-ended questions require the authenticated generative
+  // endpoint (not the legacy summary generator).
+  function answerDirectQuestion(message, now = new Date()) {
+    const text = String(message || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[!?.,]/g, ' ').trim();
+    if (!text) return null;
+    if (/^(?:que horas (?:sao|sao agora|e|temos)|qual (?:e )?a hora|me diga as horas|horario atual)$/.test(text)) {
+      return 'Agora são ' + new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Recife', hour: '2-digit', minute: '2-digit' }).format(now) + ' (horário de Recife).';
+    }
+    if (/^(?:qual (?:e )?a data de hoje|que dia e hoje|hoje e que dia)$/.test(text)) {
+      return 'Hoje é ' + new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Recife', dateStyle: 'full' }).format(now) + '.';
+    }
+    return null;
+  }
+
+  // The legacy classic-script app exposes this global on builds that allow
+  // runtime adaptation. Keep technical answers untouched until the real
+  // authenticated LLM backend is enabled; only direct factual intents are
+  // intercepted here.
+  if (typeof window.askPlanesIntelligence === 'function') {
+    const legacyAsk = window.askPlanesIntelligence;
+    window.askPlanesIntelligence = function (...args) {
+      const first = args[0];
+      const question = typeof first === 'string' ? first
+        : first && typeof first === 'object' ? (first.message || first.question || '') : '';
+      const direct = answerDirectQuestion(question);
+      if (direct !== null) return Promise.resolve(direct);
+      return legacyAsk.apply(this, args);
+    };
+  }
+  window.planesIntelligenceDirectQuestion = answerDirectQuestion;
+
   window.planesIntelligenceDictation = { stop, toggle };
 })();

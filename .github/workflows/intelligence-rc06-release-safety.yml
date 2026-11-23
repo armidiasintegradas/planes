@@ -1,0 +1,41 @@
+name: Planes Intelligence RC-06 release safety
+
+on:
+  push:
+    branches:
+      - 'hardening/intelligence-rc06-release-gates'
+  pull_request:
+    paths:
+      - 'scripts/check-intelligence-release-readiness.mjs'
+      - 'tests/intelligence-release-readiness.test.mjs'
+      - 'tests/intelligence-dictation-preview.test.mjs'
+      - 'public/intelligence-dictation-preview.js'
+      - '.github/workflows/intelligence-rc06-release-safety.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-release-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check release gate logic (synthetic only)
+        run: node --test tests/intelligence-release-readiness.test.mjs
+      - name: Verify question-specific responses in legacy adapter
+        run: node --test tests/intelligence-dictation-preview.test.mjs
+      - name: Ensure missing evidence BLOCKS release
+        shell: bash
+        run: |
+          if node scripts/check-intelligence-release-readiness.mjs docs/intelligence-rc06-evidence.json; then
+            echo "::error::Release gate unexpectedly allowed missing evidence"
+            exit 1
+          else
+            echo "Expected NO-GO: real staging and device evidence is not yet available"
+          fi
