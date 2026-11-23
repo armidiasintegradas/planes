@@ -231,7 +231,7 @@ test('mock Edge Function: field and engineering roles never forward financial va
     const h = harness({ role });
     const r = await h.post();
     assert.equal(r.status, 200);
-    const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\\n').slice(1).join('\\n'));
+    const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\n').slice(1).join('\n'));
     assert.equal(snapshot.metrics.financial_spent_m, undefined);
     assert.equal(snapshot.metrics.pac_score, 80);
     assert.equal(snapshot.metrics.workers_count, 0);
@@ -245,7 +245,7 @@ test('mock Edge Function: finance role requests only authorized financial metric
   const h = harness({ role: 'financeiro' });
   const r = await h.post();
   assert.equal(r.status, 200);
-  const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\\n').slice(1).join('\\n'));
+  const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\n').slice(1).join('\n'));
   assert.equal(snapshot.metrics.financial_spent_m, 3);
   assert.equal(snapshot.metrics.pac_score, undefined);
   assert.equal(snapshot.metrics.workers_count, undefined);
