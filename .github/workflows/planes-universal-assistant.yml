@@ -7,6 +7,8 @@ on:
     paths:
       - 'supabase/functions/planes-universal-assistant/**'
       - 'tests/planes-universal-assistant.test.mjs'
+      - 'tests/planes-universal-preview.test.mjs'
+      - 'public/planes-universal-preview.js'
       - 'tests/sql/planes-universal-assistant-quota.test.sql'
       - 'supabase/staging-only/planes_universal_assistant_quota.sql'
       - '.github/workflows/planes-universal-assistant.yml'
@@ -23,7 +25,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts
-      - run: node --test tests/planes-universal-assistant.test.mjs
+      - run: node --test tests/planes-universal-assistant.test.mjs tests/planes-universal-preview.test.mjs
       - name: Release remains blocked without real evidence
         run: |
           if node scripts/check-intelligence-release-readiness.mjs; then
