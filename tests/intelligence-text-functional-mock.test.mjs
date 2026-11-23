@@ -26,6 +26,7 @@ function harness({
   providerStatus = 200,
   origin = 'https://armidiasintegradas.github.io',
   supplies = [{ name: 'Aço', supplier: 'Fornecedor de teste', status: 'Programado' }],
+  metrics = [{ physical_progress: 0, target_progress: 10, pac_score: 80, financial_spent_m: 3, workers_count: 0 }],
 } = {}) {
   let handler;
   const queried = [];
@@ -34,7 +35,7 @@ function harness({
   const rows = {
     profiles: { id: 'demo-user', role, status: approved ? 'approved' : 'pending' },
     projects: accessible ? { id: 'demo-project', code: 'obra_demo', name: 'Obra demonstrativa', status: 'Ativa' } : null,
-    project_metrics: [{ physical_progress: 0, target_progress: 10, pac_score: 80, financial_spent_m: 3, workers_count: 0 }],
+    project_metrics: metrics,
     project_supplies: supplies,
     project_validations: [{ item: 'Laje', status: 'Pendente', front: 'F1' }],
     project_tasks: [{ title: 'Verificar obra', done: false }],
@@ -156,4 +157,20 @@ test('mock Edge Function: finance role sees no supplier identities or field reco
   assert.equal(snapshot.supplies[0].sector, undefined);
   assert.deepEqual(Object.keys(snapshot.tasks), []);
   assert.deepEqual(Object.keys(snapshot.validations), []);
+});
+
+test('mock Edge Function: no metrics means no model call and no fabricated progress', async () => {
+  const h = harness({ metrics: [] });
+  const r = await h.post();
+  assert.equal(r.status, 503);
+  assert.equal(r.body.error, 'project_metrics_unavailable');
+  assert.equal(h.calls.length, 0);
+});
+
+test('mock Edge Function: metrics with missing core progress are rejected', async () => {
+  const h = harness({ metrics: [{ physical_progress: null, target_progress: 30 }] });
+  const r = await h.post();
+  assert.equal(r.status, 503);
+  assert.equal(r.body.error, 'project_metrics_unavailable');
+  assert.equal(h.calls.length, 0);
 });
