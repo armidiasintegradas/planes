@@ -144,3 +144,16 @@ test('mock Edge Function: upstream errors fail closed, never invent answers', as
   assert.equal(r.status, 503);
   assert.equal(r.body.error, 'intelligence_provider_unavailable');
 });
+
+test('mock Edge Function: finance role sees no supplier identities or field records', async () => {
+  const h = harness({ role: 'financeiro' });
+  const r = await h.post();
+  assert.equal(r.status, 200);
+  const snapshot = JSON.parse(h.calls[0].body.input[0].content.split('\n').slice(1).join('\n'));
+  assert.equal(snapshot.metrics.financial_spent_m, 3);
+  assert.equal(snapshot.supplies[0].name, 'Aço');
+  assert.equal(snapshot.supplies[0].supplier, undefined);
+  assert.equal(snapshot.supplies[0].sector, undefined);
+  assert.deepEqual(Object.keys(snapshot.tasks), []);
+  assert.deepEqual(Object.keys(snapshot.validations), []);
+});
