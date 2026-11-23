@@ -131,13 +131,8 @@ Deno.serve(async (req) => {
     .filter((cap) => !voiceCapabilities.includes(cap))
     .map((cap) => capabilityLabels[cap]);
 
-  // Vozes Realtime distintas por persona. A naturalidade vem principalmente das
-  // instruções de prosódia e conversação abaixo; Web Speech nunca é a experiência principal.
-  const voice = persona === "brita" ? "marin" : "cedar";
+  // Personas textuais; nenhuma voz de saida e selecionada.
   const personaName = persona === "brita" ? "Brita" : "Castanha";
-  const voiceDirection = persona === "brita"
-    ? `Brita: use um timbre inequivocamente feminino, brasileiro, jovem-adulto e contemporâneo; acolhedor, espontâneo e expressivo. Fale como uma colega inteligente ao lado do usuário, nunca como locutora, URA, GPS ou leitura de texto. A voz deve ter leveza, sorriso discreto, variação melódica natural e energia conversacional.`
-    : `Castanha: use um timbre inequivocamente masculino, brasileiro, adulto e contemporâneo; mais grave, tranquilo, próximo e expressivo. Fale como um colega experiente ao lado do usuário, nunca como locutor, URA, GPS ou leitura de texto. A voz deve ter corpo, calor, pausas naturais e segurança sem formalidade excessiva.`;
 
   const planesTools = [
     {
@@ -369,25 +364,14 @@ Deno.serve(async (req) => {
     }
   ];
 
-  const sessionInstructions =
-    `Você é ${personaName}, persona oficial do Planes Intelligence. ${voiceDirection}
-
-ESTILO DE VOZ — prioridade máxima:
-- Fale sempre em português brasileiro atual, natural e conversacional.
-- Soe como uma pessoa conversando ao lado do usuário, nunca como locução, URA, GPS, audiobook ou texto lido.
-- Use cadência humana, micro-pausas naturais, variação leve de ritmo e ênfase contextual.
-- Prefira frases curtas e fluidas; evite listas longas e linguagem de relatório em voz alta.
-- Não repita a mesma abertura em todas as respostas.
-- Números, datas, percentuais e siglas devem ser pronunciados naturalmente em português.
-- Se o usuário interromper, pare imediatamente e escute.
-- Chame ${firstName} pelo primeiro nome apenas quando soar natural.
-- Reaja ao contexto antes de responder; seja breve, espontâneo, caloroso e profissional.
-
+  const sessionInstructions = `Você é ${personaName}, persona textual oficial do Planes Intelligence.
+Responda exclusivamente por texto em português brasileiro, com clareza e objetividade.
+Não produza voz, áudio, instruções de síntese de fala ou saudações faladas.
+Quando a mensagem chegar por microfone, trate a transcrição como entrada normal de conversa.
 Você é também o copiloto operacional do Planes para ${projectTitle}.
 Perfil efetivo: ${effectiveRole}. Público: ${audience}.
 Capacidades permitidas: ${allowedMutationLabels.length ? allowedMutationLabels.join(", ") : "nenhuma"}.
 Capacidades não permitidas: ${deniedMutationLabels.length ? deniedMutationLabels.join(", ") : "nenhuma"}.
-
 Use as ferramentas do Planes para consultar dados atuais; nunca invente números.
 Para alterações AUTORIZADAS, use primeiro uma ferramenta prepare_* e devolva um resumo claro pedindo confirmação.
 Somente após confirmação explícita use confirm_pending_action.
@@ -398,17 +382,17 @@ Nunca diga que uma alteração foi concluída antes do retorno da ferramenta.`;
   const sessionConfig = {
     type: "realtime",
     model: "gpt-realtime-1.5",
-    output_modalities: ["audio"],
+    output_modalities: ["text"],
     audio: {
       input: {
+        transcription: { model: "gpt-4o-mini-transcribe", language: "pt" },
         turn_detection: {
           type: "semantic_vad",
           eagerness: "auto",
           create_response: true,
           interrupt_response: true
         }
-      },
-      output: { voice }
+      }
     },
     tools: planesTools,
     tool_choice: "auto",
@@ -443,7 +427,7 @@ Nunca diga que uma alteração foi concluída antes do retorno da ferramenta.`;
     return json({
       sdp: answer,
       engine: "gpt-realtime-1.5",
-      voice,
+      output_modality: "text",
       persona: personaName
     }, 201);
   } catch (error) {

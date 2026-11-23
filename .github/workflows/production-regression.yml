@@ -40,6 +40,12 @@ jobs:
           cp public/email-lifecycle-kick-live.js production-site/email-lifecycle-kick-live.js
           cp public/legacy-auth-sanitizer-live.js production-site/legacy-auth-sanitizer-live.js
           cp sw.js production-site/sw.js
+          cp public/intelligence-dictation-preview.js production-site/intelligence-dictation-preview.js
+          # Preview-only adapter: leave the gh-pages branch and deployed production untouched.
+          node -e "const fs=require('fs');let p='production-site/index.html';let h=fs.readFileSync(p,'utf8');if(!h.includes('id=\\\"planes-v2-mic\\\"'))throw Error('Legacy Intelligence microphone not found');h=h.replace('</body>','<script src=\\\"intelligence-dictation-preview.js\\\"></script>\\n</body>');fs.writeFileSync(p,h)"
+          grep -q "intelligence-dictation-preview.js" production-site/index.html
+          grep -q "stopImmediatePropagation" production-site/intelligence-dictation-preview.js
+
 
           grep -q "Planes" production-site/index.html
           grep -q "hydratePlanesFromSupabase" production-site/auth-gate-live.js
@@ -93,6 +99,28 @@ jobs:
           trap 'kill $server_pid || true' EXIT
           sleep 1
           PLANES_E2E_URL="http://127.0.0.1:4173/" node tests/browser-auth-runtime-e2e.mjs
+
+      - name: Validate Intelligence candidate runtime in isolated browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4183 --directory . >/tmp/planes-intelligence-e2e.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          sleep 1
+          PLANES_E2E_URL="http://127.0.0.1:4183/" node tests/browser-auth-runtime-e2e.mjs
+          grep -q "Planes Intelligence candidate: text-only dictation" index.html
+          grep -q "intelligenceTextApiEnabled === true" index.html
+
+      - name: Exercise Intelligence mobile mic without calling a backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4184 --directory . >/tmp/planes-intelligence-mic-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          sleep 1
+          PLANES_E2E_URL="http://127.0.0.1:4184/" node tests/browser-intelligence-e2e.mjs
 
       - name: Validate live production runtime hydration
         shell: bash

@@ -9248,6 +9248,14 @@
     }
 
     async function startRealtimeVoiceAssistant(retryAttempt = 0) {
+      // Text-only policy: never open an audio-output WebRTC session.
+      if (window.planesIntelligenceDictation?.toggle) {
+        window.planesIntelligenceDictation.toggle();
+        return true;
+      }
+      showToast('Use o campo de texto: ditado temporariamente indisponível.');
+      return false;
+
       if (!getAssistantPersona() && typeof hydrateAssistantPersona === 'function') {
         await hydrateAssistantPersona();
       }
@@ -9429,6 +9437,10 @@
     }
 
     async function speakText(text) {
+      // Assistant audio playback is disabled: every reply is rendered in the chat.
+      isSpeaking = false;
+      return;
+
       const cleanText = String(text || '')
         .replace(/\*\*/g, '')
         .replace(/[•✓]/g, '')
@@ -9532,6 +9544,13 @@
     }
 
     function toggleVoiceAssistant() {
+      if (window.planesIntelligenceDictation?.toggle) {
+        window.planesIntelligenceDictation.toggle();
+      } else {
+        showToast('Ditado indisponível. Digite sua mensagem.');
+      }
+      return;
+
       unlockAudioContextOnce();
 
       if (isRealtimeVoiceActive()) {
@@ -9548,6 +9567,13 @@
     }
 
     function startVoiceAssistant() {
+      if (window.planesIntelligenceDictation?.toggle) {
+        window.planesIntelligenceDictation.toggle();
+      } else {
+        showToast('Ditado indisponível. Digite sua mensagem.');
+      }
+      return;
+
       unlockAudioContextOnce();
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -10567,13 +10593,14 @@
     }
 
     async function refreshIntelligenceOperationalData() {
-      if (!supabaseClient) {
-        intelligenceDataSource = 'local';
+      if (!supabaseClient || !selectedProject?.id) {
+        intelligenceDataSource = 'unavailable';
         return false;
       }
 
       try {
-        const projectCode = (selectedProject && selectedProject.id) ? String(selectedProject.id) : 'japaratinga-r3';
+        // Never silently switch to a sample project when the user has no active project.
+        const projectCode = String(selectedProject.id);
         const { data: projects, error: projectError } = await supabaseClient
           .from('projects')
           .select('id, code, name, active')
@@ -10605,11 +10632,15 @@
         }
 
         const metrics = Array.isArray(metricsRes.data) ? metricsRes.data[0] : null;
+        if (!metrics) {
+          intelligenceDataSource = 'unavailable';
+          return false;
+        }
         if (metrics) {
-          physicalProgress = Number(metrics.physical_progress) || physicalProgress;
-          pacScore = Number(metrics.pac_score) || pacScore;
-          financialSpent = Number(metrics.financial_spent_m) || financialSpent;
-          workersCount = Number(metrics.workers_count) || workersCount;
+          if (metrics.physical_progress !== null && metrics.physical_progress !== undefined && Number.isFinite(Number(metrics.physical_progress))) physicalProgress = Number(metrics.physical_progress);
+          if (metrics.pac_score !== null && metrics.pac_score !== undefined && Number.isFinite(Number(metrics.pac_score))) pacScore = Number(metrics.pac_score);
+          if (metrics.financial_spent_m !== null && metrics.financial_spent_m !== undefined && Number.isFinite(Number(metrics.financial_spent_m))) financialSpent = Number(metrics.financial_spent_m);
+          if (metrics.workers_count !== null && metrics.workers_count !== undefined && Number.isFinite(Number(metrics.workers_count))) workersCount = Number(metrics.workers_count);
           if (selectedProject) {
             selectedProject.progress = Number(metrics.physical_progress);
             selectedProject.targetProgress = Number(metrics.target_progress);
@@ -11066,6 +11097,18 @@
       addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence [' + liveScreenContext.module + ']: "' + rawPromptText.slice(0, 80) + '"');
       render();
 
+      // Never turn stale/demo values into apparently live operational guidance.
+      const synced = await refreshIntelligenceOperationalData();
+      if (!synced) {
+        intelligenceChatHistory.push({
+          sender: 'ai',
+          text: 'Não consegui confirmar os dados atuais da obra no Supabase. Para sua segurança, não vou apresentar números locais como dados ao vivo nem preparar alterações. Confira sua conexão, seu acesso e a obra selecionada.',
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        });
+        render();
+        return;
+      }
+
       const preparedMutation = await tryPrepareContextualTextMutation(rawPromptText);
       if (preparedMutation && preparedMutation.ok !== false && preparedMutation.requires_confirmation) {
         intelligenceChatHistory.push({
@@ -11077,13 +11120,61 @@
         return;
       }
 
-      await refreshIntelligenceOperationalData();
+      // Enable the generative model only after its isolated Edge Function is deployed
+      // and validated. A provider failure must not silently fall back to demo analysis.
+      if (window.PLANES_CONFIG?.intelligenceTextApiEnabled === true) {
+        try {
+          const projectCode = String(selectedProject?.id || '').trim();
+          if (!projectCode) throw new Error('Obra não selecionada');
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          if (sessionError || !session?.access_token) throw new Error('Sessão inválida');
+          const endpoint = String(window.PLANES_CONFIG?.supabaseUrl || '').replace(/\/$/, '') +
+            '/functions/v1/planes-intelligence-text';
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + session.access_token,
+              'apikey': window.PLANES_CONFIG.supabaseAnonKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              project_code: projectCode,
+              persona: getAssistantPersona() || 'brita',
+              message: rawPromptText
+            })
+          });
+          const response = await res.json();
+          if (!res.ok || !response?.ok || response?.project_code !== projectCode ||
+              typeof response?.answer !== 'string' || !response.answer.trim()) {
+            throw new Error('Resposta indisponível ou de outra obra');
+          }
+          intelligenceChatHistory.push({
+            sender: 'ai', text: response.answer.trim(),
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          });
+          render();
+          return;
+        } catch (err) {
+          console.warn('Planes Intelligence textual indisponível:', err instanceof Error ? err.message : 'unknown');
+          intelligenceChatHistory.push({
+            sender: 'ai',
+            text: 'Não consegui consultar a inteligência textual neste momento. Não vou apresentar uma análise alternativa como se fosse a resposta atual. Tente novamente.',
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          });
+          render();
+          return;
+        }
+      }
+
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
       analysis.screenContext = liveScreenContext;
       if (rawPromptText !== promptText) {
         analysis.answer = 'Estou olhando a tela de **' + liveScreenContext.module + '** com você.\n' + analysis.answer;
       }
       analysis.answer = personalizeIntelligenceAnswer(analysis.answer);
+      // The legacy rules engine still uses some local screen/chart values.
+      // Never claim every number is server-confirmed until migrated.
+      analysis.answer += '\n\n*Fonte: registros operacionais sincronizados do Supabase. Gráficos e indicadores complementares desta visualização podem incluir dados locais; confirme esses valores antes de decisões.*';
       lastIntelligenceAnalysis = analysis;
 
       intelligenceChatHistory.push({
@@ -11092,7 +11183,7 @@
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       });
 
-      speakText(summarizeIntelligenceForVoice(promptText, analysis.answer));
+      // Resposta textual já registrada; não solicitar TTS.
       render();
     }
 
@@ -12881,7 +12972,7 @@
       const now = new Date().toISOString();
       if (currentUser) {
         currentUser.assistant_persona = persona;
-        currentUser.assistant_voice_enabled = true;
+        currentUser.assistant_voice_enabled = false;
         currentUser.assistant_onboarding_completed_at = currentUser.assistant_onboarding_completed_at || now;
       }
       saveSessionState();
@@ -12892,7 +12983,7 @@
           .from('profiles')
           .update({
             assistant_persona: persona,
-            assistant_voice_enabled: true,
+            assistant_voice_enabled: false,
             assistant_onboarding_completed_at: currentUser.assistant_onboarding_completed_at || now,
             updated_at: now
           })
@@ -19436,7 +19527,7 @@ ${activeNav === 'Equipe & Contatos' ? `
       if(!chosen){
         window.__PLANES_VOICE_START_AFTER_PERSONA__=true;
         renderOverlay();
-        if(typeof showToast==='function') showToast('Escolha Brita ou Castanha. A voz inicia logo depois.');
+        if(typeof showToast==='function') showToast('Escolha Brita ou Castanha para personalizar sua conversa em texto.');
         return;
       }
       if(typeof toggleVoiceAssistant==='function') toggleVoiceAssistant();
@@ -19466,10 +19557,8 @@ ${activeNav === 'Equipe & Contatos' ? `
   async function selectPersona(p){
     try{
       if(typeof chooseAssistantPersona==='function') await chooseAssistantPersona(p);
-      if(window.__PLANES_VOICE_START_AFTER_PERSONA__){
-        window.__PLANES_VOICE_START_AFTER_PERSONA__=false;
-        setTimeout(()=>{ if(typeof toggleVoiceAssistant==='function') toggleVoiceAssistant(); },120);
-      }
+      // Escolher uma persona não ativa microfone automaticamente.
+      window.__PLANES_VOICE_START_AFTER_PERSONA__=false;
     }catch(e){}
     setTimeout(renderOverlay,50);
   }
@@ -19514,15 +19603,16 @@ ${activeNav === 'Equipe & Contatos' ? `
     const send=document.getElementById('planes-v2-send');
     const text=String(forced || input?.value || '').trim();
     if(!text) return;
-    if(input&&!forced) input.value='';
+    // Keep the original draft until the request is handled.
     if(input) input.disabled=true;
     if(send){send.disabled=true;send.textContent='…'}
     try{
-      if(typeof askPlanesIntelligence==='function'){
-        await askPlanesIntelligence(text);
-      }
+      if(typeof askPlanesIntelligence!=='function') throw new Error('Intelligence indisponível');
+      await askPlanesIntelligence(text);
+      if(input&&!forced) input.value='';
     }catch(e){
-      if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Tente novamente.');
+      if(input&&!forced) input.value=text;
+      if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Mensagem preservada.');
     }finally{
       if(input) input.disabled=false;
       if(send){send.disabled=false;send.textContent='➤'}
@@ -19582,7 +19672,7 @@ ${activeNav === 'Equipe & Contatos' ? `
 
     let voiceState='idle';
     try{voiceState=typeof realtimeVoiceState!=='undefined'?realtimeVoiceState:'idle'}catch(e){}
-    const statusMap={connecting:'Conectando voz…',listening:'Ouvindo você',speaking:'Falando com você',reconnecting:'Reconectando…',error:'Voz local disponível',idle:'Sempre com você na obra'};
+    const statusMap={connecting:'Preparando ditado…',listening:'Ouvindo você',speaking:'Resposta em texto',reconnecting:'Reconectando…',error:'Digite sua mensagem',idle:'Conversa em texto'};
     let backendState='Ao vivo';
     try{backendState=typeof operationalRealtimeStatus!=='undefined'?operationalRealtimeStatus:'Ao vivo'}catch(e){}
     const backendLabel=backendState==='Offline'?'Sem conexão · ações pausadas':backendState==='Reconectando'||backendState==='Conectando'?'Reconectando ao Planes…':null;
@@ -19594,7 +19684,7 @@ ${activeNav === 'Equipe & Contatos' ? `
       const active=['connecting','listening','speaking','reconnecting'].includes(voiceState);
       mic.style.background=active?'#0f172a':'';
       mic.style.color=active?'#d4ff00':'';
-      mic.setAttribute('aria-label',active?'Encerrar voz':'Usar voz');
+      mic.setAttribute('aria-label',active?'Encerrar ditado':'Ditar mensagem');
     }
 
     let pending=null;
@@ -19628,6 +19718,125 @@ ${activeNav === 'Equipe & Contatos' ? `
     document.documentElement.style.overflow='';
   };
 })();
+</script>
+
+<!-- Planes Intelligence candidate: text-only dictation; no assistant audio playback. -->
+<script>
+/* Planes Intelligence: no-playback dictation adapter for the legacy gh-pages chat.
+ * Loaded only into candidate preview artifacts. Does not publish itself.
+ */
+(() => {
+  'use strict';
+
+  let recognizer = null;
+  let results = [];
+  let errorState = false;
+
+  function getField() {
+    return document.getElementById('planes-v2-input');
+  }
+  function getMic() {
+    return document.getElementById('planes-v2-mic');
+  }
+  function status(text) {
+    const mic = getMic();
+    if (mic) {
+      mic.setAttribute('aria-label', recognizer ? 'Encerrar ditado' : 'Iniciar ditado');
+      mic.setAttribute('aria-pressed', recognizer ? 'true' : 'false');
+      mic.textContent = recognizer ? '■' : '🎙';
+      mic.title = text;
+    }
+    const field = getField();
+    if (field && text) field.setAttribute('aria-description', text);
+  }
+  function appendTranscript(text) {
+    const field = getField();
+    if (!field || !text) return;
+    field.value = [field.value.trim(), text].filter(Boolean).join(' ');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.focus();
+  }
+  function stop() {
+    if (recognizer) {
+      try { recognizer.stop(); } catch (_) {}
+    }
+  }
+  function toggle() {
+    if (recognizer) {
+      stop();
+      return;
+    }
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      status('Ditado indisponível neste navegador. Digite normalmente.');
+      return;
+    }
+    const instance = new SpeechRec();
+    recognizer = instance;
+    results = [];
+    errorState = false;
+    instance.lang = 'pt-BR';
+    instance.continuous = false;
+    instance.interimResults = true;
+    instance.maxAlternatives = 1;
+    instance.onstart = () => status('Ouvindo: toque novamente para encerrar.');
+    instance.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const entry = event.results[i];
+        results[i] = entry[0] && entry[0].transcript ? String(entry[0].transcript) : '';
+      }
+    };
+    instance.onerror = (event) => {
+      errorState = true;
+      const message = event.error === 'not-allowed' || event.error === 'service-not-allowed'
+        ? 'Autorize o acesso ao microfone nas configurações do navegador.'
+        : event.error === 'network'
+          ? 'Erro de rede na transcrição. Digite normalmente.'
+          : 'Ditado interrompido. Digite ou tente novamente.';
+      status(message);
+    };
+    instance.onend = () => {
+      if (recognizer !== instance) return;
+      recognizer = null;
+      const text = results.join(' ').replace(/\s+/g, ' ').trim();
+      results = [];
+      if (text) appendTranscript(text);
+      status(text ? 'Transcrição adicionada. Revise antes de enviar.' :
+        errorState ? 'Ditado indisponível. Digite normalmente.' : 'Nenhuma fala reconhecida.');
+    };
+    try {
+      instance.start();
+      status('Solicitando acesso ao microfone…');
+    } catch (_) {
+      recognizer = null;
+      status('Não foi possível iniciar o microfone.');
+    }
+  }
+
+  // Capturing prevents the legacy handler from starting audio generation/WebRTC.
+  document.addEventListener('click', (event) => {
+    const button = event.target && event.target.closest && event.target.closest('#planes-v2-mic');
+    if (!button) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggle();
+  }, true);
+
+  document.addEventListener('click', (event) => {
+    if (event.target && event.target.closest && event.target.closest('[data-v2-close]')) stop();
+  }, true);
+
+  // Use a text-only path for any legacy helper that tries to synthesize replies.
+  // This function is a global in the published classic-script app.
+  if (typeof window.speakText === 'function') {
+    window.speakText = async () => {
+      if (typeof window.stopSpeaking === 'function') window.stopSpeaking();
+    };
+  }
+
+  window.planesIntelligenceDictation = { stop, toggle };
+})();
+
 </script>
 </body>
 </html>
