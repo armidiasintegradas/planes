@@ -17,21 +17,28 @@ const runnable=transpilation.outputText.replace(
 );
 assert.doesNotMatch(runnable,/^import\s/m);
 
-function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=true}={}){
+function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=true,quotaDenied=false,quotaUnavailable=false}={}){
   let handler;
   const calls=[];
+  const quotaCalls=[];
   const rows={
     profiles:approved?{id:'user',role:'engenharia',status:'approved'}:{id:'user',role:'engenharia',status:'pending'},
     projects:project?{id:'project-id',code:'obraA',name:'Obra A',status:'Ativa'}:null
   };
   const createClient=()=>({
+    rpc:async(name,args)=>{
+      quotaCalls.push({name,args});
+      if(quotaUnavailable) return {data:null,error:{message:'rpc_not_available'}};
+      if(quotaDenied) return {data:{allowed:false},error:null};
+      return {data:{allowed:true,minute_used:1,day_used:1},error:null};
+    },
     auth:{getUser:async(jwt)=>jwt==='test-token'?{data:{user:{id:'user'}},error:null}:{data:null,error:{}}},
     from(table) {
       const q={select(){return q;},eq(){return q;},single:async()=>rows[table]?{data:rows[table],error:null}:{data:null,error:{}}};
       return q;
     }
   });
-  const env={SUPABASE_URL:'https://test.supabase.co',SUPABASE_ANON_KEY:'public-key',OPENAI_API_KEY:'mock-key',
+  const env={SUPABASE_URL:'https://test.supabase.co',SUPABASE_ANON_KEY:'public-key',SUPABASE_SERVICE_ROLE_KEY:'server-only-test-key',OPENAI_API_KEY:'mock-key',
     PLANES_ASSISTANT_ENABLED:enabled?'true':'false',
     PLANES_ASSISTANT_QUOTAS_VERIFIED:quotas?'true':'false',
     PLANES_ASSISTANT_WEB_ENABLED:allowWeb?'true':'false'};
@@ -44,7 +51,7 @@ function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=t
       return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:'Resposta específica da pergunta.'}]}]})};
     }
   });
-  return {calls,async post(body,auth='test-token'){
+  return {calls,quotaCalls,async post(body,auth='test-token'){
     const result=await handler({method:'POST',headers:new Headers({
       Origin:'https://armidiasintegradas.github.io',
       ...(auth?{Authorization:'Bearer '+auth}:{})
@@ -95,4 +102,22 @@ test('deny unavailable quota service, unapproved profile and unknown project',as
   assert.equal((await b.post({message:'Olá'})).status,403);
   const c=harness({project:false});
   assert.equal((await c.post({message:'PAC da obra',project_code:'obraB'})).status,403);
+});
+
+
+test('quota check uses authenticated user and blocks model on exhaustion',async()=>{
+  const h=harness({quotaDenied:true});
+  const r=await h.post({message:'Que horas são?'});
+  assert.equal(r.status,429);
+  assert.equal(h.calls.length,0);
+  assert.equal(h.quotaCalls.length,1);
+  assert.equal(h.quotaCalls[0].name,'consume_planes_assistant_quota');
+  assert.equal(h.quotaCalls[0].args.p_user_id,'user');
+});
+test('unavailable quota service fails closed before model invocation',async()=>{
+  const h=harness({quotaUnavailable:true});
+  const r=await h.post({message:'Explique curva S'});
+  assert.equal(r.status,503);
+  assert.equal(r.body.error,'quota_service_unavailable');
+  assert.equal(h.calls.length,0);
 });
