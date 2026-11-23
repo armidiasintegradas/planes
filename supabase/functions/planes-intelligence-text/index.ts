@@ -115,6 +115,12 @@ Deno.serve(async (req) => {
   // Defense in depth: explicitly allow-list fields instead of trusting projections alone.
   // Even an unexpectedly broad query must never send privileged columns to the LLM.
   const metric = Array.isArray(metrics) ? metrics[0] : null;
+  // An empty RLS-filtered metrics result is not evidence of a valid, current
+  // project snapshot. Fail closed before incurring an AI provider request.
+  if (!metric || metric.physical_progress === null || metric.physical_progress === undefined ||
+      metric.target_progress === null || metric.target_progress === undefined) {
+    return errorMessage("project_metrics_unavailable", headers, 503);
+  }
   const safeMetrics = metric ? {
     physical_progress: metric.physical_progress,
     target_progress: metric.target_progress,
