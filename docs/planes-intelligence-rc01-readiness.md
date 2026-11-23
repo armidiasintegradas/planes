@@ -46,3 +46,15 @@
 ## Próximo módulo
 
 Começar o Planes AutoCare *após* os bloqueadores de publicação do Intelligence: abertura de chamados contextualizados, catálogo de rotinas de recuperação de baixo risco, trilha de auditoria e notificações. Não misturar seu lançamento com o primeiro rollout generativo.
+
+## Endurecimento do candidato RC-04 (23/11/2026)
+
+A Edge Function `planes-intelligence-text` agora exige **duas condições independentes** para uso real:
+- No frontend do ambiente de homologação, `window.PLANES_CONFIG.intelligenceTextApiEnabled === true`.
+- No servidor Supabase de homologação, o secret/config `PLANES_INTELLIGENCE_TEXT_ENABLED=true`. Ausente ou diferente de `true`, a função responde `503 intelligence_not_enabled` **antes de autenticar, consultar tabelas ou chamar o modelo**.
+
+Essas condições evitam que um usuário ative uma integração sensível apenas manipulando o navegador. O modelo continua somente leitura, sem ferramentas de escrita e com controles de autenticação, RLS e minimização de dados. O bloqueio do servidor não é substituto de limite de gastos: **para produção ainda é obrigatório limitar consumo por usuário e por janela no servidor e estabelecer teto de custo no provedor**.
+
+Para testar localmente, configurar o segredo apenas no ambiente de teste e usar dados inteiramente fictícios; nunca incluir uma chave OpenAI em HTML, repositório ou configuração pública. Não habilitar o segredo na produção sem cumprir todos os bloqueadores desta revisão.
+
+**Estado:** CI valida o caminho com o mock, não uma chamada real nem a disponibilidade de serviços hospedados.
