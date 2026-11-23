@@ -1062,3 +1062,15 @@ void boot().catch((error) => {
   blockApp();
   node.setAttribute('data-auth-fatal', 'true');
 });
+
+
+/* Scoped Intelligence chat hotfix. Independent of Supabase Auth and RBAC. */
+(() => {
+  if (document.getElementById('planes-intelligence-chat-hotfix-loader')) return;
+  const script = document.createElement('script');
+  script.id = 'planes-intelligence-chat-hotfix-loader';
+  script.src = './intelligence-live-chat-fix.js?v=20261123-2';
+  script.async = true;
+  script.onerror = () => console.warn('Planes Intelligence: noncritical chat hotfix unavailable');
+  (document.head || document.documentElement).appendChild(script);
+})();
