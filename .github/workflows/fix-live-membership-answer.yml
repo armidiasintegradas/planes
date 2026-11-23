@@ -1,0 +1,92 @@
+name: Fix live Copiloto membership answers
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - scripts/patch-project-membership-answer.py
+      - .github/workflows/fix-live-membership-answer.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: patch-live-membership-answer
+  cancel-in-progress: false
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Patch actual legacy chat handler
+        run: python3 scripts/patch-project-membership-answer.py
+      - name: Verify actual membership question against stubbed authorized RLS
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs');
+          const vm=require('node:vm');
+          const html=fs.readFileSync('index.html','utf8');
+          const start=html.indexOf('    async function answerPlanesProjectMembershipQuestion(rawQuestion) {');
+          const end=html.indexOf('    async function askPlanesIntelligence(',start);
+          if(start<0||end<0) throw Error('Handler not found');
+          const helper=html.slice(start,end);
+          const input='quantas pessoas estao cadastradas nessa obra?';
+          const projectId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+          const selectedProject={id:projectId};
+          function mockClient(role,count){
+            const calls=[];
+            return {calls,
+              auth:{getUser:async()=>({data:{user:{id:'11111111-1111-4111-8111-111111111111'}},error:null})},
+              from(table){
+                calls.push(table);
+                const q={
+                  select(cols,options){calls.push({table,cols,options});return q;},
+                  eq(col,value){calls.push({table,col,value});return q;},
+                  single:async()=>({data:table==='profiles'?{role,status:'approved'}:
+                    {id:projectId,name:'Obra A'},error:null}),
+                  then(resolve){return Promise.resolve({count,data:null,error:null}).then(resolve);}
+                };
+                return q;
+              }
+            };
+          }
+          async function test(role,count){
+            const client=mockClient(role,count);
+            const context={window:{__PLANES_SUPABASE_CLIENT__:client},selectedProject,projectsList:[],console,Number};
+            vm.runInNewContext(helper,context);
+            const result=await context.answerPlanesProjectMembershipQuestion(input);
+            return {result,client,context};
+          }
+          (async()=>{
+            const admin=await test('admin',4);
+            if(!/4 usuários vinculados/.test(admin.result))throw Error('Admin answer must use exact count: '+admin.result);
+            if(!admin.client.calls.some(x=>x.table==='user_project_access'&&x.options?.head===true&&x.options?.count==='exact'))
+              throw Error('Missing head exact count under JWT');
+            const nonAdmin=await test('engenharia',4);
+            if(!/restrita a administradores/.test(nonAdmin.result)||nonAdmin.client.calls.includes('user_project_access'))
+              throw Error('Unauthorized count exposed');
+            const normal=await admin.context.answerPlanesProjectMembershipQuestion('qual o PAC da obra?');
+            if(normal!==null)throw Error('Normal engineering question incorrectly diverted');
+            const handlerIndex=html.indexOf('    async function askPlanesIntelligence(');
+            const target=html.indexOf('await answerPlanesProjectMembershipQuestion(rawPromptText)',handlerIndex);
+            const fallback=html.indexOf('buildPlanesIntelligenceAnalysis(promptText)',handlerIndex);
+            if(!(handlerIndex<target && target<fallback)) throw Error('Membership question not intercepted before fixed fallback');
+            console.log('PASS: real chat handler, exact project count, RLS admin check, normal questions');
+          })().catch(e=>{console.error(e);process.exitCode=1;});
+          NODE
+      - name: Commit inspected index only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "fix(intelligence): answer project membership counts from authorized data"
+            git push origin HEAD:gh-pages
+          fi
