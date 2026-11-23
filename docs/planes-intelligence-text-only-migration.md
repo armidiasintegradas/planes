@@ -63,3 +63,22 @@ O nome `setDraftMessage` é ilustrativo: substitua pelo setter real do chat. Nã
 **Limites reais da implementação:** o motor principal de `askPlanesIntelligence` continua baseado em `buildPlanesIntelligenceAnalysis` e regras por palavras-chave, não em um LLM conversacional geral. A Edge Function de sessão Realtime foi configurada para texto, porém não está publicada na produção, e o chat textual antigo não é uma integração completa com esse serviço. Não classificar como inteligência generativa conectada e homologada antes de implementar e validar esse contrato.
 
 **Próximos testes obrigatórios:** resposta com banco indisponível; isolamento entre projetos e perfis; cenários com valor zero; confirmações de alterações; regressão visual de chat e ditado no iOS/Android/desktop; execução dos pipelines do GitHub na revisão mais recente.
+
+## Endpoint de IA generativa textual (candidato, não publicado)
+
+O arquivo `supabase/functions/planes-intelligence-text/index.ts` oferece chat generativo **somente leitura** com a API de Responses, `store: false`, sem ferramentas de escrita e sem TTS. Confirma o JWT do Supabase e um perfil `approved` em `profiles`. Todas as consultas à obra e aos itens operacionais usam o cliente autenticado sob as políticas RLS, sem `SUPABASE_SERVICE_ROLE_KEY` nem confiança em papel/projeto informados pelo cliente.
+
+O perfil `cliente` recebe apenas avanço e meta física e informações gerais da obra; o perfil `financeiro` não recebe tarefas e validações detalhadas. Outros perfis recebem dados operacionais permitidos por RLS. Os itens são limitados a 25 por categoria, e o prompt instrui o modelo a não apresentar o limite como contagem total.
+
+O `index.html` só solicita essa IA quando `window.PLANES_CONFIG.intelligenceTextApiEnabled === true`. Em erro de provedor, o chat retorna mensagem de indisponibilidade, sem uma análise local disfarçada de IA. Na ausência da flag, o mecanismo textual anterior permanece inalterado.
+
+### Ativação controlada (somente em homologação)
+
+1. Criar ou selecionar ambiente Supabase **não produtivo** com migrações, perfis e RLS de teste. Não reutilizar dados pessoais de usuários reais.
+2. Implantar **apenas nele** a função `planes-intelligence-text` e configurar `OPENAI_API_KEY` como secret do servidor; `OPENAI_TEXT_MODEL` é opcional (padrão `gpt-4.1-mini`). Não colocar segredo no HTML ou no cliente.
+3. Configurar no site candidato a URL e chave pública desse Supabase, depois habilitar `window.PLANES_CONFIG.intelligenceTextApiEnabled = true`.
+4. Testar sessão ausente, perfil pendente/suspenso, usuário sem projeto, cliente, financeiro e engenharia; confirmar que respostas não incluem dados externos ao escopo.
+5. Testar projeto inacessível, falha de API, ausência de métricas, zeros e listas com mais de 25 registros. Validar que nenhuma ação pode ser gravada pelo endpoint.
+6. Revisar política de privacidade e envio de dados autorizados ao provedor de IA; executar testes no mobile e desktop antes de qualquer proposta de publicação.
+
+**Não foi feito deploy desta função, não foi habilitada a flag e não foi confirmado o funcionamento de IA externa em tempo real.**
