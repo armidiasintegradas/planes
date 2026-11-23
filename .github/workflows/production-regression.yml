@@ -40,6 +40,12 @@ jobs:
           cp public/email-lifecycle-kick-live.js production-site/email-lifecycle-kick-live.js
           cp public/legacy-auth-sanitizer-live.js production-site/legacy-auth-sanitizer-live.js
           cp sw.js production-site/sw.js
+          cp public/intelligence-dictation-preview.js production-site/intelligence-dictation-preview.js
+          # Preview-only adapter: leave the gh-pages branch and deployed production untouched.
+          node -e "const fs=require('fs');let p='production-site/index.html';let h=fs.readFileSync(p,'utf8');if(!h.includes('id=\\\"planes-v2-mic\\\"'))throw Error('Legacy Intelligence microphone not found');h=h.replace('</body>','<script src=\\\"intelligence-dictation-preview.js\\\"></script>\\n</body>');fs.writeFileSync(p,h)"
+          grep -q "intelligence-dictation-preview.js" production-site/index.html
+          grep -q "stopImmediatePropagation" production-site/intelligence-dictation-preview.js
+
 
           grep -q "Planes" production-site/index.html
           grep -q "hydratePlanesFromSupabase" production-site/auth-gate-live.js
