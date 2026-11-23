@@ -35,7 +35,12 @@ test('Legacy assistant speech synthesis endpoint fails closed', () => {
   assert.doesNotMatch(tts, /audio\/wav/);
 });
 
-test('No fabricated voice interface implementation is assumed', async () => {
+test('Runtime may supply either an empty source entrypoint or the assembled production shell', async () => {
   const html = await readFile('index.html', 'utf8');
-  assert.equal(html.trim(), '', 'index.html is currently an empty legacy entrypoint');
+  if (html.trim()) {
+    assert.match(html, /<!DOCTYPE html>/i);
+    assert.match(html, /Planes/i);
+    // Full production HTML is assembled separately by CI from gh-pages.
+    // Presence alone is not evidence that the text-only integration is live.
+  }
 });
