@@ -8,7 +8,8 @@ const client = await readFile(new URL('../index.html', import.meta.url), 'utf8')
 test('Intelligence text endpoint verifies JWT, approved profile and project RLS', () => {
   assert.match(server, /auth\.getUser\(\)/);
   assert.match(server, /profile\.status !== "approved"/);
-  assert.match(server, /\.from\("projects"\)[\s\S]*?\.eq\("code", projectCode\)\.single\(\)/);
+  assert.match(server, /projectLookup\.eq\("code", projectCode\)/);
+  assert.match(server, /projectLookup\.eq\("id", projectCode\)/);
   assert.match(server, /global: \{ headers: \{ Authorization: tokenHeader \} \}/);
   assert.doesNotMatch(server, /SUPABASE_SERVICE_ROLE_KEY|service_role/);
   assert.match(server, /project_not_accessible/);
