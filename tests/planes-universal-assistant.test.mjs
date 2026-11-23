@@ -17,13 +17,18 @@ const runnable=transpilation.outputText.replace(
 );
 assert.doesNotMatch(runnable,/^import\s/m);
 
-function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=true,quotaDenied=false,quotaUnavailable=false}={}){
+function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=true,quotaDenied=false,quotaUnavailable=false,role='engenharia'}={}){
   let handler;
   const calls=[];
   const quotaCalls=[];
+  const queried=[];
   const rows={
-    profiles:approved?{id:'user',role:'engenharia',status:'approved'}:{id:'user',role:'engenharia',status:'pending'},
-    projects:project?{id:'project-id',code:'obraA',name:'Obra A',status:'Ativa'}:null
+    profiles:approved?{id:'user',role,status:'approved'}:{id:'user',role,status:'pending'},
+    projects:project?{id:'project-id',code:'obraA',name:'Obra A',status:'Ativa'}:null,
+    project_metrics:[{physical_progress:0,target_progress:15,pac_score:80,workers_count:0,financial_spent_m:5}],
+    project_supplies:[{name:'Material A',status:'Programado',supplier:'Fornecedor privado',quantity_text:'2',delivery_text:'Amanhã'}],
+    project_tasks:[{title:'Tarefa interna',responsible:'Engenheiro',deadline_text:'Amanhã',done:false}],
+    project_validations:[{item:'Validação interna',status:'Pendente'}]
   };
   const createClient=()=>({
     rpc:async(name,args)=>{
@@ -34,7 +39,7 @@ function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=t
     },
     auth:{getUser:async(jwt)=>jwt==='test-token'?{data:{user:{id:'user'}},error:null}:{data:null,error:{}}},
     from(table) {
-      const q={select(){return q;},eq(){return q;},single:async()=>rows[table]?{data:rows[table],error:null}:{data:null,error:{}}};
+      const q={select(columns){queried.push({table,columns});return q;},eq(){return q;},limit:async()=>({data:rows[table]||[],error:null}),single:async()=>rows[table]?{data:rows[table],error:null}:{data:null,error:{}}};
       return q;
     }
   });
@@ -51,7 +56,7 @@ function harness({enabled=true,quotas=true,approved=true,project=true,allowWeb=t
       return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:'Resposta específica da pergunta.'}]}]})};
     }
   });
-  return {calls,quotaCalls,async post(body,auth='test-token'){
+  return {calls,quotaCalls,queried,async post(body,auth='test-token'){
     const result=await handler({method:'POST',headers:new Headers({
       Origin:'https://armidiasintegradas.github.io',
       ...(auth?{Authorization:'Bearer '+auth}:{})
@@ -120,4 +125,35 @@ test('unavailable quota service fails closed before model invocation',async()=>{
   assert.equal(r.status,503);
   assert.equal(r.body.error,'quota_service_unavailable');
   assert.equal(h.calls.length,0);
+});
+
+test('project responses contain only RLS-scoped role-limited data',async()=>{
+  const h=harness({role:'cliente'});
+  const r=await h.post({message:'Como anda a obra?',project_code:'obraA'});
+  assert.equal(r.status,200);
+  const context=JSON.stringify(h.calls[0].body.input);
+  assert.match(context,/"physical_progress":0/);
+  assert.doesNotMatch(context,/Fornecedor privado|Tarefa interna|Validação interna|pac_score|financial_spent_m/);
+  assert.equal(h.queried.some(x=>x.table==='project_supplies'),false);
+  assert.equal(h.queried.some(x=>x.table==='project_tasks'),false);
+});
+test('engineering role receives permitted operational context without financial values',async()=>{
+  const h=harness({role:'engenharia'});
+  const r=await h.post({message:'Resumo do PAC',project_code:'obraA'});
+  assert.equal(r.status,200);
+  const context=JSON.stringify(h.calls[0].body.input);
+  assert.match(context,/pac_score/);
+  assert.match(context,/Tarefa interna/);
+  assert.doesNotMatch(context,/financial_spent_m/);
+});
+test('recent conversation is bounded and clock context is supplied',async()=>{
+  const h=harness();
+  const history=Array.from({length:14},(_,i)=>({role:i%2?'assistant':'user',content:'Turno '+i}));
+  const r=await h.post({message:'E o que eu perguntei?',history});
+  assert.equal(r.status,200);
+  const req=h.calls[0].body;
+  assert.equal(req.input.length,10);
+  assert.match(req.instructions,/America\/Recife/);
+  assert.match(JSON.stringify(req.input),/Turno 13/);
+  assert.doesNotMatch(JSON.stringify(req.input),/Turno 0/);
 });
