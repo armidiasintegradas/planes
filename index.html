@@ -11115,6 +11115,52 @@
         return;
       }
 
+      // Enable the generative model only after its isolated Edge Function is deployed
+      // and validated. A provider failure must not silently fall back to demo analysis.
+      if (window.PLANES_CONFIG?.intelligenceTextApiEnabled === true) {
+        try {
+          const projectCode = String(selectedProject?.id || '').trim();
+          if (!projectCode) throw new Error('Obra não selecionada');
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          if (sessionError || !session?.access_token) throw new Error('Sessão inválida');
+          const endpoint = String(window.PLANES_CONFIG?.supabaseUrl || '').replace(/\/$/, '') +
+            '/functions/v1/planes-intelligence-text';
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + session.access_token,
+              'apikey': window.PLANES_CONFIG.supabaseAnonKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              project_code: projectCode,
+              persona: getAssistantPersona() || 'brita',
+              message: rawPromptText
+            })
+          });
+          const response = await res.json();
+          if (!res.ok || !response?.ok || response?.project_code !== projectCode ||
+              typeof response?.answer !== 'string' || !response.answer.trim()) {
+            throw new Error('Resposta indisponível ou de outra obra');
+          }
+          intelligenceChatHistory.push({
+            sender: 'ai', text: response.answer.trim(),
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          });
+          render();
+          return;
+        } catch (err) {
+          console.warn('Planes Intelligence textual indisponível:', err instanceof Error ? err.message : 'unknown');
+          intelligenceChatHistory.push({
+            sender: 'ai',
+            text: 'Não consegui consultar a inteligência textual neste momento. Não vou apresentar uma análise alternativa como se fosse a resposta atual. Tente novamente.',
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          });
+          render();
+          return;
+        }
+      }
+
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
       analysis.screenContext = liveScreenContext;
       if (rawPromptText !== promptText) {
