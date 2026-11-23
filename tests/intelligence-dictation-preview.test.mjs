@@ -8,7 +8,7 @@ const source = await readFile(new URL('../public/intelligence-dictation-preview.
 test('legacy V2 microphone dictates into editable chat, without submission or sound', async () => {
   const listeners = [];
   const mic = { attributes: {}, setAttribute(k, v) { this.attributes[k] = v; }, textContent: '', title: '' };
-  const input = { value: 'Resumo:', events: [], dispatchEvent(e) { this.events.push(e.type); }, focus() {} };
+  const input = { value: 'Resumo:', events: [], setAttribute() {}, dispatchEvent(e) { this.events.push(e.type); }, focus() {} };
   const document = {
     getElementById(id) { return id === 'planes-v2-mic' ? mic : id === 'planes-v2-input' ? input : null; },
     addEventListener(type, callback, capture) { listeners.push({ type, callback, capture }); }
