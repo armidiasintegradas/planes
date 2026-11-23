@@ -15,6 +15,20 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      isolated-postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: planes_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: planes_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d planes_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -33,6 +47,18 @@ jobs:
 
       - name: Test auth security
         run: npm test
+
+      - name: Exercise isolated PostgreSQL RLS matrix with synthetic identities
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: planes_ci_only
+          PGDATABASE: planes_ci
+        run: |
+          set -euo pipefail
+          psql --version
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/intelligence-rls-isolated.sql
 
       - name: Build
         run: npm run build
