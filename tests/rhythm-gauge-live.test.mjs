@@ -64,7 +64,7 @@ function setup({reduced=false}={}){
 }
 test('live loader exists and gauge script parses',()=>{
   new vm.Script(code);
-  assert.match(auth,/rhythm-gauge-live\.js\?v=20261123-1/);
+  assert.match(auth,/rhythm-gauge-live\.js\?v=20261123-2/);
 });
 test('initial and final marker locations precisely match each gauge arc',()=>{
   const h=setup();
