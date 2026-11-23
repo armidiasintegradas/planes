@@ -68,3 +68,19 @@ bash scripts/validate-intelligence-rls-local.sh
 O script inicia um container PostgreSQL 16 sem expor portas de rede, executa `tests/sql/intelligence-rls-isolated.sql`, registra resultados e destrói o container ao sair. **Não configura, clona ou acessa o Supabase de produção.** Também não cria um projeto hospedado nem gera cobrança no Supabase. O teste local/CI possui senhas exclusivamente fictícias e temporárias, que não devem ser reutilizadas em serviços públicos.
 
 Para homologação completa, permanece necessária a reprodução fiel do schema e Auth do Supabase e o teste do endpoint com JWT reais de usuários fictícios e uma API de IA configurada com limites de custo.
+
+## Testes HTTP autenticados no CI (PostgREST 14.18)
+
+Além dos **26 asserts SQL em PostgreSQL 16**, o workflow `Validate Planes IAM` inicia um **PostgREST descartável** e assina JWTs fictícios com um segredo que existe apenas no próprio processo de teste. Em `tests/http-intelligence-rls-e2e.mjs`, o serviço executa requisições HTTP à Data API usando os papéis `authenticated` e `anon`. A etapa passou em `https://github.com/armidiasintegradas/planes/actions/runs/45192328123`.
+
+Os cenários exercitam:
+- Usuários de engenharia, campo, financeiro, cliente e gestor: apenas a Obra A visível;
+- Administrador: Obra A e Obra B;
+- Usuários pendente/suspenso: zero obras e zero métricas;
+- Valores zero preservados nas métricas;
+- Requisição anônima e assinatura JWT inválida rejeitadas;
+- `PATCH` de métricas negado para campo, permitido a engenharia na Obra A, negado na Obra B.
+
+**Escopo do teste:** utiliza PostgREST real, SQL real e JWTs assinados, mas **não é uma instância completa do Supabase Auth** nem prova end-to-end com contas hospedadas. Postgres e PostgREST só existem durante o CI; tokens, IDs, banco e segredos são inteiramente sintéticos. Não há conexão com o Supabase de produção.
+
+Os testes SQL e HTTP devem continuar sendo executados automaticamente a cada PR. A implantação do backend generativo e as verificações com dados de testes reais dependem de ambiente Supabase equivalente com autenticação, configurações e funções completas.
