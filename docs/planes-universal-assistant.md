@@ -25,3 +25,13 @@ Pesquisas web pela OpenAI são cobradas por chamada além dos tokens, conforme a
 
 ## Estado
 Código candidato e testes de mock podem passar sem credenciais, mas **nenhuma chamada real à OpenAI, pesquisa pública ou ligação real ocorreu**. Não está ativado no cliente e não há aprovação de produção.
+
+## Quota persistente adicionada à candidata
+
+Implementado `supabase/staging-only/planes_universal_assistant_quota.sql`: tabela privada de uso com RLS e RPC restrita ao `service_role`, permitindo limites atômicos por minuto e dia por usuário. A Edge Function agora faz a chamada real a `consume_planes_assistant_quota` após autenticar e validar permissões e **antes** de chamar a OpenAI. Se a RPC não existir, não funcionar ou faltar a chave de serviço no servidor, responde indisponível (fail-closed); se exceder a cota, responde HTTP 429. Padrão: 10 requisições/minuto e 100/dia.
+
+- Não aplicar a migração na produção: somente quando existir homologação isolada com esquema conciliado.
+- Testes de mock em `tests/planes-universal-assistant.test.mjs` cobrem cotas, bloqueio e indisponibilidade.
+- O workflow `.github/workflows/planes-universal-assistant.yml` foi estendido para usar PostgreSQL 16 descartável e executar `tests/sql/planes-universal-assistant-quota.test.sql`.
+- A flag de habilitação permanece **desligada**. Mesmo com a RPC, é necessário homologar transações, limites efetivos, privacidade e teto financeiro no provedor antes de ativar.
+- Tokens pagos consumidos variam por pergunta/modelo/pesquisa. A quota por requisição reduz risco mas **não equivale a um orçamento financeiro em reais/dólares**.
