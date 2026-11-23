@@ -72,3 +72,18 @@ test('Intelligence answers no longer request speech synthesis', async () => {
   assert.match(block, /tryPrepareContextualTextMutation\(rawPromptText\)/);
   assert.doesNotMatch(block, /speakText\(/);
 });
+
+test('live Intelligence refuses stale local data and permits zero-valued metrics', async () => {
+  const html = await readFile('index.html', 'utf8');
+  const start = html.indexOf('async function askPlanesIntelligence(predefinedPrompt)');
+  const end = html.indexOf('// ==========================================\n    // MOBILE RENDERING COMPONENTS', start);
+  const block = html.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(block, /const synced = await refreshIntelligenceOperationalData\(\)/);
+  assert.match(block, /if \(!synced\)/);
+  assert.match(block, /não vou apresentar números locais como dados ao vivo/);
+  assert.ok(block.indexOf('const synced = await refreshIntelligenceOperationalData()') < block.indexOf('tryPrepareContextualTextMutation(rawPromptText)'));
+  const refresh = html.slice(html.indexOf('async function refreshIntelligenceOperationalData()'), html.indexOf('function formatPct(', html.indexOf('async function refreshIntelligenceOperationalData()')));
+  assert.doesNotMatch(refresh, /Number\(metrics\.(?:physical_progress|pac_score|financial_spent_m|workers_count)\) \|\|/);
+  assert.match(refresh, /metrics\.physical_progress !== null/);
+});
