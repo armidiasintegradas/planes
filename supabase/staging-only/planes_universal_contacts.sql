@@ -4,7 +4,7 @@ create table if not exists public.planes_user_contacts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid(),
   display_name text not null check (char_length(btrim(display_name)) between 2 and 120),
-  phone_e164 text not null check (phone_e164 ~ '^\\+[1-9][0-9]{7,14}$'),
+  phone_e164 text not null check (phone_e164 ~ '^[+][1-9][0-9]{7,14}$'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
