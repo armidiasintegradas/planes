@@ -1107,7 +1107,7 @@ void boot().catch((error) => {
   if (document.getElementById('planes-rhythm-gauge-fix-loader')) return;
   const script=document.createElement('script');
   script.id='planes-rhythm-gauge-fix-loader';
-  script.src='./rhythm-gauge-live.js?v=20261123-1';
+  script.src='./rhythm-gauge-live.js?v=20261123-2';
   script.async=true;
   script.onerror=()=>console.warn('Planes OS: Rhythm Global gauge correction unavailable');
   (document.head||document.documentElement).appendChild(script);
