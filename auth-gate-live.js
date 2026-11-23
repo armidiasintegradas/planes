@@ -523,8 +523,8 @@ async function handlePasskeySignIn(node) {
 function renderLogin() {
   const googleLabel = capabilities.google ? 'Continuar com Google' : 'Google temporariamente indisponível';
   const providerText = capabilities.google
-    ? 'Primeiro acesso: use o Google. Depois da aprovação, você pode ativar Face ID / Passkey para entrar mais rápido.'
-    : 'Não foi possível confirmar o provider Google agora. O acesso administrativo de contingência continua disponível.';
+    ? 'Entre com a conta autorizada por Google ou com e-mail e senha. O acesso continua sujeito à aprovação do administrador.'
+    : 'Use e-mail e senha de uma conta previamente autorizada. O login com Google está indisponível neste momento.';
 
   const passkeyButton = capabilities.passkeys
     ? '<button class="planes-auth-btn passkey" data-passkey>Entrar com Face ID / Passkey</button><div class="planes-auth-divider">ou</div>'
@@ -536,13 +536,13 @@ function renderLogin() {
     ${passkeyButton}
     <button class="planes-auth-btn" data-google ${capabilities.google ? '' : 'disabled'}>${googleLabel}</button>
     <p class="planes-auth-muted" style="font-size:12px;margin:10px 0 0">${providerText}</p>
-    <button class="planes-auth-btn link" data-admin-toggle style="margin-top:12px">Acesso administrativo</button>
+    <button class="planes-auth-btn link" data-admin-toggle style="margin-top:12px" aria-expanded="false">Entrar com e-mail e senha</button>
     <div class="planes-auth-hide" data-admin-wrap style="border-top:1px solid #e2e8f0;padding-top:16px">
-      <p class="planes-auth-muted" style="font-size:12px;margin-top:0">Reservado à conta administrativa já existente. Este formulário não cria novos usuários.</p>
+      <p class="planes-auth-muted" style="font-size:12px;margin-top:0">Somente contas existentes e aprovadas. Este formulário não cria novos usuários.</p>
       <form class="planes-auth-grid" data-admin-form>
-        <input class="planes-auth-input" data-email type="email" autocomplete="email" placeholder="E-mail administrativo" required />
+        <input class="planes-auth-input" data-email type="email" autocomplete="email" placeholder="Seu e-mail cadastrado" required />
         <input class="planes-auth-input" data-password type="password" autocomplete="current-password" placeholder="Senha" required />
-        <button class="planes-auth-btn secondary" type="submit">Entrar como administrador</button>
+        <button class="planes-auth-btn secondary" type="submit">Entrar com e-mail e senha</button>
       </form>
     </div>
     <div class="planes-auth-status planes-auth-hide" data-auth-message></div>
@@ -567,7 +567,8 @@ function renderLogin() {
   });
 
   node.querySelector('[data-admin-toggle]')?.addEventListener('click', () => {
-    node.querySelector('[data-admin-wrap]')?.classList.toggle('planes-auth-hide');
+    const collapsed = node.querySelector('[data-admin-wrap]')?.classList.toggle('planes-auth-hide');
+    node.querySelector('[data-admin-toggle]')?.setAttribute('aria-expanded', String(!collapsed));
   });
 
   node.querySelector('[data-admin-form]')?.addEventListener('submit', async (event) => {
@@ -580,8 +581,8 @@ function renderLogin() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       submit.disabled = false;
-      submit.textContent = 'Entrar como administrador';
-      renderMessage(node, `Login administrativo não concluído: ${error.message}`, 'planes-auth-bad');
+      submit.textContent = 'Entrar com e-mail e senha';
+      renderMessage(node, `Não foi possível entrar. Verifique seu e-mail e senha ou entre novamente: ${error.message}`, 'planes-auth-bad');
     }
   });
 }
