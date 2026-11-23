@@ -1,0 +1,28 @@
+name: Planes published chat response hotfix
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - auth-gate-live.js
+      - intelligence-live-chat-fix.js
+      - tests/intelligence-live-chat-fix.test.mjs
+      - .github/workflows/live-chat-hotfix.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-chat-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/intelligence-live-chat-fix.test.mjs
+      - name: Check production loader and safe paths
+        run: |
+          grep -q 'intelligence-live-chat-fix.js' auth-gate-live.js
+          grep -q 'planesLegacyChatDirectAnswer' intelligence-live-chat-fix.js
+          grep -q 'https://xfgcbxppsbwmxwsuajou.supabase.co' auth-gate-live.js
+          grep -q 'PLANES' index.html
