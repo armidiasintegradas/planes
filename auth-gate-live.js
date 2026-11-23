@@ -1087,3 +1087,15 @@ void boot().catch((error) => {
   script.onerror = () => console.warn('Planes Intelligence: layout swap unavailable');
   (document.head || document.documentElement).appendChild(script);
 })();
+
+
+/* Planes Intelligence 2026 visual redesign. Presentation-only: no backend writes. */
+(() => {
+  if (document.getElementById('planes-intelligence-redesign-loader')) return;
+  const script=document.createElement('script');
+  script.id='planes-intelligence-redesign-loader';
+  script.src='./intelligence-redesign-live.js?v=20261123-1';
+  script.async=true;
+  script.onerror=()=>console.warn('Planes Intelligence: visual refresh unavailable');
+  (document.head||document.documentElement).appendChild(script);
+})();
