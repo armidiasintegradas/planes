@@ -1,0 +1,30 @@
+name: Admin access-review JWT hotfix
+on:
+  push:
+    branches: [hotfix/iam-approve-jwt-context]
+  pull_request:
+    paths:
+      - 'supabase/functions/admin-review-access/index.ts'
+      - 'tests/admin-review-access-jwt.test.mjs'
+      - '.github/workflows/admin-review-access-jwt.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-review-authorization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/admin-review-access-jwt.test.mjs
+      - name: Verify user JWT, not service role, is used for approval RPC
+        run: |
+          grep -F 'userClient.rpc("admin_review_access_request"' supabase/functions/admin-review-access/index.ts
+          if grep -F 'adminClient.rpc("admin_review_access_request"' supabase/functions/admin-review-access/index.ts; then
+            echo "::error::service_role RPC loses user Auth context"
+            exit 1
+          fi
