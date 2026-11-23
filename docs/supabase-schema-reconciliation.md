@@ -56,3 +56,15 @@ O workflow passou no commit `42b12978ebb49775884d689ee183e9b5261e642d`, com **26
 **Limitação:** este é um *espelho mínimo de contratos RLS em PostgreSQL*, não o conjunto completo de migrações do Supabase local. Ele valida a semântica das políticas espelhadas em um banco real, mas não o comportamento das configurações Auth/PostgREST/Storage/Realtime ou das políticas não incluídas. Antes de produção, executar testes E2E com JWTs reais em ambiente Supabase isolado e schema completo.
 
 A Edge Function possui testes de mock independentes que validam minimização dos dados encaminhados à IA. A consulta de colunas agora diferencia valores financeiros e métricas operacionais por papel, como defesa adicional às políticas SQL.
+
+## Repetição gratuita no computador de desenvolvimento
+
+Com Docker instalado e iniciado, executar a partir da raiz do repositório:
+
+```bash
+bash scripts/validate-intelligence-rls-local.sh
+```
+
+O script inicia um container PostgreSQL 16 sem expor portas de rede, executa `tests/sql/intelligence-rls-isolated.sql`, registra resultados e destrói o container ao sair. **Não configura, clona ou acessa o Supabase de produção.** Também não cria um projeto hospedado nem gera cobrança no Supabase. O teste local/CI possui senhas exclusivamente fictícias e temporárias, que não devem ser reutilizadas em serviços públicos.
+
+Para homologação completa, permanece necessária a reprodução fiel do schema e Auth do Supabase e o teste do endpoint com JWT reais de usuários fictícios e uma API de IA configurada com limites de custo.
