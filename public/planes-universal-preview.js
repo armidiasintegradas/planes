@@ -111,6 +111,10 @@
         {role:'assistant',content:String(payload.answer || '').slice(0,1500)}].slice(-8);
       if(payload.kind==='action_proposal'){
         addMessage('AÇÃO NÃO EXECUTADA — é necessário confirmar no fluxo seguro do sistema.');
+        if(payload.proposal?.type==='database_change' &&
+          typeof window.planesStagingTaskAction?.suggestInstruction==='function') {
+          window.planesStagingTaskAction.suggestInstruction(message);
+        }
       }
       // Render links by DOM properties only; never inject model text as HTML.
       if(Array.isArray(payload.sources)){
