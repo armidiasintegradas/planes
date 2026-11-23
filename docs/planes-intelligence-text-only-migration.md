@@ -8,11 +8,15 @@
 - O endpoint legado `planes-voice-tts` responde `410 assistant_audio_disabled`, sem solicitar síntese de fala.
 - Testes antigos de geração de áudio foram substituídos por testes de regressão focados na sessão textual e no bloqueio do TTS.
 
-## Importante — interface ainda não implementada nesta branch
+## Origem do frontend e integração na homologação
 
-O arquivo `index.html` está vazio na `main` consultada e o `app/page.tsx` não contém o cliente de voz referenciado pela documentação legada. O código que exibe o microfone, controla o início/parada da gravação, emite eventos WebRTC, renderiza transcrições e mensagens e retira estados visuais de fala **não foi localizado** entre os arquivos do repositório consultado. Portanto, esta branch não pode ser considerada uma entrega completa de UI ou de voz sem áudio.
+A afirmação anterior de que `index.html` estava vazio era incorreta: a leitura resumida do conector retornou um conteúdo vazio, mas uma consulta direta ao endpoint do GitHub confirmou um arquivo de aproximadamente 1,44 MB em `main` e outro de aproximadamente 1,46 MB em `gh-pages`. A versão publicada é montada a partir do `gh-pages`; não se deve substituir essa fonte sem testes de equivalência.
 
-Antes de publicar: localizar a origem real do frontend implantado, tratar eventos `conversation.item.input_audio_transcription.completed` e `response.output_text.delta/done` (ou equivalentes do cliente), preservar a transcrição editável no chat, implementar encerramento por silêncio e permitir parada por segundo toque, remover player de resposta, atalhos de TTS e opção de voz de saída. O cliente não deve forçar `output_modalities: ["audio"]` em atualizações da sessão ou respostas.
+O `index.html` da branch de homologação foi atualizado para conectar o microfone da experiência existente (`planes-v2-mic`) ao campo editável de conversa (`planes-v2-input`). O adaptador acrescenta ditado por `SpeechRecognition` quando disponível, botão liga/desliga, encerramento após silêncio pelo navegador e revisão do texto antes do envio. Entradas por texto continuam disponíveis.
+
+A branch também usa retornos antecipados nas rotas legadas `startRealtimeVoiceAssistant`, `toggleVoiceAssistant`, `startVoiceAssistant` e `speakText` para bloquear síntese de voz no cliente candidato. O pipeline monta um artefato temporário a partir do site `gh-pages` com o adaptador `public/intelligence-dictation-preview.js` e executa testes de regressão, sem alterar o site público.
+
+**Não é garantia de entrega integral:** eventos de transcrição do Realtime antigo ainda existem no HTML legado, a integração com o backend textual Realtime não foi exercitada ponta a ponta, o ditado depende do suporte do navegador, e a publicação das Edge Functions textuais não foi realizada.
 
 ## Validação necessária antes de produção
 
@@ -45,4 +49,4 @@ O nome `setDraftMessage` é ilustrativo: substitua pelo setter real do chat. Nã
 
 **Privacidade:** alguns navegadores enviam fala a seus próprios serviços de reconhecimento; revisar consentimento e política de privacidade antes de disponibilizar essa opção em produção.
 
-**Limite:** ainda não há integração do componente ao chat real; nem o componente nem a Edge Function foram publicados.
+**Limite:** o adaptador legado está integrado ao chat em homologação; o componente React permanece reutilizável e não é usado diretamente pelo HTML legado. Nenhuma Edge Function da migração foi publicada.
