@@ -51,6 +51,8 @@ Deno.serve(async (req) => {
 
   const tokenHeader = req.headers.get("Authorization") || "";
   if (!tokenHeader.startsWith("Bearer ")) return errorMessage("authentication_required", headers, 401);
+  const userJwt = tokenHeader.slice(7).trim();
+  if (!userJwt) return errorMessage("authentication_required", headers, 401);
   const url = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
@@ -80,7 +82,9 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: tokenHeader } },
   });
-  const { data: identity, error: identityError } = await userClient.auth.getUser();
+  // No persisted session exists in this stateless Edge Function: verify the
+  // explicit caller JWT against Supabase Auth instead of a missing local session.
+  const { data: identity, error: identityError } = await userClient.auth.getUser(userJwt);
   if (identityError || !identity?.user) return errorMessage("invalid_session", headers, 401);
 
   const { data: profile, error: profileError } = await userClient.from("profiles")
