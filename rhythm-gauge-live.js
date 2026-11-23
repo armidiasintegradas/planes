@@ -5,8 +5,7 @@
 (() => {
   'use strict';
   const PROGRESS = [0.92, 0.74, 0.62];
-  const LABELS = ['Arena', 'Apartamentos', 'Infraestrutura'];
-  const REDUCED = typeof window.matchMedia === 'function' &&
+    const REDUCED = typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clamp = value => Math.min(1, Math.max(0, value));
 
@@ -34,7 +33,6 @@
     svg.setAttribute('aria-label',
       'Ritmo global de produção: Arena 92%, Apartamentos 74%, Infraestrutura 62%');
 
-    const from = [];
     tracks.forEach((p,i)=>{
       const length=values[i].length;
       // Legacy CSS/JS uses hard-coded 283/220/163 and unrelated marker coords.
@@ -47,9 +45,16 @@
       p.style.strokeDashoffset=String(length);
       p.removeAttribute('data-offset');
       p.setAttribute('data-rhythm-progress',String(PROGRESS[i]));
+      // The outer lime marker originally has anim-pulse-slow. That CSS
+      // animation transforms the entire circle away from its SVG cx/cy,
+      // independently of our path-following animation. Disable every
+      // marker-level transform/animation so the points stay on their arcs.
+      markers[i].classList.remove('anim-pulse-slow');
+      markers[i].style.animation='none';
+      markers[i].style.transform='none';
+      markers[i].style.transition='none';
       markers[i].setAttribute('cx',String(p.getPointAtLength(0).x));
       markers[i].setAttribute('cy',String(p.getPointAtLength(0).y));
-      from.push(length);
     });
 
     const duration=REDUCED?0:1250;
