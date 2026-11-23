@@ -1,0 +1,99 @@
+name: Planes Universal Assistant candidate
+on:
+  push:
+    branches:
+      - 'feature/planes-intelligence-universal-agent'
+  pull_request:
+    paths:
+      - 'supabase/functions/planes-universal-assistant/**'
+      - 'tests/planes-universal-assistant.test.mjs'
+      - 'tests/planes-universal-preview.test.mjs'
+      - 'tests/planes-task-action-preview.test.mjs'
+      - 'public/planes-task-action-preview.js'
+      - 'public/planes-contact-call-preview.js'
+      - 'tests/planes-contact-call-preview.test.mjs'
+      - 'supabase/staging-only/planes_universal_contacts.sql'
+      - 'public/planes-universal-preview.js'
+      - 'tests/sql/planes-universal-assistant-quota.test.sql'
+      - 'tests/sql/planes-universal-task-actions.test.sql'
+      - 'supabase/staging-only/planes_universal_task_actions.sql'
+      - 'supabase/staging-only/planes_universal_assistant_quota.sql'
+      - '.github/workflows/planes-universal-assistant.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/planes-universal-assistant.test.mjs tests/planes-universal-preview.test.mjs tests/planes-task-action-preview.test.mjs
+      - name: Release remains blocked without real evidence
+        run: |
+          if node scripts/check-intelligence-release-readiness.mjs; then
+            echo "::error::Missing evidence should not pass"
+            exit 1
+          fi
+
+  postgres-quota-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: planes_quota_ci
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: fixture-only
+      PGHOST: 127.0.0.1
+      PGPORT: 5433
+      PGUSER: postgres
+      PGDATABASE: planes_quota_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable roles and quota schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;'
+          psql -v ON_ERROR_STOP=1 -f supabase/staging-only/planes_universal_assistant_quota.sql
+      - name: Exercise atomic minute/day quota, grants and rollback in PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/planes-universal-assistant-quota.test.sql
+
+  task-confirmation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: planes_tasks_ci
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: fixture-only
+      PGHOST: 127.0.0.1
+      PGPORT: 5434
+      PGUSER: postgres
+      PGDATABASE: planes_tasks_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify task preparation and confirmed writing using disposable database
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/planes-universal-task-actions.test.sql
