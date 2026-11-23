@@ -115,6 +115,10 @@
           typeof window.planesStagingTaskAction?.suggestInstruction==='function') {
           window.planesStagingTaskAction.suggestInstruction(message);
         }
+        if(payload.proposal?.type==='call_contact' &&
+          typeof window.planesStagingContacts?.suggestContact==='function') {
+          window.planesStagingContacts.suggestContact(payload.proposal.target);
+        }
       }
       // Render links by DOM properties only; never inject model text as HTML.
       if(Array.isArray(payload.sources)){
