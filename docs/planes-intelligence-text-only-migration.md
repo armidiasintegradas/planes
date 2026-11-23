@@ -23,3 +23,26 @@ Antes de publicar: localizar a origem real do frontend implantado, tratar evento
 5. Confirmar que o serviço Realtime aceita a configuração de transcrição e que seu cliente processa os eventos de texto.
 
 **Não publicar/mesclar sem esses testes.**
+
+## Componente de entrada preparado
+
+`components/PlanesDictationButton.tsx` oferece ditado em português com botão iniciar/parar, encerramento nativo após pausa e tratamento de erros de microfone. Usa Web Speech quando disponibilizado pelo navegador e é **apenas entrada de texto**. O componente não inicia síntese, não executa chamadas para alterar dados e não envia automaticamente mensagens ao assistente.
+
+Para integrar a um campo controlado de chat já existente:
+
+```tsx
+import PlanesDictationButton from '../components/PlanesDictationButton';
+
+// No mesmo componente que detém o estado da mensagem:
+<PlanesDictationButton
+  onTranscript={(transcript) =>
+    setDraftMessage((previous) => [previous.trim(), transcript].filter(Boolean).join(' '))
+  }
+/>
+```
+
+O nome `setDraftMessage` é ilustrativo: substitua pelo setter real do chat. Não anexar a uma tela diferente da experiência de conversa aprovada. Se o navegador não oferecer `SpeechRecognition` / `webkitSpeechRecognition`, a digitação continua disponível, com aviso acessível.
+
+**Privacidade:** alguns navegadores enviam fala a seus próprios serviços de reconhecimento; revisar consentimento e política de privacidade antes de disponibilizar essa opção em produção.
+
+**Limite:** ainda não há integração do componente ao chat real; nem o componente nem a Edge Function foram publicados.
