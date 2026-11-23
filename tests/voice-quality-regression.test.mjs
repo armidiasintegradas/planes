@@ -35,12 +35,18 @@ test('Legacy assistant speech synthesis endpoint fails closed', () => {
   assert.doesNotMatch(tts, /audio\/wav/);
 });
 
-test('Runtime may supply either an empty source entrypoint or the assembled production shell', async () => {
+test('Existing Planes Intelligence chat has silent dictation and audio fail-closed guards', async () => {
   const html = await readFile('index.html', 'utf8');
-  if (html.trim()) {
-    assert.match(html, /<!DOCTYPE html>/i);
-    assert.match(html, /Planes/i);
-    // Full production HTML is assembled separately by CI from gh-pages.
-    // Presence alone is not evidence that the text-only integration is live.
+  assert.match(html, /<!DOCTYPE html>/i);
+  assert.match(html, /id="planes-v2-mic"/);
+  assert.match(html, /id="planes-v2-input"/);
+  assert.match(html, /Planes Intelligence candidate: text-only dictation/);
+  assert.match(html, /stopImmediatePropagation/);
+
+  for (const name of ['startRealtimeVoiceAssistant', 'speakText', 'startVoiceAssistant', 'toggleVoiceAssistant']) {
+    const match = html.match(new RegExp('(?:async )?function ' + name + '\\([^)]*\\) \\{'));
+    assert.ok(match, name + ' must be present');
+    const firstLines = html.slice(match.index, match.index + 650);
+    assert.match(firstLines, /return (false|true)?;/, name + ' should stop before legacy audio code');
   }
 });
