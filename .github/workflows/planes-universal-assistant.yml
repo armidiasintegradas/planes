@@ -7,6 +7,8 @@ on:
     paths:
       - 'supabase/functions/planes-universal-assistant/**'
       - 'tests/planes-universal-assistant.test.mjs'
+      - 'tests/sql/planes-universal-assistant-quota.test.sql'
+      - 'supabase/staging-only/planes_universal_assistant_quota.sql'
       - '.github/workflows/planes-universal-assistant.yml'
   workflow_dispatch:
 permissions:
@@ -28,3 +30,34 @@ jobs:
             echo "::error::Missing evidence should not pass"
             exit 1
           fi
+
+  postgres-quota-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: planes_quota_ci
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: fixture-only
+      PGHOST: 127.0.0.1
+      PGPORT: 5433
+      PGUSER: postgres
+      PGDATABASE: planes_quota_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable roles and quota schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;'
+          psql -v ON_ERROR_STOP=1 -f supabase/staging-only/planes_universal_assistant_quota.sql
+      - name: Exercise atomic minute/day quota, grants and rollback in PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/planes-universal-assistant-quota.test.sql
