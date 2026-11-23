@@ -9248,6 +9248,14 @@
     }
 
     async function startRealtimeVoiceAssistant(retryAttempt = 0) {
+      // Text-only policy: never open an audio-output WebRTC session.
+      if (window.planesIntelligenceDictation?.toggle) {
+        window.planesIntelligenceDictation.toggle();
+        return true;
+      }
+      showToast('Use o campo de texto: ditado temporariamente indisponível.');
+      return false;
+
       if (!getAssistantPersona() && typeof hydrateAssistantPersona === 'function') {
         await hydrateAssistantPersona();
       }
@@ -9429,6 +9437,10 @@
     }
 
     async function speakText(text) {
+      // Assistant audio playback is disabled: every reply is rendered in the chat.
+      isSpeaking = false;
+      return;
+
       const cleanText = String(text || '')
         .replace(/\*\*/g, '')
         .replace(/[•✓]/g, '')
@@ -9532,6 +9544,13 @@
     }
 
     function toggleVoiceAssistant() {
+      if (window.planesIntelligenceDictation?.toggle) {
+        window.planesIntelligenceDictation.toggle();
+      } else {
+        showToast('Ditado indisponível. Digite sua mensagem.');
+      }
+      return;
+
       unlockAudioContextOnce();
 
       if (isRealtimeVoiceActive()) {
@@ -9548,6 +9567,13 @@
     }
 
     function startVoiceAssistant() {
+      if (window.planesIntelligenceDictation?.toggle) {
+        window.planesIntelligenceDictation.toggle();
+      } else {
+        showToast('Ditado indisponível. Digite sua mensagem.');
+      }
+      return;
+
       unlockAudioContextOnce();
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
