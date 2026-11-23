@@ -50,3 +50,25 @@ test('Existing Planes Intelligence chat has silent dictation and audio fail-clos
     assert.match(firstLines, /return(?: (?:false|true))?;/, name + ' should stop before legacy audio code');
   }
 });
+
+test('textual chat preserves draft when request fails and does not start voice after persona choice', async () => {
+  const html = await readFile('index.html', 'utf8');
+  assert.match(html, /Mensagem preservada/);
+  assert.match(html, /if\(input&&!forced\) input\.value=text/);
+  assert.match(html, /if\(input&&!forced\) input\.value=''/);
+  assert.match(html, /currentUser\.assistant_voice_enabled = false/);
+  assert.match(html, /assistant_voice_enabled: false/);
+  assert.match(html, /window\.__PLANES_VOICE_START_AFTER_PERSONA__=false/);
+  assert.doesNotMatch(html, /setTimeout\(\(\)=>\{ if\(typeof toggleVoiceAssistant==='function'\) toggleVoiceAssistant\(\); \},120\)/);
+});
+
+test('Intelligence answers no longer request speech synthesis', async () => {
+  const html = await readFile('index.html', 'utf8');
+  const start = html.indexOf('async function askPlanesIntelligence(predefinedPrompt)');
+  const end = html.indexOf('// ==========================================\n    // MOBILE RENDERING COMPONENTS', start);
+  assert.ok(start >= 0 && end > start);
+  const block = html.slice(start, end);
+  assert.match(block, /await refreshIntelligenceOperationalData\(\)/);
+  assert.match(block, /tryPrepareContextualTextMutation\(rawPromptText\)/);
+  assert.doesNotMatch(block, /speakText\(/);
+});
