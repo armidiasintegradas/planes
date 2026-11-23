@@ -38,3 +38,21 @@ A incompatibilidade foi **identificada e documentada**, e existe referência de 
 - Os pipelines `Validate Planes IAM` e `PLANES Production Regression` passaram no commit `796d7b0b68f48ea6d7320acc2c7038df679d0657`. Uma alteração posterior deste documento exigirá nova execução dos checks.
 
 **Decisão:** ainda não há evidência suficiente de paridade real do Supabase local. Mantém-se NO-GO para publicar a Edge Function generativa ou ativar `intelligenceTextApiEnabled` na produção.
+
+## Homologação RLS gratuita em PostgreSQL isolado — evidência CI (23/11/2026)
+
+Foi adicionado `tests/sql/intelligence-rls-isolated.sql` e um serviço `postgres:16` descartável ao workflow `Validate Planes IAM`. Esse teste NÃO necessita de credenciais, conexão com banco hospedado ou dados reais. Ele recria as **funções e políticas principais de autorização por projeto** a partir das definições consultadas por leitura no Supabase, usando UUIDs e obras inteiramente fictícios.
+
+O workflow passou no commit `42b12978ebb49775884d689ee183e9b5261e642d`, com **26 asserções SQL reais aprovadas**, incluindo:
+
+- Engenharia: apenas obra A; acesso a métricas incluindo zero; negação de leitura e atualização da obra B.
+- Campo: acesso à obra A e atualização de tarefas da obra A, mas não de métricas ou tarefas da obra B.
+- Financeiro: leitura de obra A, impossibilidade de alterar suprimentos via política RLS.
+- Cliente: acesso apenas à obra A; sem alterações de tarefas.
+- Gestor: atualização operacional da obra A, sem acesso à obra B.
+- Pendente e suspenso: sem linhas de projetos ou métricas.
+- Administrador: visualização das duas obras e respectivos dados.
+
+**Limitação:** este é um *espelho mínimo de contratos RLS em PostgreSQL*, não o conjunto completo de migrações do Supabase local. Ele valida a semântica das políticas espelhadas em um banco real, mas não o comportamento das configurações Auth/PostgREST/Storage/Realtime ou das políticas não incluídas. Antes de produção, executar testes E2E com JWTs reais em ambiente Supabase isolado e schema completo.
+
+A Edge Function possui testes de mock independentes que validam minimização dos dados encaminhados à IA. A consulta de colunas agora diferencia valores financeiros e métricas operacionais por papel, como defesa adicional às políticas SQL.
