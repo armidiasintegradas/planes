@@ -76,6 +76,7 @@
     return item;
   };
   let inflight=false;
+  let history=[]; // memory limited to this preview tab, no localStorage
   async function submit() {
     if(inflight)return;
     const message=field.value.trim();
@@ -98,7 +99,7 @@
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt,
           'apikey':String(cfg.publishableKey || '')},
-        body:JSON.stringify({message,mode:mode.value,
+        body:JSON.stringify({message,history:history.slice(-8),mode:mode.value,
           ...(project.value.trim()?{project_code:project.value.trim()}:{})})
       });
       const payload=await response.json();
@@ -106,6 +107,8 @@
         throw Error(payload.error || 'Resposta indisponível');
       }
       addMessage(payload.answer || 'Sem resposta.');
+      history=[...history,{role:'user',content:message.slice(0,1500)},
+        {role:'assistant',content:String(payload.answer || '').slice(0,1500)}].slice(-8);
       if(payload.kind==='action_proposal'){
         addMessage('AÇÃO NÃO EXECUTADA — é necessário confirmar no fluxo seguro do sistema.');
       }
