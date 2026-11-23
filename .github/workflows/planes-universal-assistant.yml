@@ -8,6 +8,8 @@ on:
       - 'supabase/functions/planes-universal-assistant/**'
       - 'tests/planes-universal-assistant.test.mjs'
       - 'tests/planes-universal-preview.test.mjs'
+      - 'tests/planes-task-action-preview.test.mjs'
+      - 'public/planes-task-action-preview.js'
       - 'public/planes-universal-preview.js'
       - 'tests/sql/planes-universal-assistant-quota.test.sql'
       - 'tests/sql/planes-universal-task-actions.test.sql'
@@ -27,7 +29,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts
-      - run: node --test tests/planes-universal-assistant.test.mjs tests/planes-universal-preview.test.mjs
+      - run: node --test tests/planes-universal-assistant.test.mjs tests/planes-universal-preview.test.mjs tests/planes-task-action-preview.test.mjs
       - name: Release remains blocked without real evidence
         run: |
           if node scripts/check-intelligence-release-readiness.mjs; then
