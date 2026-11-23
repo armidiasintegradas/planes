@@ -111,5 +111,15 @@
   prepare.addEventListener('click',()=>{void prepareAction();});
   confirm.addEventListener('click',()=>{void finish(true);});
   cancel.addEventListener('click',()=>{void finish(false);});
-  window.planesStagingTaskAction={prepare:prepareAction,confirm:()=>finish(true),cancel:()=>finish(false),section};
+  function suggestInstruction(instruction) {
+    // Pre-fill only. Never prepare or confirm automatically based on AI output.
+    const text=String(instruction || '').trim();
+    const match=/^(?:adicione|adicionar|registre|registrar|cadastre|cadastrar|crie|criar)\\s+(?:uma?\\s+)?tarefa(?:\\s+(?:para|de|que|:))?\\s*(.+)$/i.exec(text);
+    if (!match || !match[1]) return false;
+    task.value=match[1].trim().slice(0,180);
+    invalidate();
+    summary.textContent='Título sugerido. Informe o UUID da obra e revise os campos antes de preparar.';
+    return true;
+  }
+  window.planesStagingTaskAction={prepare:prepareAction,confirm:()=>finish(true),cancel:()=>finish(false),suggestInstruction,section};
 })();
