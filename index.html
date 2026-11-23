@@ -10632,10 +10632,10 @@
 
         const metrics = Array.isArray(metricsRes.data) ? metricsRes.data[0] : null;
         if (metrics) {
-          physicalProgress = Number(metrics.physical_progress) || physicalProgress;
-          pacScore = Number(metrics.pac_score) || pacScore;
-          financialSpent = Number(metrics.financial_spent_m) || financialSpent;
-          workersCount = Number(metrics.workers_count) || workersCount;
+          if (metrics.physical_progress !== null && metrics.physical_progress !== undefined && Number.isFinite(Number(metrics.physical_progress))) physicalProgress = Number(metrics.physical_progress);
+          if (metrics.pac_score !== null && metrics.pac_score !== undefined && Number.isFinite(Number(metrics.pac_score))) pacScore = Number(metrics.pac_score);
+          if (metrics.financial_spent_m !== null && metrics.financial_spent_m !== undefined && Number.isFinite(Number(metrics.financial_spent_m))) financialSpent = Number(metrics.financial_spent_m);
+          if (metrics.workers_count !== null && metrics.workers_count !== undefined && Number.isFinite(Number(metrics.workers_count))) workersCount = Number(metrics.workers_count);
           if (selectedProject) {
             selectedProject.progress = Number(metrics.physical_progress);
             selectedProject.targetProgress = Number(metrics.target_progress);
@@ -11092,6 +11092,18 @@
       addAuditLog('AI_DIAGNOSTIC', 'Consulta ao Planes Intelligence [' + liveScreenContext.module + ']: "' + rawPromptText.slice(0, 80) + '"');
       render();
 
+      // Never turn stale/demo values into apparently live operational guidance.
+      const synced = await refreshIntelligenceOperationalData();
+      if (!synced) {
+        intelligenceChatHistory.push({
+          sender: 'ai',
+          text: 'Não consegui confirmar os dados atuais da obra no Supabase. Para sua segurança, não vou apresentar números locais como dados ao vivo nem preparar alterações. Confira sua conexão, seu acesso e a obra selecionada.',
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        });
+        render();
+        return;
+      }
+
       const preparedMutation = await tryPrepareContextualTextMutation(rawPromptText);
       if (preparedMutation && preparedMutation.ok !== false && preparedMutation.requires_confirmation) {
         intelligenceChatHistory.push({
@@ -11103,7 +11115,6 @@
         return;
       }
 
-      await refreshIntelligenceOperationalData();
       const analysis = buildPlanesIntelligenceAnalysis(promptText);
       analysis.screenContext = liveScreenContext;
       if (rawPromptText !== promptText) {
