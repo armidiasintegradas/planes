@@ -10,6 +10,8 @@ on:
       - 'tests/planes-universal-preview.test.mjs'
       - 'public/planes-universal-preview.js'
       - 'tests/sql/planes-universal-assistant-quota.test.sql'
+      - 'tests/sql/planes-universal-task-actions.test.sql'
+      - 'supabase/staging-only/planes_universal_task_actions.sql'
       - 'supabase/staging-only/planes_universal_assistant_quota.sql'
       - '.github/workflows/planes-universal-assistant.yml'
   workflow_dispatch:
@@ -63,3 +65,30 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/staging-only/planes_universal_assistant_quota.sql
       - name: Exercise atomic minute/day quota, grants and rollback in PostgreSQL
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/planes-universal-assistant-quota.test.sql
+
+  task-confirmation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: planes_tasks_ci
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: fixture-only
+      PGHOST: 127.0.0.1
+      PGPORT: 5434
+      PGUSER: postgres
+      PGDATABASE: planes_tasks_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify task preparation and confirmed writing using disposable database
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/planes-universal-task-actions.test.sql
