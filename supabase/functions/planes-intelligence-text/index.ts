@@ -85,10 +85,14 @@ Deno.serve(async (req) => {
     return errorMessage("access_not_approved", headers, 403);
   }
 
-  // Projects RLS restricts this query to projects explicitly accessible to the user.
-  const { data: project, error: projectError } = await userClient.from("projects")
-    .select("id,code,name,location,status,deadline_text")
-    .eq("code", projectCode).single();
+  // The UI uses a human-readable code when present, otherwise the UUID.
+  // Both lookup paths still run under the user's JWT and project SELECT RLS.
+  const projectLookup = userClient.from("projects")
+    .select("id,code,name,location,status,deadline_text");
+  const isProjectUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectCode);
+  const { data: project, error: projectError } = await (
+    isProjectUuid ? projectLookup.eq("id", projectCode) : projectLookup.eq("code", projectCode)
+  ).single();
   if (projectError || !project) return errorMessage("project_not_accessible", headers, 403);
 
   const role = String(profile.role);
@@ -220,7 +224,7 @@ Não use áudio, TTS ou SSML.`;
         .join("\n").trim() : "";
     if (!answer) return errorMessage("empty_intelligence_response", headers, 503);
     return reply({
-      ok: true, answer: answer.slice(0, 9000), persona, project_code: project.code,
+      ok: true, answer: answer.slice(0, 9000), persona, project_code: project.code || project.id,
       source: "supabase_rls", generated: true,
     }, 200, headers);
   } catch (error) {
