@@ -11118,7 +11118,7 @@
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       });
 
-      speakText(summarizeIntelligenceForVoice(promptText, analysis.answer));
+      // Resposta textual já registrada; não solicitar TTS.
       render();
     }
 
@@ -12907,7 +12907,7 @@
       const now = new Date().toISOString();
       if (currentUser) {
         currentUser.assistant_persona = persona;
-        currentUser.assistant_voice_enabled = true;
+        currentUser.assistant_voice_enabled = false;
         currentUser.assistant_onboarding_completed_at = currentUser.assistant_onboarding_completed_at || now;
       }
       saveSessionState();
@@ -12918,7 +12918,7 @@
           .from('profiles')
           .update({
             assistant_persona: persona,
-            assistant_voice_enabled: true,
+            assistant_voice_enabled: false,
             assistant_onboarding_completed_at: currentUser.assistant_onboarding_completed_at || now,
             updated_at: now
           })
@@ -19462,7 +19462,7 @@ ${activeNav === 'Equipe & Contatos' ? `
       if(!chosen){
         window.__PLANES_VOICE_START_AFTER_PERSONA__=true;
         renderOverlay();
-        if(typeof showToast==='function') showToast('Escolha Brita ou Castanha. A voz inicia logo depois.');
+        if(typeof showToast==='function') showToast('Escolha Brita ou Castanha para personalizar sua conversa em texto.');
         return;
       }
       if(typeof toggleVoiceAssistant==='function') toggleVoiceAssistant();
@@ -19492,10 +19492,8 @@ ${activeNav === 'Equipe & Contatos' ? `
   async function selectPersona(p){
     try{
       if(typeof chooseAssistantPersona==='function') await chooseAssistantPersona(p);
-      if(window.__PLANES_VOICE_START_AFTER_PERSONA__){
-        window.__PLANES_VOICE_START_AFTER_PERSONA__=false;
-        setTimeout(()=>{ if(typeof toggleVoiceAssistant==='function') toggleVoiceAssistant(); },120);
-      }
+      // Escolher uma persona não ativa microfone automaticamente.
+      window.__PLANES_VOICE_START_AFTER_PERSONA__=false;
     }catch(e){}
     setTimeout(renderOverlay,50);
   }
@@ -19540,15 +19538,16 @@ ${activeNav === 'Equipe & Contatos' ? `
     const send=document.getElementById('planes-v2-send');
     const text=String(forced || input?.value || '').trim();
     if(!text) return;
-    if(input&&!forced) input.value='';
+    // Keep the original draft until the request is handled.
     if(input) input.disabled=true;
     if(send){send.disabled=true;send.textContent='…'}
     try{
-      if(typeof askPlanesIntelligence==='function'){
-        await askPlanesIntelligence(text);
-      }
+      if(typeof askPlanesIntelligence!=='function') throw new Error('Intelligence indisponível');
+      await askPlanesIntelligence(text);
+      if(input&&!forced) input.value='';
     }catch(e){
-      if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Tente novamente.');
+      if(input&&!forced) input.value=text;
+      if(typeof showToast==='function') showToast('Não consegui concluir essa conversa agora. Mensagem preservada.');
     }finally{
       if(input) input.disabled=false;
       if(send){send.disabled=false;send.textContent='➤'}
@@ -19608,7 +19607,7 @@ ${activeNav === 'Equipe & Contatos' ? `
 
     let voiceState='idle';
     try{voiceState=typeof realtimeVoiceState!=='undefined'?realtimeVoiceState:'idle'}catch(e){}
-    const statusMap={connecting:'Conectando voz…',listening:'Ouvindo você',speaking:'Falando com você',reconnecting:'Reconectando…',error:'Voz local disponível',idle:'Sempre com você na obra'};
+    const statusMap={connecting:'Preparando ditado…',listening:'Ouvindo você',speaking:'Resposta em texto',reconnecting:'Reconectando…',error:'Digite sua mensagem',idle:'Conversa em texto'};
     let backendState='Ao vivo';
     try{backendState=typeof operationalRealtimeStatus!=='undefined'?operationalRealtimeStatus:'Ao vivo'}catch(e){}
     const backendLabel=backendState==='Offline'?'Sem conexão · ações pausadas':backendState==='Reconectando'||backendState==='Conectando'?'Reconectando ao Planes…':null;
@@ -19620,7 +19619,7 @@ ${activeNav === 'Equipe & Contatos' ? `
       const active=['connecting','listening','speaking','reconnecting'].includes(voiceState);
       mic.style.background=active?'#0f172a':'';
       mic.style.color=active?'#d4ff00':'';
-      mic.setAttribute('aria-label',active?'Encerrar voz':'Usar voz');
+      mic.setAttribute('aria-label',active?'Encerrar ditado':'Ditar mensagem');
     }
 
     let pending=null;
