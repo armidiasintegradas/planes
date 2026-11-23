@@ -1,0 +1,25 @@
+name: Rhythm Global gauge geometry check
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - rhythm-gauge-live.js
+      - tests/rhythm-gauge-live.test.mjs
+      - auth-gate-live.js
+      - .github/workflows/rhythm-gauge-live.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geometry-and-animation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify animation and endpoint geometry
+        run: node --test tests/rhythm-gauge-live.test.mjs
+      - name: Check browser syntax
+        run: node --check rhythm-gauge-live.js
