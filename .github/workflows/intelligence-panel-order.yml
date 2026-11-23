@@ -1,0 +1,28 @@
+name: Planes Intelligence layout swap
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - intelligence-panel-order-live.js
+      - auth-gate-live.js
+      - tests/intelligence-panel-order.test.mjs
+      - .github/workflows/intelligence-panel-order.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-panel-order:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify precise layout swap and preserved chat input
+        run: node --test tests/intelligence-panel-order.test.mjs
+      - name: Confirm live HTML still contains both components
+        run: |
+          grep -qi 'Memória de decisões' index.html
+          grep -qi 'Painel de Respostas & Diagnósticos de Engenharia' index.html
+          grep -q 'intelligence-panel-order-live.js' auth-gate-live.js
