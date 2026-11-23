@@ -112,13 +112,49 @@ Deno.serve(async (req) => {
   }
   const [metrics, supplies, validations, tasks] = results.map((item) => item.data);
 
+  // Defense in depth: explicitly allow-list fields instead of trusting projections alone.
+  // Even an unexpectedly broad query must never send privileged columns to the LLM.
+  const metric = Array.isArray(metrics) ? metrics[0] : null;
+  const safeMetrics = metric ? {
+    physical_progress: metric.physical_progress,
+    target_progress: metric.target_progress,
+    ...(isClient ? {} : {
+      pac_score: metric.pac_score,
+      financial_spent_m: metric.financial_spent_m,
+      workers_count: metric.workers_count,
+    }),
+  } : null;
+  const safeSupplies = (isClient ? [] : (Array.isArray(supplies) ? supplies : []))
+    .slice(0, 25).map((item: any) => ({
+      name: item.name,
+      status: item.status,
+      quantity_text: item.quantity_text,
+      delivery_text: item.delivery_text,
+      ...(isFinancial ? {} : { supplier: item.supplier, sector: item.sector }),
+    }));
+  const safeValidations = (isClient || isFinancial ? [] : (Array.isArray(validations) ? validations : []))
+    .slice(0, 25).map((item: any) => ({
+      item: item.item,
+      front: item.front,
+      status: item.status,
+      quantity_text: item.quantity_text,
+      recorded_at_text: item.recorded_at_text,
+    }));
+  const safeTasks = (isClient || isFinancial ? [] : (Array.isArray(tasks) ? tasks : []))
+    .slice(0, 25).map((item: any) => ({
+      title: item.title,
+      responsible: item.responsible,
+      deadline_text: item.deadline_text,
+      done: item.done,
+    }));
+
   // The external LLM sees ONLY a bounded, role-scoped, RLS-authorized snapshot.
   const snapshot = {
     project: { name: project.name, code: project.code, location: project.location, status: project.status, deadline: project.deadline_text },
-    metrics: Array.isArray(metrics) ? metrics[0] || null : null,
-    supplies: Array.isArray(supplies) ? supplies : [],
-    validations: Array.isArray(validations) ? validations : [],
-    tasks: Array.isArray(tasks) ? tasks : [],
+    metrics: safeMetrics,
+    supplies: safeSupplies,
+    validations: safeValidations,
+    tasks: safeTasks,
     scope: { role, partial_lists_capped_at: 25, as_of: new Date().toISOString() },
   };
 
