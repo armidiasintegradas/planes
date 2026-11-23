@@ -6,7 +6,7 @@ const server = await readFile(new URL('../supabase/functions/planes-intelligence
 const client = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
 test('Intelligence text endpoint verifies JWT, approved profile and project RLS', () => {
-  assert.match(server, /auth\.getUser\(\)/);
+  assert.match(server, /auth\.getUser\(userJwt\)/);
   assert.match(server, /profile\.status !== "approved"/);
   assert.match(server, /projectLookup\.eq\("code", projectCode\)/);
   assert.match(server, /projectLookup\.eq\("id", projectCode\)/);
