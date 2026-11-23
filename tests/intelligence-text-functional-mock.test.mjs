@@ -34,6 +34,7 @@ function harness({
   let handler;
   const queried = [];
   const calls = [];
+  const authChecks = [];
   const errors = [];
   const rows = {
     profiles: { id: 'demo-user', role, status: approved ? 'approved' : 'pending' },
@@ -45,7 +46,10 @@ function harness({
   };
 
   const createClient = () => ({
-    auth: { getUser: async () => ({ data: { user: { id: 'demo-user' } }, error: null }) },
+    auth: { getUser: async jwt => {
+      authChecks.push(jwt);
+      return { data: { user: { id: 'demo-user' } }, error: null };
+    } },
     from(table) {
       queried.push(table);
       const q = {
@@ -78,7 +82,7 @@ function harness({
   vm.runInNewContext(runnable, ctx, { timeout: 1500 });
 
   return {
-    queried, calls, errors,
+    queried, calls, authChecks, errors,
     async post(payload = { message: 'Qual o estado da obra?', project_code: 'obra_demo', persona: 'brita' }, auth = token) {
       const headers = new Headers({ Origin: origin, ...(auth ? { Authorization: 'Bearer ' + auth } : {}) });
       const response = await handler({ method: 'POST', headers, text: async () => JSON.stringify(payload) });
@@ -252,4 +256,20 @@ test('mock Edge Function: finance role requests only authorized financial metric
   const projection = h.queried.find(x => Array.isArray(x) && x[0] === 'project_metrics' && typeof x[1] === 'string');
   assert.ok(projection);
   assert.doesNotMatch(projection[1], /pac_score|workers_count/);
+});
+
+test('mock Edge Function: explicit JWT is passed to Supabase Auth getUser', async () => {
+  const h = harness();
+  const r = await h.post();
+  assert.equal(r.status, 200);
+  assert.deepEqual(h.authChecks, ['test-token']);
+});
+
+test('mock Edge Function: empty bearer is denied before auth or model work', async () => {
+  const h = harness();
+  const r = await h.post(undefined, ' ');
+  assert.equal(r.status, 401);
+  assert.equal(r.body.error, 'authentication_required');
+  assert.equal(h.authChecks.length, 0);
+  assert.equal(h.calls.length, 0);
 });
