@@ -1,11 +1,8 @@
 const fs=require('node:fs');
 const s=fs.readFileSync('index.html','utf8');
-const terms=['MEMÓRIA DE DECISÕES','Memória de Decisões','Seu histórico nesta obra','PAINEL DE RESPOSTAS','Painel de Respostas','DIAGNÓSTICOS RÁPIDOS PARA REUNIÃO'];
-console.log('SIZE',s.length);
-for(const term of terms){
- let p=-1,count=0;
- while((p=s.toLowerCase().indexOf(term.toLowerCase(),p+1))>=0 && count++<8){
-  console.log('\n===',JSON.stringify(term),'offset',p,'===');
-  console.log(s.slice(Math.max(0,p-1800),Math.min(s.length,p+900)).replace(/data:image\/[^\s'"]{300,}/g,'[DATA_IMAGE]'));
- }
+const markers=['<!-- Grid Principal: Perguntas Rápidas & Chat Analítico -->','renderIntelligenceMemoryFeed(false)','Painel de Respostas & Diagnósticos de Engenharia','SEU ASSISTENTE','Seu Assistente','Modelo Analítico Conectado','Empreendimento Ativo:',"intelligenceChatHistory.map(msg"];
+for(const marker of markers){
+ const pos=s.toLowerCase().indexOf(marker.toLowerCase(),800000);
+ console.log('\n===== '+marker+' at '+pos+' =====\n');
+ if(pos>=0)console.log(s.slice(Math.max(0,pos-4300),Math.min(s.length,pos+3800)).replace(/data:image\/[^\s'"]{200,}/g,'[IMAGE]').slice(0,8500));
 }
