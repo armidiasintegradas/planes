@@ -1,0 +1,27 @@
+name: Planes Intelligence redesign checks
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - intelligence-redesign-live.js
+      - auth-gate-live.js
+      - tests/intelligence-redesign-live.test.mjs
+      - .github/workflows/intelligence-redesign-live.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual-regression-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify scripts parse
+        run: |
+          node --check intelligence-redesign-live.js
+          node --check intelligence-panel-order-live.js
+      - name: Validate scoped layout and loader
+        run: node --test tests/intelligence-redesign-live.test.mjs tests/intelligence-panel-order.test.mjs
