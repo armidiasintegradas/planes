@@ -1,0 +1,66 @@
+name: Apply precise live Copilot fix
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - scripts/patch-legacy-copilot.py
+      - .github/workflows/apply-legacy-copilot-fix.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: patch-legacy-copilot-gh-pages
+  cancel-in-progress: false
+jobs:
+  update-live-chat-handler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Patch handler in published index (fail closed on structural changes)
+        run: python3 scripts/patch-legacy-copilot.py
+      - name: Verify exact reply for failing screenshot question
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const html = fs.readFileSync('index.html','utf8');
+          const start=html.indexOf('    function answerLegacyChatSpecificQuestion(rawQuestion) {');
+          const end=html.indexOf('    async function askPlanesIntelligence(', start);
+          if (start < 0 || end < 0) throw Error('patched function missing');
+          const extracted=html.slice(start,end);
+          const context={Intl,Date};
+          vm.runInNewContext(extracted,context);
+          for (const prompt of ['ola que horas sao?', 'que horas sao?', 'olá', 'qual a capital da frança?']) {
+            const reply=context.answerLegacyChatSpecificQuestion(prompt);
+            if (!reply || /Leitura integrada do empreendimento|Japaratinga Lounge Resort/.test(reply)) {
+              throw Error('Wrong response to: '+prompt);
+            }
+            console.log(prompt+' -> '+reply);
+          }
+          if (context.answerLegacyChatSpecificQuestion('qual o PAC da obra?') !== null)
+            throw Error('Engineering question should use original analysis');
+          const handlerStart=html.indexOf('    async function askPlanesIntelligence(');
+          const directIndex=html.indexOf('answerLegacyChatSpecificQuestion(rawPromptText)',handlerStart);
+          const fallbackIndex=html.indexOf('buildPlanesIntelligenceAnalysis(promptText)',handlerStart);
+          if (!(handlerStart < directIndex && directIndex < fallbackIndex))
+            throw Error('Not connected to actual chat handler');
+          if (html.includes('speakText(summarizeIntelligenceForVoice(promptText, analysis.answer))'))
+            throw Error('Legacy chat still starts output TTS');
+          NODE
+      - name: Commit the inspected index only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes required"
+          else
+            git commit -m "fix(intelligence): direct answers in actual legacy chat handler"
+            git push origin HEAD:gh-pages
+          fi
