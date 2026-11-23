@@ -1,0 +1,30 @@
+name: Planes Universal Assistant candidate
+on:
+  push:
+    branches:
+      - 'feature/planes-intelligence-universal-agent'
+  pull_request:
+    paths:
+      - 'supabase/functions/planes-universal-assistant/**'
+      - 'tests/planes-universal-assistant.test.mjs'
+      - '.github/workflows/planes-universal-assistant.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/planes-universal-assistant.test.mjs
+      - name: Release remains blocked without real evidence
+        run: |
+          if node scripts/check-intelligence-release-readiness.mjs; then
+            echo "::error::Missing evidence should not pass"
+            exit 1
+          fi
