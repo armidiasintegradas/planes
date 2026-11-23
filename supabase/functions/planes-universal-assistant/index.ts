@@ -122,9 +122,46 @@ Deno.serve(async (request) => {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectCode);
     const {data:project,error:projectError} = await (isUuid?query.eq("id",projectCode):query.eq("code",projectCode)).single();
     if (projectError || !project) return json({ok:false,error:"project_not_accessible"},403,origin);
-    scope = {type:"project", role:profile.role, project};
-    // Never infer unauthorized metrics: project details are limited to the
-    // selected RLS-authorized row. Future adapters must scope every query.
+    const role=String(profile.role);
+    const clientRole=role==="cliente";
+    const financeRole=role==="financeiro";
+    const canSeeFinance=["financeiro","gestor","admin","super_admin"].includes(role);
+    const canSeeOperations=!clientRole && !financeRole;
+    const metricFields=[
+      "physical_progress","target_progress","updated_at",
+      ...(canSeeOperations?["pac_score","workers_count"]:[]),
+      ...(canSeeFinance?["financial_spent_m"]:[])
+    ].join(",");
+    const snapshots=await Promise.all([
+      client.from("project_metrics").select(metricFields).eq("project_id",project.id).limit(1),
+      clientRole ? Promise.resolve({data:[],error:null}) :
+        client.from("project_supplies").select(financeRole?
+          "name,status,quantity_text,delivery_text":
+          "name,status,quantity_text,delivery_text,supplier,sector")
+          .eq("project_id",project.id).limit(20),
+      (clientRole || financeRole)?Promise.resolve({data:[],error:null}):
+        client.from("project_tasks").select("title,responsible,deadline_text,done")
+          .eq("project_id",project.id).limit(20),
+      (clientRole || financeRole)?Promise.resolve({data:[],error:null}):
+        client.from("project_validations").select("item,front,status,quantity_text,recorded_at_text")
+          .eq("project_id",project.id).limit(20)
+    ]);
+    if (snapshots.some(item=>item.error))
+      return json({ok:false,error:"project_data_unavailable"},503,origin);
+    const metrics=Array.isArray(snapshots[0].data)?snapshots[0].data[0]||null:null;
+    const safeMetrics=metrics?{
+      physical_progress:metrics.physical_progress,
+      target_progress:metrics.target_progress,
+      ...(canSeeOperations?{pac_score:metrics.pac_score,workers_count:metrics.workers_count}:{}),
+      ...(canSeeFinance?{financial_spent_m:metrics.financial_spent_m}:{})
+    }:null;
+    scope={type:"project",role,project,metrics:safeMetrics,
+      supplies:Array.isArray(snapshots[1].data)?snapshots[1].data.slice(0,20):[],
+      tasks:Array.isArray(snapshots[2].data)?snapshots[2].data.slice(0,20):[],
+      validations:Array.isArray(snapshots[3].data)?snapshots[3].data.slice(0,20):[],
+      partial_lists:true};
+    // No service-role reads: every projection above executes under the JWT
+    // and is additionally narrowed by role before reaching the model.
   }
   const proposal = proposedAction(question);
   if (proposal) {
