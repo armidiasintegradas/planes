@@ -102,10 +102,17 @@ Deno.serve(async (req) => {
   const role = String(profile.role);
   const isClient = role === "cliente";
   const isFinancial = role === "financeiro";
+  const canSeeFinancial = ["super_admin", "admin", "gestor", "financeiro"].includes(role);
+  const canSeeOperationalMetrics = !isClient && !isFinancial;
+  // Minimize the columns fetched, not merely those forwarded to the model.
+  const metricColumns = [
+    "physical_progress", "target_progress", "updated_at",
+    ...(canSeeOperationalMetrics ? ["pac_score", "workers_count"] : []),
+    ...(canSeeFinancial ? ["financial_spent_m"] : []),
+  ].join(",");
   const results = await Promise.all([
     userClient.from("project_metrics")
-      .select(isClient ? "physical_progress,target_progress,updated_at" :
-        "physical_progress,target_progress,pac_score,financial_spent_m,workers_count,updated_at")
+      .select(metricColumns)
       .eq("project_id", project.id).limit(1),
     isClient ? Promise.resolve({ data: [], error: null }) :
       userClient.from("project_supplies")
@@ -138,11 +145,11 @@ Deno.serve(async (req) => {
   const safeMetrics = metric ? {
     physical_progress: metric.physical_progress,
     target_progress: metric.target_progress,
-    ...(isClient ? {} : {
+    ...(canSeeOperationalMetrics ? {
       pac_score: metric.pac_score,
-      financial_spent_m: metric.financial_spent_m,
       workers_count: metric.workers_count,
-    }),
+    } : {}),
+    ...(canSeeFinancial ? { financial_spent_m: metric.financial_spent_m } : {}),
   } : null;
   const safeSupplies = (isClient ? [] : (Array.isArray(supplies) ? supplies : []))
     .slice(0, 25).map((item: any) => ({
