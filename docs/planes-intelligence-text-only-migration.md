@@ -50,3 +50,16 @@ O nome `setDraftMessage` é ilustrativo: substitua pelo setter real do chat. Nã
 **Privacidade:** alguns navegadores enviam fala a seus próprios serviços de reconhecimento; revisar consentimento e política de privacidade antes de disponibilizar essa opção em produção.
 
 **Limite:** o adaptador legado está integrado ao chat em homologação; o componente React permanece reutilizável e não é usado diretamente pelo HTML legado. Nenhuma Edge Function da migração foi publicada.
+
+## Revisão de experiência e confiabilidade — 23/11/2026
+
+- O envio do chat agora preserva o texto digitado quando `askPlanesIntelligence` estiver indisponível ou lançar erro, permitindo nova tentativa. Após sucesso, limpa o campo.
+- Escolher Brita/Castanha não liga microfone automaticamente e a preferência de saída de voz é gravada como desabilitada.
+- Respostas de `askPlanesIntelligence` deixaram de chamar `speakText`.
+- Consultas e preparação de alterações exigem sincronização bem-sucedida de dados do projeto em Supabase; não respondem a partir do fallback local quando o backend não está confirmado.
+- Métricas com valor zero não são substituídas por valores anteriores devido ao uso de `||`.
+- Testes de regressão foram adicionados para os novos contratos.
+
+**Limites reais da implementação:** o motor principal de `askPlanesIntelligence` continua baseado em `buildPlanesIntelligenceAnalysis` e regras por palavras-chave, não em um LLM conversacional geral. A Edge Function de sessão Realtime foi configurada para texto, porém não está publicada na produção, e o chat textual antigo não é uma integração completa com esse serviço. Não classificar como inteligência generativa conectada e homologada antes de implementar e validar esse contrato.
+
+**Próximos testes obrigatórios:** resposta com banco indisponível; isolamento entre projetos e perfis; cenários com valor zero; confirmações de alterações; regressão visual de chat e ditado no iOS/Android/desktop; execução dos pipelines do GitHub na revisão mais recente.
