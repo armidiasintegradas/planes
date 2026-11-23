@@ -8,6 +8,8 @@ on:
     paths:
       - 'scripts/check-intelligence-release-readiness.mjs'
       - 'tests/intelligence-release-readiness.test.mjs'
+      - 'tests/intelligence-dictation-preview.test.mjs'
+      - 'public/intelligence-dictation-preview.js'
       - '.github/workflows/intelligence-rc06-release-safety.yml'
   workflow_dispatch:
 
@@ -26,6 +28,8 @@ jobs:
           node-version: '22'
       - name: Check release gate logic (synthetic only)
         run: node --test tests/intelligence-release-readiness.test.mjs
+      - name: Verify question-specific responses in legacy adapter
+        run: node --test tests/intelligence-dictation-preview.test.mjs
       - name: Ensure missing evidence BLOCKS release
         shell: bash
         run: |
