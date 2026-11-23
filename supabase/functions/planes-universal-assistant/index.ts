@@ -132,6 +132,28 @@ Deno.serve(async (request) => {
   const research = mode === "research";
   if (research && Deno.env.get("PLANES_ASSISTANT_WEB_ENABLED") !== "true")
     return json({ok:false,error:"research_disabled"},503,origin);
+  // Charge quota atomically in Postgres, after identity/authorization and before
+  // any billable model/tool request. Only the privileged Edge server can call RPC.
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceKey) return json({ok:false,error:"quota_service_not_configured"},503,origin);
+  const quotaClient = createClient(url,serviceKey,{
+    auth:{persistSession:false,autoRefreshToken:false}
+  });
+  const perMinute = 10;
+  const perDay = 100;
+  const {data:quota,error:quotaError} = await quotaClient.rpc("consume_planes_assistant_quota",{
+    p_user_id:identity.user.id,
+    p_minute_limit:perMinute,
+    p_day_limit:perDay
+  });
+  if (quotaError) {
+    const msg=String(quotaError.message || "");
+    if (msg.includes("planes_assistant_daily_quota_exceeded"))
+      return json({ok:false,error:"daily_quota_exceeded"},429,origin);
+    return json({ok:false,error:"quota_service_unavailable"},503,origin);
+  }
+  if (!quota || quota.allowed !== true)
+    return json({ok:false,error:"request_quota_exceeded"},429,origin);
   const settings:any = {
     model:Deno.env.get("OPENAI_TEXT_MODEL") || "gpt-4.1-mini",
     instructions:`Você é o Planes Intelligence, assistente geral e profissional em português brasileiro.
