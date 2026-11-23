@@ -32,7 +32,8 @@ test('all operational tables queried by Intelligence exist in the deployed schem
   expectColumns('project_tasks', ['project_id', 'title', 'responsible', 'deadline_text', 'done']);
 });
 test('Edge Function remains fail-closed and scoped by active authenticated project', () => {
-  assert.match(edge, /\.eq\("code", projectCode\)\.single\(\)/);
+  assert.match(edge, /projectLookup\.eq\("code", projectCode\)/);
+  assert.match(edge, /projectLookup\.eq\("id", projectCode\)/);
   assert.match(edge, /\.eq\("id", identity\.user\.id\)\.single\(\)/);
   assert.match(edge, /\.eq\("project_id", project\.id\)/);
   assert.match(edge, /project_not_accessible/);
