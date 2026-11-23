@@ -132,7 +132,7 @@ test('project responses contain only RLS-scoped role-limited data',async()=>{
   const r=await h.post({message:'Como anda a obra?',project_code:'obraA'});
   assert.equal(r.status,200);
   const context=JSON.stringify(h.calls[0].body.input);
-  assert.match(context,/"physical_progress":0/);
+  assert.match(h.calls[0].body.input[0].content,/"physical_progress":0/);
   assert.doesNotMatch(context,/Fornecedor privado|Tarefa interna|Validação interna|pac_score|financial_spent_m/);
   assert.equal(h.queried.some(x=>x.table==='project_supplies'),false);
   assert.equal(h.queried.some(x=>x.table==='project_tasks'),false);
