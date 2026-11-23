@@ -10593,13 +10593,14 @@
     }
 
     async function refreshIntelligenceOperationalData() {
-      if (!supabaseClient) {
-        intelligenceDataSource = 'local';
+      if (!supabaseClient || !selectedProject?.id) {
+        intelligenceDataSource = 'unavailable';
         return false;
       }
 
       try {
-        const projectCode = (selectedProject && selectedProject.id) ? String(selectedProject.id) : 'japaratinga-r3';
+        // Never silently switch to a sample project when the user has no active project.
+        const projectCode = String(selectedProject.id);
         const { data: projects, error: projectError } = await supabaseClient
           .from('projects')
           .select('id, code, name, active')
@@ -10631,6 +10632,10 @@
         }
 
         const metrics = Array.isArray(metricsRes.data) ? metricsRes.data[0] : null;
+        if (!metrics) {
+          intelligenceDataSource = 'unavailable';
+          return false;
+        }
         if (metrics) {
           if (metrics.physical_progress !== null && metrics.physical_progress !== undefined && Number.isFinite(Number(metrics.physical_progress))) physicalProgress = Number(metrics.physical_progress);
           if (metrics.pac_score !== null && metrics.pac_score !== undefined && Number.isFinite(Number(metrics.pac_score))) pacScore = Number(metrics.pac_score);
@@ -11167,6 +11172,9 @@
         analysis.answer = 'Estou olhando a tela de **' + liveScreenContext.module + '** com você.\n' + analysis.answer;
       }
       analysis.answer = personalizeIntelligenceAnswer(analysis.answer);
+      // The legacy rules engine still uses some local screen/chart values.
+      // Never claim every number is server-confirmed until migrated.
+      analysis.answer += '\n\n*Fonte: registros operacionais sincronizados do Supabase. Gráficos e indicadores complementares desta visualização podem incluir dados locais; confirme esses valores antes de decisões.*';
       lastIntelligenceAnalysis = analysis;
 
       intelligenceChatHistory.push({
