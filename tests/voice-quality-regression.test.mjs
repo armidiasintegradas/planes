@@ -47,6 +47,6 @@ test('Existing Planes Intelligence chat has silent dictation and audio fail-clos
     const match = html.match(new RegExp('(?:async )?function ' + name + '\\([^)]*\\) \\{'));
     assert.ok(match, name + ' must be present');
     const firstLines = html.slice(match.index, match.index + 650);
-    assert.match(firstLines, /return (false|true)?;/, name + ' should stop before legacy audio code');
+    assert.match(firstLines, /return(?: (?:false|true))?;/, name + ' should stop before legacy audio code');
   }
 });
